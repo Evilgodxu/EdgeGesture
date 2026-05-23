@@ -46,6 +46,7 @@
     <string name="settings_donate">捐赠打赏</string>
     <string name="settings_donate_desc">支持开发者继续改进应用</string>
     <string name="settings_donate_alipay">支付宝</string>
+    <string name="settings_donate_thanks">感谢您的支持！</string>
 
     <!-- 震动设置 -->
     <string name="settings_vibration_title">震动反馈</string>

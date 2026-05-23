@@ -46,6 +46,7 @@
     <string name="settings_donate">Donate</string>
     <string name="settings_donate_desc">Support the developer to continue improving the app</string>
     <string name="settings_donate_alipay">Alipay</string>
+    <string name="settings_donate_thanks">Thank you for your support!</string>
 
     <!-- Vibration Settings -->
     <string name="settings_vibration_title">Disable Vibration Feedback</string>
@@ -117,8 +118,16 @@
     <string name="edge_width_percent">Width Percent</string>
     <string name="edge_position_percent">Position Percent</string>
     <string name="gesture_left_edge_actions">Left Edge Actions</string>
+    <string name="gesture_left_edge_actions_2">Left Edge Actions - Segment 2</string>
+    <string name="gesture_left_edge_actions_3">Left Edge Actions - Segment 3</string>
     <string name="gesture_right_edge_actions">Right Edge Actions</string>
+    <string name="gesture_right_edge_actions_2">Right Edge Actions - Segment 2</string>
+    <string name="gesture_right_edge_actions_3">Right Edge Actions - Segment 3</string>
     <string name="gesture_bottom_edge_actions">Bottom Edge Actions</string>
+    <string name="gesture_bottom_edge_actions_2">Bottom Edge Actions - Segment 2</string>
+    <string name="gesture_bottom_edge_actions_3">Bottom Edge Actions - Segment 3</string>
+    <string name="edge_segment_count">Segments</string>
+    <string name="edge_segment_unit">seg</string>
     <string name="gesture_disabled">Disabled</string>
 
     <!-- ==================== Permission Requests ==================== -->

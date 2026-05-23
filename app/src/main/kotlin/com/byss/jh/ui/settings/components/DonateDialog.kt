@@ -46,7 +46,7 @@ fun DonateDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "感谢您的支持！",
+                    text = stringResource(R.string.settings_donate_thanks),
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 16.dp)

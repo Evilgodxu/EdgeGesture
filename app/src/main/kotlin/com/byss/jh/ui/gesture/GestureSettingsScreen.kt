@@ -237,7 +237,7 @@ fun GestureSettingsScreen(
                     GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT,
                     GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT_LONG -> viewModel.setBottomEdgeGesture(key, action)
                 }
-                Logger.i(context, "GestureSettings", "设置手势: $key -> ${action.displayName}")
+                Logger.i(context, "GestureSettings", "设置手势: $key -> ${action.value}")
                 showActionDialog = false
             },
             getActionDisplayName = { getActionDisplayName(it) }

@@ -35,7 +35,7 @@ class AccessibilityActionExecutor(
     fun performAction(action: GestureAction, settings: GestureSettingsState) {
         if (action == GestureAction.NONE) return
         vibrate(settings)
-        Logger.i(service, TAG, "执行操作: ${action.displayName}")
+        Logger.i(service, TAG, "执行操作: ${action.value}")
 
         when (action) {
             GestureAction.HOME -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)

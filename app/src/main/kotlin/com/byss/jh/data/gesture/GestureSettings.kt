@@ -114,20 +114,24 @@ object GestureSettingsKeys {
     val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
 }
 
-enum class GestureAction(val value: String, val displayName: String) {
-    NONE("none", "无"),
-    HOME("home", "主页键"),
-    RECENT("recent", "任务键"),
-    BACK("back", "返回键"),
-    LAST_APP("last_app", "上一个应用"),
-    PREVIOUS_TRACK("previous_track", "上一曲"),
-    NEXT_TRACK("next_track", "下一曲"),
-    FLASHLIGHT("flashlight", "手电筒"),
-    VOICE_ASSISTANT("voice_assistant", "语音助手"),
-    POWER_MENU("power_menu", "电源菜单"),
-    LOCK_SCREEN("lock_screen", "锁屏"),
-    SCREENSHOT("screenshot", "截屏"),
-    EXPAND_PANEL("expand_panel", "扩展面板");
+/**
+ * 手势动作枚举
+ * 显示名称通过 [getActionDisplayName] 函数从字符串资源获取，支持多语言
+ */
+enum class GestureAction(val value: String) {
+    NONE("none"),
+    HOME("home"),
+    RECENT("recent"),
+    BACK("back"),
+    LAST_APP("last_app"),
+    PREVIOUS_TRACK("previous_track"),
+    NEXT_TRACK("next_track"),
+    FLASHLIGHT("flashlight"),
+    VOICE_ASSISTANT("voice_assistant"),
+    POWER_MENU("power_menu"),
+    LOCK_SCREEN("lock_screen"),
+    SCREENSHOT("screenshot"),
+    EXPAND_PANEL("expand_panel");
 
     companion object {
         fun fromValue(value: String): GestureAction = entries.find { it.value == value } ?: NONE
