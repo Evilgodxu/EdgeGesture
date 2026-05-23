@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ==================== 应用通用 ==================== -->
+    <string name="app_name">边缘手势</string>
+
+    <!-- ==================== 启动页 (Splash) ==================== -->
+    <string name="splash_app_title">边缘手势</string>
+
+    <!-- ==================== 隐私页 (Privacy) ==================== -->
+    <string name="privacy_title">隐私政策</string>
+    <string name="privacy_statement_title">隐私政策声明</string>
+    <string name="privacy_agree_button">同意并继续</string>
+    <string name="privacy_section_1_title">1. 信息收集</string>
+    <string name="privacy_section_1_content">本应用仅在本地设备上收集以下信息，用于提供边缘手势功能：\n• 设备基本信息（品牌、型号、Android版本）- 用于日志记录和问题诊断\n• 屏幕参数（分辨率、密度）- 用于计算手势触发区域\n• 操作日志（手势触发记录、设置变更）- 用于排查问题，仅保留最近50条\n• 应用列表 - 仅用于应用切换黑名单功能\n所有数据均存储在设备本地，不会上传至任何服务器。</string>
+    <string name="privacy_section_2_title">2. 权限说明</string>
+    <string name="privacy_section_2_content">本应用需要以下权限来实现核心功能：\n• 无障碍服务 - 执行返回、主页、最近任务等系统操作\n• 悬浮窗 - 显示边缘手势触发区域\n• 使用情况访问 - 获取应用切换黑名单中的应用信息\n• 查询所有应用 - 管理应用切换黑名单\n• 电池优化白名单 - 确保手势服务在后台持续运行\n• 通知 - 显示服务运行状态通知</string>
+    <string name="privacy_section_3_title">3. 数据存储与安全</string>
+    <string name="privacy_section_3_content">• 所有数据仅存储在设备本地外部私有目录\n• 操作日志保留3天，每日轮换，最多保留50条记录\n• 应用设置使用Android DataStore加密存储\n• 本应用不连接互联网，不收集、不上传任何个人数据</string>
+    <string name="privacy_section_4_title">4. 第三方服务</string>
+    <string name="privacy_section_4_content">本应用不包含任何第三方SDK或分析服务，不集成广告平台，不与任何第三方共享数据。所有功能均在设备本地完成。</string>
+    <string name="privacy_section_5_title">5. 用户权利</string>
+    <string name="privacy_section_5_content">您可以随时：\n• 在应用设置中查看和修改所有本地存储的数据\n• 清除应用数据以删除所有日志和设置\n• 卸载应用以彻底删除所有相关数据</string>
+
+    <!-- ==================== 设置页 (Settings) ==================== -->
+    <!-- 页面通用 -->
+    <string name="settings_title">更多设置</string>
+    <string name="settings_back_content_description">返回</string>
+
+    <!-- 外观设置 -->
+    <string name="settings_section_appearance">外观</string>
+    <string name="settings_theme_title">主题模式</string>
+    <string name="settings_theme_system">跟随系统</string>
+    <string name="settings_theme_dark">始终深色</string>
+    <string name="settings_theme_light">始终浅色</string>
+    <string name="settings_theme_dialog_title">选择主题</string>
+
+    <!-- 语言设置 -->
+    <string name="settings_section_language">语言</string>
+    <string name="settings_language_title">应用语言</string>
+    <string name="settings_language_system">跟随系统</string>
+    <string name="settings_language_dialog_title">选择语言</string>
+    <string name="settings_language_chinese">简体中文</string>
+    <string name="settings_language_english">English</string>
+
+    <!-- 捐赠设置 -->
+    <string name="settings_donate">捐赠打赏</string>
+    <string name="settings_donate_desc">支持开发者继续改进应用</string>
+    <string name="settings_donate_alipay">支付宝</string>
+
+    <!-- 震动设置 -->
+    <string name="settings_vibration_title">震动反馈</string>
+    <string name="settings_vibration_desc">滑动操作时触发震动效果</string>
+
+    <!-- ==================== 手势设置页 (Gesture Settings) ==================== -->
+    <!-- 页面标题 -->
+    <string name="gesture_settings_title">边缘手势设置</string>
+
+    <!-- 手势开关 -->
+    <string name="gesture_enable_title">边缘手势</string>
+    <string name="gesture_enable_desc">启用手势触发区</string>
+
+    <!-- 手势触发区显示设置 -->
+    <string name="gesture_hide_overlay_title">隐藏显示</string>
+    <string name="gesture_hide_overlay_desc">隐藏手势触发区</string>
+
+    <!-- 最近任务隐藏 -->
+    <string name="gesture_hide_recents_title">隐藏后台</string>
+    <string name="gesture_hide_recents_desc">在最近任务列表中隐藏本应用</string>
+
+    <!-- 边缘区域标题 -->
+    <string name="gesture_left_edge_title">左侧手势</string>
+    <string name="gesture_right_edge_title">右侧手势</string>
+    <string name="gesture_bottom_edge_title">底部手势</string>
+
+    <!-- 分段手势操作标题 -->
+    <string name="gesture_left_edge_actions">左侧手势操作</string>
+    <string name="gesture_left_edge_actions_2">左侧手势操作 - 第2段</string>
+    <string name="gesture_left_edge_actions_3">左侧手势操作 - 第3段</string>
+    <string name="gesture_right_edge_actions">右侧手势操作</string>
+    <string name="gesture_right_edge_actions_2">右侧手势操作 - 第2段</string>
+    <string name="gesture_right_edge_actions_3">右侧手势操作 - 第3段</string>
+    <string name="gesture_bottom_edge_actions">底部手势操作</string>
+    <string name="gesture_bottom_edge_actions_2">底部手势操作 - 第2段</string>
+    <string name="gesture_bottom_edge_actions_3">底部手势操作 - 第3段</string>
+
+    <!-- 手势操作类型 -->
+    <string name="gesture_swipe_right">右滑</string>
+    <string name="gesture_swipe_right_long">长按右滑</string>
+    <string name="gesture_swipe_left">左滑</string>
+    <string name="gesture_swipe_left_long">长按左滑</string>
+    <string name="gesture_swipe_up">上滑</string>
+    <string name="gesture_swipe_up_long">长按上滑</string>
+    <string name="gesture_swipe_down">下滑</string>
+    <string name="gesture_swipe_down_long">长按下滑</string>
+
+    <!-- 手势功能选项 -->
+    <string name="gesture_action_none">无</string>
+    <string name="gesture_action_home">主页键</string>
+    <string name="gesture_action_recent">任务键</string>
+    <string name="gesture_action_back">返回键</string>
+    <string name="gesture_action_last_app">上一个应用</string>
+    <string name="gesture_action_previous_track">上一曲</string>
+    <string name="gesture_action_next_track">下一曲</string>
+    <string name="gesture_action_flashlight">手电筒</string>
+    <string name="gesture_action_voice_assistant">语音助手</string>
+    <string name="gesture_action_power_menu">电源菜单</string>
+    <string name="gesture_action_lock_screen">锁屏</string>
+    <string name="gesture_action_screenshot">截屏</string>
+    <string name="gesture_action_expand_panel">扩展面板</string>
+
+    <!-- 手势操作选择对话框 -->
+    <string name="gesture_select_action_title">选择操作</string>
+
+    <!-- ==================== 应用黑名单 (App Blacklist) ==================== -->
+    <string name="settings_more">更多设置</string>
+    <string name="settings_section_gesture">手势</string>
+    <string name="settings_blacklist_title">应用切换黑名单</string>
+    <string name="settings_blacklist_desc">切换上一个应用时忽略黑名单中的应用</string>
+    <string name="settings_blacklist_dialog_title">应用切换黑名单</string>
+    <string name="settings_blacklist_search_hint">搜索应用</string>
+    <string name="settings_blacklist_system_tag">系统</string>
+    <string name="settings_blacklist_loading">加载中…</string>
+
+    <!-- ==================== 边缘尺寸设置 (Edge Size) ==================== -->
+    <string name="edge_width">宽度</string>
+    <string name="edge_height">高度</string>
+    <string name="edge_height_percent">高度百分比</string>
+    <string name="edge_width_percent">宽度百分比</string>
+    <string name="edge_position_percent">位置百分比</string>
+    <string name="edge_segment_count">段数</string>
+    <string name="edge_segment_unit">段</string>
+    <string name="gesture_disabled">禁用</string>
+
+    <!-- ==================== 权限申请 (Permissions) ==================== -->
+    <string name="permission_status_title">权限状态</string>
+    <string name="permission_overlay_title">悬浮窗权限</string>
+    <string name="permission_overlay_desc">需要悬浮窗权限创建边缘手势触发区域</string>
+    <string name="permission_notification_title">通知权限</string>
+    <string name="permission_notification_desc">需要通知权限来保持服务在后台运行</string>
+    <string name="permission_battery_title">电池优化白名单</string>
+    <string name="permission_battery_desc">需要关闭电池优化以确保手势服务在后台持续运行</string>
+    <string name="permission_usage_stats_title">使用情况访问权限</string>
+    <string name="permission_usage_stats_desc">需要使用情况访问权限来实现上一个应用切换</string>
+    <string name="permission_query_packages_title">获取已安装应用列表</string>
+    <string name="permission_query_packages_desc">需要获取已安装应用权限来管理应用切换黑名单</string>
+
+    <!-- ==================== 无障碍服务 (Accessibility) ==================== -->
+    <string name="accessibility_service_description">边缘手势需要无障碍权限来实现覆盖系统手势操作</string>
+    <string name="accessibility_permission_required">需要无障碍权限</string>
+    <string name="accessibility_permission_desc">边缘手势需要无障碍权限来执行系统操作，点击前往开启</string>
+    <string name="accessibility_dialog_title">开启无障碍权限</string>
+    <string name="accessibility_dialog_message">边缘手势需要无障碍权限才能执行主页、返回、最近任务等系统操作。请在设置中找到"边缘手势"并开启。</string>
+    <string name="accessibility_go_settings">前往设置</string>
+    <string name="accessibility_cancel">取消</string>
+
+    <!-- ==================== 扩展面板 (Expand Panel) ==================== -->
+    <string name="expand_panel_brightness">屏幕亮度</string>
+    <string name="expand_panel_alarm_volume">闹钟音量</string>
+    <string name="expand_panel_ring_volume">铃声音量</string>
+    <string name="expand_panel_media_volume">媒体音量</string>
+    <string name="expand_panel_shortcuts_title">快捷方式</string>
+    <string name="expand_panel_add_shortcut_desc">添加快捷方式</string>
+    <string name="expand_panel_app_picker_title">选择应用</string>
+    <string name="expand_panel_cancel">取消</string>
+    <string name="expand_panel_search_hint">搜索应用名称或包名</string>
+    <string name="expand_panel_show_system_apps">显示系统应用</string>
+
+</resources>

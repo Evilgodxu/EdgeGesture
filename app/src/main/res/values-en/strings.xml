@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ==================== App General ==================== -->
+    <string name="app_name">Edge Gesture</string>
+
+    <!-- ==================== Splash Screen ==================== -->
+    <string name="splash_app_title">Edge Gesture</string>
+
+    <!-- ==================== Privacy Screen ==================== -->
+    <string name="privacy_title">Privacy Policy</string>
+    <string name="privacy_statement_title">Privacy Policy Statement</string>
+    <string name="privacy_agree_button">Agree and Continue</string>
+    <string name="privacy_section_1_title">1. Information Collection</string>
+    <string name="privacy_section_1_content">This application only collects the following information locally on your device to provide edge gesture functionality:\n• Device basic info (brand, model, Android version) - for logging and issue diagnosis\n• Screen parameters (resolution, density) - for calculating gesture trigger areas\n• Operation logs (gesture triggers, setting changes) - for troubleshooting, keeping only the last 50 entries\n• App list - only for the app switch blacklist feature\nAll data is stored locally on the device and will not be uploaded to any server.</string>
+    <string name="privacy_section_2_title">2. Permissions</string>
+    <string name="privacy_section_2_content">This application requires the following permissions to implement core features:\n• Accessibility Service - to perform system operations like back, home, and recent tasks\n• Overlay - to display edge gesture trigger areas\n• Usage Access - to get app information for the app switch blacklist\n• Query All Packages - to manage the app switch blacklist\n• Battery Optimization Whitelist - to ensure the gesture service runs continuously in the background\n• Notification - to display service running status notifications</string>
+    <string name="privacy_section_3_title">3. Data Storage and Security</string>
+    <string name="privacy_section_3_content">• All data is stored only in the local external private directory of the device\n• Operation logs are retained for 3 days, rotated daily, with a maximum of 50 entries\n• App settings are stored using Android DataStore with encryption\n• This application does not connect to the internet, nor does it collect or upload any personal data</string>
+    <string name="privacy_section_4_title">4. Third-Party Services</string>
+    <string name="privacy_section_4_content">This application does not contain any third-party SDKs or analytics services, does not integrate advertising platforms, and does not share data with any third parties. All functions are completed locally on the device.</string>
+    <string name="privacy_section_5_title">5. User Rights</string>
+    <string name="privacy_section_5_content">You can at any time:\n• View and modify all locally stored data in the app settings\n• Clear app data to delete all logs and settings\n• Uninstall the app to completely delete all related data</string>
+
+    <!-- ==================== Settings Screen ==================== -->
+    <!-- Page General -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_back_content_description">Back</string>
+
+    <!-- Appearance Settings -->
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_theme_title">Theme</string>
+    <string name="settings_theme_system">System Default</string>
+    <string name="settings_theme_dark">Always Dark</string>
+    <string name="settings_theme_light">Always Light</string>
+    <string name="settings_theme_dialog_title">Select Theme</string>
+
+    <!-- Language Settings -->
+    <string name="settings_section_language">Language</string>
+    <string name="settings_language_title">App Language</string>
+    <string name="settings_language_system">System Default</string>
+    <string name="settings_language_dialog_title">Select Language</string>
+    <string name="settings_language_chinese">简体中文</string>
+    <string name="settings_language_english">English</string>
+
+    <!-- Donate Settings -->
+    <string name="settings_donate">Donate</string>
+    <string name="settings_donate_desc">Support the developer to continue improving the app</string>
+    <string name="settings_donate_alipay">Alipay</string>
+
+    <!-- Vibration Settings -->
+    <string name="settings_vibration_title">Disable Vibration Feedback</string>
+    <string name="settings_vibration_desc">Disable vibration effect triggered during swipe operations</string>
+
+    <!-- ==================== Gesture Settings Screen ==================== -->
+    <!-- Page Title -->
+    <string name="gesture_settings_title">Edge Gesture Settings</string>
+
+    <!-- Gesture Toggle -->
+    <string name="gesture_enable_title">Edge Gesture</string>
+    <string name="gesture_enable_desc">Enable gesture floating window</string>
+
+    <!-- Gesture Overlay Visibility -->
+    <string name="gesture_hide_overlay_title">Hide Overlay</string>
+    <string name="gesture_hide_overlay_desc">Hide gesture floating window</string>
+
+    <!-- Hide from Recents -->
+    <string name="gesture_hide_recents_title">Hide from Recents</string>
+    <string name="gesture_hide_recents_desc">Hide this app from task list</string>
+
+    <!-- Edge Area Titles -->
+    <string name="gesture_left_edge_title">Left Edge Gestures</string>
+    <string name="gesture_right_edge_title">Right Edge Gestures</string>
+    <string name="gesture_bottom_edge_title">Bottom Edge Gestures</string>
+
+    <!-- Gesture Action Types -->
+    <string name="gesture_swipe_right">Swipe Right</string>
+    <string name="gesture_swipe_right_long">Long Press Swipe Right</string>
+    <string name="gesture_swipe_left">Swipe Left</string>
+    <string name="gesture_swipe_left_long">Long Press Swipe Left</string>
+    <string name="gesture_swipe_up">Swipe Up</string>
+    <string name="gesture_swipe_up_long">Long Press Swipe Up</string>
+    <string name="gesture_swipe_down">Swipe Down</string>
+    <string name="gesture_swipe_down_long">Long Press Swipe Down</string>
+
+    <!-- Gesture Action Options -->
+    <string name="gesture_action_none">None</string>
+    <string name="gesture_action_home">Home</string>
+    <string name="gesture_action_recent">Recent Apps</string>
+    <string name="gesture_action_back">Back</string>
+    <string name="gesture_action_last_app">Last App</string>
+    <string name="gesture_action_previous_track">Previous Track</string>
+    <string name="gesture_action_next_track">Next Track</string>
+    <string name="gesture_action_flashlight">Flashlight</string>
+    <string name="gesture_action_voice_assistant">Voice Assistant</string>
+    <string name="gesture_action_power_menu">Power Menu</string>
+    <string name="gesture_action_lock_screen">Lock Screen</string>
+    <string name="gesture_action_screenshot">Screenshot</string>
+    <string name="gesture_action_expand_panel">Expand Panel</string>
+
+    <!-- Gesture Action Selection Dialog -->
+    <string name="gesture_select_action_title">Select Action</string>
+
+    <!-- ==================== App Blacklist ==================== -->
+    <string name="settings_more">More Settings</string>
+    <string name="settings_section_gesture">Gesture</string>
+    <string name="settings_blacklist_title">App Switch Blacklist</string>
+    <string name="settings_blacklist_desc">Ignore blacklisted apps when switching to last app</string>
+    <string name="settings_blacklist_dialog_title">App Switch Blacklist</string>
+    <string name="settings_blacklist_search_hint">Search apps</string>
+    <string name="settings_blacklist_system_tag">System</string>
+    <string name="settings_blacklist_loading">Loading…</string>
+
+    <!-- ==================== Edge Dimension Settings ==================== -->
+    <string name="edge_width">Width</string>
+    <string name="edge_height">Height</string>
+    <string name="edge_height_percent">Height Percent</string>
+    <string name="edge_width_percent">Width Percent</string>
+    <string name="edge_position_percent">Position Percent</string>
+    <string name="gesture_left_edge_actions">Left Edge Actions</string>
+    <string name="gesture_right_edge_actions">Right Edge Actions</string>
+    <string name="gesture_bottom_edge_actions">Bottom Edge Actions</string>
+    <string name="gesture_disabled">Disabled</string>
+
+    <!-- ==================== Permission Requests ==================== -->
+    <string name="permission_status_title">Permission Status</string>
+    <string name="permission_overlay_title">Overlay Permission</string>
+    <string name="permission_overlay_desc">Overlay permission is required to display edge gesture areas</string>
+    <string name="permission_notification_title">Notification Permission</string>
+    <string name="permission_notification_desc">Notification permission is required to keep the service running in background</string>
+    <string name="permission_battery_title">Battery Optimization Whitelist</string>
+    <string name="permission_battery_desc">Need to disable battery optimization to ensure gesture service runs continuously in background</string>
+    <string name="permission_usage_stats_title">Usage Access Permission</string>
+    <string name="permission_usage_stats_desc">Usage access permission is required to switch to the last app</string>
+    <string name="permission_query_packages_title">Query All Packages</string>
+    <string name="permission_query_packages_desc">Required to manage app switch blacklist</string>
+
+    <!-- ==================== Accessibility Service ==================== -->
+    <string name="accessibility_service_description">Edge Gesture requires accessibility permission to perform system operations such as back, home, recent tasks, etc.</string>
+    <string name="accessibility_permission_required">Accessibility Required</string>
+    <string name="accessibility_permission_desc">Edge gesture requires accessibility permission to perform system operations, tap to enable</string>
+    <string name="accessibility_dialog_title">Enable Accessibility</string>
+    <string name="accessibility_dialog_message">Edge gesture requires accessibility permission to perform Home, Back, Recent Apps and other system operations. Please find "Edge Gesture" in settings and enable it.</string>
+    <string name="accessibility_go_settings">Go to Settings</string>
+    <string name="accessibility_cancel">Cancel</string>
+
+    <!-- ==================== Expand Panel ==================== -->
+    <string name="expand_panel_brightness">Brightness</string>
+    <string name="expand_panel_alarm_volume">Alarm Volume</string>
+    <string name="expand_panel_ring_volume">Ring Volume</string>
+    <string name="expand_panel_media_volume">Media Volume</string>
+    <string name="expand_panel_shortcuts_title">Shortcuts</string>
+    <string name="expand_panel_add_shortcut_desc">Add shortcut</string>
+    <string name="expand_panel_app_picker_title">Select App</string>
+    <string name="expand_panel_cancel">Cancel</string>
+    <string name="expand_panel_search_hint">Search by name or package</string>
+    <string name="expand_panel_show_system_apps">Show system apps</string>
+
+</resources>
