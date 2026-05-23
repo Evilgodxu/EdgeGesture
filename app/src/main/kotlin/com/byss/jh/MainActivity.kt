@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var windowInsetsController: WindowInsetsControllerCompat
 
     override fun attachBaseContext(newBase: Context) {
-        // 在 Activity 创建前应用语言设置
+        // 必须在 super.attachBaseContext 之前应用语言，确保整个 Activity 生命周期使用正确语言
         val updatedContext = applyLanguageSettings(newBase)
         super.attachBaseContext(updatedContext)
     }
@@ -44,10 +44,10 @@ class MainActivity : ComponentActivity() {
         setupSystemBars()
 
         setContent {
-            // 监听设置变化，触发重组
+            // 通过 StateFlow 监听设置变化，当设置改变时触发 Compose 重组
             val settings by settingsFlow().collectAsState(initial = null)
 
-            // 当语言设置改变时，重新应用语言
+            // 语言设置变更时立即应用到当前 Activity，无需重启
             settings?.let {
                 if (it.language != AppLanguage.SYSTEM) {
                     applyLanguageToActivity(it.language)
@@ -92,12 +92,12 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
-        // 保存原始系统 Locale
+        // 缓存系统原始 Locale，用于恢复系统默认语言设置
         private var systemLocale: Locale = Locale.getDefault()
     }
 
     private fun applyLanguageSettings(context: Context): Context {
-        // 从 DataStore 读取语言设置（同步方式）
+        // 使用 SharedPreferences 同步读取语言设置（DataStore 在 attachBaseContext 时不可用）
         val prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
         val languageValue = prefs.getString("language", AppLanguage.SYSTEM.value)
             ?: AppLanguage.SYSTEM.value
@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        // 检查并应用隐藏后台设置
+        // 每次回到前台时同步隐藏后台设置，确保设置变更即时生效
         lifecycleScope.launch {
             val settings = gestureSettingsFlow().first()
             val am = getSystemService(ACTIVITY_SERVICE) as ActivityManager

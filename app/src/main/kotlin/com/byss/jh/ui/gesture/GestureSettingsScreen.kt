@@ -98,17 +98,17 @@ fun GestureSettingsScreen(
     var showAccessibilityDialog by remember { mutableStateOf(false) }
     var waitingForSystemSetting by remember { mutableStateOf(false) }
 
-    // 使用 rememberUpdatedState 确保回调使用最新值
+    // rememberUpdatedState 确保在 DisposableEffect 中也能获取到最新的 waitingForSystemSetting 值
     val currentWaitingState by rememberUpdatedState { waitingForSystemSetting }
     val setWaitingState = { value: Boolean ->
         waitingForSystemSetting = value
     }
 
-    // 监听生命周期，从设置返回时刷新权限状态
+    // 监听生命周期，用户从系统设置返回时刷新无障碍权限状态
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                // 每次从后台返回都刷新无障碍权限状态
+                // 用户可能刚从无障碍设置页返回，需要刷新权限状态
                 viewModel.refreshAccessibilityState()
                 if (currentWaitingState()) {
                     setWaitingState(false)
@@ -168,7 +168,7 @@ fun GestureSettingsScreen(
         )
     }
 
-    // 动作选择对话框
+    // 手势动作选择对话框
     if (showActionDialog && currentActionKey != null) {
         ActionSelectionDialog(
             currentAction = currentActionValue,
@@ -300,7 +300,7 @@ private fun GestureSettingsContent(
     Column(
         modifier = modifier.verticalScroll(rememberScrollState())
     ) {
-        // 无障碍权限提示
+        // 无障碍权限未开启时显示警告卡片
         if (!uiState.isAccessibilityEnabled) {
             Card(
                 modifier = Modifier
@@ -328,7 +328,7 @@ private fun GestureSettingsContent(
             }
         }
 
-        // 边缘手势总开关
+        // 边缘手势功能总开关，依赖无障碍权限
         GestureSettingsSwitchItem(
             title = stringResource(R.string.gesture_enable_title),
             subtitle = stringResource(R.string.gesture_enable_desc),
@@ -350,7 +350,7 @@ private fun GestureSettingsContent(
 
         AnimatedVisibility(visible = settings.gestureEnabled) {
             Column {
-                // 隐藏显示
+                // 隐藏边缘触摸区域可视化反馈
                 GestureSettingsSwitchItem(
                     title = stringResource(R.string.gesture_hide_overlay_title),
                     subtitle = stringResource(R.string.gesture_hide_overlay_desc),
@@ -361,7 +361,7 @@ private fun GestureSettingsContent(
                     }
                 )
 
-                // 隐藏后台
+                // 从最近任务列表中隐藏本应用
                 GestureSettingsSwitchItem(
                     title = stringResource(R.string.gesture_hide_recents_title),
                     subtitle = stringResource(R.string.gesture_hide_recents_desc),
@@ -374,7 +374,7 @@ private fun GestureSettingsContent(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                // 左侧边缘设置
+                // 左侧边缘触发区域尺寸配置
                 EdgeSettingsSection(
                     title = stringResource(R.string.gesture_left_edge_title),
                     width = settings.leftEdgeWidth,
@@ -387,7 +387,7 @@ private fun GestureSettingsContent(
                     onSegmentCountChange = { viewModel.setLeftSegmentCount(it) }
                 )
 
-                // 左侧手势第1段
+                // 左侧边缘第1段手势动作配置
                 EdgeGestureSection(
                     title = stringResource(R.string.gesture_left_edge_actions),
                     gestures = listOf(
@@ -403,7 +403,7 @@ private fun GestureSettingsContent(
                     getActionDisplayName = { getActionDisplayName(it) }
                 )
 
-                // 左侧手势第2段
+                // 左侧边缘第2段手势动作配置（当段数>=2时显示）
                 if (settings.leftSegmentCount >= 2) {
                     EdgeGestureSection(
                         title = stringResource(R.string.gesture_left_edge_actions_2),
@@ -421,7 +421,7 @@ private fun GestureSettingsContent(
                     )
                 }
 
-                // 左侧手势第3段
+                // 左侧边缘第3段手势动作配置（当段数>=3时显示）
                 if (settings.leftSegmentCount >= 3) {
                     EdgeGestureSection(
                         title = stringResource(R.string.gesture_left_edge_actions_3),
@@ -441,7 +441,7 @@ private fun GestureSettingsContent(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                // 右侧边缘设置
+                // 右侧边缘触发区域尺寸配置
                 EdgeSettingsSection(
                     title = stringResource(R.string.gesture_right_edge_title),
                     width = settings.rightEdgeWidth,
@@ -454,7 +454,7 @@ private fun GestureSettingsContent(
                     onSegmentCountChange = { viewModel.setRightSegmentCount(it) }
                 )
 
-                // 右侧手势第1段
+                // 右侧边缘第1段手势动作配置
                 EdgeGestureSection(
                     title = stringResource(R.string.gesture_right_edge_actions),
                     gestures = listOf(
@@ -470,7 +470,7 @@ private fun GestureSettingsContent(
                     getActionDisplayName = { getActionDisplayName(it) }
                 )
 
-                // 右侧手势第2段
+                // 右侧边缘第2段手势动作配置（当段数>=2时显示）
                 if (settings.rightSegmentCount >= 2) {
                     EdgeGestureSection(
                         title = stringResource(R.string.gesture_right_edge_actions_2),
@@ -488,7 +488,7 @@ private fun GestureSettingsContent(
                     )
                 }
 
-                // 右侧手势第3段
+                // 右侧边缘第3段手势动作配置（当段数>=3时显示）
                 if (settings.rightSegmentCount >= 3) {
                     EdgeGestureSection(
                         title = stringResource(R.string.gesture_right_edge_actions_3),
@@ -508,7 +508,7 @@ private fun GestureSettingsContent(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                // 底部边缘设置
+                // 底部边缘触发区域尺寸配置
                 BottomEdgeSettingsSection(
                     title = stringResource(R.string.gesture_bottom_edge_title),
                     height = settings.bottomEdgeHeight,
@@ -519,7 +519,7 @@ private fun GestureSettingsContent(
                     onSegmentCountChange = { viewModel.setBottomSegmentCount(it) }
                 )
 
-                // 底部手势第1段
+                // 底部边缘第1段手势动作配置
                 EdgeGestureSection(
                     title = stringResource(R.string.gesture_bottom_edge_actions),
                     gestures = listOf(
@@ -535,7 +535,7 @@ private fun GestureSettingsContent(
                     getActionDisplayName = { getActionDisplayName(it) }
                 )
 
-                // 底部手势第2段
+                // 底部边缘第2段手势动作配置（当段数>=2时显示）
                 if (settings.bottomSegmentCount >= 2) {
                     EdgeGestureSection(
                         title = stringResource(R.string.gesture_bottom_edge_actions_2),
@@ -553,7 +553,7 @@ private fun GestureSettingsContent(
                     )
                 }
 
-                // 底部手势第3段
+                // 底部边缘第3段手势动作配置（当段数>=3时显示）
                 if (settings.bottomSegmentCount >= 3) {
                     EdgeGestureSection(
                         title = stringResource(R.string.gesture_bottom_edge_actions_3),

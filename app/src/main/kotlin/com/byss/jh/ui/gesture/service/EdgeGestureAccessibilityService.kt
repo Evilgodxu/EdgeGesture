@@ -158,7 +158,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         actionExecutor.onAccessibilityEvent(event)
 
-        // 检测输入法状态变化
+            // 监听窗口变化事件检测输入法弹出/关闭
         event?.let {
             if (it.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
                 it.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
@@ -218,6 +218,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
         actionExecutor.markConfigChanged()
+        // 延迟更新布局，等待系统完成配置切换
         Handler(Looper.getMainLooper()).postDelayed({
             if (settings.gestureEnabled && edgeViewManager.isViewAttached()) {
                 edgeViewManager.updateEdgeViewsLayout(settings)

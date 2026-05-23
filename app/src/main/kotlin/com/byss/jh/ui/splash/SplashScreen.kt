@@ -25,6 +25,7 @@ import kotlinx.coroutines.delay
 fun SplashScreen(
     onSplashComplete: () -> Unit
 ) {
+    // 延迟300ms后完成启动页，确保用户能看到加载指示器
     LaunchedEffect(Unit) {
         delay(300)
         onSplashComplete()

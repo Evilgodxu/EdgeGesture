@@ -25,6 +25,10 @@ class ServiceRestartReceiver : BroadcastReceiver() {
         }
     }
 
+    /**
+     * 设备启动完成后延迟5秒启动服务
+     * 延迟确保系统完成初始化，避免启动失败
+     */
     private fun handleBootCompleted(context: Context) {
         Logger.i(context, TAG, "设备启动完成，启动服务")
         CoroutineScope(Dispatchers.IO).launch {
@@ -33,6 +37,9 @@ class ServiceRestartReceiver : BroadcastReceiver() {
         }
     }
 
+    /**
+     * 应用更新完成后立即重启服务
+     */
     private fun handlePackageReplaced(context: Context) {
         Logger.i(context, TAG, "应用更新完成，重启服务")
         CoroutineScope(Dispatchers.IO).launch {

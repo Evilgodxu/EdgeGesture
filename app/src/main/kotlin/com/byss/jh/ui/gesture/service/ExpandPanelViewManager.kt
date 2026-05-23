@@ -133,10 +133,15 @@ class ExpandPanelViewManager(
         fun performRestore() = controller.performRestore(null)
     }
 
+    /**
+     * 显示扩展面板悬浮窗
+     * 需要 SYSTEM_ALERT_WINDOW 权限和 WRITE_SETTINGS 权限
+     */
     @SuppressLint("ClickableViewAccessibility")
     fun show(): Boolean {
         if (composeView != null) return true
 
+        // 检查是否有修改系统设置权限（用于调节亮度/音量）
         if (!Settings.System.canWrite(context)) {
             val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
                 data = android.net.Uri.parse("package:${context.packageName}")
@@ -198,8 +203,12 @@ class ExpandPanelViewManager(
         return true
     }
 
+    /**
+     * 关闭扩展面板并清理资源
+     */
     fun dismiss() {
         val view = composeView ?: return
+        // 按正确顺序触发生命周期事件
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)

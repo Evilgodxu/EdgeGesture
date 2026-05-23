@@ -43,7 +43,7 @@ fun NavGraph(
         composable(Screen.Splash.route) {
             SplashScreen(
                 onSplashComplete = {
-                    // 根据隐私政策同意状态决定跳转页面
+                    // 首次使用需同意隐私政策，已同意则直接进入手势设置页
                     if (privacyAgreed) {
                         navController.navigate(Screen.Gesture.route) {
                             popUpTo(Screen.Splash.route) { inclusive = true }
@@ -83,17 +83,17 @@ fun NavGraph(
         composable(Screen.Settings.route) {
             SettingsScreen(
                 onNavigateBack = {
-                    // 防抖检查：确保当前页面是设置页时才执行返回
+                    // 防止快速点击导致导航状态异常
                     if (navController.currentBackStackEntry?.destination?.route == Screen.Settings.route) {
                         navController.popBackStack()
                     }
                 },
                 onThemeChange = { themeMode ->
-                    // 主题切换通过 Compose 重组实现
+                    // 主题切换通过 Compose 重组实时生效，无需 Activity 重建
                     onThemeChange(themeMode)
                 },
                 onLanguageChange = { language ->
-                    // 语言切换通过更新资源实现，无需重建页面
+                    // 语言切换通过更新 Configuration 实现，无需重启 Activity
                     onLanguageChange(language)
                 }
             )

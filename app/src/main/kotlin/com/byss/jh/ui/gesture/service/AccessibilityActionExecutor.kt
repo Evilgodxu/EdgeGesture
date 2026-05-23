@@ -84,6 +84,10 @@ class AccessibilityActionExecutor(
         expandPanelViewManager = null
     }
 
+    /**
+     * 监听窗口变化事件，记录应用切换历史
+     * 用于实现"切换到上一个应用"功能
+     */
     fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
 
@@ -92,6 +96,7 @@ class AccessibilityActionExecutor(
 
         val blacklist = getBlacklistSync()
 
+        // 屏幕旋转等配置变化会导致Activity重建，此时不应记录为应用切换
         if (justConfigChanged) {
             justConfigChanged = false
             if (packageName == currentApp) {
@@ -102,10 +107,12 @@ class AccessibilityActionExecutor(
 
         if (currentApp == packageName) return
 
+        // 将当前应用添加到历史记录，用于后续返回
         currentApp?.let { current ->
             if (current != packageName && current !in blacklist) {
                 appHistory.remove(packageName)
                 appHistory.add(current)
+                // 限制历史记录大小，避免内存无限增长
                 if (appHistory.size > 20) {
                     appHistory.removeAt(0)
                 }
@@ -179,11 +186,16 @@ class AccessibilityActionExecutor(
         }
     }
 
+    /**
+     * 从 UsageStatsManager 获取最近使用的应用
+     * 作为应用历史记录的备用方案
+     */
     private fun getLastAppFromUsageStats(blacklist: Set<String>): String? {
         return try {
             val usageStatsManager = service.getSystemService(Context.USAGE_STATS_SERVICE) as? android.app.usage.UsageStatsManager
                 ?: return null
             val endTime = System.currentTimeMillis()
+            // 查询最近5分钟的使用统计
             val startTime = endTime - 300000
 
             val stats = usageStatsManager.queryUsageStats(

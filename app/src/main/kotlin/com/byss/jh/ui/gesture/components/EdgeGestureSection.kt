@@ -98,6 +98,7 @@ fun EdgeGestureSection(
                                 color = if (isDisabled) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.primary
                             )
                         }
+                        // 除最后一个手势外，每项之间添加分隔线
                         if (gestures.last() != Triple(name, action, key)) {
                             HorizontalDivider()
                         }

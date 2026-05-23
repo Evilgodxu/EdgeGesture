@@ -63,7 +63,7 @@ fun PrivacyScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val windowSizeClass = rememberWindowSizeClass()
 
-    // 加载状态处理
+    // 等待权限检查完成时显示加载指示器
     if (uiState.isLoading) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -81,7 +81,7 @@ fun PrivacyScreen(
         Logger.i(context, "Permission", "通知权限: $isGranted")
     }
 
-    // 监听生命周期，当从设置返回时刷新权限
+    // 监听生命周期，用户从系统权限设置返回时刷新权限状态
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -120,7 +120,7 @@ fun PrivacyScreen(
             .padding(16.dp)
 
         if (windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)) {
-            // 横屏/平板布局：双列
+            // 宽屏设备使用双列布局，左侧显示隐私政策，右侧显示权限状态
             PrivacyScreenExpanded(
                 modifier = contentModifier,
                 uiState = uiState,
@@ -157,7 +157,7 @@ fun PrivacyScreen(
                 }
             )
         } else {
-            // 竖屏布局：单列
+            // 窄屏设备使用单列布局，隐私政策和权限状态上下排列
             PrivacyScreenCompact(
                 modifier = contentModifier,
                 uiState = uiState,
@@ -285,7 +285,7 @@ private fun PrivacyScreenExpanded(
     Row(
         modifier = modifier.verticalScroll(rememberScrollState())
     ) {
-        // 左侧：隐私政策内容
+        // 左侧列：隐私政策内容
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -325,7 +325,7 @@ private fun PrivacyScreenExpanded(
             )
         }
 
-        // 右侧：权限状态和同意按钮
+        // 右侧列：权限状态和同意按钮
         Column(
             modifier = Modifier.weight(1f)
         ) {

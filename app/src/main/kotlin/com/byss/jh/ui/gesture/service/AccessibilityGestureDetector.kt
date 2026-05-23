@@ -37,8 +37,8 @@ class AccessibilityGestureDetector(
         var isLongPressTriggered = false
         var isSwipeStarted = false
         var swipeDirection: SwipeDirection? = null
-        val swipeThreshold = 80f
-        val longPressThreshold = 200L
+        val swipeThreshold = 80f // 滑动触发阈值（像素）
+        val longPressThreshold = 200L // 长按触发阈值（毫秒）
 
         val handler = Handler(Looper.getMainLooper())
         var longPressRunnable: Runnable? = null

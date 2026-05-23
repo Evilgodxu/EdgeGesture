@@ -68,16 +68,22 @@ import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
-// DataStore 扩展
+/**
+ * 应用设置 DataStore 实例
+ */
 val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-// 设置键
+/**
+ * 设置存储键名定义
+ */
 object SettingsKeys {
     val THEME_MODE = stringPreferencesKey("theme_mode")
     val LANGUAGE = stringPreferencesKey("language")
 }
 
-// 主题模式枚举
+/**
+ * 应用主题模式
+ */
 enum class ThemeMode(val value: String) {
     SYSTEM("system"),
     DARK("dark"),
@@ -88,10 +94,12 @@ enum class ThemeMode(val value: String) {
     }
 }
 
-// 保存原始系统 Locale
+// 缓存系统原始 Locale，用于恢复系统默认语言
 private var systemLocale: Locale = Locale.getDefault()
 
-// 语言枚举
+/**
+ * 应用语言设置
+ */
 enum class AppLanguage(val value: String, val locale: Locale) {
     SYSTEM("system", Locale.getDefault()),
     CHINESE("zh", Locale.CHINESE),
@@ -102,14 +110,18 @@ enum class AppLanguage(val value: String, val locale: Locale) {
     }
 }
 
-// 设置数据类
+/**
+ * 设置状态数据类
+ */
 data class SettingsState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val language: AppLanguage = AppLanguage.SYSTEM,
     val vibrationEnabled: Boolean = false
 )
 
-// 获取设置 Flow
+/**
+ * 获取设置状态流，合并主题、语言和震动设置
+ */
 fun Context.settingsFlow(): Flow<SettingsState> = settingsDataStore.data.map { preferences ->
     SettingsState(
         themeMode = ThemeMode.fromValue(preferences[SettingsKeys.THEME_MODE] ?: ThemeMode.SYSTEM.value),
@@ -119,25 +131,36 @@ fun Context.settingsFlow(): Flow<SettingsState> = settingsDataStore.data.map { p
     settings.copy(vibrationEnabled = gestureSettings.vibrationEnabled)
 }
 
-// 获取主题模式 Flow
+/**
+ * 获取主题模式流
+ */
 fun Context.themeModeFlow(): Flow<ThemeMode> = settingsDataStore.data.map { preferences ->
     ThemeMode.fromValue(preferences[SettingsKeys.THEME_MODE] ?: ThemeMode.SYSTEM.value)
 }
 
-// 保存设置（使用 Dispatchers.IO）
+/**
+ * 保存主题模式设置
+ */
 suspend fun Context.saveThemeMode(mode: ThemeMode) = withContext(Dispatchers.IO) {
     settingsDataStore.edit { preferences ->
         preferences[SettingsKeys.THEME_MODE] = mode.value
     }
 }
 
+/**
+ * 保存语言设置
+ */
 suspend fun Context.saveLanguage(language: AppLanguage) = withContext(Dispatchers.IO) {
     settingsDataStore.edit { preferences ->
         preferences[SettingsKeys.LANGUAGE] = language.value
     }
 }
 
-// 更新应用语言
+/**
+ * 更新应用语言配置
+ * 使用 @Suppress("DEPRECATION") 因为 updateConfiguration 虽被标记废弃，
+ * 但在 attachBaseContext 场景下仍是唯一可行的方案
+ */
 @Suppress("DEPRECATION")
 fun updateAppLanguage(context: Context, language: AppLanguage) {
     val locale = when (language) {
@@ -165,7 +188,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
 
-    // 从 ViewModel 读取设置
+    // 通过 ViewModel 获取设置状态，自动响应设置变更
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val windowSizeClass = rememberWindowSizeClass()
 
@@ -179,7 +202,7 @@ fun SettingsScreen(
         return
     }
 
-    // 对话框状态
+    // 各对话框显示状态管理
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showBlacklistDialog by remember { mutableStateOf(false) }
@@ -220,7 +243,7 @@ fun SettingsScreen(
             .padding(16.dp)
 
         if (windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)) {
-            // 横屏/平板布局：双列
+            // 宽屏设备使用双列布局，提高空间利用率
             Row(
                 modifier = contentModifier.verticalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(24.dp),
@@ -264,7 +287,7 @@ fun SettingsScreen(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
-                    // 手势设置
+                    // 手势反馈设置
                     SettingsSection(title = stringResource(R.string.settings_section_gesture)) {
                         SettingsSwitchItem(
                             icon = Icons.Default.Vibration,
@@ -285,7 +308,7 @@ fun SettingsScreen(
                         )
                     }
 
-                    // 更多设置
+                    // 更多设置项
                     SettingsSection(title = stringResource(R.string.settings_more)) {
                         SettingsClickableItem(
                             icon = Icons.Default.Favorite,
@@ -297,7 +320,7 @@ fun SettingsScreen(
                 }
             }
         } else {
-            // 竖屏布局：单列
+            // 窄屏设备使用单列布局
             Column(
                 modifier = contentModifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -330,7 +353,7 @@ fun SettingsScreen(
                     )
                 }
 
-                // 手势设置
+                // 手势反馈设置
                 SettingsSection(title = stringResource(R.string.settings_section_gesture)) {
                     SettingsSwitchItem(
                         icon = Icons.Default.Vibration,
@@ -351,7 +374,7 @@ fun SettingsScreen(
                     )
                 }
 
-                // 更多设置
+                // 更多设置项
                 SettingsSection(title = stringResource(R.string.settings_more)) {
                     SettingsClickableItem(
                         icon = Icons.Default.Favorite,
@@ -393,14 +416,14 @@ fun SettingsScreen(
         )
     }
 
-    // 应用切换黑名单对话框
+    // 应用切换黑名单管理对话框
     if (showBlacklistDialog) {
         AppSwitchBlacklistDialog(
             onDismiss = { showBlacklistDialog = false }
         )
     }
 
-    // 捐赠对话框
+    // 捐赠支持对话框
     if (showDonateDialog) {
         DonateDialog(
             onDismiss = { showDonateDialog = false }

@@ -110,6 +110,7 @@ fun MyApplicationTheme(
 
     val colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme
 
+    // 同步状态栏图标颜色与主题
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
