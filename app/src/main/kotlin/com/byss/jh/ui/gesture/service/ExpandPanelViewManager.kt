@@ -348,9 +348,14 @@ private fun ExpandPanelContent(
                         onShortcutSet(index, packageName)
                     }
                 },
-                onLaunchApp = { packageName ->
-                    launchApp(context, packageName)
-                    onDismiss()
+                onLaunchApp = { packageName, index ->
+                    val launched = launchApp(context, packageName)
+                    if (launched) {
+                        onDismiss()
+                    } else {
+                        selectedIndex = index
+                        isAppPickerMode = true
+                    }
                 }
             )
         }
@@ -578,7 +583,7 @@ private fun VerticalSliderItem(
 private fun ShortcutsGrid(
     shortcuts: List<String?>,
     onShortcutSet: (index: Int, packageName: String?) -> Unit,
-    onLaunchApp: (String) -> Unit
+    onLaunchApp: (String, Int) -> Unit
 ) {
     Column {
         Text(
@@ -602,7 +607,7 @@ private fun ShortcutsGrid(
                         packageName = packageName,
                         onClick = {
                             if (packageName != null) {
-                                onLaunchApp(packageName)
+                                onLaunchApp(packageName, index)
                             } else {
                                 onShortcutSet(index, null)
                             }
@@ -851,14 +856,19 @@ private fun brightnessToPercent(brightness: Int): Float {
     return (brightness / 50f).coerceIn(0f, 1f)
 }
 
-private fun launchApp(context: Context, packageName: String) {
-    try {
+private fun launchApp(context: Context, packageName: String): Boolean {
+    return try {
         val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName)
         if (launchIntent != null) {
             launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
             context.startActivity(launchIntent)
+            true
+        } else {
+            false
         }
-    } catch (_: Exception) {}
+    } catch (_: Exception) {
+        false
+    }
 }
 
 private fun loadInstalledApps(context: Context): List<AppInfo> {
