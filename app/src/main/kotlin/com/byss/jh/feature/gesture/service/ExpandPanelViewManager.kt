@@ -681,17 +681,14 @@ private fun AppPickerScreen(
     val context = LocalContext.current
     var apps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
     var searchQuery by remember { mutableStateOf("") }
-    var showSystemApps by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         apps = loadInstalledApps(context)
     }
 
     val filteredApps = apps.filter { app ->
-        val matchesSearch = app.label.contains(searchQuery, ignoreCase = true) ||
+        app.label.contains(searchQuery, ignoreCase = true) ||
                 app.packageName.contains(searchQuery, ignoreCase = true)
-        val matchesSystemFilter = showSystemApps || !app.isSystemApp
-        matchesSearch && matchesSystemFilter
     }
 
     Column(
@@ -730,26 +727,6 @@ private fun AppPickerScreen(
             ),
             textStyle = androidx.compose.ui.text.TextStyle(color = MaterialTheme.colorScheme.onSurface)
         )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.expand_panel_show_system_apps),
-                style = MaterialTheme.typography.bodySmall,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            androidx.compose.material3.Switch(
-                checked = showSystemApps,
-                onCheckedChange = { showSystemApps = it }
-            )
-        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -810,8 +787,7 @@ private fun AppPickerScreen(
 
 private data class AppInfo(
     val label: String,
-    val packageName: String,
-    val isSystemApp: Boolean
+    val packageName: String
 )
 
 private fun sendMediaKeyEvent(context: Context, keyCode: Int) {
@@ -869,8 +845,7 @@ private fun loadInstalledApps(context: Context): List<AppInfo> {
         }
         .map { app ->
             val label = pm.getApplicationLabel(app).toString()
-            val isSystem = (app.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
-            AppInfo(label, app.packageName, isSystem)
+            AppInfo(label, app.packageName)
         }
         .sortedBy { it.label }
 }

@@ -175,7 +175,6 @@
     <string name="expand_panel_app_picker_title">选择应用</string>
     <string name="expand_panel_cancel">取消</string>
     <string name="expand_panel_search_hint">搜索应用名称或包名</string>
-    <string name="expand_panel_show_system_apps">显示系统应用</string>
 
     <!-- ==================== 启动拦截 (Launch Block) ==================== -->
     <string name="settings_launch_block_title">启动拦截</string>
