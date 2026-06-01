@@ -155,11 +155,11 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         actionExecutor.onAccessibilityEvent(event)
 
-            // 监听窗口变化事件检测输入法弹出/关闭
         event?.let {
-            if (it.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
-                it.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
-                checkKeyboardVisibility()
+            when (it.eventType) {
+                AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
+                AccessibilityEvent.TYPE_WINDOWS_CHANGED -> checkKeyboardVisibility()
+                AccessibilityEvent.TYPE_VIEW_FOCUSED -> checkInputFieldFocused(it)
             }
         }
     }
@@ -167,20 +167,44 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     // 检测输入法是否弹出，通过检查窗口列表中是否存在输入法窗口
     private fun checkKeyboardVisibility() {
         val windowList = windows
-        if (windowList.isEmpty()) {
-            return
-        }
+        if (windowList.isEmpty()) return
 
         val hasKeyboardWindow = windowList.any { windowInfo ->
             windowInfo.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD
         }
 
-        if (hasKeyboardWindow && !isKeyboardVisible) {
+        updateKeyboardState(hasKeyboardWindow)
+    }
+
+    // 检测输入框是否获得焦点，作为输入法显示的辅助判断
+    private fun checkInputFieldFocused(event: AccessibilityEvent) {
+        val className = event.className?.toString() ?: return
+        val isInputField = isInputFieldClass(className)
+
+        if (isInputField && !isKeyboardVisible) {
+            // 输入框获得焦点，延迟检查输入法窗口（输入法弹出可能有动画延迟）
+            Handler(Looper.getMainLooper()).postDelayed({
+                checkKeyboardVisibility()
+            }, 200)
+        }
+    }
+
+    // 判断类名是否为输入框类型
+    private fun isInputFieldClass(className: String): Boolean {
+        return className.contains("EditText", ignoreCase = true) ||
+            className.contains("TextInput", ignoreCase = true) ||
+            className.contains("SearchView", ignoreCase = true) ||
+            className.contains("AutoCompleteTextView", ignoreCase = true) ||
+            className.contains("ComposeUiNode", ignoreCase = true) // Jetpack Compose 输入框
+    }
+
+    private fun updateKeyboardState(visible: Boolean) {
+        if (visible && !isKeyboardVisible) {
             isKeyboardVisible = true
-            edgeViewManager.hideEdgeViewsForKeyboard()
-        } else if (!hasKeyboardWindow && isKeyboardVisible) {
+            edgeViewManager.disableEdgeViewsTouch()
+        } else if (!visible && isKeyboardVisible) {
             isKeyboardVisible = false
-            edgeViewManager.restoreEdgeViewsAfterKeyboard()
+            edgeViewManager.enableEdgeViewsTouch()
         }
     }
 

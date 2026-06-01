@@ -28,11 +28,6 @@ class AccessibilityEdgeViewManager(
     private var screenHeight: Int = 0
     private var density: Float = 1f
 
-    // 缓存边缘视图的原始位置，用于输入法关闭后恢复
-    private var originalLeftY: MutableList<Int> = mutableListOf()
-    private var originalRightY: MutableList<Int> = mutableListOf()
-    private var originalBottomX: MutableList<Int> = mutableListOf()
-
     fun updateScreenDimensions() {
         val metrics = windowManager.currentWindowMetrics
         val bounds = metrics.bounds
@@ -58,7 +53,6 @@ class AccessibilityEdgeViewManager(
             leftTotalHeightPx / settings.leftSegmentCount
         }
 
-        originalLeftY.clear()
         for (i in 0 until settings.leftSegmentCount) {
             val y = leftBaseY + i * leftSegmentHeight + i * leftGapPx
             val height = if (i == settings.leftSegmentCount - 1) {
@@ -74,7 +68,6 @@ class AccessibilityEdgeViewManager(
                 y = y
             )
             leftParamsList.add(params)
-            originalLeftY.add(y)
             leftEdgeViews.add(createEdgeView(EdgePosition.LEFT, i, settingsProvider))
         }
 
@@ -89,7 +82,6 @@ class AccessibilityEdgeViewManager(
             rightTotalHeightPx / settings.rightSegmentCount
         }
 
-        originalRightY.clear()
         for (i in 0 until settings.rightSegmentCount) {
             val y = rightBaseY + i * rightSegmentHeight + i * rightGapPx
             val height = if (i == settings.rightSegmentCount - 1) {
@@ -105,7 +97,6 @@ class AccessibilityEdgeViewManager(
                 y = y
             )
             rightParamsList.add(params)
-            originalRightY.add(y)
             rightEdgeViews.add(createEdgeView(EdgePosition.RIGHT, i, settingsProvider))
         }
 
@@ -120,7 +111,6 @@ class AccessibilityEdgeViewManager(
         }
         val bottomBaseX = (screenWidth - bottomTotalWidthPx) / 2
 
-        originalBottomX.clear()
         for (i in 0 until settings.bottomSegmentCount) {
             val x = bottomBaseX + i * bottomSegmentWidth + i * bottomGapPx
             val width = if (i == settings.bottomSegmentCount - 1) {
@@ -136,7 +126,6 @@ class AccessibilityEdgeViewManager(
                 y = 0
             )
             bottomParamsList.add(params)
-            originalBottomX.add(x)
             bottomEdgeViews.add(createEdgeView(EdgePosition.BOTTOM, i, settingsProvider))
         }
     }
@@ -267,8 +256,6 @@ class AccessibilityEdgeViewManager(
             params.width = leftWidthPx
             params.height = height
             params.y = y
-            // 同步更新原始位置记录，确保输入法关闭后能正确恢复到更新后的位置
-            originalLeftY[index] = y
             try {
                 windowManager.updateViewLayout(view, params)
             } catch (_: Exception) {
@@ -297,8 +284,6 @@ class AccessibilityEdgeViewManager(
             params.width = rightWidthPx
             params.height = height
             params.y = y
-            // 同步更新原始位置记录，确保输入法关闭后能正确恢复到更新后的位置
-            originalRightY[index] = y
             try {
                 windowManager.updateViewLayout(view, params)
             } catch (_: Exception) {
@@ -327,8 +312,6 @@ class AccessibilityEdgeViewManager(
             params.width = width
             params.height = bottomHeightPx
             params.x = x
-            // 同步更新原始位置记录，确保输入法关闭后能正确恢复到更新后的位置
-            originalBottomX[index] = x
             try {
                 windowManager.updateViewLayout(view, params)
             } catch (_: Exception) {
@@ -338,63 +321,30 @@ class AccessibilityEdgeViewManager(
 
     fun isViewAttached(): Boolean = leftEdgeViews.isNotEmpty() && leftEdgeViews.firstOrNull()?.windowToken != null
 
-    // 输入法弹出时将边缘视图移到屏幕外，避免遮挡输入区域
-    fun hideEdgeViewsForKeyboard() {
-        // 左侧边缘移到屏幕下方（y坐标设为屏幕高度+1000）
-        leftEdgeViews.forEachIndexed { index, view ->
-            val params = leftParamsList.getOrNull(index) ?: return@forEachIndexed
-            params.y = screenHeight + 1000
-            try {
-                windowManager.updateViewLayout(view, params)
-            } catch (_: Exception) {}
-        }
+    // 禁用边缘视图的触摸事件，触摸会穿透到下层窗口
+    fun disableEdgeViewsTouch() {
+        val allViews = leftEdgeViews + rightEdgeViews + bottomEdgeViews
+        val allParams = leftParamsList + rightParamsList + bottomParamsList
 
-        // 右侧边缘移到屏幕下方
-        rightEdgeViews.forEachIndexed { index, view ->
-            val params = rightParamsList.getOrNull(index) ?: return@forEachIndexed
-            params.y = screenHeight + 1000
-            try {
-                windowManager.updateViewLayout(view, params)
-            } catch (_: Exception) {}
-        }
-
-        // 底部边缘移到屏幕右侧（x坐标设为屏幕宽度+1000）
-        bottomEdgeViews.forEachIndexed { index, view ->
-            val params = bottomParamsList.getOrNull(index) ?: return@forEachIndexed
-            params.x = screenWidth + 1000
+        allViews.forEachIndexed { index, view ->
+            val params = allParams.getOrNull(index) ?: return@forEachIndexed
+            // 添加 FLAG_NOT_TOUCHABLE 使触摸事件穿透到下层
+            params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
             try {
                 windowManager.updateViewLayout(view, params)
             } catch (_: Exception) {}
         }
     }
 
-    // 输入法关闭后恢复边缘视图到原始位置
-    fun restoreEdgeViewsAfterKeyboard() {
-        // 恢复左侧边缘到缓存的原始位置
-        leftEdgeViews.forEachIndexed { index, view ->
-            val params = leftParamsList.getOrNull(index) ?: return@forEachIndexed
-            val originalY = originalLeftY.getOrNull(index) ?: return@forEachIndexed
-            params.y = originalY
-            try {
-                windowManager.updateViewLayout(view, params)
-            } catch (_: Exception) {}
-        }
+    // 恢复边缘视图的触摸事件
+    fun enableEdgeViewsTouch() {
+        val allViews = leftEdgeViews + rightEdgeViews + bottomEdgeViews
+        val allParams = leftParamsList + rightParamsList + bottomParamsList
 
-        // 恢复右侧边缘到缓存的原始位置
-        rightEdgeViews.forEachIndexed { index, view ->
-            val params = rightParamsList.getOrNull(index) ?: return@forEachIndexed
-            val originalY = originalRightY.getOrNull(index) ?: return@forEachIndexed
-            params.y = originalY
-            try {
-                windowManager.updateViewLayout(view, params)
-            } catch (_: Exception) {}
-        }
-
-        // 恢复底部边缘到缓存的原始位置
-        bottomEdgeViews.forEachIndexed { index, view ->
-            val params = bottomParamsList.getOrNull(index) ?: return@forEachIndexed
-            val originalX = originalBottomX.getOrNull(index) ?: return@forEachIndexed
-            params.x = originalX
+        allViews.forEachIndexed { index, view ->
+            val params = allParams.getOrNull(index) ?: return@forEachIndexed
+            // 移除 FLAG_NOT_TOUCHABLE 恢复触摸检测
+            params.flags = params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
             try {
                 windowManager.updateViewLayout(view, params)
             } catch (_: Exception) {}
