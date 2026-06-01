@@ -88,10 +88,7 @@
 
 ```bash
 # 克隆仓库
-git clone https://github.com/Evilgodxu/kotlin-android-EdgeGesture.git
-
-# 进入项目目录
-cd kotlin-android-EdgeGesture
+git clone https://github.com/Evilgodxu/EdgeGesture.git
 
 # 构建 Release 版本
 ./gradlew assembleRelease
