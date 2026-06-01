@@ -54,6 +54,11 @@
     <string name="settings_vibration_title">Disable Vibration Feedback</string>
     <string name="settings_vibration_desc">Disable vibration effect triggered during swipe operations</string>
 
+    <!-- Privacy Policy -->
+    <string name="settings_privacy_title">Privacy Policy</string>
+    <string name="settings_privacy_desc">View app privacy policy</string>
+    <string name="privacy_dialog_confirm">I Understand</string>
+
     <!-- ==================== Gesture Settings Screen ==================== -->
     <!-- Page Title -->
     <string name="gesture_settings_title">Edge Gesture Settings</string>

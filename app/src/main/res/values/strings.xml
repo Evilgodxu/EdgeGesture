@@ -54,6 +54,11 @@
     <string name="settings_vibration_title">震动反馈</string>
     <string name="settings_vibration_desc">滑动操作时触发震动效果</string>
 
+    <!-- 隐私政策 -->
+    <string name="settings_privacy_title">隐私政策</string>
+    <string name="settings_privacy_desc">查看应用隐私政策内容</string>
+    <string name="privacy_dialog_confirm">我知道了</string>
+
     <!-- ==================== 手势设置页 (Gesture Settings) ==================== -->
     <!-- 页面标题 -->
     <string name="gesture_settings_title">边缘手势设置</string>

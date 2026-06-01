@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,6 +56,7 @@ import com.byss.jh.ui.adaptive.rememberWindowSizeClass
 import com.byss.jh.ui.settings.components.AppSwitchBlacklistDialog
 import com.byss.jh.ui.settings.components.DonateDialog
 import com.byss.jh.ui.settings.components.LanguageSelectionDialog
+import com.byss.jh.ui.settings.components.PrivacyPolicyDialog
 import com.byss.jh.ui.settings.components.SettingsClickableItem
 import com.byss.jh.ui.settings.components.SettingsSection
 import com.byss.jh.ui.settings.components.SettingsSwitchItem
@@ -206,6 +208,7 @@ fun SettingsScreen(
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showBlacklistDialog by remember { mutableStateOf(false) }
     var showDonateDialog by remember { mutableStateOf(false) }
+    var showPrivacyDialog by remember { mutableStateOf(false) }
 
     val topBarInsets = if (!windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)) {
         WindowInsets.statusBars
@@ -309,6 +312,12 @@ fun SettingsScreen(
                     // 更多设置项
                     SettingsSection(title = stringResource(R.string.settings_more)) {
                         SettingsClickableItem(
+                            icon = Icons.Default.Policy,
+                            title = stringResource(R.string.settings_privacy_title),
+                            subtitle = stringResource(R.string.settings_privacy_desc),
+                            onClick = { showPrivacyDialog = true }
+                        )
+                        SettingsClickableItem(
                             icon = Icons.Default.Favorite,
                             title = stringResource(R.string.settings_donate),
                             subtitle = stringResource(R.string.settings_donate_desc),
@@ -374,6 +383,12 @@ fun SettingsScreen(
                 // 更多设置项
                 SettingsSection(title = stringResource(R.string.settings_more)) {
                     SettingsClickableItem(
+                        icon = Icons.Default.Policy,
+                        title = stringResource(R.string.settings_privacy_title),
+                        subtitle = stringResource(R.string.settings_privacy_desc),
+                        onClick = { showPrivacyDialog = true }
+                    )
+                    SettingsClickableItem(
                         icon = Icons.Default.Favorite,
                         title = stringResource(R.string.settings_donate),
                         subtitle = stringResource(R.string.settings_donate_desc),
@@ -422,6 +437,13 @@ fun SettingsScreen(
     if (showDonateDialog) {
         DonateDialog(
             onDismiss = { showDonateDialog = false }
+        )
+    }
+
+    // 隐私政策对话框
+    if (showPrivacyDialog) {
+        PrivacyPolicyDialog(
+            onDismiss = { showPrivacyDialog = false }
         )
     }
 }
