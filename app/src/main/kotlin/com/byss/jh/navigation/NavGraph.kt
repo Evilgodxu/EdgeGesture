@@ -11,12 +11,12 @@ import androidx.navigation.compose.composable
 import com.byss.jh.data.gesture.initBlacklistIfNeeded
 import com.byss.jh.data.privacy.isPrivacyAgreed
 import com.byss.jh.data.privacy.savePrivacyAgreed
-import com.byss.jh.ui.gesture.GestureSettingsScreen
-import com.byss.jh.ui.privacy.PrivacyScreen
-import com.byss.jh.ui.settings.AppLanguage
-import com.byss.jh.ui.settings.SettingsScreen
-import com.byss.jh.ui.settings.ThemeMode
-import com.byss.jh.ui.splash.SplashScreen
+import com.byss.jh.feature.gesture.GestureSettingsScreen
+import com.byss.jh.feature.privacy.PrivacyScreen
+import com.byss.jh.feature.settings.AppLanguage
+import com.byss.jh.feature.settings.SettingsScreen
+import com.byss.jh.feature.settings.ThemeMode
+import com.byss.jh.feature.splash.SplashScreen
 import kotlinx.coroutines.launch
 
 sealed class Screen(val route: String) {
@@ -30,7 +30,7 @@ sealed class Screen(val route: String) {
 fun NavGraph(
     navController: NavHostController,
     startDestination: String = Screen.Splash.route,
-    onThemeChange: (com.byss.jh.ui.settings.ThemeMode) -> Unit = {},
+    onThemeChange: (com.byss.jh.feature.settings.ThemeMode) -> Unit = {},
     onLanguageChange: (AppLanguage) -> Unit = {}
 ) {
     val context = LocalContext.current

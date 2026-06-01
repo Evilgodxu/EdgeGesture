@@ -160,15 +160,15 @@ data class RightEdgeConfig(
     val swipeUp: GestureAction = GestureAction.NEXT_TRACK,
     val swipeUpLong: GestureAction = GestureAction.FLASHLIGHT,
     val swipeDown: GestureAction = GestureAction.VOICE_ASSISTANT,
-    val swipeDownLong: GestureAction = GestureAction.LOCK_SCREEN
+    val swipeDownLong: GestureAction = GestureAction.EXPAND_PANEL
 )
 
 data class BottomEdgeConfig(
     val swipeUp: GestureAction = GestureAction.HOME,
     val swipeUpLong: GestureAction = GestureAction.RECENT,
-    val swipeLeft: GestureAction = GestureAction.NONE,
+    val swipeLeft: GestureAction = GestureAction.LAST_APP,
     val swipeLeftLong: GestureAction = GestureAction.NONE,
-    val swipeRight: GestureAction = GestureAction.NONE,
+    val swipeRight: GestureAction = GestureAction.LAST_APP,
     val swipeRightLong: GestureAction = GestureAction.NONE
 )
 
@@ -284,14 +284,14 @@ fun Context.gestureSettingsFlow(): Flow<GestureSettingsState> = gestureDataStore
             swipeUp = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_SWIPE_UP] ?: GestureAction.NEXT_TRACK.value),
             swipeUpLong = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_SWIPE_UP_LONG] ?: GestureAction.FLASHLIGHT.value),
             swipeDown = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_SWIPE_DOWN] ?: GestureAction.VOICE_ASSISTANT.value),
-            swipeDownLong = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_SWIPE_DOWN_LONG] ?: GestureAction.LOCK_SCREEN.value)
+            swipeDownLong = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_SWIPE_DOWN_LONG] ?: GestureAction.EXPAND_PANEL.value)
         ),
         bottomEdge = BottomEdgeConfig(
             swipeUp = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_UP] ?: GestureAction.HOME.value),
             swipeUpLong = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_UP_LONG] ?: GestureAction.RECENT.value),
-            swipeLeft = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_LEFT] ?: GestureAction.NONE.value),
+            swipeLeft = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_LEFT] ?: GestureAction.LAST_APP.value),
             swipeLeftLong = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_LEFT_LONG] ?: GestureAction.NONE.value),
-            swipeRight = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_RIGHT] ?: GestureAction.NONE.value),
+            swipeRight = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_RIGHT] ?: GestureAction.LAST_APP.value),
             swipeRightLong = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_RIGHT_LONG] ?: GestureAction.NONE.value)
         ),
         // 手势配置（第2段）
