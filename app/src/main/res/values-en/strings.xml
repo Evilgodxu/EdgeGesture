@@ -51,8 +51,8 @@
     <string name="settings_donate_thanks">Thank you for your support!</string>
 
     <!-- Vibration Settings -->
-    <string name="settings_vibration_title">Disable Vibration Feedback</string>
-    <string name="settings_vibration_desc">Disable vibration effect triggered during swipe operations</string>
+    <string name="settings_vibration_title">Vibration Feedback</string>
+    <string name="settings_vibration_desc">Trigger vibration effect during swipe operations</string>
 
     <!-- Privacy Policy -->
     <string name="settings_privacy_title">Privacy Policy</string>
@@ -65,11 +65,11 @@
 
     <!-- Gesture Toggle -->
     <string name="gesture_enable_title">Edge Gesture</string>
-    <string name="gesture_enable_desc">Enable gesture floating window</string>
+    <string name="gesture_enable_desc">Enable gesture trigger area</string>
 
     <!-- Gesture Overlay Visibility -->
     <string name="gesture_hide_overlay_title">Hide Overlay</string>
-    <string name="gesture_hide_overlay_desc">Hide gesture floating window</string>
+    <string name="gesture_hide_overlay_desc">Hide gesture trigger area</string>
 
     <!-- Hide from Recents -->
     <string name="gesture_hide_recents_title">Hide from Recents</string>
@@ -170,5 +170,44 @@
     <string name="expand_panel_cancel">Cancel</string>
     <string name="expand_panel_search_hint">Search by name or package</string>
     <string name="expand_panel_show_system_apps">Show system apps</string>
+
+    <!-- ==================== Launch Block ==================== -->
+    <string name="settings_launch_block_title">Launch Block</string>
+    <string name="settings_launch_block_desc">Block specified app launch behavior</string>
+    <string name="launch_block_shizuku_not_installed_short">Shizuku Required</string>
+    <string name="launch_block_shizuku_not_running_short">Start Shizuku</string>
+    <string name="launch_block_shizuku_denied_short">Shizuku Permission</string>
+    <string name="launch_block_add_title">Add Block Rule</string>
+    <string name="launch_block_edit_title">Edit Block Rule</string>
+    <string name="launch_block_launcher_label">Launcher (Optional)</string>
+    <string name="launch_block_launcher_hint">Enter package name, e.g., com.example.app</string>
+    <string name="launch_block_launcher_supporting">Leave empty to block all apps from launching target</string>
+    <string name="launch_block_target_label">Target (Required)</string>
+    <string name="launch_block_target_hint">Enter package name, e.g., com.example.app</string>
+    <string name="launch_block_target_supporting">Triggered when this app is launched</string>
+    <string name="launch_block_target_required">Please enter target app</string>
+    <string name="launch_block_kill_switch_title">High-frequency Launch Detection</string>
+    <string name="launch_block_kill_switch_desc">Kill launcher process when launched too frequently</string>
+    <string name="launch_block_kill_switch_disabled_hint">Requires launcher to be set</string>
+    <string name="launch_block_kill_target_title">Kill Target</string>
+    <string name="launch_block_kill_target_desc">Kill target app process immediately after blocking</string>
+    <string name="launch_block_allow_kill_system_title">Allow Kill System Apps</string>
+    <string name="launch_block_allow_kill_system_desc">Warning: Killing system apps may cause instability</string>
+    <string name="launch_block_rules_title">Block Rules</string>
+    <string name="launch_block_rules_count">%d rules</string>
+    <string name="launch_block_add_rule">Add Rule</string>
+    <string name="launch_block_edit_rule">Edit</string>
+    <string name="launch_block_delete_rule">Delete</string>
+    <string name="launch_block_expand">Expand</string>
+    <string name="launch_block_collapse">Collapse</string>
+    <string name="launch_block_no_rules">No rules yet, tap + to add</string>
+    <string name="launch_block_rule_launcher">Launcher: %s</string>
+    <string name="launch_block_rule_target">Target: %s</string>
+    <string name="launch_block_rule_kill_enabled">Process termination protection enabled</string>
+
+    <!-- Common Dialog Buttons -->
+    <string name="dialog_confirm">Confirm</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_delete">Delete</string>
 
 </resources>
