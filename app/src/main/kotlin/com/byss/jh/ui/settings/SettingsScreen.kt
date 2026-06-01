@@ -3,6 +3,7 @@ package com.byss.jh.ui.settings
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Policy
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,11 +54,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowSizeClass
 import com.byss.jh.R
 import com.byss.jh.data.gesture.gestureSettingsFlow
+import com.byss.jh.data.launchblock.LaunchBlockRule
+import com.byss.jh.data.shizuku.ShizukuManager
+import com.byss.jh.data.shizuku.ShizukuState
 import com.byss.jh.ui.gesture.service.EdgeGestureAccessibilityService
 import com.byss.jh.ui.adaptive.rememberWindowSizeClass
 import com.byss.jh.ui.settings.components.AppSwitchBlacklistDialog
 import com.byss.jh.ui.settings.components.DonateDialog
 import com.byss.jh.ui.settings.components.LanguageSelectionDialog
+import com.byss.jh.ui.settings.components.LaunchBlockRuleDialog
+import com.byss.jh.ui.settings.components.LaunchBlockRulesList
 import com.byss.jh.ui.settings.components.PrivacyPolicyDialog
 import com.byss.jh.ui.settings.components.SettingsClickableItem
 import com.byss.jh.ui.settings.components.SettingsSection
@@ -67,6 +75,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
+import rikka.shizuku.Shizuku
 import java.util.Locale
 
 // 应用设置 DataStore 实例
@@ -189,6 +198,32 @@ fun SettingsScreen(
     var showBlacklistDialog by remember { mutableStateOf(false) }
     var showDonateDialog by remember { mutableStateOf(false) }
     var showPrivacyDialog by remember { mutableStateOf(false) }
+    var showLaunchBlockRuleDialog by remember { mutableStateOf(false) }
+    var editingLaunchBlockRule by remember { mutableStateOf<LaunchBlockRule?>(null) }
+
+    // Shizuku 状态
+    var shizukuState by remember { mutableStateOf<ShizukuState>(ShizukuState.NotRunning) }
+    val shizukuPermissionCode = 1001
+
+    DisposableEffect(Unit) {
+        ShizukuManager.init(context)
+        shizukuState = ShizukuManager.state.value
+
+        val listener = Shizuku.OnRequestPermissionResultListener { requestCode, grantResult ->
+            if (requestCode == shizukuPermissionCode) {
+                shizukuState = if (grantResult == PackageManager.PERMISSION_GRANTED) {
+                    ShizukuState.Granted
+                } else {
+                    ShizukuState.Denied
+                }
+            }
+        }
+        ShizukuManager.addPermissionListener(listener)
+
+        onDispose {
+            ShizukuManager.removePermissionListener()
+        }
+    }
 
     val topBarInsets = if (!windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)) {
         WindowInsets.statusBars
@@ -362,6 +397,32 @@ fun SettingsScreen(
 
                 // 更多设置项
                 SettingsSection(title = stringResource(R.string.settings_more)) {
+                    SettingsSwitchItem(
+                        icon = Icons.Default.Security,
+                        title = stringResource(R.string.settings_launch_block_title),
+                        subtitle = stringResource(R.string.settings_launch_block_desc),
+                        checked = uiState.launchBlockEnabled,
+                        onCheckedChange = { enabled ->
+                            viewModel.setLaunchBlockEnabled(enabled)
+                        }
+                    )
+                    if (uiState.launchBlockEnabled) {
+                        LaunchBlockRulesList(
+                            rules = uiState.launchBlockRules,
+                            onAddRule = {
+                                editingLaunchBlockRule = null
+                                showLaunchBlockRuleDialog = true
+                            },
+                            onEditRule = { rule ->
+                                editingLaunchBlockRule = rule
+                                showLaunchBlockRuleDialog = true
+                            },
+                            onDeleteRule = { ruleId ->
+                                viewModel.removeLaunchBlockRule(ruleId)
+                            },
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
                     SettingsClickableItem(
                         icon = Icons.Default.Policy,
                         title = stringResource(R.string.settings_privacy_title),
@@ -424,6 +485,31 @@ fun SettingsScreen(
     if (showPrivacyDialog) {
         PrivacyPolicyDialog(
             onDismiss = { showPrivacyDialog = false }
+        )
+    }
+
+    // 启动拦截规则对话框
+    if (showLaunchBlockRuleDialog) {
+        LaunchBlockRuleDialog(
+            rule = editingLaunchBlockRule,
+            onDismiss = {
+                showLaunchBlockRuleDialog = false
+                editingLaunchBlockRule = null
+            },
+            onConfirm = { rule ->
+                if (editingLaunchBlockRule != null) {
+                    viewModel.updateLaunchBlockRule(rule)
+                } else {
+                    viewModel.addLaunchBlockRule(rule)
+                }
+                showLaunchBlockRuleDialog = false
+                editingLaunchBlockRule = null
+            },
+            onDelete = { ruleId ->
+                viewModel.removeLaunchBlockRule(ruleId)
+                showLaunchBlockRuleDialog = false
+                editingLaunchBlockRule = null
+            }
         )
     }
 }

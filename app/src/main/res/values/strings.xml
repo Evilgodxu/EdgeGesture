@@ -173,4 +173,43 @@
     <string name="expand_panel_search_hint">搜索应用名称或包名</string>
     <string name="expand_panel_show_system_apps">显示系统应用</string>
 
+    <!-- ==================== 启动拦截 (Launch Block) ==================== -->
+    <string name="settings_launch_block_title">启动拦截</string>
+    <string name="settings_launch_block_desc">拦截指定应用的启动行为</string>
+    <string name="launch_block_shizuku_not_installed_short">需安装 Shizuku</string>
+    <string name="launch_block_shizuku_not_running_short">需启动 Shizuku</string>
+    <string name="launch_block_shizuku_denied_short">需 Shizuku 授权</string>
+    <string name="launch_block_add_title">添加拦截规则</string>
+    <string name="launch_block_edit_title">编辑拦截规则</string>
+    <string name="launch_block_launcher_label">试图启动者（可选）</string>
+    <string name="launch_block_launcher_hint">输入应用包名，如 com.example.app</string>
+    <string name="launch_block_launcher_supporting">留空则拦截所有应用启动目标应用</string>
+    <string name="launch_block_target_label">被启动者（必填）</string>
+    <string name="launch_block_target_hint">输入应用包名，如 com.example.app</string>
+    <string name="launch_block_target_supporting">当此应用被启动时将触发拦截</string>
+    <string name="launch_block_target_required">请输入被启动应用</string>
+    <string name="launch_block_kill_switch_title">高频启动检测</string>
+    <string name="launch_block_kill_switch_desc">短时间内高频启动时终止启动者进程</string>
+    <string name="launch_block_kill_switch_disabled_hint">需要先输入试图启动者才能启用</string>
+    <string name="launch_block_kill_target_title">终止被启动者</string>
+    <string name="launch_block_kill_target_desc">拦截后立即终止被启动应用进程</string>
+    <string name="launch_block_allow_kill_system_title">允许终止系统程序</string>
+    <string name="launch_block_allow_kill_system_desc">警告:终止系统应用可能导致系统不稳定</string>
+    <string name="launch_block_rules_title">拦截规则</string>
+    <string name="launch_block_rules_count">共 %d 条规则</string>
+    <string name="launch_block_add_rule">添加规则</string>
+    <string name="launch_block_edit_rule">编辑</string>
+    <string name="launch_block_delete_rule">删除</string>
+    <string name="launch_block_expand">展开</string>
+    <string name="launch_block_collapse">收起</string>
+    <string name="launch_block_no_rules">暂无拦截规则，点击 + 添加</string>
+    <string name="launch_block_rule_launcher">启动者：%s</string>
+    <string name="launch_block_rule_target">目标：%s</string>
+    <string name="launch_block_rule_kill_enabled">已启用进程终止保护</string>
+
+    <!-- 通用对话框按钮 -->
+    <string name="dialog_confirm">确定</string>
+    <string name="dialog_cancel">取消</string>
+    <string name="dialog_delete">删除</string>
+
 </resources>

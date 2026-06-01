@@ -4,6 +4,7 @@
 
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 [versions]
 
@@ -55,3 +56,10 @@ androidx-compose-material3-adaptive-layout = { group = "androidx.compose.materia
 koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
 koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compose", version.ref = "koin" }
 koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
+
+# Kotlin Serialization
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.6.3" }
+
+# Shizuku
+shizuku-api = { group = "dev.rikka.shizuku", name = "api", version = "13.1.0" }
+shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version = "13.1.0" }

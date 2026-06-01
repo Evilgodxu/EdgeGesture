@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Handler
@@ -16,6 +17,11 @@ import com.byss.jh.data.gesture.GestureSettingsState
 import com.byss.jh.data.gesture.gestureDataStore
 import com.byss.jh.data.gesture.gestureSettingsFlow
 import com.byss.jh.data.gesture.initBlacklistIfNeeded
+import com.byss.jh.data.launchblock.LaunchBlockRule
+import com.byss.jh.data.launchblock.LaunchBlockState
+import com.byss.jh.data.launchblock.launchBlockFlow
+import com.byss.jh.data.launchblock.updateLaunchBlockRule
+import com.byss.jh.data.shizuku.ShizukuManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -26,6 +32,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import rikka.shizuku.Shizuku
 
 class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGestureDetector.GestureCallback {
 
@@ -77,7 +84,13 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     }
 
     private var settingsFlowJob: kotlinx.coroutines.Job? = null
+    private var launchBlockFlowJob: kotlinx.coroutines.Job? = null
     private var isKeyboardVisible = false
+
+    // 启动拦截相关
+    private var launchBlockState: LaunchBlockState = LaunchBlockState()
+    private var currentPackage: String? = null
+    private val launchHistory = mutableMapOf<String, MutableList<Long>>() // 包名 -> 启动时间列表
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -87,6 +100,9 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         gestureDetector = AccessibilityGestureDetector(this, this)
         edgeViewManager = AccessibilityEdgeViewManager(this, gestureDetector)
 
+        // 初始化 Shizuku
+        ShizukuManager.init(this)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(settingsReceiver, IntentFilter("ACTION_UPDATE_SETTINGS"), Context.RECEIVER_NOT_EXPORTED)
         } else {
@@ -95,6 +111,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
 
         startSettingsFlow()
+        startLaunchBlockFlow()
 
         serviceScope.launch {
             initBlacklistIfNeeded()
@@ -106,6 +123,15 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                 }
             }
         }
+    }
+
+    private fun startLaunchBlockFlow() {
+        launchBlockFlowJob = launchBlockFlow()
+            .flowOn(Dispatchers.IO)
+            .onEach { state ->
+                launchBlockState = state
+            }
+            .launchIn(serviceScope)
     }
 
     private fun startSettingsFlow() {
@@ -158,9 +184,170 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         event?.let {
             when (it.eventType) {
                 AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
-                AccessibilityEvent.TYPE_WINDOWS_CHANGED -> checkKeyboardVisibility()
+                AccessibilityEvent.TYPE_WINDOWS_CHANGED -> {
+                    checkKeyboardVisibility()
+                    checkAppLaunch(it)
+                }
                 AccessibilityEvent.TYPE_VIEW_FOCUSED -> checkInputFieldFocused(it)
             }
+        }
+    }
+
+    // 检测应用启动并执行拦截
+    private fun checkAppLaunch(event: AccessibilityEvent) {
+        if (!launchBlockState.enabled || launchBlockState.rules.isEmpty()) return
+
+        val newPackage = event.packageName?.toString() ?: return
+        if (newPackage == currentPackage) return
+
+        // 排除本应用自身
+        if (newPackage == packageName) return
+
+        val previousPackage = currentPackage
+        currentPackage = newPackage
+
+        // 排除本应用作为启动者的情况
+        if (previousPackage == packageName) return
+
+        // 检查是否需要拦截
+        val matchedRule = launchBlockState.rules.find { rule ->
+            // 检查目标应用是否匹配
+            val targetMatch = newPackage.contains(rule.targetApp, ignoreCase = true) ||
+                rule.targetApp.contains(newPackage, ignoreCase = true)
+
+            if (!targetMatch) return@find false
+
+            // 如果指定了启动者，检查启动者是否匹配
+            if (rule.launcherApp.isNotBlank() && previousPackage != null) {
+                previousPackage.contains(rule.launcherApp, ignoreCase = true) ||
+                    rule.launcherApp.contains(previousPackage, ignoreCase = true)
+            } else {
+                true // 未指定启动者，只匹配目标
+            }
+        }
+
+        if (matchedRule != null) {
+            blockLaunch(matchedRule, previousPackage, newPackage)
+        }
+    }
+
+    private fun blockLaunch(rule: LaunchBlockRule, launcherPackage: String?, targetPackage: String) {
+        // 检查启动者是否为系统应用
+        val isLauncherSystemApp = launcherPackage?.let { pkg ->
+            try {
+                val appInfo = packageManager.getApplicationInfo(pkg, 0)
+                (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
+            } catch (_: Exception) {
+                false
+            }
+        } ?: false
+
+        // 检查被启动者是否为系统应用
+        val isTargetSystemApp = targetPackage.let { pkg ->
+            try {
+                val appInfo = packageManager.getApplicationInfo(pkg, 0)
+                (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
+            } catch (_: Exception) {
+                false
+            }
+        }
+
+        // 执行拦截：切换应用或返回桌面
+        if (isLauncherSystemApp && launcherPackage != null) {
+            // 系统应用启动，返回桌面并提示
+            performGlobalAction(GLOBAL_ACTION_HOME)
+            showSystemAppWarning(launcherPackage)
+        } else if (launcherPackage != null && launcherPackage != packageName) {
+            // 非系统应用，切换到上一个应用
+            actionExecutor.performAction(GestureAction.LAST_APP, settings)
+        } else {
+            // 没有上一个应用，返回桌面
+            performGlobalAction(GLOBAL_ACTION_HOME)
+        }
+
+        // 终止被启动者（如果启用）
+        if (rule.enableKillTarget) {
+            // 系统应用需要额外检查是否允许终止
+            if (!isTargetSystemApp || rule.allowKillSystemApp) {
+                killAppProcess(targetPackage)
+            }
+        }
+
+        // 检查是否需要高频检测
+        val shouldKillLauncher = rule.enableKillOnFrequentLaunch && launcherPackage != null
+        val isLauncherKillAllowed = !isLauncherSystemApp || rule.allowKillSystemApp
+        if (shouldKillLauncher && isLauncherKillAllowed) {
+            checkFrequentLaunchAndKill(launcherPackage, rule)
+        }
+
+        // 更新规则统计
+        serviceScope.launch {
+            val updatedRule = rule.copy(
+                launchCount = rule.launchCount + 1,
+                lastLaunchTime = System.currentTimeMillis()
+            )
+            updateLaunchBlockRule(updatedRule)
+        }
+    }
+
+    // 显示系统应用警告提示
+    private fun showSystemAppWarning(packageName: String) {
+        val appName = try {
+            val appInfo = packageManager.getApplicationInfo(packageName, 0)
+            packageManager.getApplicationLabel(appInfo).toString()
+        } catch (_: Exception) {
+            packageName
+        }
+
+        Handler(Looper.getMainLooper()).post {
+            android.widget.Toast.makeText(
+                this,
+                "警告：非法程序为系统应用 ($appName)",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    // 检查是否高频启动，如果是则终止启动者进程
+    private fun checkFrequentLaunchAndKill(launcherPackage: String, rule: LaunchBlockRule) {
+        val now = System.currentTimeMillis()
+        val history = launchHistory.getOrPut(launcherPackage) { mutableListOf() }
+
+        // 清理超过1分钟的历史记录
+        history.removeAll { now - it > 60000 }
+        history.add(now)
+
+        // 1分钟内启动超过3次视为高频
+        if (history.size >= 3) {
+            // 检查是否为系统应用
+            val isSystemApp = try {
+                val appInfo = packageManager.getApplicationInfo(launcherPackage, 0)
+                (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
+            } catch (_: Exception) {
+                false
+            }
+
+            // 非系统应用才终止
+            if (!isSystemApp) {
+                killAppProcess(launcherPackage)
+                history.clear() // 清除历史避免重复终止
+            }
+        }
+    }
+
+    private fun killAppProcess(packageName: String) {
+        // 优先使用 Shizuku 执行 force-stop
+        if (ShizukuManager.isAvailable()) {
+            ShizukuManager.forceStopPackage(packageName)
+            return
+        }
+
+        // 降级方案：使用 ActivityManager
+        try {
+            val am = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
+            am.killBackgroundProcesses(packageName)
+        } catch (_: Exception) {
+            // 终止失败，忽略错误
         }
     }
 
@@ -246,6 +433,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         weakInstance = null
         unregisterReceiver(settingsReceiver)
         settingsFlowJob?.cancel()
+        launchBlockFlowJob?.cancel()
         edgeViewManager.removeEdgeViews()
         actionExecutor.dismissExpandPanel()
         serviceScope.cancel()
