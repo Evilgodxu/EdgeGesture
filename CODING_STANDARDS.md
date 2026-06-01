@@ -54,7 +54,7 @@ fun processData(input: String): Result {
 
 ## 禁止的写法
 
-### ❌ 单行内容使用多行注释
+### 单行内容使用多行注释
 
 ```kotlin
 // 错误示例 - 只有一行内容却占用3行
@@ -68,7 +68,7 @@ fun setThemeMode(mode: ThemeMode) { }
 fun setThemeMode(mode: ThemeMode) { }
 ```
 
-### ❌ 无意义的注释
+### 无意义的注释
 
 ```kotlin
 // 错误示例 - 注释与代码重复，无额外信息
