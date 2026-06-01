@@ -121,6 +121,10 @@
     <string name="settings_blacklist_search_hint">Search apps</string>
     <string name="settings_blacklist_system_tag">System</string>
     <string name="settings_blacklist_loading">Loading…</string>
+    <string name="settings_blacklist_empty">No app data available</string>
+    <string name="settings_blacklist_no_permission">Missing query app permission</string>
+    <string name="settings_blacklist_go_settings">Go to Settings</string>
+    <string name="settings_blacklist_refresh">Refresh List</string>
 
     <!-- ==================== Edge Dimension Settings ==================== -->
     <string name="edge_width">Width</string>

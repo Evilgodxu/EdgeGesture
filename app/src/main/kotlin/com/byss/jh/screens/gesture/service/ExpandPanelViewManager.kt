@@ -55,6 +55,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -94,10 +95,12 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.byss.jh.data.app.AppRepository
 import com.byss.jh.data.gesture.ExpandPanelShortcutsState
 import com.byss.jh.screens.settings.ThemeMode
 import com.byss.jh.ui.theme.DarkColorScheme
 import com.byss.jh.ui.theme.LightColorScheme
+import org.koin.compose.koinInject
 import kotlinx.coroutines.flow.Flow
 
 // 扩展面板悬浮窗管理器
@@ -673,22 +676,31 @@ private fun ShortcutItem(
     }
 }
 
+// 应用选择器组件
+// 使用 AppRepository 缓存实现即时加载，无需等待扫描
 @Composable
 private fun AppPickerScreen(
     onAppSelected: (String) -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
+    appRepository: AppRepository = koinInject()
 ) {
     val context = LocalContext.current
-    var apps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
+
+    // 从缓存仓库获取应用列表，实现即时显示
+    val apps by appRepository.appsFlow.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
-    LaunchedEffect(Unit) {
-        apps = loadInstalledApps(context)
-    }
-
-    val filteredApps = apps.filter { app ->
-        app.label.contains(searchQuery, ignoreCase = true) ||
-                app.packageName.contains(searchQuery, ignoreCase = true)
+    // 本地搜索过滤，无需重新扫描
+    val filteredApps = remember(apps, searchQuery) {
+        if (searchQuery.isBlank()) {
+            apps
+        } else {
+            val lowerQuery = searchQuery.lowercase()
+            apps.filter { app ->
+                app.appName.lowercase().contains(lowerQuery) ||
+                app.packageName.lowercase().contains(lowerQuery)
+            }
+        }
     }
 
     Column(
@@ -737,58 +749,66 @@ private fun AppPickerScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             filteredApps.forEach { app ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onAppSelected(app.packageName) }
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val icon = remember(app.packageName) {
-                        try {
-                            context.packageManager.getApplicationIcon(app.packageName)
-                        } catch (_: Exception) {
-                            null
-                        }
-                    }
-                    if (icon != null) {
-                        Image(
-                            painter = BitmapPainter(
-                                icon.toBitmap().asImageBitmap()
-                            ),
-                            contentDescription = null,
-                            modifier = Modifier.size(40.dp)
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Default.MusicNote,
-                            contentDescription = null,
-                            modifier = Modifier.size(40.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = app.label,
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = app.packageName,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                AppPickerItem(
+                    app = app,
+                    onClick = { onAppSelected(app.packageName) }
+                )
             }
         }
     }
 }
 
-private data class AppInfo(
-    val label: String,
-    val packageName: String
-)
+@Composable
+private fun AppPickerItem(
+    app: com.byss.jh.data.app.AppInfo,
+    onClick: () -> Unit
+) {
+    val context = LocalContext.current
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val icon = remember(app.packageName) {
+            try {
+                context.packageManager.getApplicationIcon(app.packageName)
+            } catch (_: Exception) {
+                null
+            }
+        }
+        if (icon != null) {
+            Image(
+                painter = BitmapPainter(
+                    icon.toBitmap().asImageBitmap()
+                ),
+                contentDescription = null,
+                modifier = Modifier.size(40.dp)
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Default.MusicNote,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp)
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(
+                text = app.appName,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = app.packageName,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
 
 private fun sendMediaKeyEvent(context: Context, keyCode: Int) {
     try {
@@ -835,19 +855,6 @@ private fun launchApp(context: Context, packageName: String): Boolean {
     } catch (_: Exception) {
         false
     }
-}
-
-private fun loadInstalledApps(context: Context): List<AppInfo> {
-    val pm = context.packageManager
-    return pm.getInstalledApplications(0)
-        .filter { app ->
-            pm.getLaunchIntentForPackage(app.packageName) != null
-        }
-        .map { app ->
-            val label = pm.getApplicationLabel(app).toString()
-            AppInfo(label, app.packageName)
-        }
-        .sortedBy { it.label }
 }
 
 private fun android.graphics.drawable.Drawable.toBitmap(): android.graphics.Bitmap {

@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowSizeClass
 import com.byss.jh.R
+import com.byss.jh.data.app.AppRepository
 import com.byss.jh.ui.adaptive.rememberWindowSizeClass
 import com.byss.jh.screens.privacy.components.PermissionStatusCard
 import com.byss.jh.screens.privacy.components.PrivacySection
@@ -61,6 +62,7 @@ fun PrivacyScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
     val windowSizeClass = rememberWindowSizeClass()
+    val appRepository = AppRepository.getInstance(context)
 
     // 等待权限检查完成时显示加载指示器
     if (uiState.isLoading) {
@@ -122,7 +124,11 @@ fun PrivacyScreen(
             PrivacyScreenExpanded(
                 modifier = contentModifier,
                 uiState = uiState,
-                onAgree = onAgree,
+                onAgree = {
+                    // 用户同意隐私政策后，触发应用列表扫描
+                    appRepository.initializeWithScan()
+                    onAgree()
+                },
                 onRequestOverlay = {
                     val intent = Intent(
                         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -159,7 +165,11 @@ fun PrivacyScreen(
             PrivacyScreenCompact(
                 modifier = contentModifier,
                 uiState = uiState,
-                onAgree = onAgree,
+                onAgree = {
+                    // 用户同意隐私政策后，触发应用列表扫描
+                    appRepository.initializeWithScan()
+                    onAgree()
+                },
                 onRequestOverlay = {
                     val intent = Intent(
                         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
