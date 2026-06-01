@@ -16,7 +16,6 @@ import com.byss.jh.data.gesture.GestureSettingsState
 import com.byss.jh.data.gesture.gestureDataStore
 import com.byss.jh.data.gesture.gestureSettingsFlow
 import com.byss.jh.data.gesture.initBlacklistIfNeeded
-import com.byss.jh.util.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -82,7 +81,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        Logger.i(this, TAG, "无障碍服务已连接")
         weakInstance = java.lang.ref.WeakReference(this)
 
         actionExecutor = AccessibilityActionExecutor(this)
@@ -130,7 +128,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                             edgeViewManager.updateEdgeViewsAlpha(settings)
                         }
                         if (hasSizeOrPositionChanged(oldSettings, newSettings)) {
-                            Logger.i(this@EdgeGestureAccessibilityService, TAG, "边缘尺寸或位置设置变化，重新创建视图")
                             edgeViewManager.removeEdgeViews()
                             edgeViewManager.createEdgeViews(settings, settingsProvider)
                             edgeViewManager.showEdgeViews(settings)
@@ -183,11 +180,9 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
         if (hasKeyboardWindow && !isKeyboardVisible) {
             isKeyboardVisible = true
-            Logger.i(this, TAG, "检测到输入法弹出")
             edgeViewManager.hideEdgeViewsForKeyboard()
         } else if (!hasKeyboardWindow && isKeyboardVisible) {
             isKeyboardVisible = false
-            Logger.i(this, TAG, "检测到输入法关闭")
             edgeViewManager.restoreEdgeViewsAfterKeyboard()
         }
     }
@@ -227,7 +222,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        Logger.i(this, TAG, "无障碍服务断开")
         weakInstance = null
         unregisterReceiver(settingsReceiver)
         settingsFlowJob?.cancel()
@@ -350,7 +344,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                         edgeViewManager.updateEdgeViewsAlpha(settings)
                     }
                     if (hasSizeOrPositionChanged(oldSettings, settings)) {
-                        Logger.i(this@EdgeGestureAccessibilityService, TAG, "边缘尺寸或位置改变，更新布局")
                         edgeViewManager.removeEdgeViews()
                         edgeViewManager.createEdgeViews(settings, settingsProvider)
                         edgeViewManager.showEdgeViews(settings)

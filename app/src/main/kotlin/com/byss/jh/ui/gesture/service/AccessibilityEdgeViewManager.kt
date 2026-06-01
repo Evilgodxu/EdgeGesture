@@ -9,7 +9,6 @@ import android.view.WindowManager
 import androidx.core.graphics.toColorInt
 import com.byss.jh.data.gesture.GestureSettingsState
 import com.byss.jh.data.gesture.EdgePosition
-import com.byss.jh.util.Logger
 
 class AccessibilityEdgeViewManager(
     private val context: Context,
@@ -203,8 +202,6 @@ class AccessibilityEdgeViewManager(
                 }
             }
         }
-
-        Logger.i(context, TAG, "显示边缘视图: 左${leftEdgeViews.size} 右${rightEdgeViews.size} 底${bottomEdgeViews.size}")
     }
 
     fun removeEdgeViews() {
@@ -233,7 +230,6 @@ class AccessibilityEdgeViewManager(
 
     fun updateEdgeViewsAlpha(settings: GestureSettingsState) {
         val alpha = if (settings.hideOverlay) 0f else 0.6f
-        Logger.i(context, TAG, "更新边缘视图透明度: $alpha")
 
         val allViews = leftEdgeViews + rightEdgeViews + bottomEdgeViews
         allViews.forEach { view ->
@@ -275,8 +271,7 @@ class AccessibilityEdgeViewManager(
             originalLeftY[index] = y
             try {
                 windowManager.updateViewLayout(view, params)
-            } catch (e: Exception) {
-                Logger.e(context, TAG, "更新左侧边缘布局失败: ${e.message}")
+            } catch (_: Exception) {
             }
         }
 
@@ -306,8 +301,7 @@ class AccessibilityEdgeViewManager(
             originalRightY[index] = y
             try {
                 windowManager.updateViewLayout(view, params)
-            } catch (e: Exception) {
-                Logger.e(context, TAG, "更新右侧边缘布局失败: ${e.message}")
+            } catch (_: Exception) {
             }
         }
 
@@ -337,8 +331,7 @@ class AccessibilityEdgeViewManager(
             originalBottomX[index] = x
             try {
                 windowManager.updateViewLayout(view, params)
-            } catch (e: Exception) {
-                Logger.e(context, TAG, "更新底部边缘布局失败: ${e.message}")
+            } catch (_: Exception) {
             }
         }
     }
@@ -349,8 +342,6 @@ class AccessibilityEdgeViewManager(
      * 输入法弹出时将边缘视图移到屏幕外，避免遮挡输入区域
      */
     fun hideEdgeViewsForKeyboard() {
-        Logger.i(context, TAG, "输入法弹出，隐藏边缘视图")
-
         // 左侧边缘移到屏幕下方（y坐标设为屏幕高度+1000）
         leftEdgeViews.forEachIndexed { index, view ->
             val params = leftParamsList.getOrNull(index) ?: return@forEachIndexed
@@ -383,8 +374,6 @@ class AccessibilityEdgeViewManager(
      * 输入法关闭后恢复边缘视图到原始位置
      */
     fun restoreEdgeViewsAfterKeyboard() {
-        Logger.i(context, TAG, "输入法关闭，恢复边缘视图")
-
         // 恢复左侧边缘到缓存的原始位置
         leftEdgeViews.forEachIndexed { index, view ->
             val params = leftParamsList.getOrNull(index) ?: return@forEachIndexed

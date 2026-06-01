@@ -59,7 +59,6 @@ import com.byss.jh.ui.settings.components.SettingsClickableItem
 import com.byss.jh.ui.settings.components.SettingsSection
 import com.byss.jh.ui.settings.components.SettingsSwitchItem
 import com.byss.jh.ui.settings.components.ThemeSelectionDialog
-import com.byss.jh.util.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -297,7 +296,6 @@ fun SettingsScreen(
                             onCheckedChange = { enabled ->
                                 viewModel.setVibrationEnabled(enabled)
                                 EdgeGestureAccessibilityService.updateSettings(context)
-                                Logger.i(context, "Settings", "震动反馈: $enabled")
                             }
                         )
                         SettingsClickableItem(
@@ -363,7 +361,6 @@ fun SettingsScreen(
                         onCheckedChange = { enabled ->
                             viewModel.setVibrationEnabled(enabled)
                             EdgeGestureAccessibilityService.updateSettings(context)
-                            Logger.i(context, "Settings", "震动反馈: $enabled")
                         }
                     )
                     SettingsClickableItem(
@@ -394,7 +391,6 @@ fun SettingsScreen(
             onDismiss = { showThemeDialog = false },
             onThemeSelected = { themeMode ->
                 viewModel.setThemeMode(themeMode)
-                Logger.i(context, "Settings", "主题切换为: ${themeMode.name}")
                 onThemeChange(themeMode)
                 showThemeDialog = false
             }
@@ -408,7 +404,6 @@ fun SettingsScreen(
             onDismiss = { showLanguageDialog = false },
             onLanguageSelected = { language ->
                 viewModel.setLanguage(language)
-                Logger.i(context, "Settings", "语言切换为: ${language.name}")
                 updateAppLanguage(context, language)
                 onLanguageChange(language)
                 showLanguageDialog = false

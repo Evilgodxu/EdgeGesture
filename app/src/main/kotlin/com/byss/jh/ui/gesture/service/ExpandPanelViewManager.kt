@@ -98,7 +98,6 @@ import com.byss.jh.data.gesture.ExpandPanelShortcutsState
 import com.byss.jh.ui.settings.ThemeMode
 import com.byss.jh.ui.theme.DarkColorScheme
 import com.byss.jh.ui.theme.LightColorScheme
-import com.byss.jh.util.Logger
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -199,7 +198,6 @@ class ExpandPanelViewManager(
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 
-        Logger.i(context, TAG, "扩展面板已显示")
         return true
     }
 
@@ -219,7 +217,6 @@ class ExpandPanelViewManager(
         } catch (_: Exception) {}
         composeView = null
         onDismiss()
-        Logger.i(context, TAG, "扩展面板已关闭")
     }
 
     companion object {

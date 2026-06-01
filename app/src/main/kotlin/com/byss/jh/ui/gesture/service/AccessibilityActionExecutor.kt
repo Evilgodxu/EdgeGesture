@@ -16,7 +16,6 @@ import com.byss.jh.data.gesture.expandPanelShortcutsFlow
 import com.byss.jh.data.gesture.gestureDataStore
 import com.byss.jh.data.gesture.saveExpandPanelShortcut
 import com.byss.jh.ui.settings.themeModeFlow
-import com.byss.jh.util.Logger
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -35,7 +34,6 @@ class AccessibilityActionExecutor(
     fun performAction(action: GestureAction, settings: GestureSettingsState) {
         if (action == GestureAction.NONE) return
         vibrate(settings)
-        Logger.i(service, TAG, "执行操作: ${action.value}")
 
         when (action) {
             GestureAction.HOME -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
@@ -100,7 +98,6 @@ class AccessibilityActionExecutor(
         if (justConfigChanged) {
             justConfigChanged = false
             if (packageName == currentApp) {
-                Logger.i(service, TAG, "应用重建: current=$packageName, history=$appHistory")
                 return
             }
         }
@@ -119,7 +116,6 @@ class AccessibilityActionExecutor(
             }
         }
         currentApp = packageName
-        Logger.i(service, TAG, "应用切换: current=$packageName, history=$appHistory")
     }
 
     fun markConfigChanged() {
@@ -144,17 +140,13 @@ class AccessibilityActionExecutor(
                         }
                     }
                     currentApp = target
-                    Logger.i(service, TAG, "切换到上一个应用: $target, history=$appHistory")
                 } else {
-                    Logger.w(service, TAG, "无法启动应用: $target，尝试任务切换")
                     service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
                 }
             } else {
-                Logger.w(service, TAG, "没有找到上一个应用，尝试任务切换")
                 service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
             }
-        } catch (e: Exception) {
-            Logger.e(service, TAG, "切换到上一个应用失败: ${e.message}")
+        } catch (_: Exception) {
             service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
         }
     }
@@ -163,8 +155,7 @@ class AccessibilityActionExecutor(
         return try {
             val prefs = runBlocking { (service as Context).gestureDataStore.data.first() }
             prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] ?: emptySet()
-        } catch (e: Exception) {
-            Logger.e(service, TAG, "读取黑名单失败: ${e.message}")
+        } catch (_: Exception) {
             emptySet()
         }
     }
@@ -180,8 +171,7 @@ class AccessibilityActionExecutor(
             } else {
                 false
             }
-        } catch (e: Exception) {
-            Logger.e(service, TAG, "启动应用失败: ${e.message}")
+        } catch (_: Exception) {
             false
         }
     }
@@ -212,8 +202,7 @@ class AccessibilityActionExecutor(
             } else {
                 null
             }
-        } catch (e: Exception) {
-            Logger.e(service, TAG, "获取最近应用失败: ${e.message}")
+        } catch (_: Exception) {
             null
         }
     }
@@ -227,9 +216,7 @@ class AccessibilityActionExecutor(
             audioManager.dispatchMediaKeyEvent(android.view.KeyEvent(
                 android.view.KeyEvent.ACTION_UP, keyCode
             ))
-            Logger.i(service, TAG, "发送媒体按键: $keyCode")
-        } catch (e: Exception) {
-            Logger.e(service, TAG, "发送媒体按键失败: ${e.message}")
+        } catch (_: Exception) {
         }
     }
 
@@ -243,8 +230,7 @@ class AccessibilityActionExecutor(
                 flashlightOn = !flashlightOn
                 cameraManager.setTorchMode(id, flashlightOn)
             }
-        } catch (e: CameraAccessException) {
-            Logger.e(service, TAG, "手电筒操作失败: ${e.message}")
+        } catch (_: CameraAccessException) {
         }
     }
 
@@ -255,9 +241,7 @@ class AccessibilityActionExecutor(
                 addCategory(Intent.CATEGORY_DEFAULT)
             }
             service.startActivity(intent)
-            Logger.i(service, TAG, "触发语音助手")
-        } catch (e: Exception) {
-            Logger.e(service, TAG, "触发语音助手失败: ${e.message}")
+        } catch (_: Exception) {
         }
     }
 

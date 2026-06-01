@@ -48,7 +48,6 @@ import com.byss.jh.R
 import com.byss.jh.ui.adaptive.rememberWindowSizeClass
 import com.byss.jh.ui.privacy.components.PermissionStatusCard
 import com.byss.jh.ui.privacy.components.PrivacySection
-import com.byss.jh.util.Logger
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -78,7 +77,6 @@ fun PrivacyScreen(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         viewModel.setNotificationGranted(isGranted)
-        Logger.i(context, "Permission", "通知权限: $isGranted")
     }
 
     // 监听生命周期，用户从系统权限设置返回时刷新权限状态
@@ -244,6 +242,11 @@ private fun PrivacyScreenCompact(
             content = stringResource(R.string.privacy_section_5_content)
         )
 
+        PrivacySection(
+            title = stringResource(R.string.privacy_section_6_title),
+            content = stringResource(R.string.privacy_section_6_content)
+        )
+
         Spacer(modifier = Modifier.height(24.dp))
 
         PermissionStatusCard(
@@ -322,6 +325,11 @@ private fun PrivacyScreenExpanded(
             PrivacySection(
                 title = stringResource(R.string.privacy_section_5_title),
                 content = stringResource(R.string.privacy_section_5_content)
+            )
+
+            PrivacySection(
+                title = stringResource(R.string.privacy_section_6_title),
+                content = stringResource(R.string.privacy_section_6_content)
             )
         }
 

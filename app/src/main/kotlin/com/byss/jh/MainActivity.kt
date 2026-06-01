@@ -20,7 +20,6 @@ import com.byss.jh.ui.adaptive.ProvideWindowSizeClass
 import com.byss.jh.ui.settings.AppLanguage
 import com.byss.jh.ui.settings.settingsFlow
 import com.byss.jh.ui.theme.MyApplicationTheme
-import com.byss.jh.util.Logger
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -37,7 +36,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Logger.i(this, "AppLifecycle", "应用启动")
         enableEdgeToEdge()
 
         // 设置系统栏控制
@@ -141,12 +139,10 @@ class MainActivity : ComponentActivity() {
             am.appTasks.forEach { task ->
                 task.setExcludeFromRecents(settings.hideFromRecents)
             }
-            Logger.i(this@MainActivity, "AppLifecycle", "隐藏后台: ${settings.hideFromRecents}")
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Logger.i(this, "AppLifecycle", "应用退出")
     }
 }

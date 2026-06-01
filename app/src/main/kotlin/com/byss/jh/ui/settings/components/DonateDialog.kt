@@ -20,7 +20,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.byss.jh.R
-import com.byss.jh.util.Logger
 
 /**
  * 捐赠对话框
@@ -63,7 +62,6 @@ fun DonateDialog(
                                     data = "alipays://platformapi/startapp?appId=20000067&url=https://qr.alipay.com/fkx19806mp7pzmxerluwrfd".toUri()
                                 }
                                 context.startActivity(alipayIntent)
-                                Logger.i(context, "Donate", "打开支付宝捐赠页面")
                             } catch (e: Exception) {
                                 // 如果支付宝应用未安装，降级到浏览器打开
                                 try {
@@ -71,9 +69,7 @@ fun DonateDialog(
                                         data = "https://qr.alipay.com/fkx19806mp7pzmxerluwrfd".toUri()
                                     }
                                     context.startActivity(browserIntent)
-                                    Logger.i(context, "Donate", "使用浏览器打开支付宝捐赠页面")
-                                } catch (e2: Exception) {
-                                    Logger.e(context, "Donate", "无法打开支付宝: ${e2.message}")
+                                } catch (_: Exception) {
                                 }
                             }
                             onDismiss()

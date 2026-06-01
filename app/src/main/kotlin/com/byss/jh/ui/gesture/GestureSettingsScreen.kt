@@ -65,7 +65,6 @@ import com.byss.jh.ui.gesture.components.EdgeGestureSection
 import com.byss.jh.ui.gesture.components.EdgeSettingsSection
 import com.byss.jh.ui.gesture.components.GestureSettingsSwitchItem
 import com.byss.jh.ui.gesture.components.getActionDisplayName
-import com.byss.jh.util.Logger
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -112,7 +111,6 @@ fun GestureSettingsScreen(
                 viewModel.refreshAccessibilityState()
                 if (currentWaitingState()) {
                     setWaitingState(false)
-                    Logger.i(context, "GestureSettings", "从系统设置返回，刷新无障碍权限状态")
                 }
             }
         }
@@ -237,7 +235,6 @@ fun GestureSettingsScreen(
                     GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT,
                     GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT_LONG -> viewModel.setBottomEdgeGesture(key, action)
                 }
-                Logger.i(context, "GestureSettings", "设置手势: $key -> ${action.value}")
                 showActionDialog = false
             },
             getActionDisplayName = { getActionDisplayName(it) }
@@ -265,7 +262,6 @@ fun GestureSettingsScreen(
                 TextButton(
                     onClick = {
                         waitingForSystemSetting = true
-                        Logger.i(context, "GestureSettings", "打开无障碍设置，标记等待状态")
                         val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
                         context.startActivity(intent)
                         showAccessibilityDialog = false
@@ -339,7 +335,6 @@ private fun GestureSettingsContent(
                     return@GestureSettingsSwitchItem
                 }
                 viewModel.setGestureEnabled(enabled)
-                Logger.i(context, "GestureSettings", "边缘手势: $enabled")
                 if (enabled) {
                     EdgeGestureAccessibilityService.startService(context)
                 } else {
@@ -357,7 +352,6 @@ private fun GestureSettingsContent(
                     checked = settings.hideOverlay,
                     onCheckedChange = { hide ->
                         viewModel.setHideOverlay(hide)
-                        Logger.i(context, "GestureSettings", "隐藏显示: $hide")
                     }
                 )
 
@@ -368,7 +362,6 @@ private fun GestureSettingsContent(
                     checked = settings.hideFromRecents,
                     onCheckedChange = { hide ->
                         viewModel.setHideFromRecents(hide)
-                        Logger.i(context, "GestureSettings", "隐藏后台: $hide")
                     }
                 )
 

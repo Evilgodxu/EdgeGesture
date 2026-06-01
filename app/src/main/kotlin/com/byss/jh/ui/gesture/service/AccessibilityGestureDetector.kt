@@ -9,7 +9,6 @@ import android.view.View
 import com.byss.jh.data.gesture.GestureAction
 import com.byss.jh.data.gesture.GestureSettingsState
 import com.byss.jh.data.gesture.EdgePosition
-import com.byss.jh.util.Logger
 import kotlin.math.abs
 
 class AccessibilityGestureDetector(
@@ -76,17 +75,16 @@ class AccessibilityGestureDetector(
                     val absDeltaX = abs(deltaX)
                     val absDeltaY = abs(deltaY)
 
-                    if (!isSwipeStarted && (absDeltaX > swipeThreshold || absDeltaY > swipeThreshold)) {
-                        isSwipeStarted = true
-                        swipeDirection = when {
-                            absDeltaY > absDeltaX -> {
-                                if (deltaY > 0) SwipeDirection.DOWN else SwipeDirection.UP
+                    if (!isLongPressTriggered) {
+                            isSwipeStarted = true
+                            swipeDirection = when {
+                                absDeltaY > absDeltaX -> {
+                                    if (deltaY > 0) SwipeDirection.DOWN else SwipeDirection.UP
+                                }
+                                else -> {
+                                    if (deltaX > 0) SwipeDirection.RIGHT else SwipeDirection.LEFT
+                                }
                             }
-                            else -> {
-                                if (deltaX > 0) SwipeDirection.RIGHT else SwipeDirection.LEFT
-                            }
-                        }
-                        Logger.i(context, TAG, "检测到滑动: $swipeDirection, 位置: $position, 段: $segmentIndex")
 
                         if (isLongPressTriggered) {
                             swipeDirection?.let { direction ->
