@@ -389,6 +389,9 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     }
 
     private fun updateKeyboardState(visible: Boolean) {
+        // 只有在开启避免遮挡设置时才处理输入法状态
+        if (!settings.avoidKeyboardOverlap) return
+
         if (visible && !isKeyboardVisible) {
             isKeyboardVisible = true
             edgeViewManager.disableEdgeViewsTouch()
@@ -436,6 +439,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             gestureEnabled = prefs[GestureSettingsKeys.GESTURE_ENABLED] ?: false,
             hideOverlay = prefs[GestureSettingsKeys.HIDE_OVERLAY] ?: false,
             hideFromRecents = prefs[GestureSettingsKeys.HIDE_FROM_RECENTS] ?: false,
+            avoidKeyboardOverlap = prefs[GestureSettingsKeys.AVOID_KEYBOARD_OVERLAP] ?: false,
             vibrationEnabled = prefs[GestureSettingsKeys.VIBRATION_ENABLED] ?: false,
             leftEdgeWidth = prefs[GestureSettingsKeys.LEFT_EDGE_WIDTH] ?: 20,
             leftEdgeHeightPercent = prefs[GestureSettingsKeys.LEFT_EDGE_HEIGHT_PERCENT] ?: 60,

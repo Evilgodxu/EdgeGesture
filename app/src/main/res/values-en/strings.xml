@@ -75,6 +75,10 @@
     <string name="gesture_hide_recents_title">Hide from Recents</string>
     <string name="gesture_hide_recents_desc">Hide this app from task list</string>
 
+    <!-- Avoid Keyboard Overlap -->
+    <string name="gesture_avoid_keyboard_overlap_title">Avoid Overlap</string>
+    <string name="gesture_avoid_keyboard_overlap_desc">Auto-disable gesture area when keyboard is shown</string>
+
     <!-- Edge Area Titles -->
     <string name="gesture_left_edge_title">Left Edge Gestures</string>
     <string name="gesture_right_edge_title">Right Edge Gestures</string>

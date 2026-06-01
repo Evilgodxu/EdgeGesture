@@ -21,6 +21,7 @@ object GestureSettingsKeys {
     val GESTURE_ENABLED = booleanPreferencesKey("gesture_enabled")
     val HIDE_OVERLAY = booleanPreferencesKey("hide_overlay")
     val HIDE_FROM_RECENTS = booleanPreferencesKey("hide_from_recents")
+    val AVOID_KEYBOARD_OVERLAP = booleanPreferencesKey("avoid_keyboard_overlap")
 
     // 左侧边缘设置
     val LEFT_EDGE_WIDTH = intPreferencesKey("left_edge_width")
@@ -175,6 +176,7 @@ data class GestureSettingsState(
     val gestureEnabled: Boolean = false,
     val hideOverlay: Boolean = false,
     val hideFromRecents: Boolean = false,
+    val avoidKeyboardOverlap: Boolean = false,
     val vibrationEnabled: Boolean = false,
     // 左侧边缘尺寸设置
     val leftEdgeWidth: Int = 20,
@@ -251,6 +253,7 @@ fun Context.gestureSettingsFlow(): Flow<GestureSettingsState> = gestureDataStore
         gestureEnabled = prefs[GestureSettingsKeys.GESTURE_ENABLED] ?: false,
         hideOverlay = prefs[GestureSettingsKeys.HIDE_OVERLAY] ?: false,
         hideFromRecents = prefs[GestureSettingsKeys.HIDE_FROM_RECENTS] ?: false,
+        avoidKeyboardOverlap = prefs[GestureSettingsKeys.AVOID_KEYBOARD_OVERLAP] ?: false,
         vibrationEnabled = prefs[GestureSettingsKeys.VIBRATION_ENABLED] ?: false,
         // 左侧边缘尺寸
         leftEdgeWidth = prefs[GestureSettingsKeys.LEFT_EDGE_WIDTH] ?: 20,
@@ -359,6 +362,12 @@ suspend fun Context.saveHideOverlay(hide: Boolean) = withContext(Dispatchers.IO)
 suspend fun Context.saveHideFromRecents(hide: Boolean) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         prefs[GestureSettingsKeys.HIDE_FROM_RECENTS] = hide
+    }
+}
+
+suspend fun Context.saveAvoidKeyboardOverlap(enabled: Boolean) = withContext(Dispatchers.IO) {
+    gestureDataStore.edit { prefs ->
+        prefs[GestureSettingsKeys.AVOID_KEYBOARD_OVERLAP] = enabled
     }
 }
 

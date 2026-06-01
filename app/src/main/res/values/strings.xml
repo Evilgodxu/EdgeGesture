@@ -75,6 +75,10 @@
     <string name="gesture_hide_recents_title">隐藏后台</string>
     <string name="gesture_hide_recents_desc">在最近任务列表中隐藏本应用</string>
 
+    <!-- 避免输入法遮挡 -->
+    <string name="gesture_avoid_keyboard_overlap_title">避免遮挡</string>
+    <string name="gesture_avoid_keyboard_overlap_desc">输入法弹出时自动禁用手势触发区</string>
+
     <!-- 边缘区域标题 -->
     <string name="gesture_left_edge_title">左侧手势</string>
     <string name="gesture_right_edge_title">右侧手势</string>

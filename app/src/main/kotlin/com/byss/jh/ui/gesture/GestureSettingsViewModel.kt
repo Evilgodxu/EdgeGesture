@@ -12,6 +12,7 @@ import com.byss.jh.data.gesture.saveBottomEdgeHeight
 import com.byss.jh.data.gesture.saveBottomEdgeWidthPercent
 import com.byss.jh.data.gesture.saveBottomSegmentCount
 import com.byss.jh.data.gesture.saveGestureEnabled
+import com.byss.jh.data.gesture.saveAvoidKeyboardOverlap
 import com.byss.jh.data.gesture.saveHideFromRecents
 import com.byss.jh.data.gesture.saveHideOverlay
 import com.byss.jh.data.gesture.saveLeftEdgeGesture
@@ -89,6 +90,13 @@ class GestureSettingsViewModel(
     fun setHideFromRecents(hide: Boolean) {
         viewModelScope.launch {
             context.saveHideFromRecents(hide)
+        }
+    }
+
+    // 设置避免输入法遮挡
+    fun setAvoidKeyboardOverlap(enabled: Boolean) {
+        viewModelScope.launch {
+            context.saveAvoidKeyboardOverlap(enabled)
         }
     }
 

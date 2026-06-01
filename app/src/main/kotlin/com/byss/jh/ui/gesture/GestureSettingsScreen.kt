@@ -365,6 +365,16 @@ private fun GestureSettingsContent(
                     }
                 )
 
+                // 避免输入法遮挡
+                GestureSettingsSwitchItem(
+                    title = stringResource(R.string.gesture_avoid_keyboard_overlap_title),
+                    subtitle = stringResource(R.string.gesture_avoid_keyboard_overlap_desc),
+                    checked = settings.avoidKeyboardOverlap,
+                    onCheckedChange = { enabled ->
+                        viewModel.setAvoidKeyboardOverlap(enabled)
+                    }
+                )
+
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 // 左侧边缘触发区域尺寸配置
