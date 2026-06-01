@@ -23,10 +23,7 @@ class ServiceRestartReceiver : BroadcastReceiver() {
         }
     }
 
-    /**
-     * 设备启动完成后延迟5秒启动服务
-     * 延迟确保系统完成初始化，避免启动失败
-     */
+    // 设备启动完成后延迟5秒启动服务，延迟确保系统完成初始化，避免启动失败
     private fun handleBootCompleted(context: Context) {
         CoroutineScope(Dispatchers.IO).launch {
             delay(5000)
@@ -34,9 +31,7 @@ class ServiceRestartReceiver : BroadcastReceiver() {
         }
     }
 
-    /**
-     * 应用更新完成后立即重启服务
-     */
+    // 应用更新完成后立即重启服务
     private fun handlePackageReplaced(context: Context) {
         CoroutineScope(Dispatchers.IO).launch {
             startGestureService(context)

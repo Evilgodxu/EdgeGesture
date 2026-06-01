@@ -15,9 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * 权限项组件
- */
+// 权限项组件
 @Composable
 fun PermissionItem(
     name: String,

@@ -21,9 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.byss.jh.R
 
-/**
- * 捐赠对话框
- */
+// 捐赠对话框
 @Composable
 fun DonateDialog(
     onDismiss: () -> Unit

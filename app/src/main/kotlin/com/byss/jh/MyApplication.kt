@@ -6,10 +6,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 
-/**
- * 应用入口类
- * 初始化 Koin 依赖注入框架
- */
+// 应用入口类，初始化 Koin 依赖注入框架
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()

@@ -17,10 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.byss.jh.R
 
-/**
- * 隐私政策对话框
- * 在设置页面中展示完整的隐私政策内容
- */
+// 隐私政策对话框，在设置页面中展示完整的隐私政策内容
 @Composable
 fun PrivacyPolicyDialog(
     onDismiss: () -> Unit
@@ -85,9 +82,7 @@ fun PrivacyPolicyDialog(
     )
 }
 
-/**
- * 隐私政策章节组件
- */
+// 隐私政策章节组件
 @Composable
 private fun PrivacyPolicySection(
     title: String,

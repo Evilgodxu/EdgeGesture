@@ -9,9 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
-/**
- * 扩展面板快捷方式存储键
- */
+// 扩展面板快捷方式存储键
 object ExpandPanelSettingsKeys {
     private const val PREFIX = "expand_panel_shortcut_"
 
@@ -27,16 +25,12 @@ object ExpandPanelSettingsKeys {
     val ALL_KEYS = listOf(SHORTCUT_1, SHORTCUT_2, SHORTCUT_3, SHORTCUT_4, SHORTCUT_5, SHORTCUT_6, SHORTCUT_7, SHORTCUT_8)
 }
 
-/**
- * 扩展面板快捷方式状态
- */
+// 扩展面板快捷方式状态
 data class ExpandPanelShortcutsState(
     val shortcuts: List<String?> = List(8) { null }
 )
 
-/**
- * 扩展面板快捷方式数据流
- */
+// 扩展面板快捷方式数据流
 fun Context.expandPanelShortcutsFlow(): Flow<ExpandPanelShortcutsState> = gestureDataStore.data.map { prefs ->
     val shortcuts = ExpandPanelSettingsKeys.ALL_KEYS.map { key ->
         prefs[key]
@@ -44,9 +38,7 @@ fun Context.expandPanelShortcutsFlow(): Flow<ExpandPanelShortcutsState> = gestur
     ExpandPanelShortcutsState(shortcuts = shortcuts)
 }
 
-/**
- * 保存单个快捷方式
- */
+// 保存单个快捷方式
 suspend fun Context.saveExpandPanelShortcut(index: Int, packageName: String?) = withContext(Dispatchers.IO) {
     val key = ExpandPanelSettingsKeys.ALL_KEYS.getOrNull(index) ?: return@withContext
     gestureDataStore.edit { prefs ->
@@ -58,9 +50,7 @@ suspend fun Context.saveExpandPanelShortcut(index: Int, packageName: String?) = 
     }
 }
 
-/**
- * 重置所有快捷方式
- */
+// 重置所有快捷方式
 suspend fun Context.resetExpandPanelShortcuts() = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         ExpandPanelSettingsKeys.ALL_KEYS.forEach { key ->

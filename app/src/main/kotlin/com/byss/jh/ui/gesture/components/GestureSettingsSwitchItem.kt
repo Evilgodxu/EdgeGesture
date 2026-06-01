@@ -13,9 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-/**
- * 手势设置开关项组件
- */
+// 手势设置开关项组件
 @Composable
 fun GestureSettingsSwitchItem(
     title: String,

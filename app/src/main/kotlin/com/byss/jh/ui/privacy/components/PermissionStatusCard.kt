@@ -17,9 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.byss.jh.R
 
-/**
- * 权限状态卡片组件
- */
+// 权限状态卡片组件
 @Composable
 fun PermissionStatusCard(
     overlayGranted: Boolean,

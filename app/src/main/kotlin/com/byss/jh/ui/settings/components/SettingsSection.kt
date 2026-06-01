@@ -9,9 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * 设置分组标题组件
- */
+// 设置分组标题组件
 @Composable
 fun SettingsSection(
     title: String,

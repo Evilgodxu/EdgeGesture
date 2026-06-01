@@ -21,9 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.byss.jh.R
 import com.byss.jh.ui.settings.ThemeMode
 
-/**
- * 主题选择对话框
- */
+// 主题选择对话框
 @Composable
 fun ThemeSelectionDialog(
     currentTheme: ThemeMode,

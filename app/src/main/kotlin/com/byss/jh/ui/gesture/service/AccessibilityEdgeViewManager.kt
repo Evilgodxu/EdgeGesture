@@ -338,9 +338,7 @@ class AccessibilityEdgeViewManager(
 
     fun isViewAttached(): Boolean = leftEdgeViews.isNotEmpty() && leftEdgeViews.firstOrNull()?.windowToken != null
 
-    /**
-     * 输入法弹出时将边缘视图移到屏幕外，避免遮挡输入区域
-     */
+    // 输入法弹出时将边缘视图移到屏幕外，避免遮挡输入区域
     fun hideEdgeViewsForKeyboard() {
         // 左侧边缘移到屏幕下方（y坐标设为屏幕高度+1000）
         leftEdgeViews.forEachIndexed { index, view ->
@@ -370,9 +368,7 @@ class AccessibilityEdgeViewManager(
         }
     }
 
-    /**
-     * 输入法关闭后恢复边缘视图到原始位置
-     */
+    // 输入法关闭后恢复边缘视图到原始位置
     fun restoreEdgeViewsAfterKeyboard() {
         // 恢复左侧边缘到缓存的原始位置
         leftEdgeViews.forEachIndexed { index, view ->

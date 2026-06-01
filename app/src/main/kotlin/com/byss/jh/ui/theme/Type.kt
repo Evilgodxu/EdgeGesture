@@ -6,10 +6,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-/**
- * Material 3 字体排版配置
- * 使用系统默认字体，遵循 Material Design 规范
- */
+// Material 3 字体排版配置，使用系统默认字体，遵循 Material Design 规范
 val Typography = Typography(
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,

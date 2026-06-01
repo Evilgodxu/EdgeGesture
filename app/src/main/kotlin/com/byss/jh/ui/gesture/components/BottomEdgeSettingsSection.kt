@@ -29,9 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.byss.jh.R
 
-/**
- * 底部边缘设置区域组件
- */
+// 底部边缘设置区域组件
 @Composable
 fun BottomEdgeSettingsSection(
     title: String,

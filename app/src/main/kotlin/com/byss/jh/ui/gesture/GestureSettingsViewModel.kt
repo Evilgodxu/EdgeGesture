@@ -32,10 +32,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/**
- * 手势设置页面 ViewModel
- * 管理手势开关、边缘尺寸、手势动作等设置状态
- */
+// 手势设置页面 ViewModel，管理手势开关、边缘尺寸、手势动作等设置状态
 class GestureSettingsViewModel(
     application: Application,
 ) : AndroidViewModel(application) {
@@ -64,168 +61,129 @@ class GestureSettingsViewModel(
             initialValue = GestureSettingsUiState(isLoading = true),
         )
 
-    /**
-     * 刷新无障碍服务状态
-     * 在从系统设置返回时调用
-     */
+    // 刷新无障碍服务状态，在从系统设置返回时调用
     fun refreshAccessibilityState() {
         _accessibilityEnabledFlow.value = isAccessibilityServiceEnabled(context)
     }
 
-    /**
-     * 检查无障碍服务是否已启用
-     */
+    // 检查无障碍服务是否已启用
     fun checkAccessibilityEnabled(): Boolean {
         return isAccessibilityServiceEnabled(context)
     }
 
-    /**
-     * 设置手势总开关
-     */
+    // 设置手势总开关
     fun setGestureEnabled(enabled: Boolean) {
         viewModelScope.launch {
             context.saveGestureEnabled(enabled)
         }
     }
 
-    /**
-     * 设置隐藏悬浮窗
-     */
+    // 设置隐藏悬浮窗
     fun setHideOverlay(hide: Boolean) {
         viewModelScope.launch {
             context.saveHideOverlay(hide)
         }
     }
 
-    /**
-     * 设置隐藏最近任务
-     */
+    // 设置隐藏最近任务
     fun setHideFromRecents(hide: Boolean) {
         viewModelScope.launch {
             context.saveHideFromRecents(hide)
         }
     }
 
-    /**
-     * 设置左侧边缘宽度
-     */
+    // 设置左侧边缘宽度
     fun setLeftEdgeWidth(width: Int) {
         viewModelScope.launch {
             context.saveLeftEdgeWidth(width)
         }
     }
 
-    /**
-     * 设置左侧边缘高度百分比
-     */
+    // 设置左侧边缘高度百分比
     fun setLeftEdgeHeightPercent(percent: Int) {
         viewModelScope.launch {
             context.saveLeftEdgeHeightPercent(percent)
         }
     }
 
-    /**
-     * 设置左侧边缘位置百分比
-     */
+    // 设置左侧边缘位置百分比
     fun setLeftEdgePositionPercent(percent: Int) {
         viewModelScope.launch {
             context.saveLeftEdgePositionPercent(percent)
         }
     }
 
-    /**
-     * 设置左侧边缘段数
-     */
+    // 设置左侧边缘段数
     fun setLeftSegmentCount(count: Int) {
         viewModelScope.launch {
             context.saveLeftSegmentCount(count)
         }
     }
 
-    /**
-     * 设置右侧边缘宽度
-     */
+    // 设置右侧边缘宽度
     fun setRightEdgeWidth(width: Int) {
         viewModelScope.launch {
             context.saveRightEdgeWidth(width)
         }
     }
 
-    /**
-     * 设置右侧边缘高度百分比
-     */
+    // 设置右侧边缘高度百分比
     fun setRightEdgeHeightPercent(percent: Int) {
         viewModelScope.launch {
             context.saveRightEdgeHeightPercent(percent)
         }
     }
 
-    /**
-     * 设置右侧边缘位置百分比
-     */
+    // 设置右侧边缘位置百分比
     fun setRightEdgePositionPercent(percent: Int) {
         viewModelScope.launch {
             context.saveRightEdgePositionPercent(percent)
         }
     }
 
-    /**
-     * 设置右侧边缘段数
-     */
+    // 设置右侧边缘段数
     fun setRightSegmentCount(count: Int) {
         viewModelScope.launch {
             context.saveRightSegmentCount(count)
         }
     }
 
-    /**
-     * 设置底部边缘高度
-     */
+    // 设置底部边缘高度
     fun setBottomEdgeHeight(height: Int) {
         viewModelScope.launch {
             context.saveBottomEdgeHeight(height)
         }
     }
 
-    /**
-     * 设置底部边缘宽度百分比
-     */
+    // 设置底部边缘宽度百分比
     fun setBottomEdgeWidthPercent(percent: Int) {
         viewModelScope.launch {
             context.saveBottomEdgeWidthPercent(percent)
         }
     }
 
-    /**
-     * 设置底部边缘段数
-     */
+    // 设置底部边缘段数
     fun setBottomSegmentCount(count: Int) {
         viewModelScope.launch {
             context.saveBottomSegmentCount(count)
         }
     }
 
-    /**
-     * 设置左侧边缘手势动作
-     */
+    // 设置左侧边缘手势动作
     fun setLeftEdgeGesture(key: androidx.datastore.preferences.core.Preferences.Key<String>, action: GestureAction) {
         viewModelScope.launch {
             context.saveLeftEdgeGesture(key, action)
         }
     }
 
-    /**
-     * 设置右侧边缘手势动作
-     */
+    // 设置右侧边缘手势动作
     fun setRightEdgeGesture(key: androidx.datastore.preferences.core.Preferences.Key<String>, action: GestureAction) {
         viewModelScope.launch {
             context.saveRightEdgeGesture(key, action)
         }
     }
 
-    /**
-     * 设置底部边缘手势动作
-     */
+    // 设置底部边缘手势动作
     fun setBottomEdgeGesture(key: androidx.datastore.preferences.core.Preferences.Key<String>, action: GestureAction) {
         viewModelScope.launch {
             context.saveBottomEdgeGesture(key, action)
@@ -233,9 +191,7 @@ class GestureSettingsViewModel(
     }
 }
 
-/**
- * 检查无障碍服务是否已启用
- */
+// 检查无障碍服务是否已启用
 private fun isAccessibilityServiceEnabled(context: android.content.Context): Boolean {
     val enabledServices = Settings.Secure.getString(
         context.contentResolver,

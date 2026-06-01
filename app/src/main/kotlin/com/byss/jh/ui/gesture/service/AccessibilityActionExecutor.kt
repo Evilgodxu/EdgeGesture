@@ -82,10 +82,7 @@ class AccessibilityActionExecutor(
         expandPanelViewManager = null
     }
 
-    /**
-     * 监听窗口变化事件，记录应用切换历史
-     * 用于实现"切换到上一个应用"功能
-     */
+    // 监听窗口变化事件，记录应用切换历史，用于实现"切换到上一个应用"功能
     fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
 
@@ -176,10 +173,7 @@ class AccessibilityActionExecutor(
         }
     }
 
-    /**
-     * 从 UsageStatsManager 获取最近使用的应用
-     * 作为应用历史记录的备用方案
-     */
+    // 从 UsageStatsManager 获取最近使用的应用，作为应用历史记录的备用方案
     private fun getLastAppFromUsageStats(blacklist: Set<String>): String? {
         return try {
             val usageStatsManager = service.getSystemService(Context.USAGE_STATS_SERVICE) as? android.app.usage.UsageStatsManager

@@ -11,10 +11,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/**
- * 设置页面 ViewModel
- * 管理主题、语言、震动反馈等设置状态
- */
+// 设置页面 ViewModel，管理主题、语言、震动反馈等设置状态
 class SettingsViewModel(
     application: Application,
 ) : AndroidViewModel(application) {
@@ -37,27 +34,21 @@ class SettingsViewModel(
         initialValue = SettingsUiState(isLoading = true),
     )
 
-    /**
-     * 设置主题模式
-     */
+    // 设置主题模式
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             context.saveThemeMode(mode)
         }
     }
 
-    /**
-     * 设置语言
-     */
+    // 设置语言
     fun setLanguage(language: AppLanguage) {
         viewModelScope.launch {
             context.saveLanguage(language)
         }
     }
 
-    /**
-     * 设置震动反馈开关
-     */
+    // 设置震动反馈开关
     fun setVibrationEnabled(enabled: Boolean) {
         viewModelScope.launch {
             context.saveVibrationEnabled(enabled)

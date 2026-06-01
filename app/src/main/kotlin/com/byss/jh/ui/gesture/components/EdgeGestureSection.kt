@@ -32,9 +32,7 @@ import androidx.datastore.preferences.core.Preferences
 import com.byss.jh.R
 import com.byss.jh.data.gesture.GestureAction
 
-/**
- * 边缘手势区域组件
- */
+// 边缘手势区域组件
 @Composable
 fun EdgeGestureSection(
     title: String,

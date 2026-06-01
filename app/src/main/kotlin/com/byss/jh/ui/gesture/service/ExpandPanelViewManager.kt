@@ -100,9 +100,7 @@ import com.byss.jh.ui.theme.DarkColorScheme
 import com.byss.jh.ui.theme.LightColorScheme
 import kotlinx.coroutines.flow.Flow
 
-/**
- * 扩展面板悬浮窗管理器
- */
+// 扩展面板悬浮窗管理器
 class ExpandPanelViewManager(
     private val context: Context,
     private val shortcutsFlow: Flow<ExpandPanelShortcutsState>,
@@ -132,10 +130,7 @@ class ExpandPanelViewManager(
         fun performRestore() = controller.performRestore(null)
     }
 
-    /**
-     * 显示扩展面板悬浮窗
-     * 需要 SYSTEM_ALERT_WINDOW 权限和 WRITE_SETTINGS 权限
-     */
+    // 显示扩展面板悬浮窗，需要 SYSTEM_ALERT_WINDOW 权限和 WRITE_SETTINGS 权限
     @SuppressLint("ClickableViewAccessibility")
     fun show(): Boolean {
         if (composeView != null) return true
@@ -201,9 +196,7 @@ class ExpandPanelViewManager(
         return true
     }
 
-    /**
-     * 关闭扩展面板并清理资源
-     */
+    // 关闭扩展面板并清理资源
     fun dismiss() {
         val view = composeView ?: return
         // 按正确顺序触发生命周期事件

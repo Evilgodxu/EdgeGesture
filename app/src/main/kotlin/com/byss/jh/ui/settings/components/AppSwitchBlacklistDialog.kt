@@ -44,18 +44,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * 应用信息数据类
- */
+// 应用信息数据类
 data class AppInfo(
     val packageName: String,
     val appName: String,
     val isSystemApp: Boolean
 )
 
-/**
- * 应用切换黑名单对话框
- */
+// 应用切换黑名单对话框
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppSwitchBlacklistDialog(

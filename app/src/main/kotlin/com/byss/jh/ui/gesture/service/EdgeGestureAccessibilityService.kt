@@ -164,10 +164,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
     }
 
-    /**
-     * 检测输入法是否弹出
-     * 通过检查窗口列表中是否存在输入法窗口
-     */
+    // 检测输入法是否弹出，通过检查窗口列表中是否存在输入法窗口
     private fun checkKeyboardVisibility() {
         val windowList = windows
         if (windowList.isEmpty()) {

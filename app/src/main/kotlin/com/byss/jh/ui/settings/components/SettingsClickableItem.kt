@@ -17,9 +17,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * 可点击的设置项组件
- */
+// 可点击的设置项组件
 @Composable
 fun SettingsClickableItem(
     icon: ImageVector,

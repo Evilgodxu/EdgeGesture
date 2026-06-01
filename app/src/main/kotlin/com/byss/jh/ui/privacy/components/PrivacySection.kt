@@ -12,9 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * 隐私政策段落组件
- */
+// 隐私政策段落组件
 @Composable
 fun PrivacySection(
     title: String,

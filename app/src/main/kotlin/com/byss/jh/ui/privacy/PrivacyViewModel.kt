@@ -16,10 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/**
- * 隐私协议页面 ViewModel
- * 管理权限检查和请求状态
- */
+// 隐私协议页面 ViewModel，管理权限检查和请求状态
 class PrivacyViewModel(
     application: Application,
 ) : AndroidViewModel(application) {
@@ -33,9 +30,7 @@ class PrivacyViewModel(
         refreshPermissions()
     }
 
-    /**
-     * 刷新所有权限状态
-     */
+    // 刷新所有权限状态
     fun refreshPermissions() {
         val overlay = Settings.canDrawOverlays(context)
         val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -60,24 +55,18 @@ class PrivacyViewModel(
         )
     }
 
-    /**
-     * 设置通知权限状态
-     */
+    // 设置通知权限状态
     fun setNotificationGranted(granted: Boolean) {
         _uiState.value = _uiState.value.copy(notificationGranted = granted)
     }
 
-    /**
-     * 检查是否忽略电池优化
-     */
+    // 检查是否忽略电池优化
     private fun isIgnoringBatteryOptimizations(ctx: android.content.Context): Boolean {
         val powerManager = ctx.getSystemService(android.content.Context.POWER_SERVICE) as PowerManager
         return powerManager.isIgnoringBatteryOptimizations(ctx.packageName)
     }
 
-    /**
-     * 检查是否有使用情况统计权限
-     */
+    // 检查是否有使用情况统计权限
     private fun hasUsageStatsPermission(ctx: android.content.Context): Boolean {
         val appOps = ctx.getSystemService(android.content.Context.APP_OPS_SERVICE) as AppOpsManager
         val mode = appOps.checkOpNoThrow(
@@ -88,9 +77,7 @@ class PrivacyViewModel(
         return mode == AppOpsManager.MODE_ALLOWED
     }
 
-    /**
-     * 检查是否有查询所有应用权限
-     */
+    // 检查是否有查询所有应用权限
     private fun hasQueryAllPackagesPermission(ctx: android.content.Context): Boolean {
         return try {
             val pm = ctx.packageManager

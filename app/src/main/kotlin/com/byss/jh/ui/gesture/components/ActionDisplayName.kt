@@ -5,9 +5,7 @@ import androidx.compose.ui.res.stringResource
 import com.byss.jh.R
 import com.byss.jh.data.gesture.GestureAction
 
-/**
- * 获取动作显示名称
- */
+// 获取动作显示名称
 @Composable
 fun getActionDisplayName(action: GestureAction): String {
     return when (action) {

@@ -21,9 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.byss.jh.R
 import com.byss.jh.ui.settings.AppLanguage
 
-/**
- * 语言选择对话框
- */
+// 语言选择对话框
 @Composable
 fun LanguageSelectionDialog(
     currentLanguage: AppLanguage,

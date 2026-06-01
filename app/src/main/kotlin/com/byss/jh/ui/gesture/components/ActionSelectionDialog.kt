@@ -22,9 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.byss.jh.R
 import com.byss.jh.data.gesture.GestureAction
 
-/**
- * 动作选择对话框
- */
+// 动作选择对话框
 @Composable
 fun ActionSelectionDialog(
     currentAction: GestureAction,

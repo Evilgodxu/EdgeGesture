@@ -1,8 +1,6 @@
 package com.byss.jh.ui.privacy
 
-/**
- * 隐私协议页面 UI 状态
- */
+// 隐私协议页面 UI 状态
 data class PrivacyUiState(
     val isLoading: Boolean = true,
     val overlayGranted: Boolean = false,
@@ -11,9 +9,7 @@ data class PrivacyUiState(
     val usageStatsGranted: Boolean = false,
     val queryAllPackagesGranted: Boolean = false,
 ) {
-    /**
-     * 检查所有权限是否已授予
-     */
+    // 检查所有权限是否已授予
     val allPermissionsGranted: Boolean
         get() = overlayGranted && notificationGranted && batteryOptimized &&
                 usageStatsGranted && queryAllPackagesGranted

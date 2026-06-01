@@ -12,9 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 
-/**
- * 设置滑块项组件
- */
+// 设置滑块项组件
 @Composable
 fun SettingSliderItem(
     label: String,

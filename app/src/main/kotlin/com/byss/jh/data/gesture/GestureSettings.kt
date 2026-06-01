@@ -114,10 +114,7 @@ object GestureSettingsKeys {
     val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
 }
 
-/**
- * 手势动作枚举
- * 显示名称通过 [getActionDisplayName] 函数从字符串资源获取，支持多语言
- */
+// 手势动作枚举，显示名称通过 [getActionDisplayName] 函数从字符串资源获取，支持多语言
 enum class GestureAction(val value: String) {
     NONE("none"),
     HOME("home"),
@@ -415,9 +412,7 @@ suspend fun Context.saveRightSegmentCount(count: Int) = withContext(Dispatchers.
     }
 }
 
-/**
- * 底部边缘尺寸设置
- */
+// 底部边缘尺寸设置
 suspend fun Context.saveBottomEdgeHeight(height: Int) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         prefs[GestureSettingsKeys.BOTTOM_EDGE_HEIGHT] = height.coerceIn(10, 50)
@@ -436,9 +431,7 @@ suspend fun Context.saveBottomSegmentCount(count: Int) = withContext(Dispatchers
     }
 }
 
-/**
- * 手势动作设置
- */
+// 手势动作设置
 suspend fun Context.saveLeftEdgeGesture(key: Preferences.Key<String>, action: GestureAction) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         prefs[key] = action.value

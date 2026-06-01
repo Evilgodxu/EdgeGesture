@@ -17,18 +17,14 @@ object PrivacySettingsKeys {
     val PRIVACY_AGREED = booleanPreferencesKey("privacy_agreed")
 }
 
-/**
- * 检查用户是否已同意隐私政策
- */
+// 检查用户是否已同意隐私政策
 fun Context.isPrivacyAgreed(): Flow<Boolean> {
     return privacyDataStore.data.map { preferences ->
         preferences[PrivacySettingsKeys.PRIVACY_AGREED] ?: false
     }
 }
 
-/**
- * 保存隐私政策同意状态
- */
+// 保存隐私政策同意状态
 suspend fun Context.savePrivacyAgreed(agreed: Boolean) {
     withContext(Dispatchers.IO) {
         privacyDataStore.edit { preferences ->

@@ -69,22 +69,16 @@ import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
-/**
- * 应用设置 DataStore 实例
- */
+// 应用设置 DataStore 实例
 val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-/**
- * 设置存储键名定义
- */
+// 设置存储键名定义
 object SettingsKeys {
     val THEME_MODE = stringPreferencesKey("theme_mode")
     val LANGUAGE = stringPreferencesKey("language")
 }
 
-/**
- * 应用主题模式
- */
+// 应用主题模式
 enum class ThemeMode(val value: String) {
     SYSTEM("system"),
     DARK("dark"),
@@ -98,9 +92,7 @@ enum class ThemeMode(val value: String) {
 // 缓存系统原始 Locale，用于恢复系统默认语言
 private var systemLocale: Locale = Locale.getDefault()
 
-/**
- * 应用语言设置
- */
+// 应用语言设置
 enum class AppLanguage(val value: String, val locale: Locale) {
     SYSTEM("system", Locale.getDefault()),
     CHINESE("zh", Locale.CHINESE),
@@ -111,18 +103,14 @@ enum class AppLanguage(val value: String, val locale: Locale) {
     }
 }
 
-/**
- * 设置状态数据类
- */
+// 设置状态数据类
 data class SettingsState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val language: AppLanguage = AppLanguage.SYSTEM,
     val vibrationEnabled: Boolean = false
 )
 
-/**
- * 获取设置状态流，合并主题、语言和震动设置
- */
+// 获取设置状态流，合并主题、语言和震动设置
 fun Context.settingsFlow(): Flow<SettingsState> = settingsDataStore.data.map { preferences ->
     SettingsState(
         themeMode = ThemeMode.fromValue(preferences[SettingsKeys.THEME_MODE] ?: ThemeMode.SYSTEM.value),
@@ -132,36 +120,28 @@ fun Context.settingsFlow(): Flow<SettingsState> = settingsDataStore.data.map { p
     settings.copy(vibrationEnabled = gestureSettings.vibrationEnabled)
 }
 
-/**
- * 获取主题模式流
- */
+// 获取主题模式流
 fun Context.themeModeFlow(): Flow<ThemeMode> = settingsDataStore.data.map { preferences ->
     ThemeMode.fromValue(preferences[SettingsKeys.THEME_MODE] ?: ThemeMode.SYSTEM.value)
 }
 
-/**
- * 保存主题模式设置
- */
+// 保存主题模式设置
 suspend fun Context.saveThemeMode(mode: ThemeMode) = withContext(Dispatchers.IO) {
     settingsDataStore.edit { preferences ->
         preferences[SettingsKeys.THEME_MODE] = mode.value
     }
 }
 
-/**
- * 保存语言设置
- */
+// 保存语言设置
 suspend fun Context.saveLanguage(language: AppLanguage) = withContext(Dispatchers.IO) {
     settingsDataStore.edit { preferences ->
         preferences[SettingsKeys.LANGUAGE] = language.value
     }
 }
 
-/**
- * 更新应用语言配置
- * 使用 @Suppress("DEPRECATION") 因为 updateConfiguration 虽被标记废弃，
- * 但在 attachBaseContext 场景下仍是唯一可行的方案
- */
+// 更新应用语言配置
+// 使用 @Suppress("DEPRECATION") 因为 updateConfiguration 虽被标记废弃，
+// 但在 attachBaseContext 场景下仍是唯一可行的方案
 @Suppress("DEPRECATION")
 fun updateAppLanguage(context: Context, language: AppLanguage) {
     val locale = when (language) {
