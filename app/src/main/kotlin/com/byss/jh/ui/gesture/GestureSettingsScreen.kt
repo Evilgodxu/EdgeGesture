@@ -336,9 +336,9 @@ private fun GestureSettingsContent(
                 }
                 viewModel.setGestureEnabled(enabled)
                 if (enabled) {
-                    EdgeGestureAccessibilityService.startService(context)
+                    EdgeGestureAccessibilityService.startGesture(context)
                 } else {
-                    EdgeGestureAccessibilityService.stopService(context)
+                    EdgeGestureAccessibilityService.stopGesture(context)
                 }
             }
         )

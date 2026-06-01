@@ -45,25 +45,28 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
         fun isAvailable(): Boolean = weakInstance?.get() != null
 
-        fun startService(context: Context) {
-            val intent = Intent(context, EdgeGestureAccessibilityService::class.java).apply {
-                action = "ACTION_START"
+        fun startGesture(context: Context) {
+            getInstance()?.apply {
+                serviceScope.launch {
+                    loadSettings()
+                    if (settings.gestureEnabled) {
+                        withContext(Dispatchers.Main) {
+                            if (!edgeViewManager.isViewAttached()) {
+                                edgeViewManager.createEdgeViews(settings, settingsProvider)
+                                edgeViewManager.showEdgeViews(settings)
+                            }
+                        }
+                    }
+                }
             }
-            context.startService(intent)
         }
 
-        fun stopService(context: Context) {
-            val intent = Intent(context, EdgeGestureAccessibilityService::class.java).apply {
-                action = "ACTION_STOP"
-            }
-            context.startService(intent)
+        fun stopGesture(context: Context) {
+            getInstance()?.edgeViewManager?.removeEdgeViews()
         }
 
         fun updateSettings(context: Context) {
-            val intent = Intent(context, EdgeGestureAccessibilityService::class.java).apply {
-                action = "ACTION_UPDATE_SETTINGS"
-            }
-            context.startService(intent)
+            getInstance()?.refreshSettings()
         }
     }
 
@@ -398,23 +401,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     override fun onInterrupt() {}
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            "ACTION_UPDATE_SETTINGS" -> refreshSettings()
-            "ACTION_START" -> {
-                serviceScope.launch {
-                    loadSettings()
-                    if (settings.gestureEnabled) {
-                        withContext(Dispatchers.Main) {
-                            if (!edgeViewManager.isViewAttached()) {
-                                edgeViewManager.createEdgeViews(settings, settingsProvider)
-                                edgeViewManager.showEdgeViews(settings)
-                            }
-                        }
-                    }
-                }
-            }
-            "ACTION_STOP" -> edgeViewManager.removeEdgeViews()
-        }
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -537,7 +523,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         )
     }
 
-    private fun refreshSettings() {
+    fun refreshSettings() {
         serviceScope.launch {
             val oldSettings = settings
             loadSettings()

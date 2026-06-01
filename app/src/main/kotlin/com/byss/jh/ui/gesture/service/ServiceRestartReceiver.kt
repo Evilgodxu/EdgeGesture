@@ -39,8 +39,13 @@ class ServiceRestartReceiver : BroadcastReceiver() {
     }
 
     private fun startGestureService(context: Context) {
+        // 设备启动或应用更新后，尝试恢复手势视图
+        // 注意：AccessibilityService 只能由用户手动开启，无法自动启动
+        // 如果服务已在运行，则恢复手势触发区域
         try {
-            EdgeGestureAccessibilityService.startService(context)
+            if (EdgeGestureAccessibilityService.isAvailable()) {
+                EdgeGestureAccessibilityService.startGesture(context)
+            }
         } catch (_: Exception) {
         }
     }
