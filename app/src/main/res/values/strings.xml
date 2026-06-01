@@ -198,6 +198,7 @@
     <string name="launch_block_kill_target_desc">拦截后立即终止被启动应用进程</string>
     <string name="launch_block_allow_kill_system_title">允许终止系统程序</string>
     <string name="launch_block_allow_kill_system_desc">警告:终止系统应用可能导致系统不稳定</string>
+    <string name="system_app_warning">警告：非法程序为系统应用 (%s)</string>
     <string name="launch_block_rules_title">拦截规则</string>
     <string name="launch_block_rules_count">共 %d 条规则</string>
     <string name="launch_block_add_rule">添加规则</string>

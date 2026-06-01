@@ -1,6 +1,7 @@
 package com.byss.jh.screens.gesture.service
 
 import android.accessibilityservice.AccessibilityService
+import com.byss.jh.R
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -305,7 +306,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         Handler(Looper.getMainLooper()).post {
             android.widget.Toast.makeText(
                 this,
-                "警告：非法程序为系统应用 ($appName)",
+                getString(R.string.system_app_warning, appName),
                 android.widget.Toast.LENGTH_LONG
             ).show()
         }
