@@ -13,11 +13,11 @@ import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
 import com.byss.jh.data.gesture.GestureAction
-import com.byss.jh.data.gesture.GestureSettingsKeys
 import com.byss.jh.data.gesture.GestureSettingsState
 import com.byss.jh.data.gesture.gestureDataStore
 import com.byss.jh.data.gesture.gestureSettingsFlow
 import com.byss.jh.data.gesture.initBlacklistIfNeeded
+import com.byss.jh.data.gesture.toGestureSettingsState
 import com.byss.jh.data.launchblock.LaunchBlockRule
 import com.byss.jh.data.launchblock.LaunchBlockState
 import com.byss.jh.data.launchblock.launchBlockFlow
@@ -436,96 +436,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
     private suspend fun loadSettings() {
         val prefs = gestureDataStore.data.first()
-        settings = GestureSettingsState(
-            gestureEnabled = prefs[GestureSettingsKeys.GESTURE_ENABLED] ?: false,
-            hideOverlay = prefs[GestureSettingsKeys.HIDE_OVERLAY] ?: false,
-            hideFromRecents = prefs[GestureSettingsKeys.HIDE_FROM_RECENTS] ?: false,
-            avoidKeyboardOverlap = prefs[GestureSettingsKeys.AVOID_KEYBOARD_OVERLAP] ?: false,
-            vibrationEnabled = prefs[GestureSettingsKeys.VIBRATION_ENABLED] ?: false,
-            leftEdgeWidth = prefs[GestureSettingsKeys.LEFT_EDGE_WIDTH] ?: 20,
-            leftEdgeHeightPercent = prefs[GestureSettingsKeys.LEFT_EDGE_HEIGHT_PERCENT] ?: 60,
-            leftEdgePositionPercent = prefs[GestureSettingsKeys.LEFT_EDGE_POSITION_PERCENT] ?: 90,
-            leftSegmentCount = prefs[GestureSettingsKeys.LEFT_SEGMENT_COUNT] ?: 1,
-            rightEdgeWidth = prefs[GestureSettingsKeys.RIGHT_EDGE_WIDTH] ?: 20,
-            rightEdgeHeightPercent = prefs[GestureSettingsKeys.RIGHT_EDGE_HEIGHT_PERCENT] ?: 60,
-            rightEdgePositionPercent = prefs[GestureSettingsKeys.RIGHT_EDGE_POSITION_PERCENT] ?: 90,
-            rightSegmentCount = prefs[GestureSettingsKeys.RIGHT_SEGMENT_COUNT] ?: 1,
-            bottomEdgeHeight = prefs[GestureSettingsKeys.BOTTOM_EDGE_HEIGHT] ?: 20,
-            bottomEdgeWidthPercent = prefs[GestureSettingsKeys.BOTTOM_EDGE_WIDTH_PERCENT] ?: 80,
-            bottomSegmentCount = prefs[GestureSettingsKeys.BOTTOM_SEGMENT_COUNT] ?: 1,
-            leftEdge = com.byss.jh.data.gesture.LeftEdgeConfig(
-                swipeRight = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_SWIPE_RIGHT] ?: GestureAction.BACK.value),
-                swipeRightLong = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_SWIPE_RIGHT_LONG] ?: GestureAction.LAST_APP.value),
-                swipeUp = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_SWIPE_UP] ?: GestureAction.PREVIOUS_TRACK.value),
-                swipeUpLong = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_SWIPE_UP_LONG] ?: GestureAction.POWER_MENU.value),
-                swipeDown = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_SWIPE_DOWN] ?: GestureAction.SCREENSHOT.value),
-                swipeDownLong = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_SWIPE_DOWN_LONG] ?: GestureAction.LOCK_SCREEN.value)
-            ),
-            rightEdge = com.byss.jh.data.gesture.RightEdgeConfig(
-                swipeLeft = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_SWIPE_LEFT] ?: GestureAction.BACK.value),
-                swipeLeftLong = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_SWIPE_LEFT_LONG] ?: GestureAction.LAST_APP.value),
-                swipeUp = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_SWIPE_UP] ?: GestureAction.NEXT_TRACK.value),
-                swipeUpLong = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_SWIPE_UP_LONG] ?: GestureAction.FLASHLIGHT.value),
-                swipeDown = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_SWIPE_DOWN] ?: GestureAction.VOICE_ASSISTANT.value),
-                swipeDownLong = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_SWIPE_DOWN_LONG] ?: GestureAction.LOCK_SCREEN.value)
-            ),
-            bottomEdge = com.byss.jh.data.gesture.BottomEdgeConfig(
-                swipeUp = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_UP] ?: GestureAction.HOME.value),
-                swipeUpLong = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_UP_LONG] ?: GestureAction.RECENT.value),
-                swipeLeft = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_LEFT] ?: GestureAction.NONE.value),
-                swipeLeftLong = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_LEFT_LONG] ?: GestureAction.NONE.value),
-                swipeRight = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_RIGHT] ?: GestureAction.NONE.value),
-                swipeRightLong = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_SWIPE_RIGHT_LONG] ?: GestureAction.NONE.value)
-            ),
-            leftEdgeSegment2 = com.byss.jh.data.gesture.LeftEdgeConfig(
-                swipeRight = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_2_SWIPE_RIGHT] ?: GestureAction.NONE.value),
-                swipeRightLong = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_2_SWIPE_RIGHT_LONG] ?: GestureAction.NONE.value),
-                swipeUp = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_2_SWIPE_UP] ?: GestureAction.NONE.value),
-                swipeUpLong = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_2_SWIPE_UP_LONG] ?: GestureAction.NONE.value),
-                swipeDown = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_2_SWIPE_DOWN] ?: GestureAction.NONE.value),
-                swipeDownLong = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_2_SWIPE_DOWN_LONG] ?: GestureAction.NONE.value)
-            ),
-            rightEdgeSegment2 = com.byss.jh.data.gesture.RightEdgeConfig(
-                swipeLeft = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_2_SWIPE_LEFT] ?: GestureAction.NONE.value),
-                swipeLeftLong = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_2_SWIPE_LEFT_LONG] ?: GestureAction.NONE.value),
-                swipeUp = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_2_SWIPE_UP] ?: GestureAction.NONE.value),
-                swipeUpLong = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_2_SWIPE_UP_LONG] ?: GestureAction.NONE.value),
-                swipeDown = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_2_SWIPE_DOWN] ?: GestureAction.NONE.value),
-                swipeDownLong = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_2_SWIPE_DOWN_LONG] ?: GestureAction.NONE.value)
-            ),
-            bottomEdgeSegment2 = com.byss.jh.data.gesture.BottomEdgeConfig(
-                swipeUp = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_2_SWIPE_UP] ?: GestureAction.NONE.value),
-                swipeUpLong = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_2_SWIPE_UP_LONG] ?: GestureAction.NONE.value),
-                swipeLeft = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT] ?: GestureAction.NONE.value),
-                swipeLeftLong = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT_LONG] ?: GestureAction.NONE.value),
-                swipeRight = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT] ?: GestureAction.NONE.value),
-                swipeRightLong = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT_LONG] ?: GestureAction.NONE.value)
-            ),
-            leftEdgeSegment3 = com.byss.jh.data.gesture.LeftEdgeConfig(
-                swipeRight = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_3_SWIPE_RIGHT] ?: GestureAction.NONE.value),
-                swipeRightLong = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_3_SWIPE_RIGHT_LONG] ?: GestureAction.NONE.value),
-                swipeUp = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_3_SWIPE_UP] ?: GestureAction.NONE.value),
-                swipeUpLong = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_3_SWIPE_UP_LONG] ?: GestureAction.NONE.value),
-                swipeDown = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_3_SWIPE_DOWN] ?: GestureAction.NONE.value),
-                swipeDownLong = GestureAction.fromValue(prefs[GestureSettingsKeys.LEFT_3_SWIPE_DOWN_LONG] ?: GestureAction.NONE.value)
-            ),
-            rightEdgeSegment3 = com.byss.jh.data.gesture.RightEdgeConfig(
-                swipeLeft = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_3_SWIPE_LEFT] ?: GestureAction.NONE.value),
-                swipeLeftLong = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_3_SWIPE_LEFT_LONG] ?: GestureAction.NONE.value),
-                swipeUp = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_3_SWIPE_UP] ?: GestureAction.NONE.value),
-                swipeUpLong = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_3_SWIPE_UP_LONG] ?: GestureAction.NONE.value),
-                swipeDown = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_3_SWIPE_DOWN] ?: GestureAction.NONE.value),
-                swipeDownLong = GestureAction.fromValue(prefs[GestureSettingsKeys.RIGHT_3_SWIPE_DOWN_LONG] ?: GestureAction.NONE.value)
-            ),
-            bottomEdgeSegment3 = com.byss.jh.data.gesture.BottomEdgeConfig(
-                swipeUp = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_3_SWIPE_UP] ?: GestureAction.NONE.value),
-                swipeUpLong = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_3_SWIPE_UP_LONG] ?: GestureAction.NONE.value),
-                swipeLeft = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT] ?: GestureAction.NONE.value),
-                swipeLeftLong = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT_LONG] ?: GestureAction.NONE.value),
-                swipeRight = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT] ?: GestureAction.NONE.value),
-                swipeRightLong = GestureAction.fromValue(prefs[GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT_LONG] ?: GestureAction.NONE.value)
-            )
-        )
+        settings = prefs.toGestureSettingsState()
     }
 
     fun refreshSettings() {
