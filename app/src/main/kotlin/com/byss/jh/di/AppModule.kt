@@ -1,8 +1,8 @@
 package com.byss.jh.di
 
-import com.byss.jh.feature.gesture.GestureSettingsViewModel
-import com.byss.jh.feature.privacy.PrivacyViewModel
-import com.byss.jh.feature.settings.SettingsViewModel
+import com.byss.jh.screens.gesture.GestureSettingsViewModel
+import com.byss.jh.screens.privacy.PrivacyViewModel
+import com.byss.jh.screens.settings.SettingsViewModel
 import org.koin.android.ext.koin.androidApplication
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module

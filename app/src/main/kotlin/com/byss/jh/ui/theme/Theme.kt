@@ -10,8 +10,8 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import com.byss.jh.feature.settings.ThemeMode
-import com.byss.jh.feature.settings.settingsFlow
+import com.byss.jh.screens.settings.ThemeMode
+import com.byss.jh.screens.settings.settingsFlow
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 

@@ -17,8 +17,8 @@ import androidx.navigation.compose.rememberNavController
 import com.byss.jh.data.gesture.gestureSettingsFlow
 import com.byss.jh.navigation.NavGraph
 import com.byss.jh.ui.adaptive.ProvideWindowSizeClass
-import com.byss.jh.feature.settings.AppLanguage
-import com.byss.jh.feature.settings.settingsFlow
+import com.byss.jh.screens.settings.AppLanguage
+import com.byss.jh.screens.settings.settingsFlow
 import com.byss.jh.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
