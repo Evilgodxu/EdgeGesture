@@ -200,7 +200,7 @@ private fun RuleItem(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error
                 )
-                if (rule.enableKillOnFrequentLaunch) {
+                if (rule.enableKillOnFrequentLaunch || rule.enableKillTarget) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)

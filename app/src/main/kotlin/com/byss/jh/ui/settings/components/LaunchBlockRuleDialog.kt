@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -76,6 +77,13 @@ fun LaunchBlockRuleDialog(
 
     val isEditing = rule != null
     val isKillSwitchEnabled = launcherApp.isNotBlank()
+
+    // 当高频启动检测和终止被启动者都关闭时，自动关闭允许终止系统程序
+    LaunchedEffect(enableKill, enableKillTarget) {
+        if (!enableKill && !enableKillTarget && allowKillSystemApp) {
+            allowKillSystemApp = false
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -267,6 +275,7 @@ fun LaunchBlockRuleDialog(
                 HorizontalDivider()
 
                 // 允许终止系统程序开关
+                val canEnableAllowKillSystem = enableKill || enableKillTarget
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -275,7 +284,12 @@ fun LaunchBlockRuleDialog(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = stringResource(R.string.launch_block_allow_kill_system_title),
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = if (canEnableAllowKillSystem) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
                         )
                         Text(
                             text = stringResource(R.string.launch_block_allow_kill_system_desc),
@@ -323,7 +337,8 @@ fun LaunchBlockRuleDialog(
                             } else {
                                 allowKillSystemApp = checked
                             }
-                        }
+                        },
+                        enabled = canEnableAllowKillSystem
                     )
                 }
             }

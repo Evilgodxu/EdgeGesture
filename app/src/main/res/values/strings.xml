@@ -205,7 +205,7 @@
     <string name="launch_block_no_rules">暂无拦截规则，点击 + 添加</string>
     <string name="launch_block_rule_launcher">启动者：%s</string>
     <string name="launch_block_rule_target">目标：%s</string>
-    <string name="launch_block_rule_kill_enabled">已启用进程终止保护</string>
+    <string name="launch_block_rule_kill_enabled">已启用进程终止</string>
 
     <!-- 通用对话框按钮 -->
     <string name="dialog_confirm">确定</string>
