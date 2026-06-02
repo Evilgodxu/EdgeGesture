@@ -24,7 +24,7 @@
 - **电源菜单**：显示电源选项
 - **锁屏**：锁定屏幕
 - **截屏**：截取屏幕
-- **扩展面板**：显示快捷设置面板（亮度/音量调节/应用快捷方式）
+- **扩展面板**：显示快捷设置面板（亮度/音量调节/8个应用快捷方式）
 - **无操作**
 
 ### 应用设置
@@ -40,8 +40,10 @@
 ### 启动拦截
 
 - **拦截规则**：基于 Shizuku 权限拦截指定应用的启动行为
+- **延迟拦截**：支持立即/延时/延迟三种拦截模式
 - **高频启动检测**：短时间内高频启动时终止启动者进程
-- **进程终止**：拦截后立即终止被启动应用进程
+- **进程终止**：拦截后可选择终止被启动应用或启动者进程
+- **系统应用保护**：可选择是否允许终止系统应用
 
 ## 技术栈
 
@@ -49,13 +51,15 @@
 |------|------|
 | 语言 | Kotlin 2.3.21 |
 | UI 框架 | Jetpack Compose (BOM 2026.05.01) + Material3 |
-| 架构模式 | MVVM + UDF（单向数据流） |
+| 自适应布局 | Material3 Adaptive 1.2.0 |
+| 架构模式 | MVVM + UDF（单向数据流）|
 | 依赖注入 | Koin 4.2.1 |
 | 导航框架 | Navigation 2.9.8 |
 | 状态管理 | DataStore + StateFlow |
-| 后台任务 | WorkManager |
+| 后台任务 | WorkManager 2.11.2 |
 | 权限框架 | Shizuku 13.1.0 |
 | 序列化 | Kotlin Serialization 1.6.3 |
+| 代码生成 | KSP 2.2.0-2.0.2 |
 | 构建工具 | AGP 9.2.1, Gradle |
 | 许可证 | AGPL-3.0 |
 
@@ -64,8 +68,9 @@
 | 属性 | 值 |
 |------|-----|
 | applicationId | com.byss.jh |
-| versionName | 1.0.0 |
-| compileSdk | 36 |
+| versionName | 1.1.0 |
+| versionCode | 1 |
+| compileSdk | 36 (minorApiLevel: 1) |
 | minSdk | 32 (Android 12L) |
 | targetSdk | 36 |
 | NDK | arm64-v8a |
@@ -78,23 +83,12 @@
   - 无障碍服务权限（用于检测边缘触摸事件和执行系统操作）
   - 悬浮窗权限（创建边缘手势触发区域）
   - 使用情况访问权限（获取最近使用应用信息）
-  - 查询所有应用权限（管理应用黑名单）
+  - 查询所有应用权限（管理应用黑名单和扩展面板快捷方式）
+  - 通知权限（显示服务通知）
+  - 忽略电池优化（保持后台运行）
+  - 修改系统设置（扩展面板亮度调节）
   - Shizuku 权限（启动拦截的高级功能）
   - 相机权限（手电筒功能）
-
-## 安装说明
-
-### 从源码构建
-
-```bash
-# 克隆仓库
-git clone https://github.com/Evilgodxu/EdgeGesture.git
-
-# 构建 Release 版本
-./gradlew assembleRelease
-```
-
-构建完成后，APK 文件位于 `app/build/outputs/apk/release/` 目录。
 
 ### 签名配置
 
@@ -108,46 +102,75 @@ KEY_PASSWORD=your_key_password
 
 ## 使用说明
 
-1. **首次启动**：授予无障碍服务权限
+1. **首次启动**：授予无障碍服务权限和悬浮窗权限
 2. **手势设置**：进入手势设置页，为各边缘配置想要的快捷操作
 3. **调整触发区域**：根据使用习惯调整边缘宽度、高度、位置和分段数量
 4. **应用黑名单**：在设置中添加不需要手势的应用
-5. **启动拦截**（可选）：安装并启动 Shizuku 后配置拦截规则
+5. **扩展面板**：配置 8 个常用应用快捷方式，快速启动应用
+6. **启动拦截**（可选）：安装并启动 Shizuku(可选) 后配置拦截规则
 
 ## 项目结构
 
 ```
 app/src/main/kotlin/com/byss/jh/
-├── data/                    # 数据层
-│   ├── app/                # 应用信息数据
-│   ├── gesture/            # 手势设置数据存储
-│   ├── launchblock/        # 启动拦截规则存储
-│   ├── privacy/            # 隐私设置数据存储
-│   └── shizuku/            # Shizuku 权限管理
-├── di/                      # 依赖注入模块
-├── navigation/              # 导航配置
-├── screens/                 # UI 层（页面）
-│   ├── gesture/            # 手势设置页面
-│   │   ├── components/     # 手势设置相关组件
-│   │   └── service/        # 无障碍服务及手势检测
-│   ├── privacy/            # 隐私协议页面
-│   ├── settings/           # 设置页面
-│   │   └── components/     # 设置相关组件
-│   └── splash/             # 启动页
-├── ui/                      # UI 基础组件
-│   ├── adaptive/           # 自适应布局
-│   └── theme/              # 主题配置
-├── MainActivity.kt          # 主 Activity
-└── MyApplication.kt         # 应用入口
+├── data/                        # 数据层
+│   ├── app/                    # 应用信息数据（AppInfo, AppRepository, AppCacheManager）
+│   ├── gesture/                # 手势设置数据存储（GestureSettings, ExpandPanelSettings）
+│   ├── launchblock/            # 启动拦截规则存储（LaunchBlockSettings）
+│   ├── permission/             # 权限监控（PermissionMonitor）
+│   └── shizuku/                # Shizuku 权限管理（ShizukuManager）
+├── di/                          # 依赖注入模块（AppModule）
+├── navigation/                  # 导航配置（NavGraph）
+├── screens/                     # UI 层（页面）
+│   ├── gesture/                # 手势设置页面
+│   │   ├── components/         # 手势设置相关组件
+│   │   │   ├── ActionDisplayName.kt
+│   │   │   ├── ActionSelectionDialog.kt
+│   │   │   ├── BottomEdgeSettingsSection.kt
+│   │   │   ├── EdgeGestureSection.kt
+│   │   │   ├── EdgeSettingsSection.kt
+│   │   │   ├── GestureSettingsSwitchItem.kt
+│   │   │   ├── PermissionItem.kt
+│   │   │   ├── PermissionStatusCard.kt
+│   │   │   └── SettingSliderItem.kt
+│   │   ├── service/            # 无障碍服务及手势检测
+│   │   │   ├── AccessibilityActionExecutor.kt    # 动作执行器
+│   │   │   ├── AccessibilityEdgeViewManager.kt   # 边缘视图管理
+│   │   │   ├── AccessibilityGestureDetector.kt   # 手势检测器
+│   │   │   ├── EdgeGestureAccessibilityService.kt # 无障碍服务
+│   │   │   ├── ExpandPanelViewManager.kt         # 扩展面板管理
+│   │   │   └── ServiceRestartReceiver.kt         # 服务重启广播
+│   │   ├── GestureSettingsScreen.kt
+│   │   ├── GestureSettingsUiState.kt
+│   │   └── GestureSettingsViewModel.kt
+│   └── settings/               # 设置页面
+│       ├── components/         # 设置相关组件
+│       │   ├── AppSwitchBlacklistDialog.kt
+│       │   ├── DonateDialog.kt
+│       │   ├── LanguageSelectionDialog.kt
+│       │   ├── LaunchBlockRuleDialog.kt
+│       │   ├── LaunchBlockRulesList.kt
+│       │   ├── SettingsClickableItem.kt
+│       │   ├── SettingsSection.kt
+│       │   ├── SettingsSwitchItem.kt
+│       │   └── ThemeSelectionDialog.kt
+│       ├── SettingsScreen.kt
+│       ├── SettingsUiState.kt
+│       └── SettingsViewModel.kt
+├── ui/                          # UI 基础组件
+│   ├── adaptive/               # 自适应布局（WindowSizeClass）
+│   └── theme/                  # 主题配置（Color, Theme, Type）
+├── MainActivity.kt              # 主 Activity
+└── MyApplication.kt             # 应用入口
 ```
 
 ## 架构说明
 
 本项目采用 **MVVM + UDF（单向数据流）** 架构：
 
-- **UI 层**：Jetpack Compose 实现声明式 UI
+- **UI 层**：Jetpack Compose 实现声明式 UI，使用 Material3 Adaptive 支持多设备适配
 - **ViewModel 层**：管理 UI 状态和业务逻辑
-- **数据层**：DataStore 持久化存储用户设置
+- **数据层**：DataStore 持久化存储用户设置，支持类型安全的数据流
 - **服务层**：AccessibilityService 监听边缘手势和执行系统操作
 
 ## 隐私说明
