@@ -256,24 +256,37 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             }
         }
 
-        // 执行拦截：切换应用或返回桌面
-        if (isLauncherSystemApp && launcherPackage != null) {
-            // 系统应用启动，返回桌面并提示
-            performGlobalAction(GLOBAL_ACTION_HOME)
-            showSystemAppWarning(launcherPackage)
-        } else if (launcherPackage != null && launcherPackage != packageName) {
-            // 非系统应用，切换到上一个应用
-            actionExecutor.performAction(GestureAction.LAST_APP, settings)
-        } else {
-            // 没有上一个应用，返回桌面
-            performGlobalAction(GLOBAL_ACTION_HOME)
+        // 仅在规则启用时执行拦截
+        if (rule.enabled) {
+            val blockAction = Runnable {
+                // 执行拦截：切换应用或返回桌面
+                if (isLauncherSystemApp && launcherPackage != null) {
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                    showSystemAppWarning(launcherPackage)
+                } else if (launcherPackage != null && launcherPackage != packageName) {
+                    actionExecutor.performAction(GestureAction.LAST_APP, settings)
+                } else {
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                }
+            }
+            if (rule.blockDelay > 0) {
+                Handler(Looper.getMainLooper()).postDelayed(blockAction, rule.blockDelay.toLong())
+            } else {
+                blockAction.run()
+            }
         }
 
-        // 终止被启动者（如果启用）
+        // 终止被启动者进程（由 enableKillTarget 开关控制）
         if (rule.enableKillTarget) {
-            // 系统应用需要额外检查是否允许终止
-            if (!isTargetSystemApp || rule.allowKillSystemApp) {
-                killAppProcess(targetPackage)
+            val killAction = Runnable {
+                if (!isTargetSystemApp || rule.allowKillSystemApp) {
+                    killAppProcess(targetPackage)
+                }
+            }
+            if (rule.blockDelay > 0) {
+                Handler(Looper.getMainLooper()).postDelayed(killAction, rule.blockDelay.toLong())
+            } else {
+                killAction.run()
             }
         }
 

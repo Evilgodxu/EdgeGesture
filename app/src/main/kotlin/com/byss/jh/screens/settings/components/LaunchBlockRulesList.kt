@@ -183,6 +183,13 @@ private fun RuleItem(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                if (!rule.enabled) {
+                    Text(
+                        text = stringResource(R.string.launch_block_rule_disabled),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 if (rule.launcherApp.isNotBlank()) {
                     Text(
                         text = stringResource(

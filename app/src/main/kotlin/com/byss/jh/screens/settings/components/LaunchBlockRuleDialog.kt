@@ -46,9 +46,11 @@ fun LaunchBlockRuleDialog(
     val context = LocalContext.current
     var launcherApp by remember { mutableStateOf(rule?.launcherApp ?: "") }
     var targetApp by remember { mutableStateOf(rule?.targetApp ?: "") }
+    var ruleEnabled by remember { mutableStateOf(rule?.enabled ?: true) }
     var enableKill by remember { mutableStateOf(rule?.enableKillOnFrequentLaunch ?: false) }
     var enableKillTarget by remember { mutableStateOf(rule?.enableKillTarget ?: false) }
     var allowKillSystemApp by remember { mutableStateOf(rule?.allowKillSystemApp ?: false) }
+    var blockDelay by remember { mutableStateOf(rule?.blockDelay ?: 0) }
     var showError by remember { mutableStateOf(false) }
 
     // Shizuku 状态
@@ -138,6 +140,31 @@ fun LaunchBlockRuleDialog(
                     singleLine = true,
                     isError = showError && targetApp.isBlank()
                 )
+
+                HorizontalDivider()
+
+                // 启用规则开关
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.launch_block_rule_enabled_title),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = stringResource(R.string.launch_block_rule_enabled_desc),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = ruleEnabled,
+                        onCheckedChange = { ruleEnabled = it }
+                    )
+                }
 
                 HorizontalDivider()
 
@@ -341,6 +368,41 @@ fun LaunchBlockRuleDialog(
                         enabled = canEnableAllowKillSystem
                     )
                 }
+
+                HorizontalDivider()
+
+                // 拦截时机选择
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = stringResource(R.string.launch_block_delay_title),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = stringResource(R.string.launch_block_delay_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(0, 500, 1000).forEach { delay ->
+                            val isSelected = blockDelay == delay
+                            val label = when (delay) {
+                                0 -> stringResource(R.string.launch_block_delay_immediate)
+                                500 -> stringResource(R.string.launch_block_delay_500ms)
+                                else -> stringResource(R.string.launch_block_delay_1000ms)
+                            }
+                            androidx.compose.material3.FilterChip(
+                                selected = isSelected,
+                                onClick = { blockDelay = delay },
+                                label = { Text(label, style = MaterialTheme.typography.bodySmall) }
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -352,16 +414,20 @@ fun LaunchBlockRuleDialog(
                     }
                     val newRule = if (isEditing && rule != null) {
                         rule.copy(
+                            enabled = ruleEnabled,
                             launcherApp = launcherApp.trim(),
                             targetApp = targetApp.trim(),
+                            blockDelay = blockDelay,
                             enableKillOnFrequentLaunch = enableKill,
                             enableKillTarget = enableKillTarget,
                             allowKillSystemApp = allowKillSystemApp
                         )
                     } else {
                         LaunchBlockRule(
+                            enabled = ruleEnabled,
                             launcherApp = launcherApp.trim(),
                             targetApp = targetApp.trim(),
+                            blockDelay = blockDelay,
                             enableKillOnFrequentLaunch = enableKill,
                             enableKillTarget = enableKillTarget,
                             allowKillSystemApp = allowKillSystemApp

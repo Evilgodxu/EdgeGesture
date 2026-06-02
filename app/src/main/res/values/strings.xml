@@ -214,6 +214,14 @@
     <string name="launch_block_rule_launcher">启动者：%s</string>
     <string name="launch_block_rule_target">目标：%s</string>
     <string name="launch_block_rule_kill_enabled">已启用进程终止</string>
+    <string name="launch_block_rule_enabled_title">启用规则</string>
+    <string name="launch_block_rule_enabled_desc">启用后将拦截目标应用的启动</string>
+    <string name="launch_block_rule_disabled">已禁用</string>
+    <string name="launch_block_delay_title">拦截时机</string>
+    <string name="launch_block_delay_desc">选择触发拦截效果的时间</string>
+    <string name="launch_block_delay_immediate">立即</string>
+    <string name="launch_block_delay_500ms">延时</string>
+    <string name="launch_block_delay_1000ms">延迟</string>
 
     <!-- 通用对话框按钮 -->
     <string name="dialog_confirm">确定</string>

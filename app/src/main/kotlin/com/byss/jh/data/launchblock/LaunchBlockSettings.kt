@@ -24,8 +24,10 @@ object LaunchBlockKeys {
 @Serializable
 data class LaunchBlockRule(
     val id: String = java.util.UUID.randomUUID().toString(),
+    val enabled: Boolean = true,
     val launcherApp: String = "",
     val targetApp: String = "",
+    val blockDelay: Int = 0, // 拦截延迟(ms): 0=立即, 500=延时, 1000=延迟
     val enableKillOnFrequentLaunch: Boolean = false,
     val enableKillTarget: Boolean = false,
     val allowKillSystemApp: Boolean = false,

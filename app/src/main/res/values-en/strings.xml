@@ -212,6 +212,14 @@
     <string name="launch_block_rule_launcher">Launcher: %s</string>
     <string name="launch_block_rule_target">Target: %s</string>
     <string name="launch_block_rule_kill_enabled">Process termination protection enabled</string>
+    <string name="launch_block_rule_enabled_title">Enable Rule</string>
+    <string name="launch_block_rule_enabled_desc">When enabled, target app launches will be blocked</string>
+    <string name="launch_block_rule_disabled">Disabled</string>
+    <string name="launch_block_delay_title">Block Timing</string>
+    <string name="launch_block_delay_desc">Choose when to trigger the block effect</string>
+    <string name="launch_block_delay_immediate">Immediate</string>
+    <string name="launch_block_delay_500ms">Delayed</string>
+    <string name="launch_block_delay_1000ms">Deferred</string>
 
     <!-- Common Dialog Buttons -->
     <string name="dialog_confirm">Confirm</string>
