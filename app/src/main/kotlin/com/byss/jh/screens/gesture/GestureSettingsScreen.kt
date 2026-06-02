@@ -1,17 +1,24 @@
 package com.byss.jh.screens.gesture
 
+import android.Manifest
+import android.app.Activity
 import android.content.Intent
+import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
@@ -48,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -57,6 +65,7 @@ import com.byss.jh.R
 import com.byss.jh.data.gesture.GestureAction
 import com.byss.jh.data.gesture.GestureSettingsState
 import com.byss.jh.data.gesture.GestureSettingsKeys
+import com.byss.jh.data.permission.PermissionType
 import com.byss.jh.screens.gesture.service.EdgeGestureAccessibilityService
 import com.byss.jh.ui.adaptive.rememberWindowSizeClass
 import com.byss.jh.screens.gesture.components.ActionSelectionDialog
@@ -64,6 +73,7 @@ import com.byss.jh.screens.gesture.components.BottomEdgeSettingsSection
 import com.byss.jh.screens.gesture.components.EdgeGestureSection
 import com.byss.jh.screens.gesture.components.EdgeSettingsSection
 import com.byss.jh.screens.gesture.components.GestureSettingsSwitchItem
+import com.byss.jh.screens.gesture.components.PermissionStatusCard
 import com.byss.jh.screens.gesture.components.getActionDisplayName
 import org.koin.androidx.compose.koinViewModel
 
@@ -74,6 +84,7 @@ fun GestureSettingsScreen(
     viewModel: GestureSettingsViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
+    val activity = context as? Activity
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings = uiState.settings
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -103,20 +114,32 @@ fun GestureSettingsScreen(
         waitingForSystemSetting = value
     }
 
-    // 监听生命周期，用户从系统设置返回时刷新无障碍权限状态
+    // 通知权限申请 launcher
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        viewModel.setNotificationGranted(isGranted)
+    }
+
+    // 监听生命周期，用户从系统设置返回时刷新权限状态
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                // 用户可能刚从无障碍设置页返回，需要刷新权限状态
+                // 用户可能刚从系统设置页返回，需要刷新权限状态
                 viewModel.refreshAccessibilityState()
+                viewModel.refreshPermissions()
                 if (currentWaitingState()) {
                     setWaitingState(false)
                 }
+                // 页面返回时停止权限监控
+                viewModel.stopPermissionMonitor()
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+            // 页面销毁时停止权限监控
+            viewModel.stopPermissionMonitor()
         }
     }
 
@@ -157,6 +180,8 @@ fun GestureSettingsScreen(
             settings = settings,
             viewModel = viewModel,
             windowSizeClass = windowSizeClass,
+            activity = activity,
+            notificationPermissionLauncher = notificationPermissionLauncher,
             onShowAccessibilityDialog = { showAccessibilityDialog = true },
             onShowActionDialog = { key, action ->
                 currentActionKey = key
@@ -262,6 +287,9 @@ fun GestureSettingsScreen(
                 TextButton(
                     onClick = {
                         waitingForSystemSetting = true
+                        if (activity != null) {
+                            viewModel.startPermissionMonitor(PermissionType.ACCESSIBILITY, activity)
+                        }
                         val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
                         context.startActivity(intent)
                         showAccessibilityDialog = false
@@ -288,6 +316,8 @@ private fun GestureSettingsContent(
     settings: GestureSettingsState,
     viewModel: GestureSettingsViewModel,
     windowSizeClass: WindowSizeClass,
+    activity: Activity?,
+    notificationPermissionLauncher: androidx.activity.result.ActivityResultLauncher<String>,
     onShowAccessibilityDialog: () -> Unit,
     onShowActionDialog: (androidx.datastore.preferences.core.Preferences.Key<String>, GestureAction) -> Unit
 ) {
@@ -323,6 +353,66 @@ private fun GestureSettingsContent(
                 }
             }
         }
+
+        // 权限状态卡片 - 所有权限授予后自动隐藏
+        AnimatedVisibility(
+            visible = !uiState.allPermissionsGranted,
+            enter = expandVertically(),
+            exit = shrinkVertically()
+        ) {
+            PermissionStatusCard(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                overlayGranted = uiState.overlayGranted,
+                notificationGranted = uiState.notificationGranted,
+                batteryOptimized = uiState.batteryOptimized,
+                usageStatsGranted = uiState.usageStatsGranted,
+                queryAllPackagesGranted = uiState.queryAllPackagesGranted,
+                onRequestOverlay = {
+                    if (activity != null) {
+                        viewModel.startPermissionMonitor(PermissionType.OVERLAY, activity)
+                    }
+                    val intent = Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        "package:${context.packageName}".toUri()
+                    )
+                    activity?.startActivity(intent)
+                },
+                onRequestNotification = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                },
+            onRequestBatteryOptimization = {
+                if (activity != null) {
+                    viewModel.startPermissionMonitor(PermissionType.BATTERY_OPTIMIZATION, activity)
+                }
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = "package:${context.packageName}".toUri()
+                }
+                activity?.startActivity(intent)
+            },
+            onRequestUsageStats = {
+                if (activity != null) {
+                    viewModel.startPermissionMonitor(PermissionType.USAGE_STATS, activity)
+                }
+                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                    data = "package:${context.packageName}".toUri()
+                }
+                activity?.startActivity(intent)
+            },
+                onRequestQueryAllPackages = {
+                    if (activity != null) {
+                        viewModel.startPermissionMonitor(PermissionType.QUERY_ALL_PACKAGES, activity)
+                    }
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = "package:${context.packageName}".toUri()
+                    }
+                    activity?.startActivity(intent)
+                }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         // 边缘手势功能总开关，依赖无障碍权限
         GestureSettingsSwitchItem(
@@ -577,3 +667,5 @@ private fun GestureSettingsContent(
         }
     }
 }
+
+const val REQUEST_OVERLAY = 1001

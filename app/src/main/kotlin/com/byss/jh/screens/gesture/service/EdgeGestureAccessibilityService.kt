@@ -438,7 +438,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         settingsFlowJob?.cancel()
         launchBlockFlowJob?.cancel()
         edgeViewManager.removeEdgeViews()
-        actionExecutor.dismissExpandPanel()
+        actionExecutor.cleanup()
         serviceScope.cancel()
         return super.onUnbind(intent)
     }

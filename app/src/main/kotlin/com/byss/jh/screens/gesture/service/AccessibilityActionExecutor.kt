@@ -6,8 +6,11 @@ import android.content.Intent
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
+import android.os.Handler
+import android.os.Looper
 import android.os.VibrationEffect
 import android.os.VibratorManager
+import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import com.byss.jh.data.gesture.GestureAction
 import com.byss.jh.data.gesture.GestureSettingsKeys
@@ -15,13 +18,20 @@ import com.byss.jh.data.gesture.GestureSettingsState
 import com.byss.jh.data.gesture.expandPanelShortcutsFlow
 import com.byss.jh.data.gesture.gestureDataStore
 import com.byss.jh.data.gesture.saveExpandPanelShortcut
+import com.byss.jh.data.permission.PermissionMonitor
+import com.byss.jh.data.permission.PermissionType
 import com.byss.jh.screens.settings.themeModeFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class AccessibilityActionExecutor(
     private val service: AccessibilityService
-) {
+) : ExpandPanelPermissionCallback {
     private val appHistory = mutableListOf<String>()
     private var currentApp: String? = null
     private var justConfigChanged: Boolean = false
@@ -30,6 +40,12 @@ class AccessibilityActionExecutor(
     private val cameraManager = service.getSystemService(Context.CAMERA_SERVICE) as CameraManager
 
     private var expandPanelViewManager: ExpandPanelViewManager? = null
+    private var pendingExpandPanelShow = false
+    private val permissionMonitor = PermissionMonitor(service)
+    private val executorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    // 等待权限监控任务
+    private var writeSettingsMonitorJob: kotlinx.coroutines.Job? = null
 
     fun performAction(action: GestureAction, settings: GestureSettingsState) {
         if (action == GestureAction.NONE) return
@@ -68,7 +84,77 @@ class AccessibilityActionExecutor(
             },
             onDismiss = {
                 expandPanelViewManager = null
-            }
+            },
+            permissionCallback = this
+        )
+        expandPanelViewManager = manager
+        val shown = manager.show()
+        if (!shown) {
+            // 权限未授予，等待用户授权后自动显示
+            expandPanelViewManager = null
+        }
+    }
+
+    // 实现 ExpandPanelPermissionCallback 接口
+    override fun onRequestWriteSettings(): Boolean {
+        // 启动权限监控，授权后自动显示扩展面板
+        startWriteSettingsMonitor()
+        // 跳转到系统设置页
+        val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
+            data = android.net.Uri.parse("package:${service.packageName}")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        service.startActivity(intent)
+        return true
+    }
+
+    // 启动修改系统设置权限监控，授权后自动返回上一个应用并显示扩展面板
+    private fun startWriteSettingsMonitor() {
+        // 取消之前的监控
+        writeSettingsMonitorJob?.cancel()
+        pendingExpandPanelShow = true
+
+        writeSettingsMonitorJob = executorScope.launch {
+            permissionMonitor.monitorPermission(PermissionType.WRITE_SETTINGS, intervalMs = 500)
+                .collect { granted ->
+                    if (granted && pendingExpandPanelShow) {
+                        pendingExpandPanelShow = false
+                        // 权限已授予，在主线程先返回上一个应用，再显示扩展面板
+                        kotlinx.coroutines.withContext(Dispatchers.Main) {
+                            returnToPreviousAppAndShowExpandPanel()
+                        }
+                        writeSettingsMonitorJob?.cancel()
+                    }
+                }
+        }
+    }
+
+    // 返回上一个应用并显示扩展面板
+    private fun returnToPreviousAppAndShowExpandPanel() {
+        // 先切换到上一个应用
+        switchToLastApp()
+        // 延迟后显示扩展面板，确保应用切换完成
+        Handler(Looper.getMainLooper()).postDelayed({
+            showExpandPanelAfterPermissionGranted()
+        }, 300)
+    }
+
+    // 权限授予后显示扩展面板
+    private fun showExpandPanelAfterPermissionGranted() {
+        if (expandPanelViewManager != null) return
+        val manager = ExpandPanelViewManager(
+            context = service,
+            shortcutsFlow = service.expandPanelShortcutsFlow(),
+            themeModeFlow = service.themeModeFlow(),
+            onShortcutSet = { index, packageName ->
+                kotlinx.coroutines.runBlocking {
+                    service.saveExpandPanelShortcut(index, packageName)
+                }
+            },
+            onDismiss = {
+                expandPanelViewManager = null
+            },
+            permissionCallback = this
         )
         expandPanelViewManager = manager
         val shown = manager.show()
@@ -80,6 +166,14 @@ class AccessibilityActionExecutor(
     fun dismissExpandPanel() {
         expandPanelViewManager?.dismiss()
         expandPanelViewManager = null
+        pendingExpandPanelShow = false
+        writeSettingsMonitorJob?.cancel()
+    }
+
+    // 清理资源
+    fun cleanup() {
+        dismissExpandPanel()
+        executorScope.cancel()
     }
 
     // 监听窗口变化事件，记录应用切换历史，用于实现"切换到上一个应用"功能

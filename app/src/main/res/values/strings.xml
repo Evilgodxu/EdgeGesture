@@ -3,26 +3,6 @@
     <!-- ==================== 应用通用 ==================== -->
     <string name="app_name">边缘手势</string>
 
-    <!-- ==================== 启动页 (Splash) ==================== -->
-    <string name="splash_app_title">边缘手势</string>
-
-    <!-- ==================== 隐私页 (Privacy) ==================== -->
-    <string name="privacy_title">隐私政策</string>
-    <string name="privacy_statement_title">隐私政策声明</string>
-    <string name="privacy_agree_button">同意并继续</string>
-    <string name="privacy_section_1_title">1. 数据收集</string>
-    <string name="privacy_section_1_content">本应用处理以下数据用于实现边缘手势功能：\n\n• 屏幕参数（分辨率、密度）：运行时临时获取，用于计算手势触发区域，不存储\n• 已安装应用列表：读取应用名称和包名，用于应用黑名单和扩展面板快捷方式设置\n• 应用使用统计：通过系统API实时查询，用于"切换到上一个应用"功能，不存储\n• 用户设置：手势配置、主题、语言等偏好设置，使用DataStore加密存储在本地\n\n所有数据均在设备本地处理，不会上传至任何服务器。</string>
-    <string name="privacy_section_2_title">2. 权限说明</string>
-    <string name="privacy_section_2_content">本应用需要以下权限：\n\n• 无障碍服务：执行系统操作（返回、主页、最近任务等）\n• 悬浮窗：显示边缘手势触发区域\n• 使用情况访问：获取应用使用统计（可选）\n• 查询所有应用：读取应用列表\n• 电池优化白名单：保持后台运行（推荐）\n• 通知：显示服务状态（可选）\n• 震动：手势反馈（可选）\n• 相机：控制闪光灯（手电筒功能）</string>
-    <string name="privacy_section_3_title">3. 数据存储</string>
-    <string name="privacy_section_3_content">• 存储位置：设备本地私有目录\n• 存储方式：使用Android DataStore加密存储\n• 数据内容：用户设置、应用黑名单、扩展面板快捷方式\n• 应用切换历史：仅保存在内存中，关闭后自动清除\n• 本应用不连接互联网，不集成第三方SDK</string>
-    <string name="privacy_section_4_title">4. 数据保留</string>
-    <string name="privacy_section_4_content">• 用户设置：永久保留，直至用户清除应用数据或卸载应用\n• 应用黑名单：永久保留，直至用户清除应用数据或卸载应用\n• 扩展面板快捷方式：永久保留，直至用户清除应用数据或卸载应用\n• 运行时临时数据（屏幕参数、应用切换历史）：应用关闭后自动清除</string>
-    <string name="privacy_section_5_title">5. 用户权利</string>
-    <string name="privacy_section_5_content">• 查看和修改：在应用设置中管理所有数据\n• 删除数据：清除应用数据或卸载应用以删除所有数据\n• 权限管理：在系统设置中随时开启或关闭权限</string>
-    <string name="privacy_section_6_title">6. 联系我们</string>
-    <string name="privacy_section_6_content">如有任何隐私相关问题，请通过以下方式联系我们：\n\n邮箱：3685634009@qq.com</string>
-
     <!-- ==================== 设置页 (Settings) ==================== -->
     <!-- 页面通用 -->
     <string name="settings_title">更多设置</string>
@@ -53,11 +33,6 @@
     <!-- 震动设置 -->
     <string name="settings_vibration_title">震动反馈</string>
     <string name="settings_vibration_desc">滑动操作时触发震动效果</string>
-
-    <!-- 隐私政策 -->
-    <string name="settings_privacy_title">隐私政策</string>
-    <string name="settings_privacy_desc">查看应用隐私政策内容</string>
-    <string name="privacy_dialog_confirm">我知道了</string>
 
     <!-- ==================== 手势设置页 (Gesture Settings) ==================== -->
     <!-- 页面标题 -->

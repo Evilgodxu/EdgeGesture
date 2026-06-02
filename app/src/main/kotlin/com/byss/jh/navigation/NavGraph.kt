@@ -1,27 +1,15 @@
 package com.byss.jh.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.byss.jh.data.gesture.initBlacklistIfNeeded
-import com.byss.jh.data.privacy.isPrivacyAgreed
-import com.byss.jh.data.privacy.savePrivacyAgreed
 import com.byss.jh.screens.gesture.GestureSettingsScreen
-import com.byss.jh.screens.privacy.PrivacyScreen
 import com.byss.jh.screens.settings.AppLanguage
 import com.byss.jh.screens.settings.SettingsScreen
 import com.byss.jh.screens.settings.ThemeMode
-import com.byss.jh.screens.splash.SplashScreen
-import kotlinx.coroutines.launch
 
 sealed class Screen(val route: String) {
-    data object Splash : Screen("splash")
-    data object Privacy : Screen("privacy")
     data object Gesture : Screen("gesture")
     data object Settings : Screen("settings")
 }
@@ -29,49 +17,14 @@ sealed class Screen(val route: String) {
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    startDestination: String = Screen.Splash.route,
-    onThemeChange: (com.byss.jh.screens.settings.ThemeMode) -> Unit = {},
+    startDestination: String = Screen.Gesture.route,
+    onThemeChange: (ThemeMode) -> Unit = {},
     onLanguageChange: (AppLanguage) -> Unit = {}
 ) {
-    val context = LocalContext.current
-    val privacyAgreed by context.isPrivacyAgreed().collectAsState(initial = false)
-
     NavHost(
         navController = navController,
         startDestination = startDestination
     ) {
-        composable(Screen.Splash.route) {
-            SplashScreen(
-                onSplashComplete = {
-                    // 首次使用需同意隐私政策，已同意则直接进入手势设置页
-                    if (privacyAgreed) {
-                        navController.navigate(Screen.Gesture.route) {
-                            popUpTo(Screen.Splash.route) { inclusive = true }
-                        }
-                    } else {
-                        navController.navigate(Screen.Privacy.route) {
-                            popUpTo(Screen.Splash.route) { inclusive = true }
-                        }
-                    }
-                }
-            )
-        }
-
-        composable(Screen.Privacy.route) {
-            PrivacyScreen(
-                onAgree = {
-                    val appScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
-                    appScope.launch {
-                        context.savePrivacyAgreed(true)
-                        context.initBlacklistIfNeeded()
-                    }
-                    navController.navigate(Screen.Gesture.route) {
-                        popUpTo(Screen.Privacy.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-
         composable(Screen.Gesture.route) {
             GestureSettingsScreen(
                 onNavigateToSettings = {

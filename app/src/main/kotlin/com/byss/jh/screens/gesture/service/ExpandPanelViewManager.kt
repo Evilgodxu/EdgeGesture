@@ -9,6 +9,11 @@ import android.media.AudioManager
 import android.provider.Settings
 import android.view.Gravity
 import android.view.WindowManager
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -103,13 +108,20 @@ import com.byss.jh.ui.theme.LightColorScheme
 import org.koin.compose.koinInject
 import kotlinx.coroutines.flow.Flow
 
+// 扩展面板权限请求回调
+interface ExpandPanelPermissionCallback {
+    // 当需要修改系统设置权限时调用，返回是否已处理
+    fun onRequestWriteSettings(): Boolean
+}
+
 // 扩展面板悬浮窗管理器
 class ExpandPanelViewManager(
     private val context: Context,
     private val shortcutsFlow: Flow<ExpandPanelShortcutsState>,
     private val themeModeFlow: Flow<ThemeMode>,
     private val onShortcutSet: (index: Int, packageName: String?) -> Unit,
-    private val onDismiss: () -> Unit
+    private val onDismiss: () -> Unit,
+    private val permissionCallback: ExpandPanelPermissionCallback? = null
 ) {
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private var composeView: ComposeView? = null
@@ -140,11 +152,16 @@ class ExpandPanelViewManager(
 
         // 检查是否有修改系统设置权限（用于调节亮度/音量）
         if (!Settings.System.canWrite(context)) {
-            val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
-                data = android.net.Uri.parse("package:${context.packageName}")
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            // 优先使用回调处理权限请求，支持授权后自动返回并显示面板
+            val handled = permissionCallback?.onRequestWriteSettings() ?: false
+            if (!handled) {
+                // 回调未处理，使用默认方式跳转设置页
+                val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
+                    data = android.net.Uri.parse("package:${context.packageName}")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                context.startActivity(intent)
             }
-            context.startActivity(intent)
             return false
         }
 
@@ -229,9 +246,15 @@ private fun ExpandPanelOverlay(
 ) {
     var currentShortcuts by remember { mutableStateOf(ExpandPanelShortcutsState()) }
     var themeMode by remember { mutableStateOf(ThemeMode.SYSTEM) }
+    var isVisible by remember { mutableStateOf(false) }
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val isSystemInDarkTheme = (configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
+    // 触发进入动画
+    LaunchedEffect(Unit) {
+        isVisible = true
+    }
 
     LaunchedEffect(shortcutsFlow) {
         shortcutsFlow.collect { state ->
@@ -264,36 +287,54 @@ private fun ExpandPanelOverlay(
                 ),
             contentAlignment = Alignment.BottomCenter
         ) {
-            Surface(
-                modifier = if (isLandscape) {
-                    Modifier
-                        .widthIn(max = 480.dp)
-                        .fillMaxWidth(0.7f)
-                        .padding(horizontal = 12.dp, vertical = 16.dp)
-                        .clickable(
-                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                            indication = null,
-                            onClick = { /* 阻止点击穿透 */ }
-                        )
-                } else {
-                    Modifier
-                        .fillMaxWidth(0.92f)
-                        .padding(horizontal = 12.dp, vertical = 16.dp)
-                        .clickable(
-                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                            indication = null,
-                            onClick = { /* 阻止点击穿透 */ }
-                        )
-                },
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                shadowElevation = 8.dp
-            ) {
-                ExpandPanelContent(
-                    shortcuts = currentShortcuts.shortcuts,
-                    onShortcutSet = onShortcutSet,
-                    onDismiss = onDismiss
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = slideInVertically(
+                    initialOffsetY = { fullHeight -> fullHeight },
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
+                ),
+                exit = slideOutVertically(
+                    targetOffsetY = { fullHeight -> fullHeight },
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    )
                 )
+            ) {
+                Surface(
+                    modifier = if (isLandscape) {
+                        Modifier
+                            .widthIn(max = 480.dp)
+                            .fillMaxWidth(0.7f)
+                            .padding(horizontal = 12.dp, vertical = 16.dp)
+                            .clickable(
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                indication = null,
+                                onClick = { /* 阻止点击穿透 */ }
+                            )
+                    } else {
+                        Modifier
+                            .fillMaxWidth(0.92f)
+                            .padding(horizontal = 12.dp, vertical = 16.dp)
+                            .clickable(
+                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                indication = null,
+                                onClick = { /* 阻止点击穿透 */ }
+                            )
+                    },
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                    shadowElevation = 8.dp
+                ) {
+                    ExpandPanelContent(
+                        shortcuts = currentShortcuts.shortcuts,
+                        onShortcutSet = onShortcutSet,
+                        onDismiss = onDismiss
+                    )
+                }
             }
         }
     }

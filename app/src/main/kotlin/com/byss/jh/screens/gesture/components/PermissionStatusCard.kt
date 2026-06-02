@@ -1,4 +1,4 @@
-package com.byss.jh.screens.privacy.components
+package com.byss.jh.screens.gesture.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +20,7 @@ import com.byss.jh.R
 // 权限状态卡片组件
 @Composable
 fun PermissionStatusCard(
+    modifier: Modifier = Modifier,
     overlayGranted: Boolean,
     notificationGranted: Boolean,
     batteryOptimized: Boolean,
@@ -32,7 +33,7 @@ fun PermissionStatusCard(
     onRequestQueryAllPackages: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )

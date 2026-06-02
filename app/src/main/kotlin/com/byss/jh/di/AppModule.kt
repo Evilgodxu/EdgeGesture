@@ -2,7 +2,6 @@ package com.byss.jh.di
 
 import com.byss.jh.data.app.AppRepository
 import com.byss.jh.screens.gesture.GestureSettingsViewModel
-import com.byss.jh.screens.privacy.PrivacyViewModel
 import com.byss.jh.screens.settings.SettingsViewModel
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
@@ -16,5 +15,4 @@ val appModule = module {
 
     viewModel { SettingsViewModel(androidApplication()) }
     viewModel { GestureSettingsViewModel(androidApplication()) }
-    viewModel { PrivacyViewModel(androidApplication()) }
 }

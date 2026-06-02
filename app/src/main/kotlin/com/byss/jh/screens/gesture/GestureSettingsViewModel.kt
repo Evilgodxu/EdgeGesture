@@ -1,7 +1,15 @@
 package com.byss.jh.screens.gesture
 
+import android.Manifest
+import android.app.Activity
 import android.app.Application
+import android.app.AppOpsManager
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.PowerManager
+import android.os.Process
 import android.provider.Settings
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.byss.jh.data.gesture.GestureAction
@@ -25,6 +33,9 @@ import com.byss.jh.data.gesture.saveRightEdgeHeightPercent
 import com.byss.jh.data.gesture.saveRightEdgePositionPercent
 import com.byss.jh.data.gesture.saveRightEdgeWidth
 import com.byss.jh.data.gesture.saveRightSegmentCount
+import com.byss.jh.data.permission.PermissionMonitor
+import com.byss.jh.data.permission.PermissionType
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -39,14 +50,34 @@ class GestureSettingsViewModel(
 ) : AndroidViewModel(application) {
 
     private val context get() = getApplication<Application>().applicationContext
+    private val permissionMonitor = PermissionMonitor(context)
 
     // 独立的无障碍权限状态流，用于实时刷新
     private val _accessibilityEnabledFlow = MutableStateFlow(isAccessibilityServiceEnabled(context))
 
+    // 权限状态流
+    private val _permissionsFlow = MutableStateFlow(PermissionsState())
+
+    // 正在等待的权限类型
+    private val _waitingPermissionFlow = MutableStateFlow<PermissionType?>(null)
+
+    // 权限监控任务
+    private var permissionMonitorJob: Job? = null
+
+    data class PermissionsState(
+        val overlayGranted: Boolean = false,
+        val notificationGranted: Boolean = false,
+        val batteryOptimized: Boolean = false,
+        val usageStatsGranted: Boolean = false,
+        val queryAllPackagesGranted: Boolean = false,
+    )
+
     val uiState: StateFlow<GestureSettingsUiState> = combine(
         context.gestureSettingsFlow(),
-        _accessibilityEnabledFlow
-    ) { settings, isAccessibilityEnabled ->
+        _accessibilityEnabledFlow,
+        _permissionsFlow,
+        _waitingPermissionFlow
+    ) { settings, isAccessibilityEnabled, permissions, waitingPermission ->
         // 当无障碍权限未启用时，强制手势开关为关闭状态
         // 避免重复安装或权限被撤销后开关状态不一致的问题
         val effectiveGestureEnabled = settings.gestureEnabled && isAccessibilityEnabled
@@ -54,6 +85,12 @@ class GestureSettingsViewModel(
             isLoading = false,
             settings = settings.copy(gestureEnabled = effectiveGestureEnabled),
             isAccessibilityEnabled = isAccessibilityEnabled,
+            overlayGranted = permissions.overlayGranted,
+            notificationGranted = permissions.notificationGranted,
+            batteryOptimized = permissions.batteryOptimized,
+            usageStatsGranted = permissions.usageStatsGranted,
+            queryAllPackagesGranted = permissions.queryAllPackagesGranted,
+            waitingPermission = waitingPermission,
         )
     }
         .stateIn(
@@ -62,9 +99,109 @@ class GestureSettingsViewModel(
             initialValue = GestureSettingsUiState(isLoading = true),
         )
 
+    init {
+        refreshPermissions()
+    }
+
+    // 开始监控指定权限，授权后自动返回应用
+    fun startPermissionMonitor(permissionType: PermissionType, activity: Activity) {
+        // 取消之前的监控
+        permissionMonitorJob?.cancel()
+        _waitingPermissionFlow.value = permissionType
+
+        permissionMonitorJob = viewModelScope.launch {
+            permissionMonitor.monitorPermission(permissionType, intervalMs = 500)
+                .collect { granted ->
+                    if (granted) {
+                        // 权限已授权，刷新状态并返回应用
+                        refreshPermissions()
+                        _waitingPermissionFlow.value = null
+                        // 将应用带回前台
+                        bringAppToFront(activity)
+                        permissionMonitorJob?.cancel()
+                    }
+                }
+        }
+    }
+
+    // 将应用带回前台
+    private fun bringAppToFront(activity: Activity) {
+        val intent = activity.packageManager.getLaunchIntentForPackage(activity.packageName)
+        intent?.let {
+            it.flags = android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+            activity.startActivity(it)
+        }
+    }
+
+    // 停止权限监控
+    fun stopPermissionMonitor() {
+        permissionMonitorJob?.cancel()
+        permissionMonitorJob = null
+        _waitingPermissionFlow.value = null
+    }
+
     // 刷新无障碍服务状态，在从系统设置返回时调用
     fun refreshAccessibilityState() {
         _accessibilityEnabledFlow.value = isAccessibilityServiceEnabled(context)
+    }
+
+    // 刷新所有权限状态
+    fun refreshPermissions() {
+        val overlay = Settings.canDrawOverlays(context)
+        val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+        val battery = isIgnoringBatteryOptimizations(context)
+        val usageStats = hasUsageStatsPermission(context)
+        val queryAllPackages = hasQueryAllPackagesPermission(context)
+
+        _permissionsFlow.value = PermissionsState(
+            overlayGranted = overlay,
+            notificationGranted = notification,
+            batteryOptimized = battery,
+            usageStatsGranted = usageStats,
+            queryAllPackagesGranted = queryAllPackages,
+        )
+    }
+
+    // 设置通知权限状态
+    fun setNotificationGranted(granted: Boolean) {
+        _permissionsFlow.value = _permissionsFlow.value.copy(notificationGranted = granted)
+    }
+
+    // 检查是否忽略电池优化
+    private fun isIgnoringBatteryOptimizations(ctx: android.content.Context): Boolean {
+        val powerManager = ctx.getSystemService(android.content.Context.POWER_SERVICE) as PowerManager
+        return powerManager.isIgnoringBatteryOptimizations(ctx.packageName)
+    }
+
+    // 检查是否有使用情况统计权限
+    private fun hasUsageStatsPermission(ctx: android.content.Context): Boolean {
+        val appOps = ctx.getSystemService(android.content.Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = appOps.checkOpNoThrow(
+            AppOpsManager.OPSTR_GET_USAGE_STATS,
+            Process.myUid(),
+            ctx.packageName
+        )
+        return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    // 检查是否有查询所有应用权限
+    private fun hasQueryAllPackagesPermission(ctx: android.content.Context): Boolean {
+        return try {
+            val pm = ctx.packageManager
+            val apps = pm.getInstalledApplications(0)
+            apps.isNotEmpty() && apps.any { it.packageName != ctx.packageName }
+        } catch (e: Exception) {
+            false
+        }
     }
 
     // 检查无障碍服务是否已启用

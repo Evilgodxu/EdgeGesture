@@ -3,26 +3,6 @@
     <!-- ==================== App General ==================== -->
     <string name="app_name">Edge Gesture</string>
 
-    <!-- ==================== Splash Screen ==================== -->
-    <string name="splash_app_title">Edge Gesture</string>
-
-    <!-- ==================== Privacy Screen ==================== -->
-    <string name="privacy_title">Privacy Policy</string>
-    <string name="privacy_statement_title">Privacy Policy Statement</string>
-    <string name="privacy_agree_button">Agree and Continue</string>
-    <string name="privacy_section_1_title">1. Data Collection</string>
-    <string name="privacy_section_1_content">This application processes the following data to provide edge gesture functionality:\n\n• Screen Parameters (resolution, density): Temporarily obtained at runtime for calculating gesture trigger areas, not stored\n• Installed App List: Reads app names and package names for app blacklist and expand panel shortcut settings\n• App Usage Statistics: Real-time queries via system API for the "Switch to Last App" feature, not stored\n• User Settings: Gesture configurations, theme, language preferences, encrypted and stored locally using DataStore\n\nAll data is processed locally on the device and will not be uploaded to any server.</string>
-    <string name="privacy_section_2_title">2. Permissions</string>
-    <string name="privacy_section_2_content">This application requires the following permissions:\n\n• Accessibility Service: Perform system operations (back, home, recent tasks, etc.)\n• Overlay: Display edge gesture trigger areas\n• Usage Access: Obtain app usage statistics (optional)\n• Query All Packages: Read app list\n• Battery Optimization Whitelist: Keep running in background (recommended)\n• Notification: Display service status (optional)\n• Vibration: Gesture feedback (optional)\n• Camera: Control flashlight (flashlight feature)</string>
-    <string name="privacy_section_3_title">3. Data Storage</string>
-    <string name="privacy_section_3_content">• Storage Location: Device local private directory\n• Storage Method: Encrypted using Android DataStore\n• Data Content: User settings, app blacklist, expand panel shortcuts\n• App Switch History: Kept in memory only, cleared when closed\n• This application does not connect to the internet or integrate third-party SDKs</string>
-    <string name="privacy_section_4_title">4. Data Retention</string>
-    <string name="privacy_section_4_content">• User Settings: Retained permanently until user clears app data or uninstalls the app\n• App Blacklist: Retained permanently until user clears app data or uninstalls the app\n• Expand Panel Shortcuts: Retained permanently until user clears app data or uninstalls the app\n• Runtime Temporary Data (screen parameters, app switch history): Automatically cleared when app closes</string>
-    <string name="privacy_section_5_title">5. User Rights</string>
-    <string name="privacy_section_5_content">• View and Modify: Manage all data in app settings\n• Delete Data: Clear app data or uninstall to delete all data\n• Permission Management: Enable or disable permissions in system settings at any time</string>
-    <string name="privacy_section_6_title">6. Contact Us</string>
-    <string name="privacy_section_6_content">For any privacy-related questions, please contact us:\n\nEmail: 3685634009@qq.com</string>
-
     <!-- ==================== Settings Screen ==================== -->
     <!-- Page General -->
     <string name="settings_title">Settings</string>
@@ -53,11 +33,6 @@
     <!-- Vibration Settings -->
     <string name="settings_vibration_title">Vibration Feedback</string>
     <string name="settings_vibration_desc">Trigger vibration effect during swipe operations</string>
-
-    <!-- Privacy Policy -->
-    <string name="settings_privacy_title">Privacy Policy</string>
-    <string name="settings_privacy_desc">View app privacy policy</string>
-    <string name="privacy_dialog_confirm">I Understand</string>
 
     <!-- ==================== Gesture Settings Screen ==================== -->
     <!-- Page Title -->

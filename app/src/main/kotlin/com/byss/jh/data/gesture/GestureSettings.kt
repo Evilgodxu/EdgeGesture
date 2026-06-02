@@ -488,11 +488,13 @@ suspend fun Context.removeFromAppSwitchBlacklist(packageNames: Set<String>) = wi
     }
 }
 
-suspend fun Context.initBlacklistIfNeeded() = withContext(Dispatchers.IO) {
+// 初始化黑名单，将系统应用加入黑名单
+// systemApps 参数可选，如果不传则从系统获取
+suspend fun Context.initBlacklistIfNeeded(systemApps: Set<String>? = null) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         if (prefs[GestureSettingsKeys.BLACKLIST_INITIALIZED] != true) {
-            val systemApps = getSystemAppPackages()
-            prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] = systemApps
+            val apps = systemApps ?: getSystemAppPackages()
+            prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] = apps
             prefs[GestureSettingsKeys.BLACKLIST_INITIALIZED] = true
         }
     }

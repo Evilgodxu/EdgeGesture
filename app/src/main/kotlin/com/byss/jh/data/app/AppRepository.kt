@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
+import com.byss.jh.data.gesture.initBlacklistIfNeeded
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -84,11 +85,25 @@ class AppRepository private constructor(private val context: Context) {
             // 检查缓存是否有效，无效则刷新
             if (!cacheManager.isCacheValid() || _appsFlow.value.isEmpty()) {
                 refreshAppsIfPermitted()
+            } else {
+                // 缓存有效，检查权限后初始化黑名单
+                initBlacklistIfPermitted()
             }
         }
 
         // 注册应用变更监听
         registerAppChangeReceiver()
+    }
+
+    // 有条件地初始化黑名单：有权限时才初始化
+    private suspend fun initBlacklistIfPermitted() {
+        if (!hasQueryPermission()) return
+        val apps = _appsFlow.value
+        if (apps.isEmpty()) return
+        val systemApps = apps.filter { it.isSystemApp }.map { it.packageName }.toSet()
+        if (systemApps.isNotEmpty()) {
+            context.initBlacklistIfNeeded(systemApps)
+        }
     }
 
     // 条件刷新：有权限时才扫描
@@ -112,6 +127,9 @@ class AppRepository private constructor(private val context: Context) {
                 val apps = cacheManager.quickScanApps()
                 _appsFlow.value = apps
                 cacheManager.saveAppsToCache(apps)
+                // 应用列表扫描完成后，初始化黑名单（将系统应用加入黑名单）
+                val systemApps = apps.filter { it.isSystemApp }.map { it.packageName }.toSet()
+                context.initBlacklistIfNeeded(systemApps)
             } finally {
                 _isLoading.value = false
             }
