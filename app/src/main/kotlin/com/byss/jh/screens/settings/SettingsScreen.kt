@@ -64,7 +64,6 @@ import com.byss.jh.screens.settings.components.DonateDialog
 import com.byss.jh.screens.settings.components.LanguageSelectionDialog
 import com.byss.jh.screens.settings.components.LaunchBlockRuleDialog
 import com.byss.jh.screens.settings.components.LaunchBlockRulesList
-import com.byss.jh.screens.settings.components.PrivacyPolicyDialog
 import com.byss.jh.screens.settings.components.SettingsClickableItem
 import com.byss.jh.screens.settings.components.SettingsSection
 import com.byss.jh.screens.settings.components.SettingsSwitchItem
@@ -197,7 +196,6 @@ fun SettingsScreen(
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showBlacklistDialog by remember { mutableStateOf(false) }
     var showDonateDialog by remember { mutableStateOf(false) }
-    var showPrivacyDialog by remember { mutableStateOf(false) }
     var showLaunchBlockRuleDialog by remember { mutableStateOf(false) }
     var editingLaunchBlockRule by remember { mutableStateOf<LaunchBlockRule?>(null) }
 
@@ -327,12 +325,6 @@ fun SettingsScreen(
                     // 更多设置项
                     SettingsSection(title = stringResource(R.string.settings_more)) {
                         SettingsClickableItem(
-                            icon = Icons.Default.Policy,
-                            title = stringResource(R.string.settings_privacy_title),
-                            subtitle = stringResource(R.string.settings_privacy_desc),
-                            onClick = { showPrivacyDialog = true }
-                        )
-                        SettingsClickableItem(
                             icon = Icons.Default.Favorite,
                             title = stringResource(R.string.settings_donate),
                             subtitle = stringResource(R.string.settings_donate_desc),
@@ -424,12 +416,6 @@ fun SettingsScreen(
                         )
                     }
                     SettingsClickableItem(
-                        icon = Icons.Default.Policy,
-                        title = stringResource(R.string.settings_privacy_title),
-                        subtitle = stringResource(R.string.settings_privacy_desc),
-                        onClick = { showPrivacyDialog = true }
-                    )
-                    SettingsClickableItem(
                         icon = Icons.Default.Favorite,
                         title = stringResource(R.string.settings_donate),
                         subtitle = stringResource(R.string.settings_donate_desc),
@@ -478,13 +464,6 @@ fun SettingsScreen(
     if (showDonateDialog) {
         DonateDialog(
             onDismiss = { showDonateDialog = false }
-        )
-    }
-
-    // 隐私政策对话框
-    if (showPrivacyDialog) {
-        PrivacyPolicyDialog(
-            onDismiss = { showPrivacyDialog = false }
         )
     }
 
