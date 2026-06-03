@@ -19,11 +19,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,13 +33,24 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.byss.jh.R
+import com.byss.jh.data.app.AppRepository
+import org.koin.compose.koinInject
 
 @Composable
 fun ShortcutsGrid(
     shortcuts: List<String?>,
     onShortcutSet: (index: Int, packageName: String?) -> Unit,
-    onLaunchApp: (String, Int) -> Unit
+    onLaunchApp: (String, Int) -> Unit,
+    appRepository: AppRepository = koinInject()
 ) {
+    // 从缓存仓库获取应用列表，实现图标预加载
+    val apps by appRepository.appsFlow.collectAsState()
+    
+    // 构建包名到图标的映射，避免重复查询
+    val iconMap = remember(apps) {
+        apps.associateBy({ it.packageName }, { it })
+    }
+
     Column {
         Text(
             text = stringResource(R.string.expand_panel_shortcuts_title),
@@ -62,6 +71,7 @@ fun ShortcutsGrid(
                     val packageName = shortcuts.getOrNull(index)
                     ShortcutItem(
                         packageName = packageName,
+                        appInfo = packageName?.let { iconMap[it] },
                         onClick = {
                             if (packageName != null) {
                                 onLaunchApp(packageName, index)
@@ -85,14 +95,15 @@ fun ShortcutsGrid(
 @Composable
 private fun ShortcutItem(
     packageName: String?,
+    appInfo: com.byss.jh.data.app.AppInfo?,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
     val context = LocalContext.current
-    var appIcon by remember { mutableStateOf<android.graphics.drawable.Drawable?>(null) }
-
-    LaunchedEffect(packageName) {
-        appIcon = if (packageName != null) {
+    
+    // 从缓存数据异步加载图标，避免阻塞主线程
+    val appIcon = remember(packageName, appInfo) {
+        if (packageName != null) {
             try {
                 context.packageManager.getApplicationIcon(packageName)
             } catch (_: Exception) {
@@ -124,7 +135,7 @@ private fun ShortcutItem(
     ) {
         if (appIcon != null) {
             Image(
-                painter = BitmapPainter(appIcon!!.toBitmap().asImageBitmap()),
+                painter = BitmapPainter(appIcon.toBitmap().asImageBitmap()),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize()
             )

@@ -96,7 +96,8 @@ class ExpandPanelViewManager(
                     shortcutsFlow = shortcutsFlow,
                     themeModeFlow = themeModeFlow,
                     onShortcutSet = onShortcutSet,
-                    onDismiss = { dismiss() }
+                    onDismiss = { dismiss() },
+                    onDismissAnimationEnd = { dismiss() }
                 )
             }
         }

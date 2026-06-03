@@ -37,11 +37,13 @@ fun ExpandPanelOverlay(
     shortcutsFlow: Flow<ExpandPanelShortcutsState>,
     themeModeFlow: Flow<ThemeMode>,
     onShortcutSet: (index: Int, packageName: String?) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onDismissAnimationEnd: () -> Unit = onDismiss
 ) {
     var currentShortcuts by remember { mutableStateOf(ExpandPanelShortcutsState()) }
     var themeMode by remember { mutableStateOf(ThemeMode.SYSTEM) }
     var isVisible by remember { mutableStateOf(false) }
+    var isDismissing by remember { mutableStateOf(false) }
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val isSystemInDarkTheme = (configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
@@ -49,6 +51,14 @@ fun ExpandPanelOverlay(
     // 触发进入动画
     LaunchedEffect(Unit) {
         isVisible = true
+    }
+
+    // 处理关闭动画完成后的回调
+    LaunchedEffect(isDismissing) {
+        if (isDismissing) {
+            kotlinx.coroutines.delay(200) // 等待退出动画完成
+            onDismissAnimationEnd()
+        }
     }
 
     LaunchedEffect(shortcutsFlow) {
@@ -72,13 +82,18 @@ fun ExpandPanelOverlay(
     val colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme
 
     MaterialTheme(colorScheme = colorScheme) {
+        val dismissWithAnimation = {
+            isDismissing = true
+            isVisible = false
+        }
+
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = onDismiss
+                    onClick = { dismissWithAnimation() }
                 ),
             contentAlignment = Alignment.BottomCenter
         ) {
@@ -127,7 +142,7 @@ fun ExpandPanelOverlay(
                     ExpandPanelContent(
                         shortcuts = currentShortcuts.shortcuts,
                         onShortcutSet = onShortcutSet,
-                        onDismiss = onDismiss
+                        onDismiss = { dismissWithAnimation() }
                     )
                 }
             }
