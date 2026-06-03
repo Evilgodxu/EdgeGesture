@@ -33,6 +33,7 @@ import com.byss.jh.data.gesture.saveRightEdgeHeightPercent
 import com.byss.jh.data.gesture.saveRightEdgePositionPercent
 import com.byss.jh.data.gesture.saveRightEdgeWidth
 import com.byss.jh.data.gesture.saveRightSegmentCount
+import com.byss.jh.data.app.AppRepository
 import com.byss.jh.data.permission.PermissionMonitor
 import com.byss.jh.data.permission.PermissionType
 import kotlinx.coroutines.Job
@@ -118,6 +119,10 @@ class GestureSettingsViewModel(
                         _waitingPermissionFlow.value = null
                         // 将应用带回前台
                         bringAppToFront(activity)
+                        // 如果是查询应用权限，触发应用扫描和黑名单初始化
+                        if (permissionType == PermissionType.QUERY_ALL_PACKAGES) {
+                            AppRepository.getInstance(context).initializeWithScan()
+                        }
                         permissionMonitorJob?.cancel()
                     }
                 }

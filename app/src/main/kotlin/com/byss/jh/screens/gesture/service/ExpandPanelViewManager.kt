@@ -19,7 +19,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,6 +58,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -83,6 +84,8 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -659,7 +662,6 @@ private fun ShortcutsGrid(
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ShortcutItem(
     packageName: String?,
@@ -667,7 +669,16 @@ private fun ShortcutItem(
     onLongClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val viewConfiguration = LocalViewConfiguration.current
     var appIcon by remember { mutableStateOf<android.graphics.drawable.Drawable?>(null) }
+
+    // 自定义长按时间为 300 毫秒
+    val customViewConfiguration = remember(viewConfiguration) {
+        object : ViewConfiguration by viewConfiguration {
+            override val longPressTimeoutMillis: Long
+                get() = 300L
+        }
+    }
 
     LaunchedEffect(packageName) {
         appIcon = if (packageName != null) {
@@ -681,23 +692,26 @@ private fun ShortcutItem(
         }
     }
 
-    Box(
-        modifier = Modifier
-            .size(56.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (packageName != null) {
-                    androidx.compose.ui.graphics.Color.Transparent
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                }
-            )
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            ),
-        contentAlignment = Alignment.Center
-    ) {
+    CompositionLocalProvider(LocalViewConfiguration provides customViewConfiguration) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(
+                    if (packageName != null) {
+                        androidx.compose.ui.graphics.Color.Transparent
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    }
+                )
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = { onClick() },
+                        onLongPress = { onLongClick() }
+                    )
+                },
+            contentAlignment = Alignment.Center
+        ) {
         if (appIcon != null) {
             Image(
                 painter = BitmapPainter(
@@ -713,6 +727,7 @@ private fun ShortcutItem(
                 modifier = Modifier.size(28.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
         }
     }
 }
