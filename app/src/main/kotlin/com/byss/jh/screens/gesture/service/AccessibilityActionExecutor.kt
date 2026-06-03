@@ -20,6 +20,9 @@ import com.byss.jh.data.gesture.gestureDataStore
 import com.byss.jh.data.gesture.saveExpandPanelShortcut
 import com.byss.jh.data.permission.PermissionMonitor
 import com.byss.jh.data.permission.PermissionType
+import com.byss.jh.screens.gesture.service.expandpanel.ExpandPanelPermissionCallback
+import com.byss.jh.screens.gesture.service.expandpanel.ExpandPanelViewManager
+import com.byss.jh.screens.gesture.service.expandpanel.sendMediaKeyEvent
 import com.byss.jh.screens.settings.themeModeFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
