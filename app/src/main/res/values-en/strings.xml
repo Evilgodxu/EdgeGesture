@@ -175,7 +175,6 @@
     <string name="launch_block_kill_target_desc">Kill target app process immediately after blocking</string>
     <string name="launch_block_allow_kill_system_title">Allow Kill System Apps</string>
     <string name="launch_block_allow_kill_system_desc">Warning: Killing system apps may cause instability</string>
-    <string name="system_app_warning">Warning: Illegal program is a system app (%s)</string>
     <string name="launch_block_rules_title">Block Rules</string>
     <string name="launch_block_rules_count">%d rules</string>
     <string name="launch_block_add_rule">Add Rule</string>

@@ -58,3 +58,14 @@ suspend fun Context.resetExpandPanelShortcuts() = withContext(Dispatchers.IO) {
         }
     }
 }
+
+// 清理指定包名的快捷方式（应用卸载时调用）
+suspend fun Context.clearExpandPanelShortcut(packageName: String) = withContext(Dispatchers.IO) {
+    gestureDataStore.edit { prefs ->
+        ExpandPanelSettingsKeys.ALL_KEYS.forEach { key ->
+            if (prefs[key] == packageName) {
+                prefs.minusAssign(key)
+            }
+        }
+    }
+}

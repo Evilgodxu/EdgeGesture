@@ -262,7 +262,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                 // 执行拦截：切换应用或返回桌面
                 if (isLauncherSystemApp && launcherPackage != null) {
                     performGlobalAction(GLOBAL_ACTION_HOME)
-                    showSystemAppWarning(launcherPackage)
                 } else if (launcherPackage != null && launcherPackage != packageName) {
                     actionExecutor.performAction(GestureAction.LAST_APP, settings)
                 } else {
@@ -304,24 +303,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                 lastLaunchTime = System.currentTimeMillis()
             )
             updateLaunchBlockRule(updatedRule)
-        }
-    }
-
-    // 显示系统应用警告提示
-    private fun showSystemAppWarning(packageName: String) {
-        val appName = try {
-            val appInfo = packageManager.getApplicationInfo(packageName, 0)
-            packageManager.getApplicationLabel(appInfo).toString()
-        } catch (_: Exception) {
-            packageName
-        }
-
-        Handler(Looper.getMainLooper()).post {
-            android.widget.Toast.makeText(
-                this,
-                getString(R.string.system_app_warning, appName),
-                android.widget.Toast.LENGTH_LONG
-            ).show()
         }
     }
 

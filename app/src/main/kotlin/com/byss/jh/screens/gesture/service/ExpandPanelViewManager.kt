@@ -669,16 +669,7 @@ private fun ShortcutItem(
     onLongClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val viewConfiguration = LocalViewConfiguration.current
     var appIcon by remember { mutableStateOf<android.graphics.drawable.Drawable?>(null) }
-
-    // 自定义长按时间为 300 毫秒
-    val customViewConfiguration = remember(viewConfiguration) {
-        object : ViewConfiguration by viewConfiguration {
-            override val longPressTimeoutMillis: Long
-                get() = 300L
-        }
-    }
 
     LaunchedEffect(packageName) {
         appIcon = if (packageName != null) {
@@ -692,31 +683,28 @@ private fun ShortcutItem(
         }
     }
 
-    CompositionLocalProvider(LocalViewConfiguration provides customViewConfiguration) {
-        Box(
-            modifier = Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(
-                    if (packageName != null) {
-                        androidx.compose.ui.graphics.Color.Transparent
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    }
+    Box(
+        modifier = Modifier
+            .size(56.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                if (packageName != null) {
+                    androidx.compose.ui.graphics.Color.Transparent
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                }
+            )
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { onClick() },
+                    onLongPress = { onLongClick() }
                 )
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onTap = { onClick() },
-                        onLongPress = { onLongClick() }
-                    )
-                },
-            contentAlignment = Alignment.Center
-        ) {
+            },
+        contentAlignment = Alignment.Center
+    ) {
         if (appIcon != null) {
             Image(
-                painter = BitmapPainter(
-                    appIcon!!.toBitmap().asImageBitmap()
-                ),
+                painter = BitmapPainter(appIcon!!.toBitmap().asImageBitmap()),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize()
             )
@@ -727,7 +715,6 @@ private fun ShortcutItem(
                 modifier = Modifier.size(28.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
         }
     }
 }

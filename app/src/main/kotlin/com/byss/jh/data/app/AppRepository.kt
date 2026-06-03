@@ -6,7 +6,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
+import com.byss.jh.data.gesture.clearExpandPanelShortcut
 import com.byss.jh.data.gesture.initBlacklistIfNeeded
+import com.byss.jh.data.gesture.removeFromAppSwitchBlacklist
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -74,8 +76,8 @@ class AppRepository private constructor(private val context: Context) {
         }
     }
 
-    // 完整初始化：加载缓存并触发后台扫描（需要权限）
-    // 应在用户同意隐私政策后调用
+    // 完整初始化：加载缓存并触发后台扫描（需要 QUERY_ALL_PACKAGES 权限）
+    // 应在获取权限后调用，如 GestureSettingsViewModel 中权限监控回调
     fun initializeWithScan() {
         if (!isInitialized) {
             initializeFromCache()
@@ -158,8 +160,62 @@ class AppRepository private constructor(private val context: Context) {
         return getAppByPackageName(packageName)?.appName ?: packageName
     }
 
+    // 应用变更广播接收器
+    private val appChangeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val action = intent?.action ?: return
+            val packageName = intent.data?.schemeSpecificPart ?: return
+
+            when (action) {
+                Intent.ACTION_PACKAGE_ADDED -> {
+                    // 新应用安装，延迟后刷新
+                    scope.launch {
+                        kotlinx.coroutines.delay(500)
+                        refreshAppsIfPermitted()
+                    }
+                }
+                Intent.ACTION_PACKAGE_REMOVED -> {
+                    // 应用卸载，立即从缓存中移除并清理相关数据
+                    scope.launch {
+                        removeAppFromCache(packageName)
+                        cleanupUninstalledApp(packageName)
+                    }
+                }
+                Intent.ACTION_PACKAGE_REPLACED -> {
+                    // 应用更新，刷新缓存
+                    scope.launch {
+                        kotlinx.coroutines.delay(500)
+                        refreshAppsIfPermitted()
+                    }
+                }
+            }
+        }
+    }
+
+    // 从缓存中移除指定应用
+    private suspend fun removeAppFromCache(packageName: String) {
+        mutex.withLock {
+            val currentApps = _appsFlow.value.toMutableList()
+            val removed = currentApps.removeAll { it.packageName == packageName }
+            if (removed) {
+                _appsFlow.value = currentApps
+                cacheManager.saveAppsToCache(currentApps)
+            }
+        }
+    }
+
+    // 清理已卸载应用的相关数据（黑名单、扩展面板快捷方式）
+    private suspend fun cleanupUninstalledApp(packageName: String) {
+        withContext(Dispatchers.IO) {
+            // 从应用切换黑名单中移除
+            context.removeFromAppSwitchBlacklist(setOf(packageName))
+            // 清理扩展面板快捷方式
+            context.clearExpandPanelShortcut(packageName)
+        }
+    }
+
     // 注册应用安装/卸载监听
-    private fun registerAppChangeReceiver() {
+    fun registerAppChangeReceiver() {
         if (isReceiverRegistered) return
         isReceiverRegistered = true
 
@@ -170,22 +226,19 @@ class AppRepository private constructor(private val context: Context) {
             addDataScheme("package")
         }
 
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                // 应用变更时延迟刷新缓存
-                scope.launch {
-                    kotlinx.coroutines.delay(1000)
-                    refreshAppsIfPermitted()
-                }
-            }
-        }
-
         ContextCompat.registerReceiver(
             context,
-            receiver,
+            appChangeReceiver,
             filter,
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
+    }
+
+    // 注销广播接收器
+    fun unregisterAppChangeReceiver() {
+        if (!isReceiverRegistered) return
+        isReceiverRegistered = false
+        context.unregisterReceiver(appChangeReceiver)
     }
 }
 
