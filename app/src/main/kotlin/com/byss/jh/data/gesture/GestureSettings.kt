@@ -488,12 +488,16 @@ suspend fun Context.removeFromAppSwitchBlacklist(packageNames: Set<String>) = wi
     }
 }
 
-// 初始化黑名单，将系统应用加入黑名单
-// systemApps 参数可选，如果不传则从系统获取
-suspend fun Context.initBlacklistIfNeeded(systemApps: Set<String>? = null) = withContext(Dispatchers.IO) {
+// 初始化黑名单，将所有系统应用（包括无入口的）和本应用加入黑名单
+// 注意：黑名单包含所有系统应用，但应用切换列表只显示有入口的应用
+suspend fun Context.initBlacklistIfNeeded(launcherApps: Set<String>? = null) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         if (prefs[GestureSettingsKeys.BLACKLIST_INITIALIZED] != true) {
-            val apps = systemApps ?: getSystemAppPackages()
+            // 获取所有系统应用（包括无入口的）
+            val allSystemApps = getSystemAppPackages()
+            val apps = allSystemApps.toMutableSet()
+            // 将本应用加入黑名单
+            apps.add(packageName)
             prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] = apps
             prefs[GestureSettingsKeys.BLACKLIST_INITIALIZED] = true
         }
@@ -513,9 +517,7 @@ private fun Context.getSystemAppPackages(): Set<String> {
     for (app in installedApps) {
         if (app.flags and ApplicationInfo.FLAG_SYSTEM != 0 ||
             app.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP != 0) {
-            if (app.packageName != this.packageName) {
-                systemApps.add(app.packageName)
-            }
+            systemApps.add(app.packageName)
         }
     }
     return systemApps

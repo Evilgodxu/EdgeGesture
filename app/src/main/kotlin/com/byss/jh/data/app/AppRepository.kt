@@ -96,14 +96,11 @@ class AppRepository private constructor(private val context: Context) {
     }
 
     // 有条件地初始化黑名单：有权限时才初始化
+    // 黑名单包含所有系统应用（包括无入口的），但应用列表只显示有入口的应用
     private suspend fun initBlacklistIfPermitted() {
         if (!hasQueryPermission()) return
-        val apps = _appsFlow.value
-        if (apps.isEmpty()) return
-        val systemApps = apps.filter { it.isSystemApp }.map { it.packageName }.toSet()
-        if (systemApps.isNotEmpty()) {
-            context.initBlacklistIfNeeded(systemApps)
-        }
+        // 直接初始化黑名单，内部会获取所有系统应用
+        context.initBlacklistIfNeeded()
     }
 
     // 条件刷新：有权限时才扫描
@@ -127,9 +124,9 @@ class AppRepository private constructor(private val context: Context) {
                 val apps = cacheManager.quickScanApps()
                 _appsFlow.value = apps
                 cacheManager.saveAppsToCache(apps)
-                // 应用列表扫描完成后，初始化黑名单（将系统应用加入黑名单）
-                val systemApps = apps.filter { it.isSystemApp }.map { it.packageName }.toSet()
-                context.initBlacklistIfNeeded(systemApps)
+                // 应用列表扫描完成后，初始化黑名单
+                // 黑名单包含所有系统应用（包括无入口的），但应用列表只显示有入口的应用
+                context.initBlacklistIfNeeded()
             } finally {
                 _isLoading.value = false
             }

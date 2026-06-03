@@ -105,7 +105,6 @@ class AppCacheManager(private val context: Context) {
             )
         }
             .distinctBy { it.packageName }
-            .filter { it.packageName != context.packageName }
             .sortedWith(compareBy({ !it.isSystemApp }, { it.appName }))
     }
 }
