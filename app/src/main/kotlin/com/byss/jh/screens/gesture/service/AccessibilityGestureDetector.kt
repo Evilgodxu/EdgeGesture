@@ -75,23 +75,14 @@ class AccessibilityGestureDetector(
                     val absDeltaX = abs(deltaX)
                     val absDeltaY = abs(deltaY)
 
-                    if (!isLongPressTriggered) {
-                            isSwipeStarted = true
-                            swipeDirection = when {
-                                absDeltaY > absDeltaX -> {
-                                    if (deltaY > 0) SwipeDirection.DOWN else SwipeDirection.UP
-                                }
-                                else -> {
-                                    if (deltaX > 0) SwipeDirection.RIGHT else SwipeDirection.LEFT
-                                }
+                    if (!isLongPressTriggered && !isSwipeStarted) {
+                        isSwipeStarted = true
+                        swipeDirection = when {
+                            absDeltaY > absDeltaX -> {
+                                if (deltaY > 0) SwipeDirection.DOWN else SwipeDirection.UP
                             }
-
-                        if (isLongPressTriggered) {
-                            swipeDirection?.let { direction ->
-                                val action = resolveAction(position, segmentIndex, direction, true, settingsProvider())
-                                if (action != GestureAction.NONE) {
-                                    callback.onSwipeAction(action)
-                                }
+                            else -> {
+                                if (deltaX > 0) SwipeDirection.RIGHT else SwipeDirection.LEFT
                             }
                         }
                     }

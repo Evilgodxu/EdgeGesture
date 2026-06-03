@@ -1,15 +1,18 @@
 package com.byss.jh.data.shizuku
 
+import android.content.ComponentName
 import android.content.Context
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.os.Build
+import android.os.IBinder
+import android.util.Log
+import com.byss.jh.service.ICommandService
+import com.byss.jh.service.CommandUserService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuProvider
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 // Shizuku 状态
 sealed class ShizukuState {
@@ -22,10 +25,30 @@ sealed class ShizukuState {
 
 object ShizukuManager {
 
+    private const val TAG = "ShizukuManager"
+
     private val _state = MutableStateFlow<ShizukuState>(ShizukuState.NotRunning)
     val state: StateFlow<ShizukuState> = _state.asStateFlow()
 
     private var permissionListener: Shizuku.OnRequestPermissionResultListener? = null
+
+    // UserService 连接
+    private var commandService: ICommandService? = null
+    private var isServiceBinding = false
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            commandService = ICommandService.Stub.asInterface(service)
+            isServiceBinding = false
+            Log.i(TAG, "CommandService connected")
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            commandService = null
+            isServiceBinding = false
+            Log.i(TAG, "CommandService disconnected")
+        }
+    }
 
     fun init(context: Context) {
         // 检查 Shizuku 是否安装
@@ -37,14 +60,20 @@ object ShizukuManager {
         // 添加 Binder 接收监听
         Shizuku.addBinderReceivedListener {
             updateState()
+            // Binder 可用时自动绑定 UserService
+            bindUserService()
         }
 
         Shizuku.addBinderDeadListener {
             _state.value = ShizukuState.NotRunning
+            commandService = null
         }
 
         // 初始状态检查
         updateState()
+        if (Shizuku.pingBinder()) {
+            bindUserService()
+        }
     }
 
     fun addPermissionListener(listener: Shizuku.OnRequestPermissionResultListener) {
@@ -97,41 +126,74 @@ object ShizukuManager {
                 Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
     }
 
-    // 通过 Shizuku 执行 shell 命令
-    fun executeCommand(command: String): Result<String> {
-        return try {
-            val process = Shizuku.newProcess(
-                arrayOf("sh", "-c", command),
-                null,
-                null
-            )
+    // 绑定 UserService
+    private fun bindUserService() {
+        if (commandService != null || isServiceBinding) return
+        if (!isAvailable()) return
 
-            val output = StringBuilder()
-            val error = StringBuilder()
-
-            BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
-                reader.lineSequence().forEach { output.appendLine(it) }
-            }
-
-            BufferedReader(InputStreamReader(process.errorStream)).use { reader ->
-                reader.lineSequence().forEach { error.appendLine(it) }
-            }
-
-            val exitCode = process.waitFor()
-
-            if (exitCode == 0) {
-                Result.success(output.toString())
-            } else {
-                Result.failure(Exception("Exit code: $exitCode, Error: $error"))
-            }
+        isServiceBinding = true
+        try {
+            val args = CommandUserService.createServiceArgs()
+            Shizuku.bindUserService(args, serviceConnection)
         } catch (e: Exception) {
-            Result.failure(e)
+            Log.e(TAG, "Failed to bind UserService", e)
+            isServiceBinding = false
+        }
+    }
+
+    // 解绑 UserService
+    fun unbindUserService() {
+        if (commandService != null) {
+            try {
+                Shizuku.unbindUserService(
+                    CommandUserService.createServiceArgs(),
+                    serviceConnection,
+                    true
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to unbind UserService", e)
+            }
+            commandService = null
+        }
+    }
+
+    // 通过 UserService 执行 shell 命令
+    fun executeCommand(command: String): Result<String> {
+        val service = commandService
+        return if (service != null && service.isAlive) {
+            try {
+                val result = service.executeCommand(command)
+                Result.success(result)
+            } catch (e: Exception) {
+                Log.e(TAG, "Command execution failed", e)
+                Result.failure(e)
+            }
+        } else {
+            // 服务未连接，尝试绑定
+            bindUserService()
+            Result.failure(IllegalStateException("CommandService not connected"))
         }
     }
 
     // 强制停止应用
     fun forceStopPackage(packageName: String): Result<String> {
-        return executeCommand("am force-stop $packageName")
+        val service = commandService
+        return if (service != null && service.isAlive) {
+            try {
+                val success = service.forceStopPackage(packageName)
+                if (success) {
+                    Result.success("Package $packageName force stopped")
+                } else {
+                    Result.failure(Exception("Failed to force stop package"))
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Force stop failed", e)
+                Result.failure(e)
+            }
+        } else {
+            bindUserService()
+            Result.failure(IllegalStateException("CommandService not connected"))
+        }
     }
 
     private fun isShizukuInstalled(context: Context): Boolean {

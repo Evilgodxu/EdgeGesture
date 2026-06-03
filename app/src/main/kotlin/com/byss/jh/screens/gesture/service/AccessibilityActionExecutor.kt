@@ -47,6 +47,11 @@ class AccessibilityActionExecutor(
     // 等待权限监控任务
     private var writeSettingsMonitorJob: kotlinx.coroutines.Job? = null
 
+    // 缓存黑名单避免频繁读取 DataStore
+    private var cachedBlacklist: Set<String>? = null
+    private var lastBlacklistCacheTime: Long = 0
+    private val blacklistCacheValidityMs = 5000L // 5秒缓存有效期
+
     fun performAction(action: GestureAction, settings: GestureSettingsState) {
         if (action == GestureAction.NONE) return
         vibrate(settings)
@@ -243,12 +248,31 @@ class AccessibilityActionExecutor(
     }
 
     private fun getBlacklistSync(): Set<String> {
+        // 检查缓存是否有效
+        val now = System.currentTimeMillis()
+        cachedBlacklist?.let { cached ->
+            if (now - lastBlacklistCacheTime < blacklistCacheValidityMs) {
+                return cached
+            }
+        }
+
+        // 缓存无效或不存在，从 DataStore 读取
         return try {
             val prefs = runBlocking { (service as Context).gestureDataStore.data.first() }
-            prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] ?: emptySet()
+            val blacklist = prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] ?: emptySet()
+            // 更新缓存
+            cachedBlacklist = blacklist
+            lastBlacklistCacheTime = now
+            blacklist
         } catch (_: Exception) {
             emptySet()
         }
+    }
+
+    // 清除黑名单缓存，在设置变更时调用
+    fun invalidateBlacklistCache() {
+        cachedBlacklist = null
+        lastBlacklistCacheTime = 0
     }
 
     private fun launchApp(packageName: String): Boolean {
