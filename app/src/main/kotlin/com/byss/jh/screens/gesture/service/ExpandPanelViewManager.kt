@@ -9,11 +9,18 @@ import android.media.AudioManager
 import android.provider.Settings
 import android.view.Gravity
 import android.view.WindowManager
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -358,43 +365,75 @@ private fun ExpandPanelContent(
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 12.dp)
     ) {
-        if (isAppPickerMode) {
-            AppPickerScreen(
-                onAppSelected = { packageName ->
-                    onShortcutSet(selectedIndex, packageName)
-                    isAppPickerMode = false
-                    selectedIndex = -1
-                },
-                onCancel = {
-                    isAppPickerMode = false
-                    selectedIndex = -1
+        AnimatedContent(
+            targetState = isAppPickerMode,
+            transitionSpec = {
+                if (targetState) {
+                    // 进入应用选择器：从右向左滑入 + 淡入
+                    (slideInHorizontally(
+                        initialOffsetX = { fullWidth -> fullWidth },
+                        animationSpec = tween(durationMillis = 300)
+                    ) + fadeIn(animationSpec = tween(durationMillis = 300))).togetherWith(
+                        slideOutHorizontally(
+                            targetOffsetX = { fullWidth -> -fullWidth / 3 },
+                            animationSpec = tween(durationMillis = 300)
+                        ) + fadeOut(animationSpec = tween(durationMillis = 250))
+                    )
+                } else {
+                    // 返回主界面：从左向右滑入 + 淡入
+                    (slideInHorizontally(
+                        initialOffsetX = { fullWidth -> -fullWidth / 3 },
+                        animationSpec = tween(durationMillis = 300)
+                    ) + fadeIn(animationSpec = tween(durationMillis = 300))).togetherWith(
+                        slideOutHorizontally(
+                            targetOffsetX = { fullWidth -> fullWidth },
+                            animationSpec = tween(durationMillis = 300)
+                        ) + fadeOut(animationSpec = tween(durationMillis = 250))
+                    )
                 }
-            )
-        } else {
-            VerticalSlidersSection()
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            ShortcutsGrid(
-                shortcuts = shortcuts,
-                onShortcutSet = { index, packageName ->
-                    if (packageName == null) {
-                        selectedIndex = index
-                        isAppPickerMode = true
-                    } else {
-                        onShortcutSet(index, packageName)
+            },
+            label = "AppPickerTransition"
+        ) { pickerMode ->
+            if (pickerMode) {
+                AppPickerScreen(
+                    onAppSelected = { packageName ->
+                        onShortcutSet(selectedIndex, packageName)
+                        isAppPickerMode = false
+                        selectedIndex = -1
+                    },
+                    onCancel = {
+                        isAppPickerMode = false
+                        selectedIndex = -1
                     }
-                },
-                onLaunchApp = { packageName, index ->
-                    val launched = launchApp(context, packageName)
-                    if (launched) {
-                        onDismiss()
-                    } else {
-                        selectedIndex = index
-                        isAppPickerMode = true
-                    }
+                )
+            } else {
+                Column {
+                    VerticalSlidersSection()
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    ShortcutsGrid(
+                        shortcuts = shortcuts,
+                        onShortcutSet = { index, packageName ->
+                            if (packageName == null) {
+                                selectedIndex = index
+                                isAppPickerMode = true
+                            } else {
+                                onShortcutSet(index, packageName)
+                            }
+                        },
+                        onLaunchApp = { packageName, index ->
+                            val launched = launchApp(context, packageName)
+                            if (launched) {
+                                onDismiss()
+                            } else {
+                                selectedIndex = index
+                                isAppPickerMode = true
+                            }
+                        }
+                    )
                 }
-            )
+            }
         }
     }
 }
