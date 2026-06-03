@@ -12,15 +12,19 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -322,66 +326,140 @@ private fun GestureSettingsContent(
     onShowActionDialog: (androidx.datastore.preferences.core.Preferences.Key<String>, GestureAction) -> Unit
 ) {
     val context = LocalContext.current
+    // 判断是否使用双列布局：横屏或大屏幕设备
+    val useTwoPaneLayout = windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
 
-    Column(
-        modifier = modifier.verticalScroll(rememberScrollState())
-    ) {
-        // 无障碍权限未开启时显示警告卡片
-        if (!uiState.isAccessibilityEnabled) {
-            Card(
+    if (useTwoPaneLayout) {
+        // 双列布局：左侧开关，右侧手势设置
+        Row(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            // 左侧列：警告卡片、权限卡片、开关组件
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clickable { onShowAccessibilityDialog() },
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.accessibility_permission_required),
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = stringResource(R.string.accessibility_permission_desc),
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        fontSize = 12.sp
-                    )
-                }
+                GestureSettingsSwitchesColumn(
+                    uiState = uiState,
+                    settings = settings,
+                    viewModel = viewModel,
+                    activity = activity,
+                    notificationPermissionLauncher = notificationPermissionLauncher,
+                    onShowAccessibilityDialog = onShowAccessibilityDialog
+                )
+            }
+
+            // 右侧列：手势设置折叠组件
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+            ) {
+                GestureSettingsExpandableColumn(
+                    settings = settings,
+                    viewModel = viewModel,
+                    onShowActionDialog = onShowActionDialog
+                )
             }
         }
-
-        // 权限状态卡片 - 所有权限授予后自动隐藏
-        AnimatedVisibility(
-            visible = !uiState.allPermissionsGranted,
-            enter = expandVertically(),
-            exit = shrinkVertically()
+    } else {
+        // 单列布局：原始垂直布局
+        Column(
+            modifier = modifier.verticalScroll(rememberScrollState())
         ) {
-            PermissionStatusCard(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                overlayGranted = uiState.overlayGranted,
-                notificationGranted = uiState.notificationGranted,
-                batteryOptimized = uiState.batteryOptimized,
-                usageStatsGranted = uiState.usageStatsGranted,
-                queryAllPackagesGranted = uiState.queryAllPackagesGranted,
-                onRequestOverlay = {
-                    if (activity != null) {
-                        viewModel.startPermissionMonitor(PermissionType.OVERLAY, activity)
-                    }
-                    val intent = Intent(
-                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        "package:${context.packageName}".toUri()
-                    )
-                    activity?.startActivity(intent)
-                },
-                onRequestNotification = {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    }
-                },
+            GestureSettingsSwitchesColumn(
+                uiState = uiState,
+                settings = settings,
+                viewModel = viewModel,
+                activity = activity,
+                notificationPermissionLauncher = notificationPermissionLauncher,
+                onShowAccessibilityDialog = onShowAccessibilityDialog
+            )
+
+            AnimatedVisibility(visible = settings.gestureEnabled) {
+                GestureSettingsExpandableColumn(
+                    settings = settings,
+                    viewModel = viewModel,
+                    onShowActionDialog = onShowActionDialog
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GestureSettingsSwitchesColumn(
+    uiState: GestureSettingsUiState,
+    settings: GestureSettingsState,
+    viewModel: GestureSettingsViewModel,
+    activity: Activity?,
+    notificationPermissionLauncher: androidx.activity.result.ActivityResultLauncher<String>,
+    onShowAccessibilityDialog: () -> Unit
+) {
+    val context = LocalContext.current
+
+    // 无障碍权限未开启时显示警告卡片
+    if (!uiState.isAccessibilityEnabled) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+                .clickable { onShowAccessibilityDialog() },
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.accessibility_permission_required),
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = stringResource(R.string.accessibility_permission_desc),
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    fontSize = 12.sp
+                )
+            }
+        }
+    }
+
+    // 权限状态卡片 - 所有权限授予后自动隐藏
+    AnimatedVisibility(
+        visible = !uiState.allPermissionsGranted,
+        enter = expandVertically(),
+        exit = shrinkVertically()
+    ) {
+        PermissionStatusCard(
+            modifier = Modifier.padding(vertical = 8.dp),
+            overlayGranted = uiState.overlayGranted,
+            notificationGranted = uiState.notificationGranted,
+            batteryOptimized = uiState.batteryOptimized,
+            usageStatsGranted = uiState.usageStatsGranted,
+            queryAllPackagesGranted = uiState.queryAllPackagesGranted,
+            onRequestOverlay = {
+                if (activity != null) {
+                    viewModel.startPermissionMonitor(PermissionType.OVERLAY, activity)
+                }
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    "package:${context.packageName}".toUri()
+                )
+                activity?.startActivity(intent)
+            },
+            onRequestNotification = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            },
             onRequestBatteryOptimization = {
                 if (activity != null) {
                     viewModel.startPermissionMonitor(PermissionType.BATTERY_OPTIMIZATION, activity)
@@ -400,270 +478,280 @@ private fun GestureSettingsContent(
                 }
                 activity?.startActivity(intent)
             },
-                onRequestQueryAllPackages = {
-                    if (activity != null) {
-                        viewModel.startPermissionMonitor(PermissionType.QUERY_ALL_PACKAGES, activity)
-                    }
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = "package:${context.packageName}".toUri()
-                    }
-                    activity?.startActivity(intent)
+            onRequestQueryAllPackages = {
+                if (activity != null) {
+                    viewModel.startPermissionMonitor(PermissionType.QUERY_ALL_PACKAGES, activity)
+                }
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = "package:${context.packageName}".toUri()
+                }
+                activity?.startActivity(intent)
+            }
+        )
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    // 边缘手势功能总开关，依赖无障碍权限
+    GestureSettingsSwitchItem(
+        title = stringResource(R.string.gesture_enable_title),
+        subtitle = stringResource(R.string.gesture_enable_desc),
+        checked = settings.gestureEnabled,
+        onCheckedChange = { enabled ->
+            if (enabled && !uiState.isAccessibilityEnabled) {
+                onShowAccessibilityDialog()
+                return@GestureSettingsSwitchItem
+            }
+            viewModel.setGestureEnabled(enabled)
+            if (enabled) {
+                EdgeGestureAccessibilityService.startGesture(context)
+            } else {
+                EdgeGestureAccessibilityService.stopGesture(context)
+            }
+        }
+    )
+
+    AnimatedVisibility(visible = settings.gestureEnabled) {
+        Column {
+            // 隐藏边缘触摸区域可视化反馈
+            GestureSettingsSwitchItem(
+                title = stringResource(R.string.gesture_hide_overlay_title),
+                subtitle = stringResource(R.string.gesture_hide_overlay_desc),
+                checked = settings.hideOverlay,
+                onCheckedChange = { hide ->
+                    viewModel.setHideOverlay(hide)
+                }
+            )
+
+            // 从最近任务列表中隐藏本应用
+            GestureSettingsSwitchItem(
+                title = stringResource(R.string.gesture_hide_recents_title),
+                subtitle = stringResource(R.string.gesture_hide_recents_desc),
+                checked = settings.hideFromRecents,
+                onCheckedChange = { hide ->
+                    viewModel.setHideFromRecents(hide)
+                }
+            )
+
+            // 避免输入法遮挡
+            GestureSettingsSwitchItem(
+                title = stringResource(R.string.gesture_avoid_keyboard_overlap_title),
+                subtitle = stringResource(R.string.gesture_avoid_keyboard_overlap_desc),
+                checked = settings.avoidKeyboardOverlap,
+                onCheckedChange = { enabled ->
+                    viewModel.setAvoidKeyboardOverlap(enabled)
                 }
             )
         }
+    }
+}
 
-        Spacer(modifier = Modifier.height(8.dp))
+@Composable
+private fun GestureSettingsExpandableColumn(
+    settings: GestureSettingsState,
+    viewModel: GestureSettingsViewModel,
+    onShowActionDialog: (androidx.datastore.preferences.core.Preferences.Key<String>, GestureAction) -> Unit
+) {
+    if (!settings.gestureEnabled) return
 
-        // 边缘手势功能总开关，依赖无障碍权限
-        GestureSettingsSwitchItem(
-            title = stringResource(R.string.gesture_enable_title),
-            subtitle = stringResource(R.string.gesture_enable_desc),
-            checked = settings.gestureEnabled,
-            onCheckedChange = { enabled ->
-                if (enabled && !uiState.isAccessibilityEnabled) {
-                    onShowAccessibilityDialog()
-                    return@GestureSettingsSwitchItem
-                }
-                viewModel.setGestureEnabled(enabled)
-                if (enabled) {
-                    EdgeGestureAccessibilityService.startGesture(context)
-                } else {
-                    EdgeGestureAccessibilityService.stopGesture(context)
-                }
-            }
+    Column {
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+        // 左侧边缘触发区域尺寸配置
+        EdgeSettingsSection(
+            title = stringResource(R.string.gesture_left_edge_title),
+            width = settings.leftEdgeWidth,
+            heightPercent = settings.leftEdgeHeightPercent,
+            positionPercent = settings.leftEdgePositionPercent,
+            segmentCount = settings.leftSegmentCount,
+            onWidthChange = { viewModel.setLeftEdgeWidth(it) },
+            onHeightPercentChange = { viewModel.setLeftEdgeHeightPercent(it) },
+            onPositionPercentChange = { viewModel.setLeftEdgePositionPercent(it) },
+            onSegmentCountChange = { viewModel.setLeftSegmentCount(it) }
         )
 
-        AnimatedVisibility(visible = settings.gestureEnabled) {
-            Column {
-                // 隐藏边缘触摸区域可视化反馈
-                GestureSettingsSwitchItem(
-                    title = stringResource(R.string.gesture_hide_overlay_title),
-                    subtitle = stringResource(R.string.gesture_hide_overlay_desc),
-                    checked = settings.hideOverlay,
-                    onCheckedChange = { hide ->
-                        viewModel.setHideOverlay(hide)
-                    }
-                )
+        // 左侧边缘第1段手势动作配置
+        EdgeGestureSection(
+            title = stringResource(R.string.gesture_left_edge_actions),
+            gestures = listOf(
+                Triple(stringResource(R.string.gesture_swipe_right), settings.leftEdge.swipeRight, GestureSettingsKeys.LEFT_SWIPE_RIGHT),
+                Triple(stringResource(R.string.gesture_swipe_right_long), settings.leftEdge.swipeRightLong, GestureSettingsKeys.LEFT_SWIPE_RIGHT_LONG),
+                Triple(stringResource(R.string.gesture_swipe_up), settings.leftEdge.swipeUp, GestureSettingsKeys.LEFT_SWIPE_UP),
+                Triple(stringResource(R.string.gesture_swipe_up_long), settings.leftEdge.swipeUpLong, GestureSettingsKeys.LEFT_SWIPE_UP_LONG),
+                Triple(stringResource(R.string.gesture_swipe_down), settings.leftEdge.swipeDown, GestureSettingsKeys.LEFT_SWIPE_DOWN),
+                Triple(stringResource(R.string.gesture_swipe_down_long), settings.leftEdge.swipeDownLong, GestureSettingsKeys.LEFT_SWIPE_DOWN_LONG)
+            ),
+            disabledGestures = setOf(stringResource(R.string.gesture_swipe_left), stringResource(R.string.gesture_swipe_left_long)),
+            onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
+            getActionDisplayName = { getActionDisplayName(it) }
+        )
 
-                // 从最近任务列表中隐藏本应用
-                GestureSettingsSwitchItem(
-                    title = stringResource(R.string.gesture_hide_recents_title),
-                    subtitle = stringResource(R.string.gesture_hide_recents_desc),
-                    checked = settings.hideFromRecents,
-                    onCheckedChange = { hide ->
-                        viewModel.setHideFromRecents(hide)
-                    }
-                )
+        // 左侧边缘第2段手势动作配置（当段数>=2时显示）
+        if (settings.leftSegmentCount >= 2) {
+            EdgeGestureSection(
+                title = stringResource(R.string.gesture_left_edge_actions_2),
+                gestures = listOf(
+                    Triple(stringResource(R.string.gesture_swipe_right), settings.leftEdgeSegment2.swipeRight, GestureSettingsKeys.LEFT_2_SWIPE_RIGHT),
+                    Triple(stringResource(R.string.gesture_swipe_right_long), settings.leftEdgeSegment2.swipeRightLong, GestureSettingsKeys.LEFT_2_SWIPE_RIGHT_LONG),
+                    Triple(stringResource(R.string.gesture_swipe_up), settings.leftEdgeSegment2.swipeUp, GestureSettingsKeys.LEFT_2_SWIPE_UP),
+                    Triple(stringResource(R.string.gesture_swipe_up_long), settings.leftEdgeSegment2.swipeUpLong, GestureSettingsKeys.LEFT_2_SWIPE_UP_LONG),
+                    Triple(stringResource(R.string.gesture_swipe_down), settings.leftEdgeSegment2.swipeDown, GestureSettingsKeys.LEFT_2_SWIPE_DOWN),
+                    Triple(stringResource(R.string.gesture_swipe_down_long), settings.leftEdgeSegment2.swipeDownLong, GestureSettingsKeys.LEFT_2_SWIPE_DOWN_LONG)
+                ),
+                disabledGestures = setOf(stringResource(R.string.gesture_swipe_left), stringResource(R.string.gesture_swipe_left_long)),
+                onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
+                getActionDisplayName = { getActionDisplayName(it) }
+            )
+        }
 
-                // 避免输入法遮挡
-                GestureSettingsSwitchItem(
-                    title = stringResource(R.string.gesture_avoid_keyboard_overlap_title),
-                    subtitle = stringResource(R.string.gesture_avoid_keyboard_overlap_desc),
-                    checked = settings.avoidKeyboardOverlap,
-                    onCheckedChange = { enabled ->
-                        viewModel.setAvoidKeyboardOverlap(enabled)
-                    }
-                )
+        // 左侧边缘第3段手势动作配置（当段数>=3时显示）
+        if (settings.leftSegmentCount >= 3) {
+            EdgeGestureSection(
+                title = stringResource(R.string.gesture_left_edge_actions_3),
+                gestures = listOf(
+                    Triple(stringResource(R.string.gesture_swipe_right), settings.leftEdgeSegment3.swipeRight, GestureSettingsKeys.LEFT_3_SWIPE_RIGHT),
+                    Triple(stringResource(R.string.gesture_swipe_right_long), settings.leftEdgeSegment3.swipeRightLong, GestureSettingsKeys.LEFT_3_SWIPE_RIGHT_LONG),
+                    Triple(stringResource(R.string.gesture_swipe_up), settings.leftEdgeSegment3.swipeUp, GestureSettingsKeys.LEFT_3_SWIPE_UP),
+                    Triple(stringResource(R.string.gesture_swipe_up_long), settings.leftEdgeSegment3.swipeUpLong, GestureSettingsKeys.LEFT_3_SWIPE_UP_LONG),
+                    Triple(stringResource(R.string.gesture_swipe_down), settings.leftEdgeSegment3.swipeDown, GestureSettingsKeys.LEFT_3_SWIPE_DOWN),
+                    Triple(stringResource(R.string.gesture_swipe_down_long), settings.leftEdgeSegment3.swipeDownLong, GestureSettingsKeys.LEFT_3_SWIPE_DOWN_LONG)
+                ),
+                disabledGestures = setOf(stringResource(R.string.gesture_swipe_left), stringResource(R.string.gesture_swipe_left_long)),
+                onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
+                getActionDisplayName = { getActionDisplayName(it) }
+            )
+        }
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                // 左侧边缘触发区域尺寸配置
-                EdgeSettingsSection(
-                    title = stringResource(R.string.gesture_left_edge_title),
-                    width = settings.leftEdgeWidth,
-                    heightPercent = settings.leftEdgeHeightPercent,
-                    positionPercent = settings.leftEdgePositionPercent,
-                    segmentCount = settings.leftSegmentCount,
-                    onWidthChange = { viewModel.setLeftEdgeWidth(it) },
-                    onHeightPercentChange = { viewModel.setLeftEdgeHeightPercent(it) },
-                    onPositionPercentChange = { viewModel.setLeftEdgePositionPercent(it) },
-                    onSegmentCountChange = { viewModel.setLeftSegmentCount(it) }
-                )
+        // 右侧边缘触发区域尺寸配置
+        EdgeSettingsSection(
+            title = stringResource(R.string.gesture_right_edge_title),
+            width = settings.rightEdgeWidth,
+            heightPercent = settings.rightEdgeHeightPercent,
+            positionPercent = settings.rightEdgePositionPercent,
+            segmentCount = settings.rightSegmentCount,
+            onWidthChange = { viewModel.setRightEdgeWidth(it) },
+            onHeightPercentChange = { viewModel.setRightEdgeHeightPercent(it) },
+            onPositionPercentChange = { viewModel.setRightEdgePositionPercent(it) },
+            onSegmentCountChange = { viewModel.setRightSegmentCount(it) }
+        )
 
-                // 左侧边缘第1段手势动作配置
-                EdgeGestureSection(
-                    title = stringResource(R.string.gesture_left_edge_actions),
-                    gestures = listOf(
-                        Triple(stringResource(R.string.gesture_swipe_right), settings.leftEdge.swipeRight, GestureSettingsKeys.LEFT_SWIPE_RIGHT),
-                        Triple(stringResource(R.string.gesture_swipe_right_long), settings.leftEdge.swipeRightLong, GestureSettingsKeys.LEFT_SWIPE_RIGHT_LONG),
-                        Triple(stringResource(R.string.gesture_swipe_up), settings.leftEdge.swipeUp, GestureSettingsKeys.LEFT_SWIPE_UP),
-                        Triple(stringResource(R.string.gesture_swipe_up_long), settings.leftEdge.swipeUpLong, GestureSettingsKeys.LEFT_SWIPE_UP_LONG),
-                        Triple(stringResource(R.string.gesture_swipe_down), settings.leftEdge.swipeDown, GestureSettingsKeys.LEFT_SWIPE_DOWN),
-                        Triple(stringResource(R.string.gesture_swipe_down_long), settings.leftEdge.swipeDownLong, GestureSettingsKeys.LEFT_SWIPE_DOWN_LONG)
-                    ),
-                    disabledGestures = setOf(stringResource(R.string.gesture_swipe_left), stringResource(R.string.gesture_swipe_left_long)),
-                    onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
-                    getActionDisplayName = { getActionDisplayName(it) }
-                )
+        // 右侧边缘第1段手势动作配置
+        EdgeGestureSection(
+            title = stringResource(R.string.gesture_right_edge_actions),
+            gestures = listOf(
+                Triple(stringResource(R.string.gesture_swipe_left), settings.rightEdge.swipeLeft, GestureSettingsKeys.RIGHT_SWIPE_LEFT),
+                Triple(stringResource(R.string.gesture_swipe_left_long), settings.rightEdge.swipeLeftLong, GestureSettingsKeys.RIGHT_SWIPE_LEFT_LONG),
+                Triple(stringResource(R.string.gesture_swipe_up), settings.rightEdge.swipeUp, GestureSettingsKeys.RIGHT_SWIPE_UP),
+                Triple(stringResource(R.string.gesture_swipe_up_long), settings.rightEdge.swipeUpLong, GestureSettingsKeys.RIGHT_SWIPE_UP_LONG),
+                Triple(stringResource(R.string.gesture_swipe_down), settings.rightEdge.swipeDown, GestureSettingsKeys.RIGHT_SWIPE_DOWN),
+                Triple(stringResource(R.string.gesture_swipe_down_long), settings.rightEdge.swipeDownLong, GestureSettingsKeys.RIGHT_SWIPE_DOWN_LONG)
+            ),
+            disabledGestures = setOf(stringResource(R.string.gesture_swipe_right), stringResource(R.string.gesture_swipe_right_long)),
+            onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
+            getActionDisplayName = { getActionDisplayName(it) }
+        )
 
-                // 左侧边缘第2段手势动作配置（当段数>=2时显示）
-                if (settings.leftSegmentCount >= 2) {
-                    EdgeGestureSection(
-                        title = stringResource(R.string.gesture_left_edge_actions_2),
-                        gestures = listOf(
-                            Triple(stringResource(R.string.gesture_swipe_right), settings.leftEdgeSegment2.swipeRight, GestureSettingsKeys.LEFT_2_SWIPE_RIGHT),
-                            Triple(stringResource(R.string.gesture_swipe_right_long), settings.leftEdgeSegment2.swipeRightLong, GestureSettingsKeys.LEFT_2_SWIPE_RIGHT_LONG),
-                            Triple(stringResource(R.string.gesture_swipe_up), settings.leftEdgeSegment2.swipeUp, GestureSettingsKeys.LEFT_2_SWIPE_UP),
-                            Triple(stringResource(R.string.gesture_swipe_up_long), settings.leftEdgeSegment2.swipeUpLong, GestureSettingsKeys.LEFT_2_SWIPE_UP_LONG),
-                            Triple(stringResource(R.string.gesture_swipe_down), settings.leftEdgeSegment2.swipeDown, GestureSettingsKeys.LEFT_2_SWIPE_DOWN),
-                            Triple(stringResource(R.string.gesture_swipe_down_long), settings.leftEdgeSegment2.swipeDownLong, GestureSettingsKeys.LEFT_2_SWIPE_DOWN_LONG)
-                        ),
-                        disabledGestures = setOf(stringResource(R.string.gesture_swipe_left), stringResource(R.string.gesture_swipe_left_long)),
-                        onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
-                        getActionDisplayName = { getActionDisplayName(it) }
-                    )
-                }
+        // 右侧边缘第2段手势动作配置（当段数>=2时显示）
+        if (settings.rightSegmentCount >= 2) {
+            EdgeGestureSection(
+                title = stringResource(R.string.gesture_right_edge_actions_2),
+                gestures = listOf(
+                    Triple(stringResource(R.string.gesture_swipe_left), settings.rightEdgeSegment2.swipeLeft, GestureSettingsKeys.RIGHT_2_SWIPE_LEFT),
+                    Triple(stringResource(R.string.gesture_swipe_left_long), settings.rightEdgeSegment2.swipeLeftLong, GestureSettingsKeys.RIGHT_2_SWIPE_LEFT_LONG),
+                    Triple(stringResource(R.string.gesture_swipe_up), settings.rightEdgeSegment2.swipeUp, GestureSettingsKeys.RIGHT_2_SWIPE_UP),
+                    Triple(stringResource(R.string.gesture_swipe_up_long), settings.rightEdgeSegment2.swipeUpLong, GestureSettingsKeys.RIGHT_2_SWIPE_UP_LONG),
+                    Triple(stringResource(R.string.gesture_swipe_down), settings.rightEdgeSegment2.swipeDown, GestureSettingsKeys.RIGHT_2_SWIPE_DOWN),
+                    Triple(stringResource(R.string.gesture_swipe_down_long), settings.rightEdgeSegment2.swipeDownLong, GestureSettingsKeys.RIGHT_2_SWIPE_DOWN_LONG)
+                ),
+                disabledGestures = setOf(stringResource(R.string.gesture_swipe_right), stringResource(R.string.gesture_swipe_right_long)),
+                onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
+                getActionDisplayName = { getActionDisplayName(it) }
+            )
+        }
 
-                // 左侧边缘第3段手势动作配置（当段数>=3时显示）
-                if (settings.leftSegmentCount >= 3) {
-                    EdgeGestureSection(
-                        title = stringResource(R.string.gesture_left_edge_actions_3),
-                        gestures = listOf(
-                            Triple(stringResource(R.string.gesture_swipe_right), settings.leftEdgeSegment3.swipeRight, GestureSettingsKeys.LEFT_3_SWIPE_RIGHT),
-                            Triple(stringResource(R.string.gesture_swipe_right_long), settings.leftEdgeSegment3.swipeRightLong, GestureSettingsKeys.LEFT_3_SWIPE_RIGHT_LONG),
-                            Triple(stringResource(R.string.gesture_swipe_up), settings.leftEdgeSegment3.swipeUp, GestureSettingsKeys.LEFT_3_SWIPE_UP),
-                            Triple(stringResource(R.string.gesture_swipe_up_long), settings.leftEdgeSegment3.swipeUpLong, GestureSettingsKeys.LEFT_3_SWIPE_UP_LONG),
-                            Triple(stringResource(R.string.gesture_swipe_down), settings.leftEdgeSegment3.swipeDown, GestureSettingsKeys.LEFT_3_SWIPE_DOWN),
-                            Triple(stringResource(R.string.gesture_swipe_down_long), settings.leftEdgeSegment3.swipeDownLong, GestureSettingsKeys.LEFT_3_SWIPE_DOWN_LONG)
-                        ),
-                        disabledGestures = setOf(stringResource(R.string.gesture_swipe_left), stringResource(R.string.gesture_swipe_left_long)),
-                        onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
-                        getActionDisplayName = { getActionDisplayName(it) }
-                    )
-                }
+        // 右侧边缘第3段手势动作配置（当段数>=3时显示）
+        if (settings.rightSegmentCount >= 3) {
+            EdgeGestureSection(
+                title = stringResource(R.string.gesture_right_edge_actions_3),
+                gestures = listOf(
+                    Triple(stringResource(R.string.gesture_swipe_left), settings.rightEdgeSegment3.swipeLeft, GestureSettingsKeys.RIGHT_3_SWIPE_LEFT),
+                    Triple(stringResource(R.string.gesture_swipe_left_long), settings.rightEdgeSegment3.swipeLeftLong, GestureSettingsKeys.RIGHT_3_SWIPE_LEFT_LONG),
+                    Triple(stringResource(R.string.gesture_swipe_up), settings.rightEdgeSegment3.swipeUp, GestureSettingsKeys.RIGHT_3_SWIPE_UP),
+                    Triple(stringResource(R.string.gesture_swipe_up_long), settings.rightEdgeSegment3.swipeUpLong, GestureSettingsKeys.RIGHT_3_SWIPE_UP_LONG),
+                    Triple(stringResource(R.string.gesture_swipe_down), settings.rightEdgeSegment3.swipeDown, GestureSettingsKeys.RIGHT_3_SWIPE_DOWN),
+                    Triple(stringResource(R.string.gesture_swipe_down_long), settings.rightEdgeSegment3.swipeDownLong, GestureSettingsKeys.RIGHT_3_SWIPE_DOWN_LONG)
+                ),
+                disabledGestures = setOf(stringResource(R.string.gesture_swipe_right), stringResource(R.string.gesture_swipe_right_long)),
+                onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
+                getActionDisplayName = { getActionDisplayName(it) }
+            )
+        }
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                // 右侧边缘触发区域尺寸配置
-                EdgeSettingsSection(
-                    title = stringResource(R.string.gesture_right_edge_title),
-                    width = settings.rightEdgeWidth,
-                    heightPercent = settings.rightEdgeHeightPercent,
-                    positionPercent = settings.rightEdgePositionPercent,
-                    segmentCount = settings.rightSegmentCount,
-                    onWidthChange = { viewModel.setRightEdgeWidth(it) },
-                    onHeightPercentChange = { viewModel.setRightEdgeHeightPercent(it) },
-                    onPositionPercentChange = { viewModel.setRightEdgePositionPercent(it) },
-                    onSegmentCountChange = { viewModel.setRightSegmentCount(it) }
-                )
+        // 底部边缘触发区域尺寸配置
+        BottomEdgeSettingsSection(
+            title = stringResource(R.string.gesture_bottom_edge_title),
+            height = settings.bottomEdgeHeight,
+            widthPercent = settings.bottomEdgeWidthPercent,
+            segmentCount = settings.bottomSegmentCount,
+            onHeightChange = { viewModel.setBottomEdgeHeight(it) },
+            onWidthPercentChange = { viewModel.setBottomEdgeWidthPercent(it) },
+            onSegmentCountChange = { viewModel.setBottomSegmentCount(it) }
+        )
 
-                // 右侧边缘第1段手势动作配置
-                EdgeGestureSection(
-                    title = stringResource(R.string.gesture_right_edge_actions),
-                    gestures = listOf(
-                        Triple(stringResource(R.string.gesture_swipe_left), settings.rightEdge.swipeLeft, GestureSettingsKeys.RIGHT_SWIPE_LEFT),
-                        Triple(stringResource(R.string.gesture_swipe_left_long), settings.rightEdge.swipeLeftLong, GestureSettingsKeys.RIGHT_SWIPE_LEFT_LONG),
-                        Triple(stringResource(R.string.gesture_swipe_up), settings.rightEdge.swipeUp, GestureSettingsKeys.RIGHT_SWIPE_UP),
-                        Triple(stringResource(R.string.gesture_swipe_up_long), settings.rightEdge.swipeUpLong, GestureSettingsKeys.RIGHT_SWIPE_UP_LONG),
-                        Triple(stringResource(R.string.gesture_swipe_down), settings.rightEdge.swipeDown, GestureSettingsKeys.RIGHT_SWIPE_DOWN),
-                        Triple(stringResource(R.string.gesture_swipe_down_long), settings.rightEdge.swipeDownLong, GestureSettingsKeys.RIGHT_SWIPE_DOWN_LONG)
-                    ),
-                    disabledGestures = setOf(stringResource(R.string.gesture_swipe_right), stringResource(R.string.gesture_swipe_right_long)),
-                    onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
-                    getActionDisplayName = { getActionDisplayName(it) }
-                )
+        // 底部边缘第1段手势动作配置
+        EdgeGestureSection(
+            title = stringResource(R.string.gesture_bottom_edge_actions),
+            gestures = listOf(
+                Triple(stringResource(R.string.gesture_swipe_up), settings.bottomEdge.swipeUp, GestureSettingsKeys.BOTTOM_SWIPE_UP),
+                Triple(stringResource(R.string.gesture_swipe_up_long), settings.bottomEdge.swipeUpLong, GestureSettingsKeys.BOTTOM_SWIPE_UP_LONG),
+                Triple(stringResource(R.string.gesture_swipe_left), settings.bottomEdge.swipeLeft, GestureSettingsKeys.BOTTOM_SWIPE_LEFT),
+                Triple(stringResource(R.string.gesture_swipe_left_long), settings.bottomEdge.swipeLeftLong, GestureSettingsKeys.BOTTOM_SWIPE_LEFT_LONG),
+                Triple(stringResource(R.string.gesture_swipe_right), settings.bottomEdge.swipeRight, GestureSettingsKeys.BOTTOM_SWIPE_RIGHT),
+                Triple(stringResource(R.string.gesture_swipe_right_long), settings.bottomEdge.swipeRightLong, GestureSettingsKeys.BOTTOM_SWIPE_RIGHT_LONG)
+            ),
+            disabledGestures = setOf(stringResource(R.string.gesture_swipe_down), stringResource(R.string.gesture_swipe_down_long)),
+            onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
+            getActionDisplayName = { getActionDisplayName(it) }
+        )
 
-                // 右侧边缘第2段手势动作配置（当段数>=2时显示）
-                if (settings.rightSegmentCount >= 2) {
-                    EdgeGestureSection(
-                        title = stringResource(R.string.gesture_right_edge_actions_2),
-                        gestures = listOf(
-                            Triple(stringResource(R.string.gesture_swipe_left), settings.rightEdgeSegment2.swipeLeft, GestureSettingsKeys.RIGHT_2_SWIPE_LEFT),
-                            Triple(stringResource(R.string.gesture_swipe_left_long), settings.rightEdgeSegment2.swipeLeftLong, GestureSettingsKeys.RIGHT_2_SWIPE_LEFT_LONG),
-                            Triple(stringResource(R.string.gesture_swipe_up), settings.rightEdgeSegment2.swipeUp, GestureSettingsKeys.RIGHT_2_SWIPE_UP),
-                            Triple(stringResource(R.string.gesture_swipe_up_long), settings.rightEdgeSegment2.swipeUpLong, GestureSettingsKeys.RIGHT_2_SWIPE_UP_LONG),
-                            Triple(stringResource(R.string.gesture_swipe_down), settings.rightEdgeSegment2.swipeDown, GestureSettingsKeys.RIGHT_2_SWIPE_DOWN),
-                            Triple(stringResource(R.string.gesture_swipe_down_long), settings.rightEdgeSegment2.swipeDownLong, GestureSettingsKeys.RIGHT_2_SWIPE_DOWN_LONG)
-                        ),
-                        disabledGestures = setOf(stringResource(R.string.gesture_swipe_right), stringResource(R.string.gesture_swipe_right_long)),
-                        onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
-                        getActionDisplayName = { getActionDisplayName(it) }
-                    )
-                }
+        // 底部边缘第2段手势动作配置（当段数>=2时显示）
+        if (settings.bottomSegmentCount >= 2) {
+            EdgeGestureSection(
+                title = stringResource(R.string.gesture_bottom_edge_actions_2),
+                gestures = listOf(
+                    Triple(stringResource(R.string.gesture_swipe_up), settings.bottomEdgeSegment2.swipeUp, GestureSettingsKeys.BOTTOM_2_SWIPE_UP),
+                    Triple(stringResource(R.string.gesture_swipe_up_long), settings.bottomEdgeSegment2.swipeUpLong, GestureSettingsKeys.BOTTOM_2_SWIPE_UP_LONG),
+                    Triple(stringResource(R.string.gesture_swipe_left), settings.bottomEdgeSegment2.swipeLeft, GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT),
+                    Triple(stringResource(R.string.gesture_swipe_left_long), settings.bottomEdgeSegment2.swipeLeftLong, GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT_LONG),
+                    Triple(stringResource(R.string.gesture_swipe_right), settings.bottomEdgeSegment2.swipeRight, GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT),
+                    Triple(stringResource(R.string.gesture_swipe_right_long), settings.bottomEdgeSegment2.swipeRightLong, GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT_LONG)
+                ),
+                disabledGestures = setOf(stringResource(R.string.gesture_swipe_down), stringResource(R.string.gesture_swipe_down_long)),
+                onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
+                getActionDisplayName = { getActionDisplayName(it) }
+            )
+        }
 
-                // 右侧边缘第3段手势动作配置（当段数>=3时显示）
-                if (settings.rightSegmentCount >= 3) {
-                    EdgeGestureSection(
-                        title = stringResource(R.string.gesture_right_edge_actions_3),
-                        gestures = listOf(
-                            Triple(stringResource(R.string.gesture_swipe_left), settings.rightEdgeSegment3.swipeLeft, GestureSettingsKeys.RIGHT_3_SWIPE_LEFT),
-                            Triple(stringResource(R.string.gesture_swipe_left_long), settings.rightEdgeSegment3.swipeLeftLong, GestureSettingsKeys.RIGHT_3_SWIPE_LEFT_LONG),
-                            Triple(stringResource(R.string.gesture_swipe_up), settings.rightEdgeSegment3.swipeUp, GestureSettingsKeys.RIGHT_3_SWIPE_UP),
-                            Triple(stringResource(R.string.gesture_swipe_up_long), settings.rightEdgeSegment3.swipeUpLong, GestureSettingsKeys.RIGHT_3_SWIPE_UP_LONG),
-                            Triple(stringResource(R.string.gesture_swipe_down), settings.rightEdgeSegment3.swipeDown, GestureSettingsKeys.RIGHT_3_SWIPE_DOWN),
-                            Triple(stringResource(R.string.gesture_swipe_down_long), settings.rightEdgeSegment3.swipeDownLong, GestureSettingsKeys.RIGHT_3_SWIPE_DOWN_LONG)
-                        ),
-                        disabledGestures = setOf(stringResource(R.string.gesture_swipe_right), stringResource(R.string.gesture_swipe_right_long)),
-                        onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
-                        getActionDisplayName = { getActionDisplayName(it) }
-                    )
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-                // 底部边缘触发区域尺寸配置
-                BottomEdgeSettingsSection(
-                    title = stringResource(R.string.gesture_bottom_edge_title),
-                    height = settings.bottomEdgeHeight,
-                    widthPercent = settings.bottomEdgeWidthPercent,
-                    segmentCount = settings.bottomSegmentCount,
-                    onHeightChange = { viewModel.setBottomEdgeHeight(it) },
-                    onWidthPercentChange = { viewModel.setBottomEdgeWidthPercent(it) },
-                    onSegmentCountChange = { viewModel.setBottomSegmentCount(it) }
-                )
-
-                // 底部边缘第1段手势动作配置
-                EdgeGestureSection(
-                    title = stringResource(R.string.gesture_bottom_edge_actions),
-                    gestures = listOf(
-                        Triple(stringResource(R.string.gesture_swipe_up), settings.bottomEdge.swipeUp, GestureSettingsKeys.BOTTOM_SWIPE_UP),
-                        Triple(stringResource(R.string.gesture_swipe_up_long), settings.bottomEdge.swipeUpLong, GestureSettingsKeys.BOTTOM_SWIPE_UP_LONG),
-                        Triple(stringResource(R.string.gesture_swipe_left), settings.bottomEdge.swipeLeft, GestureSettingsKeys.BOTTOM_SWIPE_LEFT),
-                        Triple(stringResource(R.string.gesture_swipe_left_long), settings.bottomEdge.swipeLeftLong, GestureSettingsKeys.BOTTOM_SWIPE_LEFT_LONG),
-                        Triple(stringResource(R.string.gesture_swipe_right), settings.bottomEdge.swipeRight, GestureSettingsKeys.BOTTOM_SWIPE_RIGHT),
-                        Triple(stringResource(R.string.gesture_swipe_right_long), settings.bottomEdge.swipeRightLong, GestureSettingsKeys.BOTTOM_SWIPE_RIGHT_LONG)
-                    ),
-                    disabledGestures = setOf(stringResource(R.string.gesture_swipe_down), stringResource(R.string.gesture_swipe_down_long)),
-                    onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
-                    getActionDisplayName = { getActionDisplayName(it) }
-                )
-
-                // 底部边缘第2段手势动作配置（当段数>=2时显示）
-                if (settings.bottomSegmentCount >= 2) {
-                    EdgeGestureSection(
-                        title = stringResource(R.string.gesture_bottom_edge_actions_2),
-                        gestures = listOf(
-                            Triple(stringResource(R.string.gesture_swipe_up), settings.bottomEdgeSegment2.swipeUp, GestureSettingsKeys.BOTTOM_2_SWIPE_UP),
-                            Triple(stringResource(R.string.gesture_swipe_up_long), settings.bottomEdgeSegment2.swipeUpLong, GestureSettingsKeys.BOTTOM_2_SWIPE_UP_LONG),
-                            Triple(stringResource(R.string.gesture_swipe_left), settings.bottomEdgeSegment2.swipeLeft, GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT),
-                            Triple(stringResource(R.string.gesture_swipe_left_long), settings.bottomEdgeSegment2.swipeLeftLong, GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT_LONG),
-                            Triple(stringResource(R.string.gesture_swipe_right), settings.bottomEdgeSegment2.swipeRight, GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT),
-                            Triple(stringResource(R.string.gesture_swipe_right_long), settings.bottomEdgeSegment2.swipeRightLong, GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT_LONG)
-                        ),
-                        disabledGestures = setOf(stringResource(R.string.gesture_swipe_down), stringResource(R.string.gesture_swipe_down_long)),
-                        onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
-                        getActionDisplayName = { getActionDisplayName(it) }
-                    )
-                }
-
-                // 底部边缘第3段手势动作配置（当段数>=3时显示）
-                if (settings.bottomSegmentCount >= 3) {
-                    EdgeGestureSection(
-                        title = stringResource(R.string.gesture_bottom_edge_actions_3),
-                        gestures = listOf(
-                            Triple(stringResource(R.string.gesture_swipe_up), settings.bottomEdgeSegment3.swipeUp, GestureSettingsKeys.BOTTOM_3_SWIPE_UP),
-                            Triple(stringResource(R.string.gesture_swipe_up_long), settings.bottomEdgeSegment3.swipeUpLong, GestureSettingsKeys.BOTTOM_3_SWIPE_UP_LONG),
-                            Triple(stringResource(R.string.gesture_swipe_left), settings.bottomEdgeSegment3.swipeLeft, GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT),
-                            Triple(stringResource(R.string.gesture_swipe_left_long), settings.bottomEdgeSegment3.swipeLeftLong, GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT_LONG),
-                            Triple(stringResource(R.string.gesture_swipe_right), settings.bottomEdgeSegment3.swipeRight, GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT),
-                            Triple(stringResource(R.string.gesture_swipe_right_long), settings.bottomEdgeSegment3.swipeRightLong, GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT_LONG)
-                        ),
-                        disabledGestures = setOf(stringResource(R.string.gesture_swipe_down), stringResource(R.string.gesture_swipe_down_long)),
-                        onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
-                        getActionDisplayName = { getActionDisplayName(it) }
-                    )
-                }
-            }
+        // 底部边缘第3段手势动作配置（当段数>=3时显示）
+        if (settings.bottomSegmentCount >= 3) {
+            EdgeGestureSection(
+                title = stringResource(R.string.gesture_bottom_edge_actions_3),
+                gestures = listOf(
+                    Triple(stringResource(R.string.gesture_swipe_up), settings.bottomEdgeSegment3.swipeUp, GestureSettingsKeys.BOTTOM_3_SWIPE_UP),
+                    Triple(stringResource(R.string.gesture_swipe_up_long), settings.bottomEdgeSegment3.swipeUpLong, GestureSettingsKeys.BOTTOM_3_SWIPE_UP_LONG),
+                    Triple(stringResource(R.string.gesture_swipe_left), settings.bottomEdgeSegment3.swipeLeft, GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT),
+                    Triple(stringResource(R.string.gesture_swipe_left_long), settings.bottomEdgeSegment3.swipeLeftLong, GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT_LONG),
+                    Triple(stringResource(R.string.gesture_swipe_right), settings.bottomEdgeSegment3.swipeRight, GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT),
+                    Triple(stringResource(R.string.gesture_swipe_right_long), settings.bottomEdgeSegment3.swipeRightLong, GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT_LONG)
+                ),
+                disabledGestures = setOf(stringResource(R.string.gesture_swipe_down), stringResource(R.string.gesture_swipe_down_long)),
+                onGestureClick = { _, action, key -> onShowActionDialog(key, action) },
+                getActionDisplayName = { getActionDisplayName(it) }
+            )
         }
     }
 }

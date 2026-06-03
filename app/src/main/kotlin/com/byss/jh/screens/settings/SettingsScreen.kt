@@ -324,6 +324,32 @@ fun SettingsScreen(
 
                     // 更多设置项
                     SettingsSection(title = stringResource(R.string.settings_more)) {
+                        SettingsSwitchItem(
+                            icon = Icons.Default.Security,
+                            title = stringResource(R.string.settings_launch_block_title),
+                            subtitle = stringResource(R.string.settings_launch_block_desc),
+                            checked = uiState.launchBlockEnabled,
+                            onCheckedChange = { enabled ->
+                                viewModel.setLaunchBlockEnabled(enabled)
+                            }
+                        )
+                        if (uiState.launchBlockEnabled) {
+                            LaunchBlockRulesList(
+                                rules = uiState.launchBlockRules,
+                                onAddRule = {
+                                    editingLaunchBlockRule = null
+                                    showLaunchBlockRuleDialog = true
+                                },
+                                onEditRule = { rule ->
+                                    editingLaunchBlockRule = rule
+                                    showLaunchBlockRuleDialog = true
+                                },
+                                onDeleteRule = { ruleId ->
+                                    viewModel.removeLaunchBlockRule(ruleId)
+                                },
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
                         SettingsClickableItem(
                             icon = Icons.Default.Favorite,
                             title = stringResource(R.string.settings_donate),
