@@ -16,6 +16,7 @@ import com.byss.jh.data.gesture.GestureAction
 import com.byss.jh.data.gesture.GestureSettingsState
 import com.byss.jh.data.gesture.gestureDataStore
 import com.byss.jh.data.gesture.gestureSettingsFlow
+import com.byss.jh.data.app.AppRepository
 import com.byss.jh.data.gesture.initBlacklistIfNeeded
 import com.byss.jh.data.gesture.toGestureSettingsState
 import com.byss.jh.data.launchblock.LaunchBlockRule
@@ -126,6 +127,13 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                     edgeViewManager.showEdgeViews(settings)
                 }
             }
+        }
+
+        // 预加载应用列表到缓存，确保扩展面板的应用选择器能快速显示
+        // 在后台线程执行，避免阻塞服务启动
+        serviceScope.launch {
+            val repository = AppRepository.getInstance(this@EdgeGestureAccessibilityService)
+            repository.initializeWithScan()
         }
     }
 

@@ -1,8 +1,12 @@
 package com.byss.jh.screens.gesture.service.expandpanel
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,12 +23,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.pointer.pointerInput
@@ -100,7 +108,7 @@ private fun ShortcutItem(
     onLongClick: () -> Unit
 ) {
     val context = LocalContext.current
-    
+
     // 从缓存数据异步加载图标，避免阻塞主线程
     val appIcon = remember(packageName, appInfo) {
         if (packageName != null) {
@@ -114,21 +122,40 @@ private fun ShortcutItem(
         }
     }
 
+    // 长按按压状态管理
+    var isPressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.85f else 1f,
+        animationSpec = tween(durationMillis = 150),
+        label = "press_scale"
+    )
+
     Box(
         modifier = Modifier
             .size(56.dp)
+            .scale(scale)
             .clip(RoundedCornerShape(12.dp))
             .background(
-                if (packageName != null) {
-                    androidx.compose.ui.graphics.Color.Transparent
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
+                when {
+                    isPressed -> MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                    packageName != null -> androidx.compose.ui.graphics.Color.Transparent
+                    else -> MaterialTheme.colorScheme.surfaceVariant
                 }
             )
             .pointerInput(Unit) {
                 detectTapGestures(
+                    onPress = {
+                        // 按下时触发按压效果
+                        isPressed = true
+                        tryAwaitRelease()
+                        // 释放时取消按压效果
+                        isPressed = false
+                    },
                     onTap = { onClick() },
-                    onLongPress = { onLongClick() }
+                    onLongPress = {
+                        isPressed = false
+                        onLongClick()
+                    }
                 )
             },
         contentAlignment = Alignment.Center

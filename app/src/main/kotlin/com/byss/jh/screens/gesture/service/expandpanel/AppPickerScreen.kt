@@ -17,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -55,6 +56,7 @@ fun AppPickerScreen(
 
     // 从缓存仓库获取应用列表，实现即时显示
     val apps by appRepository.appsFlow.collectAsState()
+    val isLoading by appRepository.isLoading.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
 
     // 本地搜索过滤，无需重新扫描
@@ -113,13 +115,35 @@ fun AppPickerScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(280.dp)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            filteredApps.forEach { app ->
-                AppPickerItem(
-                    app = app,
-                    onClick = { onAppSelected(app.packageName) }
-                )
+            // 显示加载指示器或应用列表
+            if (isLoading && apps.isEmpty()) {
+                // 首次加载时显示加载指示器
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(80.dp))
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(R.string.expand_panel_loading_apps),
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                filteredApps.forEach { app ->
+                    AppPickerItem(
+                        app = app,
+                        onClick = { onAppSelected(app.packageName) }
+                    )
+                }
             }
         }
     }

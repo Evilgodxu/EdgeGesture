@@ -6,6 +6,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -178,23 +180,31 @@ private fun VerticalSliderItem(
             // 背景轨道
             val trackColor = MaterialTheme.colorScheme.surfaceVariant
             val fillColor = MaterialTheme.colorScheme.primary
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val cornerRadiusPx = 12.dp.toPx()
-                drawRoundRect(
-                    color = trackColor,
-                    topLeft = Offset.Zero,
-                    size = Size(size.width, size.height),
-                    cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx)
-                )
-
-                // 填充进度
-                val fillHeight = size.height * currentValue
-                drawRoundRect(
-                    color = fillColor,
-                    topLeft = Offset(0f, size.height - fillHeight),
-                    size = Size(size.width, fillHeight),
-                    cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx)
-                )
+            val cornerRadius = 12.dp
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(cornerRadius))
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val cornerRadiusPx = cornerRadius.toPx()
+                    // 绘制背景
+                    drawRoundRect(
+                        color = trackColor,
+                        topLeft = Offset.Zero,
+                        size = Size(size.width, size.height),
+                        cornerRadius = CornerRadius(cornerRadiusPx, cornerRadiusPx)
+                    )
+                    // 绘制填充进度
+                    val fillHeight = size.height * currentValue
+                    if (fillHeight > 0) {
+                        drawRect(
+                            color = fillColor,
+                            topLeft = Offset(0f, size.height - fillHeight),
+                            size = Size(size.width, fillHeight)
+                        )
+                    }
+                }
             }
 
             // 中心点位置对应的颜色（数值文本在中心）

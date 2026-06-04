@@ -152,6 +152,7 @@
     <string name="expand_panel_app_picker_title">Select App</string>
     <string name="expand_panel_cancel">Cancel</string>
     <string name="expand_panel_search_hint">Search by name or package</string>
+    <string name="expand_panel_loading_apps">Loading apps…</string>
 
     <!-- ==================== Launch Block ==================== -->
     <string name="settings_launch_block_title">Launch Block</string>
