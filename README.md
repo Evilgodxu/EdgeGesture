@@ -30,7 +30,7 @@
 ### 应用设置
 
 - **主题切换**：浅色/深色/跟随系统
-- **语言切换**：简体中文/English（运行时切换）
+- **语言切换**：简体中文/English/跟随系统
 - **应用黑名单**：切换应用时忽略黑名单应用
 - **震动反馈**：滑动操作时触发震动效果
 - **隐藏显示**：隐藏手势触发区域
@@ -39,11 +39,11 @@
 
 ### 启动拦截
 
-- **拦截规则**：基于 Shizuku 权限拦截指定应用的启动行为
+- **拦截规则**：基于 无障碍服务 + Shizuku 权限拦截指定应用的启动行为
 - **延迟拦截**：支持立即/延时/延迟三种拦截模式
-- **高频启动检测**：短时间内高频启动时终止启动者进程
-- **进程终止**：拦截后可选择终止被启动应用或启动者进程
-- **系统应用保护**：可选择是否允许终止系统应用
+- **高频启动检测**：短时间内高频启动时终止启动者进程 Shizuku
+- **进程终止**：拦截后可选择终止被启动应用或启动者进程 Shizuku
+- **系统应用保护**：可选择是否允许终止系统应用 Shizuku
 
 ## 技术栈
 
@@ -59,7 +59,6 @@
 | 后台任务 | WorkManager 2.11.2 |
 | 权限框架 | Shizuku 13.1.0 |
 | 序列化 | Kotlin Serialization 1.6.3 |
-| 代码生成 | KSP 2.2.0-2.0.2 |
 | 构建工具 | AGP 9.2.1, Gradle |
 | 许可证 | AGPL-3.0 |
 
@@ -68,8 +67,8 @@
 | 属性 | 值 |
 |------|-----|
 | applicationId | com.byss.jh |
-| versionName | 1.1.0 |
-| versionCode | 1 |
+| versionName | 1.5.0 |
+| versionCode | 5 |
 | compileSdk | 36 (minorApiLevel: 1) |
 | minSdk | 32 (Android 12L) |
 | targetSdk | 36 |
@@ -107,7 +106,7 @@ KEY_PASSWORD=your_key_password
 3. **调整触发区域**：根据使用习惯调整边缘宽度、高度、位置和分段数量
 4. **应用黑名单**：在设置中添加不需要手势的应用
 5. **扩展面板**：配置 8 个常用应用快捷方式，快速启动应用
-6. **启动拦截**（可选）：安装并启动 Shizuku(可选) 后配置拦截规则
+6. **启动拦截**：安装并启动 Shizuku 后配置拦截规则(用于进程终止,可选项不影响拦截机制)
 
 ## 项目结构
 
@@ -157,6 +156,8 @@ app/src/main/kotlin/com/byss/jh/
 │       ├── SettingsScreen.kt
 │       ├── SettingsUiState.kt
 │       └── SettingsViewModel.kt
+├── service/                     # AIDL 服务
+│   └── CommandUserService.kt    # 命令服务
 ├── ui/                          # UI 基础组件
 │   ├── adaptive/               # 自适应布局（WindowSizeClass）
 │   └── theme/                  # 主题配置（Color, Theme, Type）
@@ -172,13 +173,6 @@ app/src/main/kotlin/com/byss/jh/
 - **ViewModel 层**：管理 UI 状态和业务逻辑
 - **数据层**：DataStore 持久化存储用户设置，支持类型安全的数据流
 - **服务层**：AccessibilityService 监听边缘手势和执行系统操作
-
-## 隐私说明
-
-- 本应用使用无障碍服务仅用于检测屏幕边缘触摸事件和执行系统操作
-- 不收集、不上传任何用户数据
-- 所有设置数据仅存储在本地设备
-- 应用切换历史仅保存在内存中，关闭后自动清除
 
 ## 开源协议
 
