@@ -137,7 +137,6 @@ private fun ShortcutItem(
             .clip(RoundedCornerShape(12.dp))
             .background(
                 when {
-                    isPressed -> MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
                     packageName != null -> androidx.compose.ui.graphics.Color.Transparent
                     else -> MaterialTheme.colorScheme.surfaceVariant
                 }
