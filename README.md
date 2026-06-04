@@ -178,6 +178,8 @@ app/src/main/kotlin/com/byss/jh/
 
 本项目采用 [GNU Affero General Public License v3.0](LICENSE) 开源协议。
 
+注意——无论原版还是修改版，您不得将本软件分发到任何平台。此外，未经许可禁止在任何应用商店发布内容。
+
 ```
 Copyright (C) 2024-2025 Evilgodxu (江寒)
 
