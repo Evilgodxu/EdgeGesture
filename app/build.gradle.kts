@@ -16,15 +16,13 @@ if (localPropertiesFile.exists()) {
 android {
     namespace = "com.byss.jh"
     compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
+        version = release(37)
     }
 
     defaultConfig {
         applicationId = "com.byss.jh"
         minSdk = 32
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 5
         versionName = "1.5.0"
 
