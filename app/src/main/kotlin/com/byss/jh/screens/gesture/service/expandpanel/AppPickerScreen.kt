@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Android
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -194,7 +194,7 @@ private fun AppPickerItem(
             )
         } else {
             Icon(
-                imageVector = Icons.Default.MusicNote,
+                imageVector = Icons.Default.Android,
                 contentDescription = null,
                 modifier = Modifier.size(40.dp)
             )
