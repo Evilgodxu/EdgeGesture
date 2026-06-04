@@ -3,18 +3,20 @@ package com.byss.jh.screens.gesture.service.expandpanel
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,6 +48,7 @@ import org.koin.compose.koinInject
 
 // 应用选择器组件
 // 使用 AppRepository 缓存实现即时加载，无需等待扫描
+// 使用 LazyColumn 优化大量应用列表的渲染性能
 @Composable
 fun AppPickerScreen(
     onAppSelected: (String) -> Unit,
@@ -111,21 +114,20 @@ fun AppPickerScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Column(
+        // 使用 LazyColumn 替代 Column + verticalScroll，实现按需加载和复用
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(280.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // 显示加载指示器或应用列表
             if (isLoading && apps.isEmpty()) {
                 // 首次加载时显示加载指示器
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Spacer(modifier = Modifier.height(80.dp))
                     CircularProgressIndicator(
                         modifier = Modifier.size(48.dp),
                         color = MaterialTheme.colorScheme.primary
@@ -138,11 +140,18 @@ fun AppPickerScreen(
                     )
                 }
             } else {
-                filteredApps.forEach { app ->
-                    AppPickerItem(
-                        app = app,
-                        onClick = { onAppSelected(app.packageName) }
-                    )
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    items(
+                        items = filteredApps,
+                        key = { it.packageName } // 使用包名作为 key 优化列表项复用
+                    ) { app ->
+                        AppPickerItem(
+                            app = app,
+                            onClick = { onAppSelected(app.packageName) }
+                        )
+                    }
                 }
             }
         }
@@ -163,17 +172,22 @@ private fun AppPickerItem(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        val icon = remember(app.packageName) {
-            try {
+        // 使用 produceState 实现异步图标加载，避免阻塞主线程
+        val icon by androidx.compose.runtime.produceState<android.graphics.drawable.Drawable?>(
+            initialValue = null,
+            key1 = app.packageName
+        ) {
+            value = try {
                 context.packageManager.getApplicationIcon(app.packageName)
             } catch (_: Exception) {
                 null
             }
         }
+
         if (icon != null) {
             Image(
                 painter = BitmapPainter(
-                    icon.toBitmap().asImageBitmap()
+                    icon!!.toBitmap().asImageBitmap()
                 ),
                 contentDescription = null,
                 modifier = Modifier.size(40.dp)

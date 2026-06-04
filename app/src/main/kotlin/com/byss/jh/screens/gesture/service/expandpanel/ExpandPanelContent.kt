@@ -1,7 +1,8 @@
 package com.byss.jh.screens.gesture.service.expandpanel
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -40,27 +41,34 @@ fun ExpandPanelContent(
         AnimatedContent(
             targetState = isAppPickerMode,
             transitionSpec = {
+                // 使用更轻量的弹簧动画替代 tween，提供更流畅的过渡体验
                 if (targetState) {
                     // 进入应用选择器：从右向左滑入 + 淡入
                     (slideInHorizontally(
                         initialOffsetX = { fullWidth -> fullWidth },
-                        animationSpec = tween(durationMillis = 300)
-                    ) + fadeIn(animationSpec = tween(durationMillis = 300))).togetherWith(
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioLowBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        )
+                    ) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium))).togetherWith(
                         slideOutHorizontally(
-                            targetOffsetX = { fullWidth -> -fullWidth / 3 },
-                            animationSpec = tween(durationMillis = 300)
-                        ) + fadeOut(animationSpec = tween(durationMillis = 250))
+                            targetOffsetX = { fullWidth -> -fullWidth / 4 },
+                            animationSpec = spring(stiffness = Spring.StiffnessMedium)
+                        ) + fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium))
                     )
                 } else {
                     // 返回主界面：从左向右滑入 + 淡入
                     (slideInHorizontally(
-                        initialOffsetX = { fullWidth -> -fullWidth / 3 },
-                        animationSpec = tween(durationMillis = 300)
-                    ) + fadeIn(animationSpec = tween(durationMillis = 300))).togetherWith(
+                        initialOffsetX = { fullWidth -> -fullWidth / 4 },
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioLowBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        )
+                    ) + fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMedium))).togetherWith(
                         slideOutHorizontally(
                             targetOffsetX = { fullWidth -> fullWidth },
-                            animationSpec = tween(durationMillis = 300)
-                        ) + fadeOut(animationSpec = tween(durationMillis = 250))
+                            animationSpec = spring(stiffness = Spring.StiffnessMedium)
+                        ) + fadeOut(animationSpec = spring(stiffness = Spring.StiffnessMedium))
                     )
                 }
             },
