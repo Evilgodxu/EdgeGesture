@@ -2,7 +2,7 @@ package com.byss.jh.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// ==================== 浅色主题配色 ====================
+// 浅色主题配色
 // 主色调
 val md_theme_light_primary = Color(0xFF3F51B5)
 val md_theme_light_onPrimary = Color(0xFFFFFFFF)
@@ -55,7 +55,7 @@ val md_theme_light_surfaceContainer = Color(0xFFF2ECF1)
 val md_theme_light_surfaceContainerHigh = Color(0xFFECE7EC)
 val md_theme_light_surfaceContainerHighest = Color(0xFFE6E1E6)
 
-// ==================== 深色主题配色 ====================
+// 深色主题配色
 // 主色调
 val md_theme_dark_primary = Color(0xFFB1B8DF)
 val md_theme_dark_onPrimary = Color(0xFF1A237E)

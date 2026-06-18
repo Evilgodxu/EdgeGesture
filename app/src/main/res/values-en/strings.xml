@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- ==================== App General ==================== -->
+    <!-- App General -->
     <string name="app_name">Edge Gesture</string>
 
-    <!-- ==================== Settings Screen ==================== -->
+    <!-- Settings Screen -->
     <!-- Page General -->
     <string name="settings_title">Settings</string>
     <string name="settings_back_content_description">Back</string>
@@ -34,7 +34,7 @@
     <string name="settings_vibration_title">Vibration Feedback</string>
     <string name="settings_vibration_desc">Trigger vibration effect during swipe operations</string>
 
-    <!-- ==================== Gesture Settings Screen ==================== -->
+    <!-- Gesture Settings Screen -->
     <!-- Page Title -->
     <string name="gesture_settings_title">Edge Gesture Settings</string>
 
@@ -87,7 +87,7 @@
     <!-- Gesture Action Selection Dialog -->
     <string name="gesture_select_action_title">Select Action</string>
 
-    <!-- ==================== App Blacklist ==================== -->
+    <!-- App Blacklist -->
     <string name="settings_more">More Settings</string>
     <string name="settings_section_gesture">Gesture</string>
     <string name="settings_blacklist_title">App Switch Blacklist</string>
@@ -101,7 +101,7 @@
     <string name="settings_blacklist_go_settings">Go to Settings</string>
     <string name="settings_blacklist_refresh">Refresh List</string>
 
-    <!-- ==================== Edge Dimension Settings ==================== -->
+    <!-- Edge Dimension Settings -->
     <string name="edge_width">Width</string>
     <string name="edge_height">Height</string>
     <string name="edge_height_percent">Height Percent</string>
@@ -120,7 +120,7 @@
     <string name="edge_segment_unit">seg</string>
     <string name="gesture_disabled">Disabled</string>
 
-    <!-- ==================== Permission Requests ==================== -->
+    <!-- Permission Requests -->
     <string name="permission_status_title">Permission Status</string>
     <string name="permission_overlay_title">Overlay Permission</string>
     <string name="permission_overlay_desc">Overlay permission is required to display edge gesture areas</string>
@@ -133,7 +133,7 @@
     <string name="permission_query_packages_title">Query All Packages</string>
     <string name="permission_query_packages_desc">Required to manage app switch blacklist</string>
 
-    <!-- ==================== Accessibility Service ==================== -->
+    <!-- Accessibility Service -->
     <string name="accessibility_service_description">Edge Gesture requires accessibility permission to perform system operations such as back, home, recent tasks, etc.</string>
     <string name="accessibility_permission_required">Accessibility Required</string>
     <string name="accessibility_permission_desc">Edge gesture requires accessibility permission to perform system operations, tap to enable</string>
@@ -142,7 +142,7 @@
     <string name="accessibility_go_settings">Go to Settings</string>
     <string name="accessibility_cancel">Cancel</string>
 
-    <!-- ==================== Expand Panel ==================== -->
+    <!-- Expand Panel -->
     <string name="expand_panel_brightness">Brightness</string>
     <string name="expand_panel_alarm_volume">Alarm Volume</string>
     <string name="expand_panel_ring_volume">Ring Volume</string>
@@ -154,7 +154,7 @@
     <string name="expand_panel_search_hint">Search by name or package</string>
     <string name="expand_panel_loading_apps">Loading apps…</string>
 
-    <!-- ==================== Launch Block ==================== -->
+    <!-- Launch Block -->
     <string name="settings_launch_block_title">Launch Block</string>
     <string name="settings_launch_block_desc">Block specified app launch behavior</string>
     <string name="launch_block_shizuku_not_installed_short">Shizuku Required</string>

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- ==================== 应用通用 ==================== -->
+    <!-- 应用通用 -->
     <string name="app_name">边缘手势</string>
 
-    <!-- ==================== 设置页 (Settings) ==================== -->
+    <!-- 设置页 (Settings) -->
     <!-- 页面通用 -->
     <string name="settings_title">更多设置</string>
     <string name="settings_back_content_description">返回</string>
@@ -34,7 +34,7 @@
     <string name="settings_vibration_title">震动反馈</string>
     <string name="settings_vibration_desc">滑动操作时触发震动效果</string>
 
-    <!-- ==================== 手势设置页 (Gesture Settings) ==================== -->
+    <!-- 手势设置页 (Gesture Settings) -->
     <!-- 页面标题 -->
     <string name="gesture_settings_title">边缘手势设置</string>
 
@@ -98,7 +98,7 @@
     <!-- 手势操作选择对话框 -->
     <string name="gesture_select_action_title">选择操作</string>
 
-    <!-- ==================== 应用黑名单 (App Blacklist) ==================== -->
+    <!-- 应用黑名单 (App Blacklist) -->
     <string name="settings_more">更多设置</string>
     <string name="settings_section_gesture">手势</string>
     <string name="settings_blacklist_title">应用切换黑名单</string>
@@ -112,7 +112,7 @@
     <string name="settings_blacklist_go_settings">前往设置</string>
     <string name="settings_blacklist_refresh">刷新列表</string>
 
-    <!-- ==================== 边缘尺寸设置 (Edge Size) ==================== -->
+    <!-- 边缘尺寸设置 (Edge Size) -->
     <string name="edge_width">宽度</string>
     <string name="edge_height">高度</string>
     <string name="edge_height_percent">高度百分比</string>
@@ -122,7 +122,7 @@
     <string name="edge_segment_unit">段</string>
     <string name="gesture_disabled">禁用</string>
 
-    <!-- ==================== 权限申请 (Permissions) ==================== -->
+    <!-- 权限申请 (Permissions) -->
     <string name="permission_status_title">权限状态</string>
     <string name="permission_overlay_title">悬浮窗权限</string>
     <string name="permission_overlay_desc">需要悬浮窗权限创建边缘手势触发区域</string>
@@ -135,7 +135,7 @@
     <string name="permission_query_packages_title">获取已安装应用列表</string>
     <string name="permission_query_packages_desc">需要获取已安装应用权限来管理应用切换黑名单</string>
 
-    <!-- ==================== 无障碍服务 (Accessibility) ==================== -->
+    <!-- 无障碍服务 (Accessibility) -->
     <string name="accessibility_service_description">边缘手势需要无障碍权限来实现覆盖系统手势操作</string>
     <string name="accessibility_permission_required">需要无障碍权限</string>
     <string name="accessibility_permission_desc">边缘手势需要无障碍权限来执行系统操作，点击前往开启</string>
@@ -144,7 +144,7 @@
     <string name="accessibility_go_settings">前往设置</string>
     <string name="accessibility_cancel">取消</string>
 
-    <!-- ==================== 扩展面板 (Expand Panel) ==================== -->
+    <!-- 扩展面板 (Expand Panel) -->
     <string name="expand_panel_brightness">屏幕亮度</string>
     <string name="expand_panel_alarm_volume">闹钟音量</string>
     <string name="expand_panel_ring_volume">铃声音量</string>
@@ -156,7 +156,7 @@
     <string name="expand_panel_search_hint">搜索应用名称或包名</string>
     <string name="expand_panel_loading_apps">正在加载应用列表…</string>
 
-    <!-- ==================== 启动拦截 (Launch Block) ==================== -->
+    <!-- 启动拦截 (Launch Block) -->
     <string name="settings_launch_block_title">启动拦截</string>
     <string name="settings_launch_block_desc">拦截指定应用的启动行为</string>
     <string name="launch_block_shizuku_not_installed_short">需安装 Shizuku</string>
