@@ -18,6 +18,7 @@ import com.byss.jh.data.gesture.GestureSettingsState
 import com.byss.jh.data.gesture.expandPanelShortcutsFlow
 import com.byss.jh.data.gesture.gestureDataStore
 import com.byss.jh.data.gesture.saveExpandPanelShortcut
+import com.byss.jh.data.gesture.saveExpandPanelShortcutFreeform
 import com.byss.jh.data.permission.PermissionMonitor
 import com.byss.jh.data.permission.PermissionType
 import com.byss.jh.screens.gesture.service.expandpanel.ExpandPanelPermissionCallback
@@ -90,6 +91,11 @@ class AccessibilityActionExecutor(
                     service.saveExpandPanelShortcut(index, packageName)
                 }
             },
+            onFreeformToggle = { index, enabled ->
+                kotlinx.coroutines.runBlocking {
+                    service.saveExpandPanelShortcutFreeform(index, enabled)
+                }
+            },
             onDismiss = {
                 expandPanelViewManager = null
             },
@@ -157,6 +163,11 @@ class AccessibilityActionExecutor(
             onShortcutSet = { index, packageName ->
                 kotlinx.coroutines.runBlocking {
                     service.saveExpandPanelShortcut(index, packageName)
+                }
+            },
+            onFreeformToggle = { index, enabled ->
+                kotlinx.coroutines.runBlocking {
+                    service.saveExpandPanelShortcutFreeform(index, enabled)
                 }
             },
             onDismiss = {

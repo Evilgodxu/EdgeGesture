@@ -37,6 +37,7 @@ fun ExpandPanelOverlay(
     shortcutsFlow: Flow<ExpandPanelShortcutsState>,
     themeModeFlow: Flow<ThemeMode>,
     onShortcutSet: (index: Int, packageName: String?) -> Unit,
+    onFreeformToggle: (Int, Boolean) -> Unit,
     onDismiss: () -> Unit,
     onDismissAnimationEnd: () -> Unit = onDismiss
 ) {
@@ -141,7 +142,9 @@ fun ExpandPanelOverlay(
                 ) {
                     ExpandPanelContent(
                         shortcuts = currentShortcuts.shortcuts,
+                        freeformFlags = currentShortcuts.freeformFlags,
                         onShortcutSet = onShortcutSet,
+                        onFreeformToggle = onFreeformToggle,
                         onDismiss = { dismissWithAnimation() }
                     )
                 }

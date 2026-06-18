@@ -48,3 +48,6 @@
 
 # model 类
 -keep class com.byss.jh.data.gesture.** { *; }
+
+# HiddenApiBypass
+-keep class org.lsposed.hiddenapibypass.** { *; }

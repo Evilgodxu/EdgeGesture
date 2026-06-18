@@ -23,6 +23,7 @@ workmanager = "2.11.2"
 window = "1.5.1"
 material3Adaptive = "1.2.0"
 koin = "4.2.2"
+hiddenApiBypass = "6.1"
 
 [libraries]
 
@@ -62,3 +63,6 @@ kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 # Shizuku
 shizuku-api = { group = "dev.rikka.shizuku", name = "api", version = "13.1.5" }
 shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version = "13.1.5" }
+
+# Hidden API Bypass
+hidden-api-bypass = { group = "org.lsposed.hiddenapibypass", name = "hiddenapibypass", version.ref = "hiddenApiBypass" }

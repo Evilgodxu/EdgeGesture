@@ -4,9 +4,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -23,7 +24,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,13 +47,15 @@ import org.koin.compose.koinInject
 @Composable
 fun ShortcutsGrid(
     shortcuts: List<String?>,
+    freeformFlags: List<Boolean>,
     onShortcutSet: (index: Int, packageName: String?) -> Unit,
     onLaunchApp: (String, Int) -> Unit,
+    onFreeformToggle: (Int, Boolean) -> Unit,
     appRepository: AppRepository = koinInject()
 ) {
     // 从缓存仓库获取应用列表，实现图标预加载
     val apps by appRepository.appsFlow.collectAsState()
-    
+
     // 构建包名到图标的映射，避免重复查询
     val iconMap = remember(apps) {
         apps.associateBy({ it.packageName }, { it })
@@ -80,6 +82,7 @@ fun ShortcutsGrid(
                     ShortcutItem(
                         packageName = packageName,
                         appInfo = packageName?.let { iconMap[it] },
+                        isFreeform = freeformFlags.getOrElse(index) { false },
                         onClick = {
                             if (packageName != null) {
                                 onLaunchApp(packageName, index)
@@ -89,6 +92,9 @@ fun ShortcutsGrid(
                         },
                         onLongClick = {
                             onShortcutSet(index, null)
+                        },
+                        onFreeformToggle = {
+                            onFreeformToggle(index, it)
                         }
                     )
                 }
@@ -104,8 +110,10 @@ fun ShortcutsGrid(
 private fun ShortcutItem(
     packageName: String?,
     appInfo: com.byss.jh.data.app.AppInfo?,
+    isFreeform: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit
+    onLongClick: () -> Unit,
+    onFreeformToggle: (Boolean) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -172,6 +180,40 @@ private fun ShortcutItem(
                 modifier = Modifier.size(28.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+
+        // 已设置应用的快捷方式右上角显示“小”字开关
+        if (packageName != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .offset(x = 4.dp, y = (-4).dp)
+                    .size(18.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(
+                        if (isFreeform) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
+                        }
+                    )
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { onFreeformToggle(!isFreeform) }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "小",
+                    fontSize = 9.sp,
+                    color = if (isFreeform) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
         }
     }
 }

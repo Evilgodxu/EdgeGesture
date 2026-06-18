@@ -30,6 +30,7 @@ class ExpandPanelViewManager(
     private val shortcutsFlow: Flow<ExpandPanelShortcutsState>,
     private val themeModeFlow: Flow<ThemeMode>,
     private val onShortcutSet: (index: Int, packageName: String?) -> Unit,
+    private val onFreeformToggle: (Int, Boolean) -> Unit,
     private val onDismiss: () -> Unit,
     private val permissionCallback: ExpandPanelPermissionCallback? = null
 ) {
@@ -96,6 +97,7 @@ class ExpandPanelViewManager(
                     shortcutsFlow = shortcutsFlow,
                     themeModeFlow = themeModeFlow,
                     onShortcutSet = onShortcutSet,
+                    onFreeformToggle = onFreeformToggle,
                     onDismiss = { dismiss() },
                     onDismissAnimationEnd = { dismiss() }
                 )

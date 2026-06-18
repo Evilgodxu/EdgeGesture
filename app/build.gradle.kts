@@ -102,6 +102,11 @@ android {
         compose = true
         aidl = true
     }
+
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 dependencies {
@@ -134,6 +139,9 @@ dependencies {
     // Shizuku
     implementation(libs.shizuku.api)
     implementation(libs.shizuku.provider)
+
+    // Hidden API Bypass（用于调用 setLaunchWindowingMode 等小窗隐藏 API）
+    implementation(libs.hidden.api.bypass)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

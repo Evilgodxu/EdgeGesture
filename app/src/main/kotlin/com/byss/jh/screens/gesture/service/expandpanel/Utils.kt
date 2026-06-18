@@ -1,14 +1,17 @@
 package com.byss.jh.screens.gesture.service.expandpanel
 
+import android.app.ActivityOptions
 import android.content.Context
 import android.content.Intent
 import android.media.AudioManager
 import android.provider.Settings
 import android.view.KeyEvent
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
+import org.lsposed.hiddenapibypass.HiddenApiBypass
 
 // Android 系统亮度范围
 private const val BRIGHTNESS_MIN = 0
@@ -91,13 +94,45 @@ private fun sq(value: Float): Float {
     return value * value
 }
 
-// 启动指定包名的应用
-fun launchApp(context: Context, packageName: String): Boolean {
+// 窗口模式常量：自由窗口（小窗）
+private const val WINDOWING_MODE_FREEFORM = 5
+
+private val hiddenApiInitialized = AtomicBoolean(false)
+
+private fun ensureHiddenApiExempt() {
+    if (hiddenApiInitialized.compareAndSet(false, true)) {
+        try {
+            HiddenApiBypass.addHiddenApiExemptions("Landroid/app/ActivityOptions;")
+        } catch (_: Throwable) {
+            // 部分系统上该调用可能受限，忽略失败
+        }
+    }
+}
+
+// 启动指定包名的应用；useFreeform 为 true 时尝试以自由窗口（小窗）模式启动
+fun launchApp(context: Context, packageName: String, useFreeform: Boolean = false): Boolean {
     return try {
         val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName)
         if (launchIntent != null) {
             launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
-            context.startActivity(launchIntent)
+            if (useFreeform) {
+                try {
+                    ensureHiddenApiExempt()
+                    val options = ActivityOptions.makeBasic()
+                    HiddenApiBypass.invoke(
+                        ActivityOptions::class.java,
+                        options,
+                        "setLaunchWindowingMode",
+                        WINDOWING_MODE_FREEFORM
+                    )
+                    context.startActivity(launchIntent, options.toBundle())
+                } catch (_: Throwable) {
+                    // 小窗启动失败时降级为普通启动
+                    context.startActivity(launchIntent)
+                }
+            } else {
+                context.startActivity(launchIntent)
+            }
             true
         } else {
             false

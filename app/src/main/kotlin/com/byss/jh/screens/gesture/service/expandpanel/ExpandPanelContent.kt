@@ -26,7 +26,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ExpandPanelContent(
     shortcuts: List<String?>,
+    freeformFlags: List<Boolean>,
     onShortcutSet: (index: Int, packageName: String?) -> Unit,
+    onFreeformToggle: (Int, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
     var isAppPickerMode by remember { mutableStateOf(false) }
@@ -94,6 +96,7 @@ fun ExpandPanelContent(
 
                     ShortcutsGrid(
                         shortcuts = shortcuts,
+                        freeformFlags = freeformFlags,
                         onShortcutSet = { index, packageName ->
                             if (packageName == null) {
                                 selectedIndex = index
@@ -103,14 +106,16 @@ fun ExpandPanelContent(
                             }
                         },
                         onLaunchApp = { packageName, index ->
-                            val launched = launchApp(context, packageName)
+                            val useFreeform = freeformFlags.getOrElse(index) { false }
+                            val launched = launchApp(context, packageName, useFreeform)
                             if (launched) {
                                 onDismiss()
                             } else {
                                 selectedIndex = index
                                 isAppPickerMode = true
                             }
-                        }
+                        },
+                        onFreeformToggle = onFreeformToggle
                     )
                 }
             }
