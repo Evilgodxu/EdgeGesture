@@ -3,12 +3,16 @@ package com.byss.jh.screens.gesture.service.expandpanel
 import android.app.ActivityOptions
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
+import android.graphics.Rect
 import android.media.AudioManager
 import android.provider.Settings
 import android.view.KeyEvent
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.exp
 import kotlin.math.ln
+import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 import org.lsposed.hiddenapibypass.HiddenApiBypass
@@ -109,6 +113,58 @@ private fun ensureHiddenApiExempt() {
     }
 }
 
+// 计算小窗启动的初始 bounds。
+// 经验：首次实现仅设置 windowing mode 时，横屏应用由系统默认处理完全正常；
+// 竖屏应用会出现灰色遮罩和异常高度，因此只在竖屏时主动传一个合理的初始大小。
+private fun computeFreeformBounds(context: Context, launchIntent: Intent): Rect? {
+    val metrics = context.resources.displayMetrics
+    val displayWidth = metrics.widthPixels
+    val displayHeight = metrics.heightPixels
+    val isDeviceLandscape = displayWidth > displayHeight
+
+    val resolveInfo = context.packageManager.resolveActivity(
+        launchIntent,
+        PackageManager.MATCH_DEFAULT_ONLY
+    )
+    val declaredOrientation = resolveInfo?.activityInfo?.screenOrientation
+        ?: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+
+    val isLandscape = when (declaredOrientation) {
+        ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
+        ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
+        ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE,
+        ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE -> true
+        ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
+        ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT,
+        ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT,
+        ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT -> false
+        else -> isDeviceLandscape
+    }
+
+    // 横屏交给系统默认处理，避免把原本正常的窗口锁死成小尺寸
+    if (isLandscape) {
+        return null
+    }
+
+    // 竖屏应用：以屏幕短边百分比为宽，按比例计算高。
+    // 该 API 的默认尺寸越接近屏幕，系统越允许双向缩放。
+    val minSide = min(displayWidth, displayHeight)
+    val maxWidth = (displayWidth * 0.85f).toInt()
+    val maxHeight = (displayHeight * 0.85f).toInt()
+
+    var width = (minSide * 0.95f).toInt()
+    var height = (width * 1.45f).toInt()
+    if (width > maxWidth || height > maxHeight) {
+        val scale = min(maxWidth / width.toFloat(), maxHeight / height.toFloat())
+        width = (width * scale).toInt()
+        height = (height * scale).toInt()
+    }
+
+    val left = (displayWidth - width) / 2
+    val top = (displayHeight - height) / 5
+    return Rect(left, top, left + width, top + height)
+}
+
 // 启动指定包名的应用；useFreeform 为 true 时尝试以自由窗口（小窗）模式启动
 fun launchApp(context: Context, packageName: String, useFreeform: Boolean = false): Boolean {
     return try {
@@ -125,6 +181,9 @@ fun launchApp(context: Context, packageName: String, useFreeform: Boolean = fals
                         "setLaunchWindowingMode",
                         WINDOWING_MODE_FREEFORM
                     )
+                    computeFreeformBounds(context, launchIntent)?.let { bounds ->
+                        options.setLaunchBounds(bounds)
+                    }
                     context.startActivity(launchIntent, options.toBundle())
                 } catch (_: Throwable) {
                     // 小窗启动失败时降级为普通启动
