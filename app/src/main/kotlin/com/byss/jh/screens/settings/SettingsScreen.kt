@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
@@ -64,6 +65,7 @@ import com.byss.jh.screens.settings.components.DonateDialog
 import com.byss.jh.screens.settings.components.LanguageSelectionDialog
 import com.byss.jh.screens.settings.components.LaunchBlockRuleDialog
 import com.byss.jh.screens.settings.components.LaunchBlockRulesList
+import com.byss.jh.screens.settings.components.OpenSourceLicensesDialog
 import com.byss.jh.screens.settings.components.SettingsClickableItem
 import com.byss.jh.screens.settings.components.SettingsSection
 import com.byss.jh.screens.settings.components.SettingsSwitchItem
@@ -196,6 +198,7 @@ fun SettingsScreen(
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showBlacklistDialog by remember { mutableStateOf(false) }
     var showDonateDialog by remember { mutableStateOf(false) }
+    var showOpenSourceDialog by remember { mutableStateOf(false) }
     var showLaunchBlockRuleDialog by remember { mutableStateOf(false) }
     var editingLaunchBlockRule by remember { mutableStateOf<LaunchBlockRule?>(null) }
 
@@ -356,6 +359,12 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_donate_desc),
                             onClick = { showDonateDialog = true }
                         )
+                        SettingsClickableItem(
+                            icon = Icons.Default.Code,
+                            title = stringResource(R.string.settings_open_source),
+                            subtitle = stringResource(R.string.settings_open_source_desc),
+                            onClick = { showOpenSourceDialog = true }
+                        )
                     }
                 }
             }
@@ -447,6 +456,12 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.settings_donate_desc),
                         onClick = { showDonateDialog = true }
                     )
+                    SettingsClickableItem(
+                        icon = Icons.Default.Code,
+                        title = stringResource(R.string.settings_open_source),
+                        subtitle = stringResource(R.string.settings_open_source_desc),
+                        onClick = { showOpenSourceDialog = true }
+                    )
                 }
             }
         }
@@ -490,6 +505,13 @@ fun SettingsScreen(
     if (showDonateDialog) {
         DonateDialog(
             onDismiss = { showDonateDialog = false }
+        )
+    }
+
+    // 开源许可对话框
+    if (showOpenSourceDialog) {
+        OpenSourceLicensesDialog(
+            onDismiss = { showOpenSourceDialog = false }
         )
     }
 

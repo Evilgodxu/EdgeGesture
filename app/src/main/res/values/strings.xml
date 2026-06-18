@@ -30,6 +30,11 @@
     <string name="settings_donate_alipay">支付宝</string>
     <string name="settings_donate_thanks">感谢您的支持！</string>
 
+    <!-- 开源许可 -->
+    <string name="settings_open_source">开源许可</string>
+    <string name="settings_open_source_desc">查看本项目使用的开源库</string>
+    <string name="settings_open_source_title">开源许可</string>
+
     <!-- 震动设置 -->
     <string name="settings_vibration_title">震动反馈</string>
     <string name="settings_vibration_desc">滑动操作时触发震动效果</string>

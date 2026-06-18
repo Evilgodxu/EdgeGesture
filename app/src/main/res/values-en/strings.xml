@@ -30,6 +30,11 @@
     <string name="settings_donate_alipay">Alipay</string>
     <string name="settings_donate_thanks">Thank you for your support!</string>
 
+    <!-- Open Source Licenses -->
+    <string name="settings_open_source">Open Source Licenses</string>
+    <string name="settings_open_source_desc">View open source libraries used by this project</string>
+    <string name="settings_open_source_title">Open Source Licenses</string>
+
     <!-- Vibration Settings -->
     <string name="settings_vibration_title">Vibration Feedback</string>
     <string name="settings_vibration_desc">Trigger vibration effect during swipe operations</string>

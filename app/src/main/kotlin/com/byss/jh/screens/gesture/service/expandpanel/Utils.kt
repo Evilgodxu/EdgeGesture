@@ -152,7 +152,7 @@ private fun computeFreeformBounds(context: Context, launchIntent: Intent): Rect?
     val maxWidth = (displayWidth * 0.85f).toInt()
     val maxHeight = (displayHeight * 0.85f).toInt()
 
-    var width = (minSide * 0.95f).toInt()
+    var width = (minSide * 1f).toInt()
     var height = (width * 1.45f).toInt()
     if (width > maxWidth || height > maxHeight) {
         val scale = min(maxWidth / width.toFloat(), maxHeight / height.toFloat())
