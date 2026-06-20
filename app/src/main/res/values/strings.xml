@@ -129,6 +129,7 @@
 
     <!-- 权限申请 (Permissions) -->
     <string name="permission_status_title">权限状态</string>
+    <string name="permission_request_button">去授权</string>
     <string name="permission_overlay_title">悬浮窗权限</string>
     <string name="permission_overlay_desc">需要悬浮窗权限创建边缘手势触发区域</string>
     <string name="permission_notification_title">通知权限</string>

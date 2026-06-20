@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.drawable.toBitmap
 import com.byss.jh.R
 import com.byss.jh.data.app.AppRepository
 import org.koin.compose.koinInject
@@ -117,14 +118,14 @@ private fun ShortcutItem(
 ) {
     val context = LocalContext.current
 
-    // 从缓存数据异步加载图标，避免阻塞主线程
-    val appIcon = remember(packageName, appInfo) {
-        if (packageName != null) {
-            try {
-                context.packageManager.getApplicationIcon(packageName)
-            } catch (_: Exception) {
-                null
-            }
+    // 优先使用扫描时缓存的图标，失败则回退到 PackageManager 实时查询
+    val appIconBitmap by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(
+        initialValue = null,
+        key1 = packageName,
+        key2 = appInfo?.iconPath
+    ) {
+        value = if (packageName != null) {
+            loadShortcutIconBitmap(context, packageName, appInfo?.iconPath)
         } else {
             null
         }
@@ -167,9 +168,9 @@ private fun ShortcutItem(
             },
         contentAlignment = Alignment.Center
     ) {
-        if (appIcon != null) {
+        if (appIconBitmap != null) {
             Image(
-                painter = BitmapPainter(appIcon.toBitmap().asImageBitmap()),
+                painter = BitmapPainter(appIconBitmap!!.asImageBitmap()),
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize()
             )
@@ -216,4 +217,20 @@ private fun ShortcutItem(
             }
         }
     }
+}
+
+// 加载快捷方式图标：优先读取缓存文件，失败则回退到 PackageManager
+private fun loadShortcutIconBitmap(
+    context: android.content.Context,
+    packageName: String,
+    iconPath: String?
+): android.graphics.Bitmap? {
+    if (!iconPath.isNullOrBlank()) {
+        runCatching {
+            android.graphics.BitmapFactory.decodeFile(iconPath)
+        }.getOrNull()?.let { return it }
+    }
+    return runCatching {
+        context.packageManager.getApplicationIcon(packageName).toBitmap()
+    }.getOrNull()
 }

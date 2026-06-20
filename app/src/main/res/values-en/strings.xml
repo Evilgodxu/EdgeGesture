@@ -127,6 +127,7 @@
 
     <!-- Permission Requests -->
     <string name="permission_status_title">Permission Status</string>
+    <string name="permission_request_button">Grant</string>
     <string name="permission_overlay_title">Overlay Permission</string>
     <string name="permission_overlay_desc">Overlay permission is required to display edge gesture areas</string>
     <string name="permission_notification_title">Notification Permission</string>

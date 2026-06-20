@@ -1,6 +1,7 @@
 *.iml
 .gradle
 .kotlin
+Example
 /local.properties
 /.idea
 .DS_Store

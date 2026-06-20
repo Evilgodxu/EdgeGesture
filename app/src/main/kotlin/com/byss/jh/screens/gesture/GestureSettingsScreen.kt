@@ -29,7 +29,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,7 +39,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -56,7 +54,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
@@ -77,7 +74,7 @@ import com.byss.jh.screens.gesture.components.BottomEdgeSettingsSection
 import com.byss.jh.screens.gesture.components.EdgeGestureSection
 import com.byss.jh.screens.gesture.components.EdgeSettingsSection
 import com.byss.jh.screens.gesture.components.GestureSettingsSwitchItem
-import com.byss.jh.screens.gesture.components.PermissionStatusCard
+import com.byss.jh.screens.gesture.components.PermissionCard
 import com.byss.jh.screens.gesture.components.getActionDisplayName
 import org.koin.androidx.compose.koinViewModel
 
@@ -109,7 +106,6 @@ fun GestureSettingsScreen(
     var currentActionKey by remember { mutableStateOf<androidx.datastore.preferences.core.Preferences.Key<String>?>(null) }
     var currentActionValue by remember { mutableStateOf(GestureAction.NONE) }
 
-    var showAccessibilityDialog by remember { mutableStateOf(false) }
     var waitingForSystemSetting by remember { mutableStateOf(false) }
 
     // rememberUpdatedState 确保在 DisposableEffect 中也能获取到最新的 waitingForSystemSetting 值
@@ -186,7 +182,6 @@ fun GestureSettingsScreen(
             windowSizeClass = windowSizeClass,
             activity = activity,
             notificationPermissionLauncher = notificationPermissionLauncher,
-            onShowAccessibilityDialog = { showAccessibilityDialog = true },
             onShowActionDialog = { key, action ->
                 currentActionKey = key
                 currentActionValue = action
@@ -270,47 +265,6 @@ fun GestureSettingsScreen(
         )
     }
 
-    // 无障碍权限对话框
-    if (showAccessibilityDialog) {
-        AlertDialog(
-            onDismissRequest = { showAccessibilityDialog = false },
-            title = {
-                Text(
-                    stringResource(R.string.accessibility_dialog_title),
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center
-                )
-            },
-            text = {
-                Text(
-                    stringResource(R.string.accessibility_dialog_message),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        waitingForSystemSetting = true
-                        if (activity != null) {
-                            viewModel.startPermissionMonitor(PermissionType.ACCESSIBILITY, activity)
-                        }
-                        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                        context.startActivity(intent)
-                        showAccessibilityDialog = false
-                    }
-                ) {
-                    Text(stringResource(R.string.accessibility_go_settings))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showAccessibilityDialog = false }
-                ) {
-                    Text(stringResource(R.string.accessibility_cancel))
-                }
-            }
-        )
-    }
 }
 
 @Composable
@@ -322,7 +276,6 @@ private fun GestureSettingsContent(
     windowSizeClass: WindowSizeClass,
     activity: Activity?,
     notificationPermissionLauncher: androidx.activity.result.ActivityResultLauncher<String>,
-    onShowAccessibilityDialog: () -> Unit,
     onShowActionDialog: (androidx.datastore.preferences.core.Preferences.Key<String>, GestureAction) -> Unit
 ) {
     val context = LocalContext.current
@@ -348,8 +301,7 @@ private fun GestureSettingsContent(
                     settings = settings,
                     viewModel = viewModel,
                     activity = activity,
-                    notificationPermissionLauncher = notificationPermissionLauncher,
-                    onShowAccessibilityDialog = onShowAccessibilityDialog
+                    notificationPermissionLauncher = notificationPermissionLauncher
                 )
             }
 
@@ -378,8 +330,7 @@ private fun GestureSettingsContent(
                 settings = settings,
                 viewModel = viewModel,
                 activity = activity,
-                notificationPermissionLauncher = notificationPermissionLauncher,
-                onShowAccessibilityDialog = onShowAccessibilityDialog
+                notificationPermissionLauncher = notificationPermissionLauncher
             )
 
             AnimatedVisibility(visible = settings.gestureEnabled) {
@@ -399,18 +350,23 @@ private fun GestureSettingsSwitchesColumn(
     settings: GestureSettingsState,
     viewModel: GestureSettingsViewModel,
     activity: Activity?,
-    notificationPermissionLauncher: androidx.activity.result.ActivityResultLauncher<String>,
-    onShowAccessibilityDialog: () -> Unit
+    notificationPermissionLauncher: androidx.activity.result.ActivityResultLauncher<String>
 ) {
     val context = LocalContext.current
 
-    // 无障碍权限未开启时显示警告卡片
+    // 无障碍权限未开启时显示警告卡片，点击直接跳转系统无障碍设置
     if (!uiState.isAccessibilityEnabled) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 8.dp)
-                .clickable { onShowAccessibilityDialog() },
+                .clickable {
+                    if (activity != null) {
+                        viewModel.startPermissionMonitor(PermissionType.ACCESSIBILITY, activity)
+                    }
+                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                    context.startActivity(intent)
+                },
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.errorContainer
             )
@@ -432,63 +388,83 @@ private fun GestureSettingsSwitchesColumn(
         }
     }
 
-    // 权限状态卡片 - 所有权限授予后自动隐藏
-    AnimatedVisibility(
-        visible = !uiState.allPermissionsGranted,
-        enter = expandVertically(),
-        exit = shrinkVertically()
-    ) {
-        PermissionStatusCard(
-            modifier = Modifier.padding(vertical = 8.dp),
-            overlayGranted = uiState.overlayGranted,
-            notificationGranted = uiState.notificationGranted,
-            batteryOptimized = uiState.batteryOptimized,
-            usageStatsGranted = uiState.usageStatsGranted,
-            queryAllPackagesGranted = uiState.queryAllPackagesGranted,
-            onRequestOverlay = {
-                if (activity != null) {
-                    viewModel.startPermissionMonitor(PermissionType.OVERLAY, activity)
-                }
-                val intent = Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    "package:${context.packageName}".toUri()
-                )
-                activity?.startActivity(intent)
-            },
-            onRequestNotification = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
-            },
-            onRequestBatteryOptimization = {
-                if (activity != null) {
-                    viewModel.startPermissionMonitor(PermissionType.BATTERY_OPTIMIZATION, activity)
-                }
-                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                    data = "package:${context.packageName}".toUri()
-                }
-                activity?.startActivity(intent)
-            },
-            onRequestUsageStats = {
-                if (activity != null) {
-                    viewModel.startPermissionMonitor(PermissionType.USAGE_STATS, activity)
-                }
-                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
-                    data = "package:${context.packageName}".toUri()
-                }
-                activity?.startActivity(intent)
-            },
-            onRequestQueryAllPackages = {
-                if (activity != null) {
-                    viewModel.startPermissionMonitor(PermissionType.QUERY_ALL_PACKAGES, activity)
-                }
-                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = "package:${context.packageName}".toUri()
-                }
-                activity?.startActivity(intent)
+    // 权限状态卡片 - 每个权限独立卡片，授予后自动隐藏
+    PermissionCard(
+        title = stringResource(R.string.permission_overlay_title),
+        description = stringResource(R.string.permission_overlay_desc),
+        granted = uiState.overlayGranted,
+        onRequest = {
+            if (activity != null) {
+                viewModel.startPermissionMonitor(PermissionType.OVERLAY, activity)
             }
-        )
-    }
+            val intent = Intent(
+                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                "package:${context.packageName}".toUri()
+            )
+            activity?.startActivity(intent)
+        },
+        modifier = Modifier.padding(vertical = 4.dp)
+    )
+
+    PermissionCard(
+        title = stringResource(R.string.permission_notification_title),
+        description = stringResource(R.string.permission_notification_desc),
+        granted = uiState.notificationGranted,
+        onRequest = {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        },
+        modifier = Modifier.padding(vertical = 4.dp)
+    )
+
+    PermissionCard(
+        title = stringResource(R.string.permission_battery_title),
+        description = stringResource(R.string.permission_battery_desc),
+        granted = uiState.batteryOptimized,
+        onRequest = {
+            if (activity != null) {
+                viewModel.startPermissionMonitor(PermissionType.BATTERY_OPTIMIZATION, activity)
+            }
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = "package:${context.packageName}".toUri()
+            }
+            activity?.startActivity(intent)
+        },
+        modifier = Modifier.padding(vertical = 4.dp)
+    )
+
+    PermissionCard(
+        title = stringResource(R.string.permission_usage_stats_title),
+        description = stringResource(R.string.permission_usage_stats_desc),
+        granted = uiState.usageStatsGranted,
+        onRequest = {
+            if (activity != null) {
+                viewModel.startPermissionMonitor(PermissionType.USAGE_STATS, activity)
+            }
+            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                data = "package:${context.packageName}".toUri()
+            }
+            activity?.startActivity(intent)
+        },
+        modifier = Modifier.padding(vertical = 4.dp)
+    )
+
+    PermissionCard(
+        title = stringResource(R.string.permission_query_packages_title),
+        description = stringResource(R.string.permission_query_packages_desc),
+        granted = uiState.queryAllPackagesGranted,
+        onRequest = {
+            if (activity != null) {
+                viewModel.startPermissionMonitor(PermissionType.QUERY_ALL_PACKAGES, activity)
+            }
+            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = "package:${context.packageName}".toUri()
+            }
+            activity?.startActivity(intent)
+        },
+        modifier = Modifier.padding(vertical = 4.dp)
+    )
 
     Spacer(modifier = Modifier.height(8.dp))
 
@@ -499,7 +475,11 @@ private fun GestureSettingsSwitchesColumn(
         checked = settings.gestureEnabled,
         onCheckedChange = { enabled ->
             if (enabled && !uiState.isAccessibilityEnabled) {
-                onShowAccessibilityDialog()
+                if (activity != null) {
+                    viewModel.startPermissionMonitor(PermissionType.ACCESSIBILITY, activity)
+                }
+                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                context.startActivity(intent)
                 return@GestureSettingsSwitchItem
             }
             viewModel.setGestureEnabled(enabled)

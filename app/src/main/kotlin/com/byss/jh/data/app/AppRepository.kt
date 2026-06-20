@@ -4,11 +4,11 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import com.byss.jh.data.gesture.clearExpandPanelShortcut
 import com.byss.jh.data.gesture.initBlacklistIfNeeded
 import com.byss.jh.data.gesture.removeFromAppSwitchBlacklist
+import com.byss.jh.data.gesture.resetBlacklistInitialized
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -55,12 +55,12 @@ class AppRepository private constructor(private val context: Context) {
         }
     }
 
-    // 检查是否有查询应用权限
+    // 检查是否真正拥有查询所有应用权限
+    // 部分系统上权限被撤销后 checkSelfPermission 仍可能返回 GRANTED，因此通过实际调用来验证
     fun hasQueryPermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            context,
-            android.Manifest.permission.QUERY_ALL_PACKAGES
-        ) == PackageManager.PERMISSION_GRANTED
+        return runCatching {
+            context.packageManager.getInstalledApplications(0).isNotEmpty()
+        }.getOrDefault(false)
     }
 
     // 延迟初始化：仅从缓存加载，不触发扫描
@@ -76,7 +76,8 @@ class AppRepository private constructor(private val context: Context) {
         }
     }
 
-    // 完整初始化：加载缓存并触发后台扫描（需要 QUERY_ALL_PACKAGES 权限）
+    // 完整初始化：加载缓存并触发后台扫描
+    // 有 QUERY_ALL_PACKAGES 权限时能扫描全部应用；无权限时依靠 <queries> 兜底扫描可启动应用
     // 应在获取权限后调用，如 GestureSettingsViewModel 中权限监控回调
     fun initializeWithScan() {
         if (!isInitialized) {
@@ -86,10 +87,10 @@ class AppRepository private constructor(private val context: Context) {
         scope.launch {
             // 检查缓存是否有效，无效则刷新
             if (!cacheManager.isCacheValid() || _appsFlow.value.isEmpty()) {
-                refreshAppsIfPermitted()
+                refreshAppsIfPossible()
             } else {
-                // 缓存有效，检查权限后初始化黑名单
-                initBlacklistIfPermitted()
+                // 缓存有效，基于当前列表初始化黑名单
+                initBlacklistFromApps(_appsFlow.value)
             }
         }
 
@@ -97,25 +98,36 @@ class AppRepository private constructor(private val context: Context) {
         registerAppChangeReceiver()
     }
 
-    // 有条件地初始化黑名单：有权限时才初始化
-    // 黑名单包含所有系统应用（包括无入口的），但应用列表只显示有入口的应用
-    private suspend fun initBlacklistIfPermitted() {
-        if (!hasQueryPermission()) return
-        // 直接初始化黑名单，内部会获取所有系统应用
-        context.initBlacklistIfNeeded()
-    }
-
-    // 条件刷新：有权限时才扫描
-    suspend fun refreshAppsIfPermitted(): Boolean = mutex.withLock {
-        if (!hasQueryPermission()) {
-            return false
+    // 基于已扫描应用初始化黑名单
+    // 有完整权限时包含所有系统应用（包括无入口的），无权限时仅包含已扫描出的可启动系统应用
+    private suspend fun initBlacklistFromApps(apps: List<AppInfo>) {
+        if (hasQueryPermission()) {
+            context.initBlacklistIfNeeded()
+        } else {
+            val systemAppPackages = apps.filter { it.isSystemApp }.map { it.packageName }.toSet()
+            context.initBlacklistIfNeeded(systemAppPackages)
         }
-        refreshAppsInternal()
-        return true
     }
 
-    // 强制刷新应用列表（调用前需确保有权限）
+    // 尝试刷新应用列表
+    // 不再强制要求 QUERY_ALL_PACKAGES，无权限时通过 <queries> 读取可启动应用
+    suspend fun refreshAppsIfPermitted(): Boolean = mutex.withLock {
+        return try {
+            refreshAppsInternal()
+            true
+        } catch (_: SecurityException) {
+            false
+        }
+    }
+
+    // 强制刷新应用列表
     suspend fun refreshApps() = mutex.withLock {
+        refreshAppsInternal()
+    }
+
+    // 用户重新授予 QUERY_ALL_PACKAGES 后调用：重置黑名单标志并重新扫描初始化
+    suspend fun onQueryPermissionGranted() = mutex.withLock {
+        context.resetBlacklistInitialized()
         refreshAppsInternal()
     }
 
@@ -126,13 +138,17 @@ class AppRepository private constructor(private val context: Context) {
                 val apps = cacheManager.quickScanApps()
                 _appsFlow.value = apps
                 cacheManager.saveAppsToCache(apps)
-                // 应用列表扫描完成后，初始化黑名单
-                // 黑名单包含所有系统应用（包括无入口的），但应用列表只显示有入口的应用
-                context.initBlacklistIfNeeded()
+                // 应用列表扫描完成后，基于扫描结果初始化黑名单
+                initBlacklistFromApps(apps)
             } finally {
                 _isLoading.value = false
             }
         }
+    }
+
+    // 在权限状态可能变化时尝试刷新并初始化黑名单
+    private suspend fun refreshAppsIfPossible() {
+        refreshAppsIfPermitted()
     }
 
     // 获取当前应用列表（同步）
@@ -204,13 +220,15 @@ class AppRepository private constructor(private val context: Context) {
         }
     }
 
-    // 清理已卸载应用的相关数据（黑名单、扩展面板快捷方式）
+    // 清理已卸载应用的相关数据（黑名单、扩展面板快捷方式、图标缓存）
     private suspend fun cleanupUninstalledApp(packageName: String) {
         withContext(Dispatchers.IO) {
             // 从应用切换黑名单中移除
             context.removeFromAppSwitchBlacklist(setOf(packageName))
             // 清理扩展面板快捷方式
             context.clearExpandPanelShortcut(packageName)
+            // 清理该应用的图标缓存文件
+            cacheManager.deleteIconCache(packageName)
         }
     }
 

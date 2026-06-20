@@ -119,9 +119,10 @@ class GestureSettingsViewModel(
                         _waitingPermissionFlow.value = null
                         // 将应用带回前台
                         bringAppToFront(activity)
-                        // 如果是查询应用权限，触发应用扫描和黑名单初始化
+                        // 如果是查询应用权限，重置黑名单初始化标志并重新扫描
+                        // 以便用完整权限重新初始化黑名单（包含所有系统应用）
                         if (permissionType == PermissionType.QUERY_ALL_PACKAGES) {
-                            AppRepository.getInstance(context).initializeWithScan()
+                            AppRepository.getInstance(context).onQueryPermissionGranted()
                         }
                         permissionMonitorJob?.cancel()
                     }

@@ -41,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.graphics.drawable.toBitmap
 import com.byss.jh.R
 import com.byss.jh.data.app.AppInfo
 import com.byss.jh.data.app.AppRepository
@@ -172,23 +173,18 @@ private fun AppPickerItem(
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 使用 produceState 实现异步图标加载，避免阻塞主线程
-        val icon by androidx.compose.runtime.produceState<android.graphics.drawable.Drawable?>(
+        // 优先使用扫描时缓存的图标，回退到 PackageManager 实时查询
+        val iconBitmap by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(
             initialValue = null,
-            key1 = app.packageName
+            key1 = app.packageName,
+            key2 = app.iconPath
         ) {
-            value = try {
-                context.packageManager.getApplicationIcon(app.packageName)
-            } catch (_: Exception) {
-                null
-            }
+            value = loadAppIconBitmap(context, app)
         }
 
-        if (icon != null) {
+        if (iconBitmap != null) {
             Image(
-                painter = BitmapPainter(
-                    icon!!.toBitmap().asImageBitmap()
-                ),
+                painter = BitmapPainter(iconBitmap!!.asImageBitmap()),
                 contentDescription = null,
                 modifier = Modifier.size(40.dp)
             )
@@ -213,4 +209,19 @@ private fun AppPickerItem(
             )
         }
     }
+}
+
+// 加载应用图标：优先读取缓存文件，失败则回退到 PackageManager
+private fun loadAppIconBitmap(
+    context: android.content.Context,
+    app: AppInfo
+): android.graphics.Bitmap? {
+    if (app.iconPath.isNotBlank()) {
+        runCatching {
+            android.graphics.BitmapFactory.decodeFile(app.iconPath)
+        }.getOrNull()?.let { return it }
+    }
+    return runCatching {
+        context.packageManager.getApplicationIcon(app.packageName).toBitmap()
+    }.getOrNull()
 }

@@ -82,8 +82,8 @@ fun AppSwitchBlacklistDialog(
         }
     }
 
-    // 是否需要显示空状态（无权限或无缓存）
-    val showEmptyState = !hasPermission || (!isLoading && allApps.isEmpty())
+    // 是否需要显示空状态（无数据且无加载中）
+    val showEmptyState = !isLoading && allApps.isEmpty()
 
     AlertDialog(
         onDismissRequest = onDismiss,

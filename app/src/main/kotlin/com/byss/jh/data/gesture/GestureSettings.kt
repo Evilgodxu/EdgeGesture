@@ -493,14 +493,35 @@ suspend fun Context.removeFromAppSwitchBlacklist(packageNames: Set<String>) = wi
 suspend fun Context.initBlacklistIfNeeded(launcherApps: Set<String>? = null) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         if (prefs[GestureSettingsKeys.BLACKLIST_INITIALIZED] != true) {
-            // 获取所有系统应用（包括无入口的）
-            val allSystemApps = getSystemAppPackages()
+            // 有完整权限时获取所有系统应用（包括无入口的）
+            // 无权限时使用已扫描的可启动系统应用兜底
+            val allSystemApps = if (hasQueryAllPackagesPermission()) {
+                getSystemAppPackages()
+            } else {
+                launcherApps ?: emptySet()
+            }
             val apps = allSystemApps.toMutableSet()
             // 将本应用加入黑名单
             apps.add(packageName)
             prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] = apps
             prefs[GestureSettingsKeys.BLACKLIST_INITIALIZED] = true
         }
+    }
+}
+
+// 检查是否真正拥有查询所有应用权限
+// 部分系统上 QUERY_ALL_PACKAGES 被撤销后 checkSelfPermission 仍可能返回 GRANTED，
+// 因此通过实际调用 getInstalledApplications 来验证
+private fun Context.hasQueryAllPackagesPermission(): Boolean {
+    return runCatching {
+        packageManager.getInstalledApplications(0).isNotEmpty()
+    }.getOrDefault(false)
+}
+
+// 重置黑名单初始化标志，用于用户重新授予 QUERY_ALL_PACKAGES 后重新初始化
+suspend fun Context.resetBlacklistInitialized() = withContext(Dispatchers.IO) {
+    gestureDataStore.edit { prefs ->
+        prefs.remove(GestureSettingsKeys.BLACKLIST_INITIALIZED)
     }
 }
 
