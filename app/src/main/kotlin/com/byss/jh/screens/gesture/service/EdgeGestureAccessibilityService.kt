@@ -119,7 +119,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         startLaunchBlockFlow()
 
         serviceScope.launch {
-            initBlacklistIfNeeded()
+            // 黑名单初始化不应阻塞服务启动，失败时仅打印日志
+            runCatching { initBlacklistIfNeeded() }.onFailure { it.printStackTrace() }
             loadSettings()
             if (settings.gestureEnabled) {
                 withContext(Dispatchers.Main) {

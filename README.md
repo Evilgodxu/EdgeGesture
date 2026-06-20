@@ -31,7 +31,9 @@
 
 - **主题切换**：浅色/深色/跟随系统
 - **语言切换**：简体中文/English/跟随系统
-- **应用黑名单**：切换应用时忽略黑名单应用
+- **应用黑名单**：切换应用时忽略黑名单应用，授予查询所有应用权限后可包含全部系统应用
+- **扩展面板快捷方式**：支持选择常用应用，扫描时自动缓存应用图标以提升加载性能
+- **权限引导**：各权限以独立卡片展示，授予后自动隐藏；无障碍权限点击直接跳转系统设置
 - **震动反馈**：滑动操作时触发震动效果
 - **隐藏显示**：隐藏手势触发区域
 - **隐藏后台**：在最近任务列表中隐藏本应用
@@ -49,16 +51,17 @@
 
 | 类别 | 技术 |
 |------|------|
-| 语言 | Kotlin 2.3.21 |
-| UI 框架 | Jetpack Compose (BOM 2026.05.01) + Material3 |
+| 语言 | Kotlin 2.4.0 |
+| UI 框架 | Jetpack Compose (BOM 2026.06.00) + Material3 |
 | 自适应布局 | Material3 Adaptive 1.2.0 |
 | 架构模式 | MVVM + UDF（单向数据流）|
-| 依赖注入 | Koin 4.2.1 |
+| 依赖注入 | Koin 4.2.2 |
 | 导航框架 | Navigation 2.9.8 |
 | 状态管理 | DataStore + StateFlow |
 | 后台任务 | WorkManager 2.11.2 |
-| 权限框架 | Shizuku 13.1.0 |
-| 序列化 | Kotlin Serialization 1.6.3 |
+| 权限框架 | Shizuku 13.1.5 |
+| 序列化 | Kotlin Serialization 1.11.0 |
+| Hidden API 绕过 | hidden-api-bypass 6.1 |
 | 构建工具 | AGP 9.2.1, Gradle |
 | 许可证 | AGPL-3.0 |
 
@@ -67,11 +70,11 @@
 | 属性 | 值 |
 |------|-----|
 | applicationId | com.byss.jh |
-| versionName | 1.5.0 |
-| versionCode | 5 |
-| compileSdk | 36 (minorApiLevel: 1) |
+| versionName | 1.7.0 |
+| versionCode | 7 |
+| compileSdk | 37 |
 | minSdk | 32 (Android 12L) |
-| targetSdk | 36 |
+| targetSdk | 37 |
 | NDK | arm64-v8a |
 | Java | 21 |
 
@@ -82,12 +85,13 @@
   - 无障碍服务权限（用于检测边缘触摸事件和执行系统操作）
   - 悬浮窗权限（创建边缘手势触发区域）
   - 使用情况访问权限（获取最近使用应用信息）
-  - 查询所有应用权限（管理应用黑名单和扩展面板快捷方式）
   - 通知权限（显示服务通知）
   - 忽略电池优化（保持后台运行）
   - 修改系统设置（扩展面板亮度调节）
   - Shizuku 权限（启动拦截的高级功能）
   - 相机权限（手电筒功能）
+- **推荐权限**：
+  - 查询所有应用权限（管理应用黑名单和扩展面板快捷方式；未授予时可通过包可见性声明读取可启动应用作为兜底）
 
 ### 签名配置
 
@@ -129,8 +133,7 @@ app/src/main/kotlin/com/byss/jh/
 │   │   │   ├── EdgeGestureSection.kt
 │   │   │   ├── EdgeSettingsSection.kt
 │   │   │   ├── GestureSettingsSwitchItem.kt
-│   │   │   ├── PermissionItem.kt
-│   │   │   ├── PermissionStatusCard.kt
+│   │   │   ├── PermissionCard.kt
 │   │   │   └── SettingSliderItem.kt
 │   │   ├── service/            # 无障碍服务及手势检测
 │   │   │   ├── AccessibilityActionExecutor.kt    # 动作执行器
@@ -149,6 +152,7 @@ app/src/main/kotlin/com/byss/jh/
 │       │   ├── LanguageSelectionDialog.kt
 │       │   ├── LaunchBlockRuleDialog.kt
 │       │   ├── LaunchBlockRulesList.kt
+│       │   ├── OpenSourceLicensesDialog.kt
 │       │   ├── SettingsClickableItem.kt
 │       │   ├── SettingsSection.kt
 │       │   ├── SettingsSwitchItem.kt
