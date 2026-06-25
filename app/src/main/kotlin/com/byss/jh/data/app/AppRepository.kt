@@ -191,6 +191,11 @@ class AppRepository private constructor(private val context: Context) {
                     }
                 }
                 Intent.ACTION_PACKAGE_REMOVED -> {
+                    // 应用更新时也会先收到 PACKAGE_REMOVED（EXTRA_REPLACING=true），
+                    // 此时不应清理黑名单与快捷方式，避免更新后设置被重置
+                    val isReplacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
+                    if (isReplacing) return
+
                     // 应用卸载，立即从缓存中移除并清理相关数据
                     scope.launch {
                         removeAppFromCache(packageName)
