@@ -9,8 +9,6 @@ import android.os.Handler
 import android.os.Looper
 import java.util.ArrayDeque
 
-// 背面双击检测器，基于 TapTap Columbus 启发式算法移植
-// 通过加速度计 Z 轴信号的峰值检测识别背面敲击，再通过时间间隔判定双击
 class BackTapDetector(
     context: Context,
     private val onDoubleTap: () -> Unit
@@ -20,7 +18,6 @@ class BackTapDetector(
     private val accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
     private val handler = Handler(Looper.getMainLooper())
 
-    // 信号处理组件
     private val resample = Resample()
     private val slope = Slope()
     private val lowpassKey = Lowpass1C()
@@ -28,35 +25,32 @@ class BackTapDetector(
     private val peakPositive = PeakDetector()
     private val peakNegative = PeakDetector()
 
-    // Z 轴信号缓冲区
     private val zBuffer = ArrayDeque<Float>()
     private var syncTime = 0L
     private var result = 0
     private val tapTimestamps = ArrayDeque<Long>()
 
-    // 双击时间窗口参数（纳秒）
-    private var minTimeGapNs = 150_000_000L  // 150ms
-    private var maxTimeGapNs = 400_000_000L  // 400ms
+    private var minTimeGapNs = 100_000_000L  // 100ms
+    private var maxTimeGapNs = 500_000_000L  // 500ms
 
-    // 采样间隔（纳秒），约 2.5ms → 400Hz
+    // 重采样间隔（纳秒），约 2.5ms → 400Hz
     private val samplingIntervalNs = 2500_000L
 
     private var isListening = false
 
-    // 设置灵敏度：1-10，越高越灵敏（噪声容忍阈值越低）
+    // 灵敏度：1-10，越高越灵敏
     fun setSensitivity(value: Int) {
-        val noiseTolerate = 0.11f - value * 0.01f  // 0.01 ~ 0.10
+        val noiseTolerate = 0.11f - value * 0.01f
         peakPositive.setMinNoiseTolerate(noiseTolerate)
         peakNegative.setMinNoiseTolerate(noiseTolerate)
     }
 
-    // 设置检测范围：1-10，越高检测窗口越大（峰值检测窗口越大，越容易匹配）
+    // 检测范围：1-10，越高窗口越大
     fun setRange(value: Int) {
-        val windowSize = value * 4 + 20  // 24 ~ 60
+        val windowSize = value * 4 + 20
         peakPositive.setWindowSize(windowSize)
         peakNegative.setWindowSize(windowSize)
-        // 同时调整双击时间窗口，范围越大允许的时间间隔越宽
-        maxTimeGapNs = (300_000_000L + value * 30_000_000L)  // 330ms ~ 600ms
+        maxTimeGapNs = 300_000_000L + value * 30_000_000L
     }
 
     fun start() {
@@ -65,7 +59,6 @@ class BackTapDetector(
 
     fun start(sensitivity: Int, range: Int) {
         if (isListening || accelerometer == null) return
-        // 初始化滤波器参数（与 TapTap 启发式模式一致）
         lowpassKey.setPara(0.2f)
         highpassKey.setPara(0.2f)
         setSensitivity(sensitivity)
@@ -145,38 +138,32 @@ class BackTapDetector(
         }
     }
 
-    // 启发式背面敲击识别：正峰在位置 4，负峰在其后 1~2 个位置
+    // 正峰在位置 4，负峰在其后 1~2 个位置
     private fun recognizeTap() {
         val posId = peakPositive.idMajorPeak
         val negId = peakNegative.idMajorPeak - posId
         result = if (posId == 4 && negId in 1..2) 1 else 0
     }
 
-    // 双击判定：两次敲击间隔在 [minGap, maxGap] 之间
     private fun checkDoubleTapTiming(timestamp: Long): Int {
-        // 清除过期时间戳
         val iter = tapTimestamps.iterator()
         while (iter.hasNext()) {
             if (timestamp - iter.next() > maxTimeGapNs) iter.remove() else break
         }
         if (tapTimestamps.isEmpty()) return 0
 
-        // 检查是否有两次敲击满足间隔要求
         val last = tapTimestamps.last
         val checkIter = tapTimestamps.iterator()
         while (checkIter.hasNext()) {
             val t = checkIter.next()
             if (last - t > minTimeGapNs) {
                 tapTimestamps.clear()
-                return 2  // 双击
+                return 2
             }
         }
-        return 1  // 单击
+        return 1
     }
 
-    // --- 信号处理内部类 ---
-
-    // 一维重采样器
     private class Resample {
         var interval = 0L; private set
         private var tInterval = 0L
@@ -210,7 +197,6 @@ class BackTapDetector(
         fun reset() { tInterval = 0; tRaw = 0; tOut = 0 }
     }
 
-    // 斜率计算器（只计算 Z 轴）
     private class Slope {
         private var last = 0f
         fun init(point: FloatArray) { last = point[2] }
@@ -223,7 +209,6 @@ class BackTapDetector(
         fun reset() { last = 0f }
     }
 
-    // 低通滤波器
     private class Lowpass1C {
         private var para = 1f
         private var last = 0f
@@ -237,7 +222,6 @@ class BackTapDetector(
         }
     }
 
-    // 高通滤波器
     private class Highpass1C {
         private var para = 1f
         private var lastIn = 0f
@@ -253,7 +237,6 @@ class BackTapDetector(
         }
     }
 
-    // 峰值检测器
     private class PeakDetector {
         private var amplitude = 0f
         private var reference = 0f
