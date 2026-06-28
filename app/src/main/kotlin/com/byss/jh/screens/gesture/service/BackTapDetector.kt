@@ -31,7 +31,7 @@ class BackTapDetector(
     private val tapTimestamps = ArrayDeque<Long>()
 
     private var minTimeGapNs = 100_000_000L
-    private var maxTimeGapNs = 0L
+    private var maxTimeGapNs = 500_000_000L
 
     // 重采样间隔（纳秒），约 2.5ms → 400Hz
     private val samplingIntervalNs = 2500_000L
