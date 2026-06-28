@@ -157,7 +157,7 @@ class BackTapDetector(
         // 清除过期时间戳
         val iter = tapTimestamps.iterator()
         while (iter.hasNext()) {
-            if (timestamp - iter.next() > maxTimeGapNs) iter.remove() else break
+            if (timestamp - iter.next() > maxTimeGapNs) iter.remove()
         }
         if (tapTimestamps.isEmpty()) return 0
 

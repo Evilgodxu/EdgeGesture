@@ -12,6 +12,13 @@
 - **自定义触发区域**：可调整边缘宽度、高度百分比、位置百分比和分段数量
 - **手势反馈**：支持震动反馈
 
+### 背面双击
+
+- **双击检测**：通过加速度计传感器检测手机背面双击动作，基于启发式信号处理算法
+- **灵敏度调节**：可调整检测灵敏度（1-10），控制敲击识别的噪声容忍阈值
+- **检测范围调节**：可调整检测范围（1-10），控制峰值检测窗口和双击时间间隔
+- **操作自定义**：背面双击支持与边缘手势相同的所有操作（返回、主页、截屏等）
+
 ### 快捷操作
 
 - **返回上一级**：模拟系统返回键
@@ -70,8 +77,8 @@
 | 属性 | 值 |
 |------|-----|
 | applicationId | com.byss.jh |
-| versionName | 1.7.0 |
-| versionCode | 7 |
+| versionName | 1.8.0 |
+| versionCode | 9 |
 | compileSdk | 37 |
 | minSdk | 32 (Android 12L) |
 | targetSdk | 37 |
@@ -108,9 +115,10 @@ KEY_PASSWORD=your_key_password
 1. **首次启动**：授予无障碍服务权限和悬浮窗权限
 2. **手势设置**：进入手势设置页，为各边缘配置想要的快捷操作
 3. **调整触发区域**：根据使用习惯调整边缘宽度、高度、位置和分段数量
-4. **应用黑名单**：在设置中添加不需要手势的应用
-5. **扩展面板**：配置 8 个常用应用快捷方式，快速启动应用
-6. **启动拦截**：安装并启动 Shizuku 后配置拦截规则(用于进程终止,可选项不影响拦截机制)
+4. **背面双击**：在手势设置页底部展开"背面双击"区域，启用后配置灵敏度、检测范围和触发操作
+5. **应用黑名单**：过滤可切换的对象
+6. **扩展面板**：配置 8 个常用应用快捷方式，快速启动应用
+7. **启动拦截**：安装并启动 Shizuku 后配置拦截规则(用于进程终止,可选项不影响拦截机制)
 
 ## 项目结构
 
@@ -129,6 +137,7 @@ app/src/main/kotlin/com/byss/jh/
 │   │   ├── components/         # 手势设置相关组件
 │   │   │   ├── ActionDisplayName.kt
 │   │   │   ├── ActionSelectionDialog.kt
+│   │   │   ├── BackTapSettingsSection.kt
 │   │   │   ├── BottomEdgeSettingsSection.kt
 │   │   │   ├── EdgeGestureSection.kt
 │   │   │   ├── EdgeSettingsSection.kt
@@ -139,9 +148,10 @@ app/src/main/kotlin/com/byss/jh/
 │   │   │   ├── AccessibilityActionExecutor.kt    # 动作执行器
 │   │   │   ├── AccessibilityEdgeViewManager.kt   # 边缘视图管理
 │   │   │   ├── AccessibilityGestureDetector.kt   # 手势检测器
+│   │   │   ├── BackTapDetector.kt                # 背面双击检测器
 │   │   │   ├── EdgeGestureAccessibilityService.kt # 无障碍服务
-│   │   │   ├── ExpandPanelViewManager.kt         # 扩展面板管理
-│   │   │   └── ServiceRestartReceiver.kt         # 服务重启广播
+│   │   │   ├── ServiceRestartReceiver.kt         # 服务重启广播
+│   │   │   └── expandpanel/                      # 扩展面板模块
 │   │   ├── GestureSettingsScreen.kt
 │   │   ├── GestureSettingsUiState.kt
 │   │   └── GestureSettingsViewModel.kt
@@ -176,7 +186,7 @@ app/src/main/kotlin/com/byss/jh/
 - **UI 层**：Jetpack Compose 实现声明式 UI，使用 Material3 Adaptive 支持多设备适配
 - **ViewModel 层**：管理 UI 状态和业务逻辑
 - **数据层**：DataStore 持久化存储用户设置，支持类型安全的数据流
-- **服务层**：AccessibilityService 监听边缘手势和执行系统操作
+- **服务层**：AccessibilityService 监听边缘手势和执行系统操作，BackTapDetector 处理背面双击检测
 
 ## 开源协议
 
