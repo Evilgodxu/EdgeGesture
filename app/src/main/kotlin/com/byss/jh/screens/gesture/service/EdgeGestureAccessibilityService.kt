@@ -202,6 +202,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         val enabledChanged = old.backTapEnabled != new.backTapEnabled
         val paramsChanged = old.backTapSensitivity != new.backTapSensitivity ||
             old.backTapRange != new.backTapRange
+        val actionChanged = old.backTapAction != new.backTapAction
 
         if (enabledChanged) {
             if (new.backTapEnabled) {
@@ -209,7 +210,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             } else {
                 stopBackTapDetector()
             }
-        } else if (paramsChanged && new.backTapEnabled) {
+        } else if ((paramsChanged || actionChanged) && new.backTapEnabled) {
             backTapDetector?.stop()
             startBackTapDetector(new)
         }
