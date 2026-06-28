@@ -209,4 +209,12 @@
     <string name="dialog_cancel">取消</string>
     <string name="dialog_delete">删除</string>
 
+    <!-- 背面双击 (Back Tap) -->
+    <string name="back_tap_title">背面双击</string>
+    <string name="back_tap_enable_title">背面双击</string>
+    <string name="back_tap_enable_desc">双击手机背面触发操作</string>
+    <string name="back_tap_sensitivity">灵敏度</string>
+    <string name="back_tap_range">检测范围</string>
+    <string name="back_tap_action">背面双击操作</string>
+
 </resources>

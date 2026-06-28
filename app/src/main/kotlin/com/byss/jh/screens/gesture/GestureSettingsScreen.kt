@@ -70,6 +70,7 @@ import com.byss.jh.data.permission.PermissionType
 import com.byss.jh.screens.gesture.service.EdgeGestureAccessibilityService
 import com.byss.jh.ui.adaptive.rememberWindowSizeClass
 import com.byss.jh.screens.gesture.components.ActionSelectionDialog
+import com.byss.jh.screens.gesture.components.BackTapSettingsSection
 import com.byss.jh.screens.gesture.components.BottomEdgeSettingsSection
 import com.byss.jh.screens.gesture.components.EdgeGestureSection
 import com.byss.jh.screens.gesture.components.EdgeSettingsSection
@@ -105,6 +106,7 @@ fun GestureSettingsScreen(
     var showActionDialog by remember { mutableStateOf(false) }
     var currentActionKey by remember { mutableStateOf<androidx.datastore.preferences.core.Preferences.Key<String>?>(null) }
     var currentActionValue by remember { mutableStateOf(GestureAction.NONE) }
+    var showBackTapActionDialog by remember { mutableStateOf(false) }
 
     var waitingForSystemSetting by remember { mutableStateOf(false) }
 
@@ -186,7 +188,8 @@ fun GestureSettingsScreen(
                 currentActionKey = key
                 currentActionValue = action
                 showActionDialog = true
-            }
+            },
+            onShowBackTapActionDialog = { showBackTapActionDialog = true }
         )
     }
 
@@ -265,6 +268,19 @@ fun GestureSettingsScreen(
         )
     }
 
+    // 背面双击操作选择对话框
+    if (showBackTapActionDialog) {
+        ActionSelectionDialog(
+            currentAction = settings.backTapAction,
+            onDismiss = { showBackTapActionDialog = false },
+            onActionSelected = { action ->
+                viewModel.setBackTapAction(action)
+                showBackTapActionDialog = false
+            },
+            getActionDisplayName = { getActionDisplayName(it) }
+        )
+    }
+
 }
 
 @Composable
@@ -276,7 +292,8 @@ private fun GestureSettingsContent(
     windowSizeClass: WindowSizeClass,
     activity: Activity?,
     notificationPermissionLauncher: androidx.activity.result.ActivityResultLauncher<String>,
-    onShowActionDialog: (androidx.datastore.preferences.core.Preferences.Key<String>, GestureAction) -> Unit
+    onShowActionDialog: (androidx.datastore.preferences.core.Preferences.Key<String>, GestureAction) -> Unit,
+    onShowBackTapActionDialog: () -> Unit
 ) {
     val context = LocalContext.current
     // 判断是否使用双列布局：横屏或大屏幕设备
@@ -316,7 +333,8 @@ private fun GestureSettingsContent(
                 GestureSettingsExpandableColumn(
                     settings = settings,
                     viewModel = viewModel,
-                    onShowActionDialog = onShowActionDialog
+                    onShowActionDialog = onShowActionDialog,
+                    onShowBackTapActionDialog = onShowBackTapActionDialog
                 )
             }
         }
@@ -337,7 +355,8 @@ private fun GestureSettingsContent(
                 GestureSettingsExpandableColumn(
                     settings = settings,
                     viewModel = viewModel,
-                    onShowActionDialog = onShowActionDialog
+                    onShowActionDialog = onShowActionDialog,
+                    onShowBackTapActionDialog = onShowBackTapActionDialog
                 )
             }
         }
@@ -530,7 +549,8 @@ private fun GestureSettingsSwitchesColumn(
 private fun GestureSettingsExpandableColumn(
     settings: GestureSettingsState,
     viewModel: GestureSettingsViewModel,
-    onShowActionDialog: (androidx.datastore.preferences.core.Preferences.Key<String>, GestureAction) -> Unit
+    onShowActionDialog: (androidx.datastore.preferences.core.Preferences.Key<String>, GestureAction) -> Unit,
+    onShowBackTapActionDialog: () -> Unit
 ) {
     if (!settings.gestureEnabled) return
 
@@ -733,6 +753,21 @@ private fun GestureSettingsExpandableColumn(
                 getActionDisplayName = { getActionDisplayName(it) }
             )
         }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+        // 背面双击设置
+        BackTapSettingsSection(
+            enabled = settings.backTapEnabled,
+            sensitivity = settings.backTapSensitivity,
+            range = settings.backTapRange,
+            action = settings.backTapAction,
+            onEnabledChange = { viewModel.setBackTapEnabled(it) },
+            onSensitivityChange = { viewModel.setBackTapSensitivity(it) },
+            onRangeChange = { viewModel.setBackTapRange(it) },
+            onActionClick = onShowBackTapActionDialog,
+            getActionDisplayName = { getActionDisplayName(it) }
+        )
     }
 }
 

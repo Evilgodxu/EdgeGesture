@@ -79,6 +79,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     private lateinit var edgeViewManager: AccessibilityEdgeViewManager
     private lateinit var actionExecutor: AccessibilityActionExecutor
     private lateinit var gestureDetector: AccessibilityGestureDetector
+    private var backTapDetector: BackTapDetector? = null
 
     private val settingsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -128,6 +129,9 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                     edgeViewManager.showEdgeViews(settings)
                 }
             }
+            if (settings.backTapEnabled) {
+                startBackTapDetector(settings)
+            }
         }
 
         // 预加载应用列表到缓存，确保扩展面板的应用选择器能快速显示
@@ -153,6 +157,9 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             .onEach { newSettings ->
                 val oldSettings = settings
                 settings = newSettings
+
+                // 背面双击检测器管理
+                updateBackTapDetector(oldSettings, newSettings)
 
                 withContext(Dispatchers.Main) {
                     if (oldSettings.gestureEnabled != newSettings.gestureEnabled) {
@@ -189,6 +196,35 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             old.bottomEdgeHeight != new.bottomEdgeHeight ||
             old.bottomEdgeWidthPercent != new.bottomEdgeWidthPercent ||
             old.bottomSegmentCount != new.bottomSegmentCount
+    }
+
+    private fun updateBackTapDetector(old: GestureSettingsState, new: GestureSettingsState) {
+        val enabledChanged = old.backTapEnabled != new.backTapEnabled
+        val paramsChanged = old.backTapSensitivity != new.backTapSensitivity ||
+            old.backTapRange != new.backTapRange
+
+        if (enabledChanged) {
+            if (new.backTapEnabled) {
+                startBackTapDetector(new)
+            } else {
+                stopBackTapDetector()
+            }
+        } else if (paramsChanged && new.backTapEnabled) {
+            backTapDetector?.stop()
+            startBackTapDetector(new)
+        }
+    }
+
+    private fun startBackTapDetector(s: GestureSettingsState) {
+        backTapDetector?.stop()
+        backTapDetector = BackTapDetector(this) {
+            actionExecutor.performAction(s.backTapAction, settings)
+        }.also { it.start(s.backTapSensitivity, s.backTapRange) }
+    }
+
+    private fun stopBackTapDetector() {
+        backTapDetector?.stop()
+        backTapDetector = null
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -427,6 +463,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         unregisterReceiver(settingsReceiver)
         settingsFlowJob?.cancel()
         launchBlockFlowJob?.cancel()
+        stopBackTapDetector()
         edgeViewManager.removeEdgeViews()
         actionExecutor.cleanup()
         serviceScope.cancel()
@@ -446,6 +483,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         serviceScope.launch {
             val oldSettings = settings
             loadSettings()
+            updateBackTapDetector(oldSettings, settings)
             withContext(Dispatchers.Main) {
                 if (oldSettings.gestureEnabled != settings.gestureEnabled) {
                     edgeViewManager.removeEdgeViews()

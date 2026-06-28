@@ -1,7 +1,6 @@
 *.iml
 .gradle
 .kotlin
-Example
 /local.properties
 /.idea
 .DS_Store
@@ -11,4 +10,5 @@ Example
 .cxx
 local.properties
 /app/build
+Demo
 jh.keystore

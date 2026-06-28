@@ -110,6 +110,12 @@ object GestureSettingsKeys {
     val BOTTOM_3_SWIPE_RIGHT = stringPreferencesKey("bottom_3_swipe_right")
     val BOTTOM_3_SWIPE_RIGHT_LONG = stringPreferencesKey("bottom_3_swipe_right_long")
 
+    // 背面双击设置
+    val BACK_TAP_ENABLED = booleanPreferencesKey("back_tap_enabled")
+    val BACK_TAP_SENSITIVITY = intPreferencesKey("back_tap_sensitivity")
+    val BACK_TAP_RANGE = intPreferencesKey("back_tap_range")
+    val BACK_TAP_ACTION = stringPreferencesKey("back_tap_action")
+
     val APP_SWITCH_BLACKLIST = stringSetPreferencesKey("app_switch_blacklist")
     val BLACKLIST_INITIALIZED = booleanPreferencesKey("blacklist_initialized")
     val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
@@ -178,6 +184,11 @@ data class GestureSettingsState(
     val hideFromRecents: Boolean = false,
     val avoidKeyboardOverlap: Boolean = false,
     val vibrationEnabled: Boolean = false,
+    // 背面双击设置
+    val backTapEnabled: Boolean = false,
+    val backTapSensitivity: Int = 5,
+    val backTapRange: Int = 5,
+    val backTapAction: GestureAction = GestureAction.HOME,
     // 左侧边缘尺寸设置
     val leftEdgeWidth: Int = 20,
     val leftEdgeHeightPercent: Int = 60,
@@ -256,6 +267,11 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
         hideFromRecents = this[GestureSettingsKeys.HIDE_FROM_RECENTS] ?: false,
         avoidKeyboardOverlap = this[GestureSettingsKeys.AVOID_KEYBOARD_OVERLAP] ?: false,
         vibrationEnabled = this[GestureSettingsKeys.VIBRATION_ENABLED] ?: false,
+        // 背面双击
+        backTapEnabled = this[GestureSettingsKeys.BACK_TAP_ENABLED] ?: false,
+        backTapSensitivity = this[GestureSettingsKeys.BACK_TAP_SENSITIVITY] ?: 5,
+        backTapRange = this[GestureSettingsKeys.BACK_TAP_RANGE] ?: 5,
+        backTapAction = GestureAction.fromValue(this[GestureSettingsKeys.BACK_TAP_ACTION] ?: GestureAction.HOME.value),
         // 左侧边缘尺寸
         leftEdgeWidth = this[GestureSettingsKeys.LEFT_EDGE_WIDTH] ?: 20,
         leftEdgeHeightPercent = this[GestureSettingsKeys.LEFT_EDGE_HEIGHT_PERCENT] ?: 60,
@@ -517,6 +533,31 @@ suspend fun Context.resetBlacklistInitialized() = withContext(Dispatchers.IO) {
 suspend fun Context.saveVibrationEnabled(enabled: Boolean) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         prefs[GestureSettingsKeys.VIBRATION_ENABLED] = enabled
+    }
+}
+
+// 背面双击设置
+suspend fun Context.saveBackTapEnabled(enabled: Boolean) = withContext(Dispatchers.IO) {
+    gestureDataStore.edit { prefs ->
+        prefs[GestureSettingsKeys.BACK_TAP_ENABLED] = enabled
+    }
+}
+
+suspend fun Context.saveBackTapSensitivity(sensitivity: Int) = withContext(Dispatchers.IO) {
+    gestureDataStore.edit { prefs ->
+        prefs[GestureSettingsKeys.BACK_TAP_SENSITIVITY] = sensitivity.coerceIn(1, 10)
+    }
+}
+
+suspend fun Context.saveBackTapRange(range: Int) = withContext(Dispatchers.IO) {
+    gestureDataStore.edit { prefs ->
+        prefs[GestureSettingsKeys.BACK_TAP_RANGE] = range.coerceIn(1, 10)
+    }
+}
+
+suspend fun Context.saveBackTapAction(action: GestureAction) = withContext(Dispatchers.IO) {
+    gestureDataStore.edit { prefs ->
+        prefs[GestureSettingsKeys.BACK_TAP_ACTION] = action.value
     }
 }
 

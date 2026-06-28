@@ -207,4 +207,12 @@
     <string name="dialog_cancel">Cancel</string>
     <string name="dialog_delete">Delete</string>
 
+    <!-- Back Tap -->
+    <string name="back_tap_title">Back Tap</string>
+    <string name="back_tap_enable_title">Back Tap</string>
+    <string name="back_tap_enable_desc">Double tap the back of phone to trigger action</string>
+    <string name="back_tap_sensitivity">Sensitivity</string>
+    <string name="back_tap_range">Detection Range</string>
+    <string name="back_tap_action">Back Tap Action</string>
+
 </resources>

@@ -21,6 +21,10 @@ import com.byss.jh.data.gesture.saveBottomEdgeWidthPercent
 import com.byss.jh.data.gesture.saveBottomSegmentCount
 import com.byss.jh.data.gesture.saveGestureEnabled
 import com.byss.jh.data.gesture.saveAvoidKeyboardOverlap
+import com.byss.jh.data.gesture.saveBackTapAction
+import com.byss.jh.data.gesture.saveBackTapEnabled
+import com.byss.jh.data.gesture.saveBackTapRange
+import com.byss.jh.data.gesture.saveBackTapSensitivity
 import com.byss.jh.data.gesture.saveHideFromRecents
 import com.byss.jh.data.gesture.saveHideOverlay
 import com.byss.jh.data.gesture.saveLeftEdgeGesture
@@ -338,6 +342,34 @@ class GestureSettingsViewModel(
     fun setBottomEdgeGesture(key: androidx.datastore.preferences.core.Preferences.Key<String>, action: GestureAction) {
         viewModelScope.launch {
             context.saveBottomEdgeGesture(key, action)
+        }
+    }
+
+    // 设置背面双击开关
+    fun setBackTapEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            context.saveBackTapEnabled(enabled)
+        }
+    }
+
+    // 设置背面双击灵敏度
+    fun setBackTapSensitivity(sensitivity: Int) {
+        viewModelScope.launch {
+            context.saveBackTapSensitivity(sensitivity)
+        }
+    }
+
+    // 设置背面双击检测范围
+    fun setBackTapRange(range: Int) {
+        viewModelScope.launch {
+            context.saveBackTapRange(range)
+        }
+    }
+
+    // 设置背面双击操作
+    fun setBackTapAction(action: GestureAction) {
+        viewModelScope.launch {
+            context.saveBackTapAction(action)
         }
     }
 }
