@@ -28,6 +28,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -118,6 +119,10 @@ private fun ShortcutItem(
 ) {
     val context = LocalContext.current
 
+    // 持有最新的回调引用，避免 pointerInput 捕获过期 lambda
+    val currentOnClick by rememberUpdatedState(onClick)
+    val currentOnLongClick by rememberUpdatedState(onLongClick)
+
     // 优先使用扫描时缓存的图标，失败则回退到 PackageManager 实时查询
     val appIconBitmap by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(
         initialValue = null,
@@ -159,10 +164,10 @@ private fun ShortcutItem(
                         // 释放时取消按压效果
                         isPressed = false
                     },
-                    onTap = { onClick() },
+                    onTap = { currentOnClick() },
                     onLongPress = {
                         isPressed = false
-                        onLongClick()
+                        currentOnLongClick()
                     }
                 )
             },
