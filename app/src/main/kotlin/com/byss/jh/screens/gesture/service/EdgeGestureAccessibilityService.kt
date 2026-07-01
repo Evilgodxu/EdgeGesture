@@ -11,6 +11,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.view.accessibility.AccessibilityEvent
 import com.byss.jh.data.gesture.GestureAction
 import com.byss.jh.data.gesture.GestureSettingsState
@@ -89,6 +90,16 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
     }
 
+    private val screenStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                Intent.ACTION_SCREEN_ON,
+                Intent.ACTION_USER_PRESENT -> backTapDetector?.setScreenOn(true)
+                Intent.ACTION_SCREEN_OFF -> backTapDetector?.setScreenOn(false)
+            }
+        }
+    }
+
     private var settingsFlowJob: kotlinx.coroutines.Job? = null
     private var launchBlockFlowJob: kotlinx.coroutines.Job? = null
     private var isKeyboardVisible = false
@@ -114,6 +125,18 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         } else {
             @Suppress("UnspecifiedRegisterReceiverFlag")
             registerReceiver(settingsReceiver, IntentFilter("ACTION_UPDATE_SETTINGS"))
+        }
+
+        val screenFilter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_USER_PRESENT)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(screenStateReceiver, screenFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(screenStateReceiver, screenFilter)
         }
 
         startSettingsFlow()
@@ -203,6 +226,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         val paramsChanged = old.backTapSensitivity != new.backTapSensitivity ||
             old.backTapRange != new.backTapRange
         val actionChanged = old.backTapAction != new.backTapAction
+        val modeChanged = old.backTapMode != new.backTapMode
 
         if (enabledChanged) {
             if (new.backTapEnabled) {
@@ -213,6 +237,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         } else if ((paramsChanged || actionChanged) && new.backTapEnabled) {
             backTapDetector?.stop()
             startBackTapDetector(new)
+        } else if (modeChanged && new.backTapEnabled) {
+            backTapDetector?.setMode(new.backTapMode)
         }
     }
 
@@ -220,7 +246,11 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         backTapDetector?.stop()
         backTapDetector = BackTapDetector(this) {
             actionExecutor.performAction(s.backTapAction, settings)
-        }.also { it.start(s.backTapSensitivity, s.backTapRange) }
+        }.also {
+            it.setMode(s.backTapMode)
+            it.setScreenOn(isScreenOn())
+            it.start(s.backTapSensitivity, s.backTapRange)
+        }
     }
 
     private fun stopBackTapDetector() {
@@ -462,6 +492,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     override fun onUnbind(intent: Intent?): Boolean {
         weakInstance = null
         unregisterReceiver(settingsReceiver)
+        unregisterReceiver(screenStateReceiver)
         settingsFlowJob?.cancel()
         launchBlockFlowJob?.cancel()
         stopBackTapDetector()
@@ -469,6 +500,11 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         actionExecutor.cleanup()
         serviceScope.cancel()
         return super.onUnbind(intent)
+    }
+
+    private fun isScreenOn(): Boolean {
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        return pm.isInteractive
     }
 
     override fun onSwipeAction(action: GestureAction) {

@@ -115,6 +115,7 @@ object GestureSettingsKeys {
     val BACK_TAP_SENSITIVITY = intPreferencesKey("back_tap_sensitivity")
     val BACK_TAP_RANGE = intPreferencesKey("back_tap_range")
     val BACK_TAP_ACTION = stringPreferencesKey("back_tap_action")
+    val BACK_TAP_MODE = stringPreferencesKey("back_tap_mode")
 
     val APP_SWITCH_BLACKLIST = stringSetPreferencesKey("app_switch_blacklist")
     val BLACKLIST_INITIALIZED = booleanPreferencesKey("blacklist_initialized")
@@ -144,6 +145,16 @@ enum class GestureAction(val value: String) {
 
 enum class EdgePosition {
     LEFT, RIGHT, BOTTOM
+}
+
+enum class BackTapMode(val value: String) {
+    ALWAYS("always"),
+    SCREEN_OFF("screen_off"),
+    SCREEN_ON("screen_on");
+
+    companion object {
+        fun fromValue(value: String): BackTapMode = entries.find { it.value == value } ?: ALWAYS
+    }
 }
 
 data class EdgeGestureConfig(
@@ -189,6 +200,7 @@ data class GestureSettingsState(
     val backTapSensitivity: Int = 5,
     val backTapRange: Int = 5,
     val backTapAction: GestureAction = GestureAction.HOME,
+    val backTapMode: BackTapMode = BackTapMode.ALWAYS,
     // 左侧边缘尺寸设置
     val leftEdgeWidth: Int = 20,
     val leftEdgeHeightPercent: Int = 60,
@@ -272,6 +284,7 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
         backTapSensitivity = this[GestureSettingsKeys.BACK_TAP_SENSITIVITY] ?: 5,
         backTapRange = this[GestureSettingsKeys.BACK_TAP_RANGE] ?: 5,
         backTapAction = GestureAction.fromValue(this[GestureSettingsKeys.BACK_TAP_ACTION] ?: GestureAction.HOME.value),
+        backTapMode = BackTapMode.fromValue(this[GestureSettingsKeys.BACK_TAP_MODE] ?: BackTapMode.ALWAYS.value),
         // 左侧边缘尺寸
         leftEdgeWidth = this[GestureSettingsKeys.LEFT_EDGE_WIDTH] ?: 20,
         leftEdgeHeightPercent = this[GestureSettingsKeys.LEFT_EDGE_HEIGHT_PERCENT] ?: 60,
@@ -558,6 +571,12 @@ suspend fun Context.saveBackTapRange(range: Int) = withContext(Dispatchers.IO) {
 suspend fun Context.saveBackTapAction(action: GestureAction) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         prefs[GestureSettingsKeys.BACK_TAP_ACTION] = action.value
+    }
+}
+
+suspend fun Context.saveBackTapMode(mode: BackTapMode) = withContext(Dispatchers.IO) {
+    gestureDataStore.edit { prefs ->
+        prefs[GestureSettingsKeys.BACK_TAP_MODE] = mode.value
     }
 }
 

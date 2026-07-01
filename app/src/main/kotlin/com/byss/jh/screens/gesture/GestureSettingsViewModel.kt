@@ -12,6 +12,7 @@ import android.provider.Settings
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.byss.jh.data.gesture.BackTapMode
 import com.byss.jh.data.gesture.GestureAction
 import com.byss.jh.data.gesture.GestureSettingsState
 import com.byss.jh.data.gesture.gestureSettingsFlow
@@ -23,6 +24,7 @@ import com.byss.jh.data.gesture.saveGestureEnabled
 import com.byss.jh.data.gesture.saveAvoidKeyboardOverlap
 import com.byss.jh.data.gesture.saveBackTapAction
 import com.byss.jh.data.gesture.saveBackTapEnabled
+import com.byss.jh.data.gesture.saveBackTapMode
 import com.byss.jh.data.gesture.saveBackTapRange
 import com.byss.jh.data.gesture.saveBackTapSensitivity
 import com.byss.jh.data.gesture.saveHideFromRecents
@@ -370,6 +372,13 @@ class GestureSettingsViewModel(
     fun setBackTapAction(action: GestureAction) {
         viewModelScope.launch {
             context.saveBackTapAction(action)
+        }
+    }
+
+    // 设置背面双击工作模式
+    fun setBackTapMode(mode: BackTapMode) {
+        viewModelScope.launch {
+            context.saveBackTapMode(mode)
         }
     }
 }

@@ -762,10 +762,12 @@ private fun GestureSettingsExpandableColumn(
             sensitivity = settings.backTapSensitivity,
             range = settings.backTapRange,
             action = settings.backTapAction,
+            mode = settings.backTapMode,
             onEnabledChange = { viewModel.setBackTapEnabled(it) },
             onSensitivityChange = { viewModel.setBackTapSensitivity(it) },
             onRangeChange = { viewModel.setBackTapRange(it) },
             onActionClick = onShowBackTapActionDialog,
+            onModeChange = { viewModel.setBackTapMode(it) },
             getActionDisplayName = { getActionDisplayName(it) }
         )
     }

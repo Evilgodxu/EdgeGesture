@@ -216,5 +216,8 @@
     <string name="back_tap_sensitivity">灵敏度</string>
     <string name="back_tap_range">检测范围</string>
     <string name="back_tap_action">背面双击操作</string>
-
+    <string name="back_tap_mode">工作模式</string>
+    <string name="back_tap_mode_always">始终激活</string>
+    <string name="back_tap_mode_screen_off">仅黑屏激活</string>
+    <string name="back_tap_mode_screen_on">仅亮屏激活</string>
 </resources>
