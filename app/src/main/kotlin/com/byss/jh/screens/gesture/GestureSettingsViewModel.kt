@@ -25,6 +25,8 @@ import com.byss.jh.data.gesture.saveAvoidKeyboardOverlap
 import com.byss.jh.data.gesture.saveBackTapAction
 import com.byss.jh.data.gesture.saveBackTapEnabled
 import com.byss.jh.data.gesture.saveBackTapMode
+import com.byss.jh.data.gesture.saveBackTapPauseOnCharging
+import com.byss.jh.data.gesture.saveBackTapPauseOnFullscreen
 import com.byss.jh.data.gesture.saveBackTapRange
 import com.byss.jh.data.gesture.saveBackTapSensitivity
 import com.byss.jh.data.gesture.saveHideFromRecents
@@ -379,6 +381,20 @@ class GestureSettingsViewModel(
     fun setBackTapMode(mode: BackTapMode) {
         viewModelScope.launch {
             context.saveBackTapMode(mode)
+        }
+    }
+
+    // 设置充电时暂停背面双击
+    fun setBackTapPauseOnCharging(pause: Boolean) {
+        viewModelScope.launch {
+            context.saveBackTapPauseOnCharging(pause)
+        }
+    }
+
+    // 设置全屏应用时暂停背面双击
+    fun setBackTapPauseOnFullscreen(pause: Boolean) {
+        viewModelScope.launch {
+            context.saveBackTapPauseOnFullscreen(pause)
         }
     }
 }

@@ -214,5 +214,13 @@
     <string name="back_tap_sensitivity">Sensitivity</string>
     <string name="back_tap_range">Detection Range</string>
     <string name="back_tap_action">Back Tap Action</string>
+    <string name="back_tap_mode">Mode</string>
+    <string name="back_tap_mode_always">Always</string>
+    <string name="back_tap_mode_screen_off">Screen off only</string>
+    <string name="back_tap_mode_screen_on">Screen on only</string>
+    <string name="back_tap_pause_on_charging_title">Pause while charging</string>
+    <string name="back_tap_pause_on_charging_desc">Automatically pause back tap while charging to save battery</string>
+    <string name="back_tap_pause_on_fullscreen_title">Pause in fullscreen apps</string>
+    <string name="back_tap_pause_on_fullscreen_desc">Automatically pause back tap when a fullscreen game or video is detected</string>
 
 </resources>

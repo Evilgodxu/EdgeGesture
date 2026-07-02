@@ -8,11 +8,16 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.Rect
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.util.DisplayMetrics
+import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityWindowInfo
 import com.byss.jh.data.gesture.GestureAction
 import com.byss.jh.data.gesture.GestureSettingsState
 import com.byss.jh.data.gesture.gestureDataStore
@@ -41,6 +46,9 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
     companion object {
         const val TAG = "EdgeGestureService"
+
+        // 窗口占据屏幕比例超过该阈值视为全屏（沉浸式游戏/视频）
+        private const val FULLSCREEN_DETECTION_RATIO = 0.97f
 
         private var weakInstance: java.lang.ref.WeakReference<EdgeGestureAccessibilityService>? = null
 
@@ -100,9 +108,25 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
     }
 
+    private val batteryReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action != Intent.ACTION_BATTERY_CHANGED) return
+            val status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, BatteryManager.BATTERY_STATUS_UNKNOWN)
+            val plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0)
+            isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                    status == BatteryManager.BATTERY_STATUS_FULL ||
+                    plugged != 0
+            updateBackTapPauseState()
+        }
+    }
+
     private var settingsFlowJob: kotlinx.coroutines.Job? = null
     private var launchBlockFlowJob: kotlinx.coroutines.Job? = null
     private var isKeyboardVisible = false
+
+    // 背面双击自动暂停状态
+    @Volatile private var isCharging = false
+    @Volatile private var isFullscreenApp = false
 
     // 启动拦截相关
     private var launchBlockState: LaunchBlockState = LaunchBlockState()
@@ -139,6 +163,14 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             registerReceiver(screenStateReceiver, screenFilter)
         }
 
+        val batteryFilter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(batteryReceiver, batteryFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(batteryReceiver, batteryFilter)
+        }
+
         startSettingsFlow()
         startLaunchBlockFlow()
 
@@ -154,6 +186,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             }
             if (settings.backTapEnabled) {
                 startBackTapDetector(settings)
+                updateBackTapPauseState()
             }
         }
 
@@ -183,6 +216,14 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
                 // 背面双击检测器管理
                 updateBackTapDetector(oldSettings, newSettings)
+
+                // 检测器启动后或自动暂停设置变化时，立即同步暂停状态
+                if (newSettings.backTapEnabled) {
+                    if (newSettings.backTapPauseOnFullscreen) {
+                        checkFullscreenState()
+                    }
+                    updateBackTapPauseState()
+                }
 
                 withContext(Dispatchers.Main) {
                     if (oldSettings.gestureEnabled != newSettings.gestureEnabled) {
@@ -267,6 +308,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                 AccessibilityEvent.TYPE_WINDOWS_CHANGED -> {
                     checkKeyboardVisibility()
                     checkAppLaunch(it)
+                    checkFullscreenState()
                 }
                 AccessibilityEvent.TYPE_VIEW_FOCUSED -> checkInputFieldFocused(it)
             }
@@ -472,6 +514,59 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
     }
 
+    // 检测当前是否有应用窗口占据全屏（游戏、视频等沉浸式场景）
+    private fun checkFullscreenState() {
+        if (!settings.backTapPauseOnFullscreen) {
+            if (isFullscreenApp) {
+                isFullscreenApp = false
+                updateBackTapPauseState()
+            }
+            return
+        }
+        val wasFullscreen = isFullscreenApp
+        isFullscreenApp = detectFullscreenImmersive()
+        if (isFullscreenApp != wasFullscreen) {
+            updateBackTapPauseState()
+        }
+    }
+
+    private fun detectFullscreenImmersive(): Boolean {
+        val windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+        val (screenWidth, screenHeight) = getRealScreenSize(windowManager)
+        val thresholdWidth = (screenWidth * FULLSCREEN_DETECTION_RATIO).toInt()
+        val thresholdHeight = (screenHeight * FULLSCREEN_DETECTION_RATIO).toInt()
+
+        return windows.any { window ->
+            window.type == AccessibilityWindowInfo.TYPE_APPLICATION &&
+                    (window.isFocused || window.isActive) && run {
+                        val bounds = Rect()
+                        window.getBoundsInScreen(bounds)
+                        bounds.width() >= thresholdWidth && bounds.height() >= thresholdHeight
+                    }
+        }
+    }
+
+    private fun getRealScreenSize(windowManager: WindowManager): Pair<Int, Int> {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = windowManager.currentWindowMetrics.bounds
+            bounds.width() to bounds.height()
+        } else {
+            val displayMetrics = DisplayMetrics()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealMetrics(displayMetrics)
+            displayMetrics.widthPixels to displayMetrics.heightPixels
+        }
+    }
+
+    // 根据充电/全屏状态决定暂停或恢复背面双击
+    private fun updateBackTapPauseState() {
+        val shouldPause = (settings.backTapPauseOnCharging && isCharging) ||
+                (settings.backTapPauseOnFullscreen && isFullscreenApp)
+        backTapDetector?.let {
+            if (shouldPause) it.pause() else it.resume()
+        }
+    }
+
     override fun onInterrupt() {}
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -493,6 +588,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         weakInstance = null
         unregisterReceiver(settingsReceiver)
         unregisterReceiver(screenStateReceiver)
+        unregisterReceiver(batteryReceiver)
         settingsFlowJob?.cancel()
         launchBlockFlowJob?.cancel()
         stopBackTapDetector()

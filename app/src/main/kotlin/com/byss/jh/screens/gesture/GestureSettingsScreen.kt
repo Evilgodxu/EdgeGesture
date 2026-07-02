@@ -763,11 +763,15 @@ private fun GestureSettingsExpandableColumn(
             range = settings.backTapRange,
             action = settings.backTapAction,
             mode = settings.backTapMode,
+            pauseOnCharging = settings.backTapPauseOnCharging,
+            pauseOnFullscreen = settings.backTapPauseOnFullscreen,
             onEnabledChange = { viewModel.setBackTapEnabled(it) },
             onSensitivityChange = { viewModel.setBackTapSensitivity(it) },
             onRangeChange = { viewModel.setBackTapRange(it) },
             onActionClick = onShowBackTapActionDialog,
             onModeChange = { viewModel.setBackTapMode(it) },
+            onPauseOnChargingChange = { viewModel.setBackTapPauseOnCharging(it) },
+            onPauseOnFullscreenChange = { viewModel.setBackTapPauseOnFullscreen(it) },
             getActionDisplayName = { getActionDisplayName(it) }
         )
     }

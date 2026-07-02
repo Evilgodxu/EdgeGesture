@@ -116,6 +116,8 @@ object GestureSettingsKeys {
     val BACK_TAP_RANGE = intPreferencesKey("back_tap_range")
     val BACK_TAP_ACTION = stringPreferencesKey("back_tap_action")
     val BACK_TAP_MODE = stringPreferencesKey("back_tap_mode")
+    val BACK_TAP_PAUSE_ON_CHARGING = booleanPreferencesKey("back_tap_pause_on_charging")
+    val BACK_TAP_PAUSE_ON_FULLSCREEN = booleanPreferencesKey("back_tap_pause_on_fullscreen")
 
     val APP_SWITCH_BLACKLIST = stringSetPreferencesKey("app_switch_blacklist")
     val BLACKLIST_INITIALIZED = booleanPreferencesKey("blacklist_initialized")
@@ -201,6 +203,8 @@ data class GestureSettingsState(
     val backTapRange: Int = 5,
     val backTapAction: GestureAction = GestureAction.HOME,
     val backTapMode: BackTapMode = BackTapMode.ALWAYS,
+    val backTapPauseOnCharging: Boolean = false,
+    val backTapPauseOnFullscreen: Boolean = false,
     // 左侧边缘尺寸设置
     val leftEdgeWidth: Int = 20,
     val leftEdgeHeightPercent: Int = 60,
@@ -285,6 +289,8 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
         backTapRange = this[GestureSettingsKeys.BACK_TAP_RANGE] ?: 5,
         backTapAction = GestureAction.fromValue(this[GestureSettingsKeys.BACK_TAP_ACTION] ?: GestureAction.HOME.value),
         backTapMode = BackTapMode.fromValue(this[GestureSettingsKeys.BACK_TAP_MODE] ?: BackTapMode.ALWAYS.value),
+        backTapPauseOnCharging = this[GestureSettingsKeys.BACK_TAP_PAUSE_ON_CHARGING] ?: false,
+        backTapPauseOnFullscreen = this[GestureSettingsKeys.BACK_TAP_PAUSE_ON_FULLSCREEN] ?: false,
         // 左侧边缘尺寸
         leftEdgeWidth = this[GestureSettingsKeys.LEFT_EDGE_WIDTH] ?: 20,
         leftEdgeHeightPercent = this[GestureSettingsKeys.LEFT_EDGE_HEIGHT_PERCENT] ?: 60,
@@ -577,6 +583,18 @@ suspend fun Context.saveBackTapAction(action: GestureAction) = withContext(Dispa
 suspend fun Context.saveBackTapMode(mode: BackTapMode) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         prefs[GestureSettingsKeys.BACK_TAP_MODE] = mode.value
+    }
+}
+
+suspend fun Context.saveBackTapPauseOnCharging(pause: Boolean) = withContext(Dispatchers.IO) {
+    gestureDataStore.edit { prefs ->
+        prefs[GestureSettingsKeys.BACK_TAP_PAUSE_ON_CHARGING] = pause
+    }
+}
+
+suspend fun Context.saveBackTapPauseOnFullscreen(pause: Boolean) = withContext(Dispatchers.IO) {
+    gestureDataStore.edit { prefs ->
+        prefs[GestureSettingsKeys.BACK_TAP_PAUSE_ON_FULLSCREEN] = pause
     }
 }
 

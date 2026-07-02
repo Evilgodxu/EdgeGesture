@@ -43,11 +43,15 @@ fun BackTapSettingsSection(
     range: Int,
     action: GestureAction,
     mode: BackTapMode,
+    pauseOnCharging: Boolean,
+    pauseOnFullscreen: Boolean,
     onEnabledChange: (Boolean) -> Unit,
     onSensitivityChange: (Int) -> Unit,
     onRangeChange: (Int) -> Unit,
     onActionClick: () -> Unit,
     onModeChange: (BackTapMode) -> Unit,
+    onPauseOnChargingChange: (Boolean) -> Unit,
+    onPauseOnFullscreenChange: (Boolean) -> Unit,
     getActionDisplayName: @Composable (GestureAction) -> String
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -174,6 +178,24 @@ fun BackTapSettingsSection(
                                 }
                             }
                         }
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                        // 充电时暂停
+                        GestureSettingsSwitchItem(
+                            title = stringResource(R.string.back_tap_pause_on_charging_title),
+                            subtitle = stringResource(R.string.back_tap_pause_on_charging_desc),
+                            checked = pauseOnCharging,
+                            onCheckedChange = onPauseOnChargingChange
+                        )
+
+                        // 全屏应用时暂停
+                        GestureSettingsSwitchItem(
+                            title = stringResource(R.string.back_tap_pause_on_fullscreen_title),
+                            subtitle = stringResource(R.string.back_tap_pause_on_fullscreen_desc),
+                            checked = pauseOnFullscreen,
+                            onCheckedChange = onPauseOnFullscreenChange
+                        )
                     }
                 }
             }

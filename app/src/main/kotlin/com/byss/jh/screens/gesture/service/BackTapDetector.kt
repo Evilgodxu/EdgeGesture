@@ -40,8 +40,13 @@ class BackTapDetector(
 
     private val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-    private val proximitySensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY)
-    private val lightSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+    // 息屏后需使用唤醒传感器，否则非唤醒传感器可能被系统挂起导致无法感知口袋/遮挡
+    private val proximitySensor: Sensor? =
+        sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY, true)
+            ?: sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY)
+    private val lightSensor: Sensor? =
+        sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT, true)
+            ?: sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
     private val handler = Handler(Looper.getMainLooper())
     private val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
     private var wakeLock: PowerManager.WakeLock? = null
@@ -60,6 +65,7 @@ class BackTapDetector(
     @Volatile private var isRegistered = false
     private var activationMode = BackTapMode.ALWAYS
     @Volatile private var isScreenOn = false
+    @Volatile private var isPaused = false
     private var currentDelayUs = SensorManager.SENSOR_DELAY_FASTEST
 
     // 可调参数
@@ -150,7 +156,25 @@ class BackTapDetector(
             releaseWakeLock()
             isListening = false
             isRegistered = false
+            isPaused = false
             reset()
+        }
+    }
+
+    // 由外部管理器在充电/全屏等场景调用，临时注销传感器；恢复后调用 resume()
+    fun pause() {
+        synchronized(this) {
+            if (isPaused) return
+            isPaused = true
+            applyActivationState()
+        }
+    }
+
+    fun resume() {
+        synchronized(this) {
+            if (!isPaused) return
+            isPaused = false
+            applyActivationState()
         }
     }
 
@@ -166,6 +190,15 @@ class BackTapDetector(
 
     private fun applyActivationState() {
         if (!isListening) return
+        if (isPaused) {
+            if (isRegistered) {
+                sensorManager.unregisterListener(this)
+                isRegistered = false
+                releaseWakeLock()
+                reset()
+            }
+            return
+        }
         val shouldRegister = when (activationMode) {
             BackTapMode.ALWAYS -> true
             BackTapMode.SCREEN_OFF -> !isScreenOn
@@ -264,14 +297,24 @@ class BackTapDetector(
         updateSustainedMotion(energy, t)
 
         // 4. 场景感知与动态采样率
-        updateScene(energy, t)
+        val isPocket = isProximityNear && (lightSensor == null || lastLightLux < POCKET_LIGHT_LUX_THRESHOLD)
+        updateScene(energy, t, isPocket)
 
-        // 5. 不应期结束则回到空闲
+        // 5. 口袋/遮挡状态立即屏蔽敲击，避免误触发
+        if (isPocket) {
+            if (state == State.IN_PULSE) {
+                lastPulseEndNs = t
+                state = State.LOCKOUT
+            }
+            return
+        }
+
+        // 6. 不应期结束则回到空闲
         if (state == State.LOCKOUT && t - lastPulseEndNs > lockoutNs) {
             state = State.IDLE
         }
 
-        // 6. 大波形 / 饱和过滤：连续振动期间直接忽略脉冲
+        // 7. 大波形 / 饱和过滤：连续振动期间直接忽略脉冲
         if (sustainedMotion || energy > SATURATION_THRESHOLD) {
             if (state == State.IN_PULSE) {
                 lastPulseEndNs = t
@@ -336,7 +379,7 @@ class BackTapDetector(
         }
     }
 
-    private fun updateScene(energy: Float, t: Long) {
+    private fun updateScene(energy: Float, t: Long, isPocket: Boolean) {
         val sceneScore = sceneLp.update(energy, t)
         val wasScene = scene
 
@@ -350,8 +393,7 @@ class BackTapDetector(
             return
         }
 
-        val likelyPocket = isProximityNear && lastLightLux < POCKET_LIGHT_LUX_THRESHOLD
-        if (likelyPocket) {
+        if (isPocket) {
             desktopSinceNs = 0L
             motionSinceNs = 0L
             if (pocketSinceNs == 0L) pocketSinceNs = t
