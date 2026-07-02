@@ -43,11 +43,11 @@
 }
 
 # Shizuku AIDL/Binder IPC
--keep class com.byss.jh.service.** { *; }
+-keep class com.edgegesture.evilgodxu.service.** { *; }
 -keep class * extends rikka.shizuku.** { *; }
 
 # model 类
--keep class com.byss.jh.data.gesture.** { *; }
+-keep class com.edgegesture.evilgodxu.data.gesture.** { *; }
 
 # HiddenApiBypass
 -keep class org.lsposed.hiddenapibypass.** { *; }

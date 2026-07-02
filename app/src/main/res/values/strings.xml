@@ -222,6 +222,4 @@
     <string name="back_tap_mode_screen_on">仅亮屏激活</string>
     <string name="back_tap_pause_on_charging_title">充电时暂停</string>
     <string name="back_tap_pause_on_charging_desc">充电时自动暂停背面双击以节省电量</string>
-    <string name="back_tap_pause_on_fullscreen_title">全屏应用时暂停</string>
-    <string name="back_tap_pause_on_fullscreen_desc">检测到全屏游戏或视频时自动暂停</string>
 </resources>

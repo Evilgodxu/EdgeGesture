@@ -14,13 +14,13 @@ if (localPropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.byss.jh"
+    namespace = "com.edgegesture.evilgodxu"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.byss.jh"
+        applicationId = "com.edgegesture.evilgodxu"
         minSdk = 32
         targetSdk = 37
         versionCode = 13

@@ -220,7 +220,5 @@
     <string name="back_tap_mode_screen_on">Screen on only</string>
     <string name="back_tap_pause_on_charging_title">Pause while charging</string>
     <string name="back_tap_pause_on_charging_desc">Automatically pause back tap while charging to save battery</string>
-    <string name="back_tap_pause_on_fullscreen_title">Pause in fullscreen apps</string>
-    <string name="back_tap_pause_on_fullscreen_desc">Automatically pause back tap when a fullscreen game or video is detected</string>
 
 </resources>

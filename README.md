@@ -76,7 +76,7 @@
 
 | 属性 | 值 |
 |------|-----|
-| applicationId | com.byss.jh |
+| applicationId | com.edgegesture.evilgodxu |
 | versionName | 2.0.0 |
 | versionCode | 11 |
 | compileSdk | 37 |
