@@ -7,6 +7,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import com.byss.jh.data.gesture.BackTapMode
 import kotlin.math.exp
 import kotlin.math.max
@@ -42,6 +43,9 @@ class BackTapDetector(
     private val proximitySensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY)
     private val lightSensor: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
     private val handler = Handler(Looper.getMainLooper())
+    private val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+    private var wakeLock: PowerManager.WakeLock? = null
+    private var isWakeLockHeld = false
 
     // 信号处理
     private val hpX = HighPassFilter(CUTOFF_HP_HZ)
@@ -113,8 +117,14 @@ class BackTapDetector(
     // 屏幕状态，由服务在收到亮灭屏广播时更新
     fun setScreenOn(isOn: Boolean) {
         synchronized(this) {
+            val wasOn = isScreenOn
             isScreenOn = isOn
             applyActivationState()
+            // 部分设备息屏后会挂起非唤醒传感器，重新注册以恢复采样
+            if (isListening && isRegistered && !isOn && wasOn) {
+                sensorManager.unregisterListener(this)
+                registerSensors()
+            }
         }
     }
 
@@ -137,6 +147,7 @@ class BackTapDetector(
         synchronized(this) {
             if (!isListening) return
             if (isRegistered) sensorManager.unregisterListener(this)
+            releaseWakeLock()
             isListening = false
             isRegistered = false
             reset()
@@ -160,12 +171,16 @@ class BackTapDetector(
             BackTapMode.SCREEN_OFF -> !isScreenOn
             BackTapMode.SCREEN_ON -> isScreenOn
         }
-        if (shouldRegister && !isRegistered) {
-            registerSensors()
-            isRegistered = true
-        } else if (!shouldRegister && isRegistered) {
+        if (shouldRegister) {
+            if (!isScreenOn) acquireWakeLock() else releaseWakeLock()
+            if (!isRegistered) {
+                registerSensors()
+                isRegistered = true
+            }
+        } else if (isRegistered) {
             sensorManager.unregisterListener(this)
             isRegistered = false
+            releaseWakeLock()
             reset()
         }
     }
@@ -191,6 +206,26 @@ class BackTapDetector(
         lpMag.reset()
         noiseEstimator.reset()
         sceneLp.reset()
+    }
+
+    private fun ensureWakeLock() {
+        if (wakeLock != null) return
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "EdgeGesture:BackTap")
+    }
+
+    private fun acquireWakeLock() {
+        ensureWakeLock()
+        if (!isWakeLockHeld) {
+            wakeLock?.acquire()
+            isWakeLockHeld = true
+        }
+    }
+
+    private fun releaseWakeLock() {
+        if (isWakeLockHeld) {
+            wakeLock?.release()
+            isWakeLockHeld = false
+        }
     }
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -305,6 +340,16 @@ class BackTapDetector(
         val sceneScore = sceneLp.update(energy, t)
         val wasScene = scene
 
+        // 快速唤醒：静置/口袋中检测到明显运动时立即恢复手持模式，避免数秒延迟
+        if ((scene == Scene.DESKTOP || scene == Scene.POCKET) && energy > FAST_WAKE_ENERGY_THRESHOLD) {
+            desktopSinceNs = 0L
+            pocketSinceNs = 0L
+            motionSinceNs = t
+            scene = Scene.HANDHELD
+            if (scene != wasScene) updateSensorDelay()
+            return
+        }
+
         val likelyPocket = isProximityNear && lastLightLux < POCKET_LIGHT_LUX_THRESHOLD
         if (likelyPocket) {
             desktopSinceNs = 0L
@@ -338,7 +383,7 @@ class BackTapDetector(
     private fun updateSensorDelay() {
         val target = when (scene) {
             Scene.HANDHELD -> SensorManager.SENSOR_DELAY_FASTEST
-            else -> SensorManager.SENSOR_DELAY_UI
+            else -> SensorManager.SENSOR_DELAY_GAME
         }
         if (target == currentDelayUs) return
         synchronized(this) {
@@ -492,8 +537,9 @@ class BackTapDetector(
         // 场景感知
         private const val SCENE_LOW_MOTION = 0.8f
         private const val SCENE_HIGH_MOTION = 2.5f
-        private const val SCENE_SETTLE_NS = 1_000_000_000L
+        private const val SCENE_SETTLE_NS = 2_000_000_000L
         private const val SCENE_MOTION_SETTLE_NS = 500_000_000L
+        private const val FAST_WAKE_ENERGY_THRESHOLD = 2.0f
 
         // 口袋判断：距离传感器被遮挡且光线较暗
         private const val POCKET_LIGHT_LUX_THRESHOLD = 10f

@@ -23,8 +23,8 @@ android {
         applicationId = "com.byss.jh"
         minSdk = 32
         targetSdk = 37
-        versionCode = 11
-        versionName = "1.9.0"
+        versionCode = 12
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
