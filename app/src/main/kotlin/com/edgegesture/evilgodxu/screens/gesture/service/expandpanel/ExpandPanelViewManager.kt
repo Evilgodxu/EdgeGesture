@@ -32,7 +32,8 @@ class ExpandPanelViewManager(
     private val onShortcutSet: (index: Int, packageName: String?) -> Unit,
     private val onFreeformToggle: (Int, Boolean) -> Unit,
     private val onDismiss: () -> Unit,
-    private val permissionCallback: ExpandPanelPermissionCallback? = null
+    private val permissionCallback: ExpandPanelPermissionCallback? = null,
+    private val onShowFailed: ((WindowManager.BadTokenException) -> Unit)? = null
 ) {
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private var composeView: ComposeView? = null
@@ -122,7 +123,14 @@ class ExpandPanelViewManager(
         view.requestFocus()
 
         composeView = view
-        windowManager.addView(view, params)
+        try {
+            windowManager.addView(view, params)
+        } catch (e: WindowManager.BadTokenException) {
+            android.util.Log.w(TAG, "BadTokenException adding expand panel, service token may be invalid", e)
+            composeView = null
+            onShowFailed?.invoke(e)
+            return false
+        }
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 

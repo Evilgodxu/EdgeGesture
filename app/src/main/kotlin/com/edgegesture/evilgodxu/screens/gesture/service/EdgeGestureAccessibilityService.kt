@@ -13,6 +13,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.util.Log
+import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
@@ -42,6 +44,9 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
     companion object {
         const val TAG = "EdgeGestureService"
+
+        private const val MAX_ATTACH_FAILURES = 3
+        private const val RESTART_DELAY_MS = 1500L
 
         private var weakInstance: java.lang.ref.WeakReference<EdgeGestureAccessibilityService>? = null
 
@@ -117,6 +122,15 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     private var launchBlockFlowJob: kotlinx.coroutines.Job? = null
     private var isKeyboardVisible = false
 
+    // 边缘视图添加失败后的重启保护
+    private var consecutiveAttachFailures = 0
+    private val restartHandler = Handler(Looper.getMainLooper())
+    private val restartRunnable = Runnable {
+        if (!isAvailable()) return@Runnable
+        consecutiveAttachFailures = 0
+        startGesture(this@EdgeGestureAccessibilityService)
+    }
+
     // 背面双击自动暂停状态
     @Volatile private var isCharging = false
 
@@ -131,7 +145,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
         actionExecutor = AccessibilityActionExecutor(this)
         gestureDetector = AccessibilityGestureDetector(this, this)
-        edgeViewManager = AccessibilityEdgeViewManager(this, gestureDetector)
+        edgeViewManager = AccessibilityEdgeViewManager(this, gestureDetector) { onEdgeViewAttachFailed() }
 
         // 初始化 Shizuku
         ShizukuManager.init(this)
@@ -510,6 +524,22 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
     }
 
+    // 边缘视图 addView 抛出 BadTokenException 时的重启保护
+    private fun onEdgeViewAttachFailed() {
+        consecutiveAttachFailures++
+        Log.w(TAG, "Edge view attach failed, failureCount=$consecutiveAttachFailures")
+
+        if (consecutiveAttachFailures >= MAX_ATTACH_FAILURES) {
+            Log.e(TAG, "Edge view attach failed too many times, disabling service to avoid crash loop")
+            disableSelf()
+            return
+        }
+
+        restartHandler.removeCallbacks(restartRunnable)
+        edgeViewManager.removeEdgeViews()
+        restartHandler.postDelayed(restartRunnable, RESTART_DELAY_MS)
+    }
+
     override fun onInterrupt() {}
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -529,6 +559,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
     override fun onUnbind(intent: Intent?): Boolean {
         weakInstance = null
+        restartHandler.removeCallbacks(restartRunnable)
         unregisterReceiver(settingsReceiver)
         unregisterReceiver(screenStateReceiver)
         unregisterReceiver(batteryReceiver)

@@ -12,7 +12,8 @@ import com.edgegesture.evilgodxu.data.gesture.EdgePosition
 
 class AccessibilityEdgeViewManager(
     private val context: Context,
-    private val gestureDetector: AccessibilityGestureDetector
+    private val gestureDetector: AccessibilityGestureDetector,
+    private val onAttachFailed: ((WindowManager.BadTokenException) -> Unit)? = null
 ) {
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
@@ -169,7 +170,7 @@ class AccessibilityEdgeViewManager(
             if (view.windowToken == null) {
                 val params = leftParamsList.getOrNull(index)
                 if (params != null) {
-                    windowManager.addView(view, params)
+                    safeAddView(view, params)
                 }
             }
         }
@@ -178,7 +179,7 @@ class AccessibilityEdgeViewManager(
             if (view.windowToken == null) {
                 val params = rightParamsList.getOrNull(index)
                 if (params != null) {
-                    windowManager.addView(view, params)
+                    safeAddView(view, params)
                 }
             }
         }
@@ -187,9 +188,20 @@ class AccessibilityEdgeViewManager(
             if (view.windowToken == null) {
                 val params = bottomParamsList.getOrNull(index)
                 if (params != null) {
-                    windowManager.addView(view, params)
+                    safeAddView(view, params)
                 }
             }
+        }
+    }
+
+    private fun safeAddView(view: View, params: WindowManager.LayoutParams) {
+        try {
+            windowManager.addView(view, params)
+        } catch (e: WindowManager.BadTokenException) {
+            android.util.Log.w(TAG, "BadTokenException adding edge view, service token may be invalid", e)
+            onAttachFailed?.invoke(e)
+        } catch (e: IllegalStateException) {
+            android.util.Log.w(TAG, "IllegalStateException adding edge view", e)
         }
     }
 
