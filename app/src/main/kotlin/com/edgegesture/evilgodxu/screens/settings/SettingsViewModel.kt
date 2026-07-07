@@ -33,7 +33,6 @@ class SettingsViewModel(
         SettingsUiState(
             isLoading = false,
             themeMode = settings.themeMode,
-            language = settings.language,
             vibrationEnabled = gestureSettings.vibrationEnabled,
             launchBlockEnabled = launchBlockState.enabled,
             launchBlockRules = launchBlockState.rules,
@@ -48,13 +47,6 @@ class SettingsViewModel(
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch {
             context.saveThemeMode(mode)
-        }
-    }
-
-    // 设置语言
-    fun setLanguage(language: AppLanguage) {
-        viewModelScope.launch {
-            context.saveLanguage(language)
         }
     }
 

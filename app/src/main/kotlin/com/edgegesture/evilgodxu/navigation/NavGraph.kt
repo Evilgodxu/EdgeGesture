@@ -5,7 +5,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.edgegesture.evilgodxu.screens.gesture.GestureSettingsScreen
-import com.edgegesture.evilgodxu.screens.settings.AppLanguage
 import com.edgegesture.evilgodxu.screens.settings.SettingsScreen
 import com.edgegesture.evilgodxu.screens.settings.ThemeMode
 import kotlinx.serialization.Serializable
@@ -21,7 +20,6 @@ fun NavGraph(
     navController: NavHostController,
     startDestination: GestureRoute = GestureRoute,
     onThemeChange: (ThemeMode) -> Unit = {},
-    onLanguageChange: (AppLanguage) -> Unit = {}
 ) {
     NavHost(
         navController = navController,
@@ -44,9 +42,6 @@ fun NavGraph(
                 },
                 onThemeChange = { themeMode ->
                     onThemeChange(themeMode)
-                },
-                onLanguageChange = { language ->
-                    onLanguageChange(language)
                 }
             )
         }

@@ -1,10 +1,10 @@
 package com.edgegesture.evilgodxu.screens.settings
 
-import android.app.Activity
+import android.app.LocaleManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Configuration
+import android.os.LocaleList
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -77,7 +78,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import rikka.shizuku.Shizuku
-import java.util.Locale
 
 // 应用设置 DataStore 实例
 val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -85,7 +85,6 @@ val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(na
 // 设置存储键名定义
 object SettingsKeys {
     val THEME_MODE = stringPreferencesKey("theme_mode")
-    val LANGUAGE = stringPreferencesKey("language")
 }
 
 // 应用主题模式
@@ -99,32 +98,47 @@ enum class ThemeMode(val value: String) {
     }
 }
 
-// 缓存系统原始 Locale，用于恢复系统默认语言
-private var systemLocale: Locale = Locale.getDefault()
-
-// 应用语言设置
-enum class AppLanguage(val value: String, val locale: Locale) {
-    SYSTEM("system", Locale.getDefault()),
-    CHINESE("zh", Locale.CHINESE),
-    ENGLISH("en", Locale.ENGLISH);
+// 应用语言设置，通过 LocaleManager 管理应用内语言偏好
+enum class AppLanguage(val languageTag: String?) {
+    SYSTEM(null),
+    CHINESE("zh"),
+    ENGLISH("en");
 
     companion object {
-        fun fromValue(value: String): AppLanguage = entries.find { it.value == value } ?: SYSTEM
+        fun fromLocaleList(localeList: LocaleList): AppLanguage {
+            if (localeList.isEmpty) return SYSTEM
+            val tag = localeList[0].toLanguageTag()
+            return entries.find { it.languageTag == tag } ?: SYSTEM
+        }
+    }
+}
+
+// 读取当前应用语言
+fun Context.getAppLanguage(): AppLanguage {
+    val locales = getSystemService(LocaleManager::class.java).applicationLocales
+    return AppLanguage.fromLocaleList(locales)
+}
+
+// 设置应用语言，系统自动持久化并触发配置变更
+fun Context.setAppLanguage(language: AppLanguage) {
+    val localeManager = getSystemService(LocaleManager::class.java)
+    localeManager.applicationLocales = if (language.languageTag != null) {
+        LocaleList.forLanguageTags(language.languageTag)
+    } else {
+        LocaleList.getEmptyLocaleList()
     }
 }
 
 // 设置状态数据类
 data class SettingsState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val language: AppLanguage = AppLanguage.SYSTEM,
     val vibrationEnabled: Boolean = false
 )
 
-// 获取设置状态流，合并主题、语言和震动设置
+// 获取设置状态流，合并主题和震动设置
 fun Context.settingsFlow(): Flow<SettingsState> = settingsDataStore.data.map { preferences ->
     SettingsState(
-        themeMode = ThemeMode.fromValue(preferences[SettingsKeys.THEME_MODE] ?: ThemeMode.SYSTEM.value),
-        language = AppLanguage.fromValue(preferences[SettingsKeys.LANGUAGE] ?: AppLanguage.SYSTEM.value)
+        themeMode = ThemeMode.fromValue(preferences[SettingsKeys.THEME_MODE] ?: ThemeMode.SYSTEM.value)
     )
 }.combine(gestureSettingsFlow()) { settings, gestureSettings ->
     settings.copy(vibrationEnabled = gestureSettings.vibrationEnabled)
@@ -142,42 +156,16 @@ suspend fun Context.saveThemeMode(mode: ThemeMode) = withContext(Dispatchers.IO)
     }
 }
 
-// 保存语言设置
-suspend fun Context.saveLanguage(language: AppLanguage) = withContext(Dispatchers.IO) {
-    settingsDataStore.edit { preferences ->
-        preferences[SettingsKeys.LANGUAGE] = language.value
-    }
-}
-
-// 更新应用语言配置
-// 使用 @Suppress("DEPRECATION") 因为 updateConfiguration 虽被标记废弃，
-// 但在 attachBaseContext 场景下仍是唯一可行的方案
-@Suppress("DEPRECATION")
-fun updateAppLanguage(context: Context, language: AppLanguage) {
-    val locale = when (language) {
-        AppLanguage.SYSTEM -> systemLocale
-        else -> language.locale
-    }
-    Locale.setDefault(locale)
-    val config = Configuration(context.resources.configuration)
-    config.setLocale(locale)
-    context.resources.updateConfiguration(config, context.resources.displayMetrics)
-    
-    // 更新 Activity 配置
-    (context as? Activity)?.let { activity ->
-        activity.resources.updateConfiguration(config, activity.resources.displayMetrics)
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onThemeChange: (ThemeMode) -> Unit = {},
-    onLanguageChange: (AppLanguage) -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val currentLanguage = remember(configuration) { context.getAppLanguage() }
 
     // 通过 ViewModel 获取设置状态，自动响应设置变更
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -290,7 +278,7 @@ fun SettingsScreen(
                         SettingsClickableItem(
                             icon = Icons.Default.Language,
                             title = stringResource(R.string.settings_language_title),
-                            subtitle = when (uiState.language) {
+                            subtitle = when (currentLanguage) {
                                 AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
                                 AppLanguage.CHINESE -> stringResource(R.string.settings_language_chinese)
                                 AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
@@ -393,7 +381,7 @@ fun SettingsScreen(
                     SettingsClickableItem(
                         icon = Icons.Default.Language,
                         title = stringResource(R.string.settings_language_title),
-                        subtitle = when (uiState.language) {
+                        subtitle = when (currentLanguage) {
                             AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
                             AppLanguage.CHINESE -> stringResource(R.string.settings_language_chinese)
                             AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
@@ -483,13 +471,11 @@ fun SettingsScreen(
     // 语言选择对话框
     if (showLanguageDialog) {
         LanguageSelectionDialog(
-            currentLanguage = uiState.language,
+            currentLanguage = currentLanguage,
             onDismiss = { showLanguageDialog = false },
             onLanguageSelected = { language ->
-                viewModel.setLanguage(language)
-                updateAppLanguage(context, language)
-                onLanguageChange(language)
                 showLanguageDialog = false
+                context.setAppLanguage(language)
             }
         )
     }

@@ -6,7 +6,6 @@ import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockRule
 data class SettingsUiState(
     val isLoading: Boolean = true,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val language: AppLanguage = AppLanguage.SYSTEM,
     val vibrationEnabled: Boolean = false,
     val launchBlockEnabled: Boolean = false,
     val launchBlockRules: List<LaunchBlockRule> = emptyList(),

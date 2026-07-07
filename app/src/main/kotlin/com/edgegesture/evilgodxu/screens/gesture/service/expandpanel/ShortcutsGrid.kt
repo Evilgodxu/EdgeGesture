@@ -198,7 +198,7 @@ private fun ShortcutItem(
                     .clip(RoundedCornerShape(4.dp))
                     .background(
                         if (isFreeform) {
-                            MaterialTheme.colorScheme.primaryContainer
+                            MaterialTheme.colorScheme.primary
                         } else {
                             MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
                         }
@@ -214,7 +214,7 @@ private fun ShortcutItem(
                     text = "小",
                     fontSize = 9.sp,
                     color = if (isFreeform) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
+                        MaterialTheme.colorScheme.onPrimary
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
