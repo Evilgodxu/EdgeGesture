@@ -106,7 +106,7 @@
     <!-- 服务状态卡片 -->
     <string name="gesture_service_running">运行中</string>
     <string name="gesture_service_stopped">已停止</string>
-    <string name="gesture_service_subtitle">无障碍服务 · 边缘手势引擎</string>
+    <string name="gesture_service_subtitle">无障碍服务 · 边缘手势</string>
     <string name="gesture_service_start">启动服务</string>
     <string name="gesture_service_stop">停止服务</string>
     <string name="gesture_count_label">手势</string>
@@ -114,6 +114,22 @@
     <!-- 权限 -->
     <string name="permission_accessibility_title">无障碍服务权限</string>
     <string name="permission_accessibility_desc">实现系统级手势操作</string>
+
+    <!-- 手势触发区预览 -->
+    <string name="gesture_preview_title">触发区域预览</string>
+    <string name="gesture_preview_left_label">左</string>
+    <string name="gesture_preview_right_label">右</string>
+    <string name="gesture_preview_bottom_label">底</string>
+
+    <!-- 触发区设置 -->
+    <string name="trigger_area_settings_title">触发区设置</string>
+
+    <!-- 更多 -->
+    <string name="more_section_title">更多</string>
+    <string name="more_expand_panel">扩展面板</string>
+    <string name="more_blacklist">应用黑名单</string>
+    <string name="more_launch_block">启动拦截</string>
+    <string name="more_settings">更多设置</string>
 
     <!-- 应用黑名单 (App Blacklist) -->
     <string name="settings_more">更多设置</string>
@@ -141,6 +157,7 @@
 
     <!-- 权限申请 (Permissions) -->
     <string name="permission_status_title">权限状态</string>
+    <string name="permission_granted">已授权</string>
     <string name="permission_request_button">去授权</string>
     <string name="permission_overlay_title">悬浮窗权限</string>
     <string name="permission_overlay_desc">创建手势触发区域与扩展面板所需</string>

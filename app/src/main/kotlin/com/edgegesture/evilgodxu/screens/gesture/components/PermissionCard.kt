@@ -24,9 +24,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.edgegesture.evilgodxu.R
 
 /**
  * 权限状态分组卡片 - 新版 UI 设计
@@ -76,7 +78,7 @@ fun PermissionGroupCard(
                         )
                     }
                     Text(
-                        text = "权限状态",
+                        text = stringResource(R.string.permission_status_title),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
@@ -151,7 +153,7 @@ fun PermissionCard(
         // 右侧状态标签
         if (granted) {
             Text(
-                text = "已授权",
+                text = stringResource(R.string.permission_granted),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF3FB950),
@@ -164,7 +166,7 @@ fun PermissionCard(
             )
         } else {
             Text(
-                text = "去授权",
+                text = stringResource(R.string.permission_request_button),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary,

@@ -35,8 +35,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Android
 import androidx.compose.material.icons.outlined.BarChart
@@ -67,7 +70,9 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -95,6 +100,7 @@ import com.edgegesture.evilgodxu.screens.gesture.components.BackTapSettingsSecti
 import com.edgegesture.evilgodxu.screens.gesture.components.BottomEdgeSettingsSection
 import com.edgegesture.evilgodxu.screens.gesture.components.EdgeGestureSection
 import com.edgegesture.evilgodxu.screens.gesture.components.EdgeSettingsSection
+import com.edgegesture.evilgodxu.screens.gesture.components.GesturePreview
 import com.edgegesture.evilgodxu.screens.gesture.components.GestureSettingsSwitchItem
 import com.edgegesture.evilgodxu.screens.gesture.components.PermissionCard
 import com.edgegesture.evilgodxu.screens.gesture.components.PermissionGroupCard
@@ -183,6 +189,7 @@ fun GestureSettingsScreen(
             windowSizeClass = windowSizeClass,
             activity = activity,
             notificationPermissionLauncher = notificationPermissionLauncher,
+            onNavigateToSettings = onNavigateToSettings,
             onShowActionDialog = { key, action ->
                 currentActionKey = key
                 currentActionValue = action
@@ -291,6 +298,7 @@ private fun GestureSettingsContent(
     windowSizeClass: WindowSizeClass,
     activity: Activity?,
     notificationPermissionLauncher: androidx.activity.result.ActivityResultLauncher<String>,
+    onNavigateToSettings: () -> Unit,
     onShowActionDialog: (androidx.datastore.preferences.core.Preferences.Key<String>, GestureAction) -> Unit,
     onShowBackTapActionDialog: () -> Unit
 ) {
@@ -319,6 +327,20 @@ private fun GestureSettingsContent(
                     activity = activity,
                     notificationPermissionLauncher = notificationPermissionLauncher
                 )
+
+                GesturePreview(
+                    leftEdgeWidth = settings.leftEdgeWidth,
+                    leftEdgeHeightPercent = settings.leftEdgeHeightPercent,
+                    leftEdgePositionPercent = settings.leftEdgePositionPercent,
+                    leftSegmentCount = settings.leftSegmentCount,
+                    rightEdgeWidth = settings.rightEdgeWidth,
+                    rightEdgeHeightPercent = settings.rightEdgeHeightPercent,
+                    rightEdgePositionPercent = settings.rightEdgePositionPercent,
+                    rightSegmentCount = settings.rightSegmentCount,
+                    bottomEdgeHeight = settings.bottomEdgeHeight,
+                    bottomEdgeWidthPercent = settings.bottomEdgeWidthPercent,
+                    bottomSegmentCount = settings.bottomSegmentCount
+                )
             }
 
             // 右侧列：手势设置折叠组件
@@ -334,6 +356,15 @@ private fun GestureSettingsContent(
                     viewModel = viewModel,
                     onShowActionDialog = onShowActionDialog,
                     onShowBackTapActionDialog = onShowBackTapActionDialog
+                )
+
+                TriggerAreaSettingsCard(
+                    settings = settings,
+                    viewModel = viewModel
+                )
+
+                MoreGridCard(
+                    onSettings = onNavigateToSettings
                 )
             }
         }
@@ -351,11 +382,41 @@ private fun GestureSettingsContent(
             )
 
             AnimatedVisibility(visible = settings.gestureEnabled) {
+                GesturePreview(
+                    leftEdgeWidth = settings.leftEdgeWidth,
+                    leftEdgeHeightPercent = settings.leftEdgeHeightPercent,
+                    leftEdgePositionPercent = settings.leftEdgePositionPercent,
+                    leftSegmentCount = settings.leftSegmentCount,
+                    rightEdgeWidth = settings.rightEdgeWidth,
+                    rightEdgeHeightPercent = settings.rightEdgeHeightPercent,
+                    rightEdgePositionPercent = settings.rightEdgePositionPercent,
+                    rightSegmentCount = settings.rightSegmentCount,
+                    bottomEdgeHeight = settings.bottomEdgeHeight,
+                    bottomEdgeWidthPercent = settings.bottomEdgeWidthPercent,
+                    bottomSegmentCount = settings.bottomSegmentCount,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
+
+            AnimatedVisibility(visible = settings.gestureEnabled) {
                 GestureSettingsExpandableColumn(
                     settings = settings,
                     viewModel = viewModel,
                     onShowActionDialog = onShowActionDialog,
                     onShowBackTapActionDialog = onShowBackTapActionDialog
+                )
+            }
+
+            AnimatedVisibility(visible = settings.gestureEnabled) {
+                TriggerAreaSettingsCard(
+                    settings = settings,
+                    viewModel = viewModel
+                )
+            }
+
+            AnimatedVisibility(visible = settings.gestureEnabled) {
+                MoreGridCard(
+                    onSettings = onNavigateToSettings
                 )
             }
         }
@@ -537,40 +598,6 @@ private fun GestureSettingsSwitchesColumn(
     }
 
     Spacer(modifier = Modifier.height(8.dp))
-
-    AnimatedVisibility(visible = settings.gestureEnabled) {
-        Column {
-            // 隐藏边缘触摸区域可视化反馈
-            GestureSettingsSwitchItem(
-                title = stringResource(R.string.gesture_hide_overlay_title),
-                subtitle = stringResource(R.string.gesture_hide_overlay_desc),
-                checked = settings.hideOverlay,
-                onCheckedChange = { hide ->
-                    viewModel.setHideOverlay(hide)
-                }
-            )
-
-            // 从最近任务列表中隐藏本应用
-            GestureSettingsSwitchItem(
-                title = stringResource(R.string.gesture_hide_recents_title),
-                subtitle = stringResource(R.string.gesture_hide_recents_desc),
-                checked = settings.hideFromRecents,
-                onCheckedChange = { hide ->
-                    viewModel.setHideFromRecents(hide)
-                }
-            )
-
-            // 避免输入法遮挡
-            GestureSettingsSwitchItem(
-                title = stringResource(R.string.gesture_avoid_keyboard_overlap_title),
-                subtitle = stringResource(R.string.gesture_avoid_keyboard_overlap_desc),
-                checked = settings.avoidKeyboardOverlap,
-                onCheckedChange = { enabled ->
-                    viewModel.setAvoidKeyboardOverlap(enabled)
-                }
-            )
-        }
-    }
 }
 
 @Composable
@@ -1213,6 +1240,223 @@ private fun StatItem(
             text = label,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun TriggerAreaSettingsCard(
+    settings: GestureSettingsState,
+    viewModel: GestureSettingsViewModel,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(0.95f),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                // 卡片头部: 闪电图标 + "触发区设置"
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(10.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "\u26A1",
+                            fontSize = 16.sp
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.trigger_area_settings_title),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                // 隐藏显示
+                GestureSettingsSwitchItem(
+                    title = stringResource(R.string.gesture_hide_overlay_title),
+                    subtitle = stringResource(R.string.gesture_hide_overlay_desc),
+                    checked = settings.hideOverlay,
+                    onCheckedChange = { hide ->
+                        viewModel.setHideOverlay(hide)
+                    }
+                )
+
+                // 隐藏后台
+                GestureSettingsSwitchItem(
+                    title = stringResource(R.string.gesture_hide_recents_title),
+                    subtitle = stringResource(R.string.gesture_hide_recents_desc),
+                    checked = settings.hideFromRecents,
+                    onCheckedChange = { hide ->
+                        viewModel.setHideFromRecents(hide)
+                    }
+                )
+
+                // 避免遮挡
+                GestureSettingsSwitchItem(
+                    title = stringResource(R.string.gesture_avoid_keyboard_overlap_title),
+                    subtitle = stringResource(R.string.gesture_avoid_keyboard_overlap_desc),
+                    checked = settings.avoidKeyboardOverlap,
+                    onCheckedChange = { enabled ->
+                        viewModel.setAvoidKeyboardOverlap(enabled)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MoreGridCard(
+    modifier: Modifier = Modifier,
+    onExpandPanel: (() -> Unit)? = null,
+    onBlacklist: (() -> Unit)? = null,
+    onLaunchBlock: (() -> Unit)? = null,
+    onSettings: (() -> Unit)? = null
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.more_section_title),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 1.2.sp
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 10.dp)
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            MoreGridItem(
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.GridView,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                label = stringResource(R.string.more_expand_panel),
+                onClick = onExpandPanel,
+                modifier = Modifier.weight(1f)
+            )
+
+            MoreGridItem(
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.Block,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                label = stringResource(R.string.more_blacklist),
+                onClick = onBlacklist,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            MoreGridItem(
+                icon = {
+                    Icon(
+                        imageVector = Icons.Filled.Security,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                label = stringResource(R.string.more_launch_block),
+                onClick = onLaunchBlock,
+                modifier = Modifier.weight(1f)
+            )
+
+            MoreGridItem(
+                icon = {
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                },
+                label = stringResource(R.string.more_settings),
+                onClick = onSettings,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+    }
+}
+
+@Composable
+private fun MoreGridItem(
+    icon: @Composable () -> Unit,
+    label: String,
+    onClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .background(
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = RoundedCornerShape(16.dp)
+            )
+            .then(
+                if (onClick != null) Modifier.clickable { onClick() }
+                else Modifier
+            )
+            .padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        icon()
+        Text(
+            text = label,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
