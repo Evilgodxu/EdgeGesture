@@ -25,6 +25,7 @@ import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
+import com.edgegesture.evilgodxu.R
 
 class RemindAlarmService : Service() {
 
@@ -58,11 +59,11 @@ class RemindAlarmService : Service() {
         // 1. 前台通知（低调，仅保持服务存活 + 状态栏可见）
         val channelId = "gesture_remind_ring"
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        nm.createNotificationChannel(NotificationChannel(channelId, "手势提醒", NotificationManager.IMPORTANCE_LOW))
+        nm.createNotificationChannel(NotificationChannel(channelId, getString(R.string.gesture_remind_channel_name), NotificationManager.IMPORTANCE_LOW))
 
         val notification = NotificationCompat.Builder(this, channelId)
-            .setContentTitle("手势提醒")
-            .setContentText("您设置的${minutes}分钟提醒时间到了")
+            .setContentTitle(getString(R.string.gesture_remind_notify_title))
+            .setContentText(getString(R.string.gesture_remind_notify_body, minutes))
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(true)
             .setSilent(true)
@@ -143,7 +144,7 @@ class RemindAlarmService : Service() {
 
             // 标题
             card.addView(TextView(this).apply {
-                text = "手势提醒"
+                text = getString(R.string.gesture_remind_notify_title)
                 textSize = 22f
                 setTextColor(textTitle)
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
@@ -152,7 +153,7 @@ class RemindAlarmService : Service() {
 
             // 消息
             card.addView(TextView(this).apply {
-                text = "您设置的 ${minutes} 分钟提醒时间到了"
+                text = getString(R.string.gesture_remind_notify_body, minutes)
                 textSize = 16f
                 setTextColor(textBody)
                 gravity = Gravity.CENTER

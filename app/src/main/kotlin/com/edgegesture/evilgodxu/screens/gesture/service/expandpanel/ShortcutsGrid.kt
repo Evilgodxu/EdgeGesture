@@ -216,7 +216,7 @@ private fun ShortcutItem(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "小",
+                    text = stringResource(R.string.expand_panel_freeform_label),
                     fontSize = 9.sp,
                     color = if (isFreeform) {
                         MaterialTheme.colorScheme.onPrimary

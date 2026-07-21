@@ -39,17 +39,21 @@
     <string name="settings_vibration_title">Vibration Feedback</string>
     <string name="settings_vibration_desc">Trigger vibration effect during swipe operations</string>
 
-    <!-- Gesture Settings Screen -->
-    <!-- Page Title -->
-    <string name="gesture_settings_title">Edge Gesture Settings</string>
-
-    <!-- Gesture Toggle -->
-    <string name="gesture_enable_title">Edge Gesture</string>
-    <string name="gesture_enable_desc">Enable gesture trigger area</string>
-
     <!-- Gesture Overlay Visibility -->
     <string name="gesture_hide_overlay_title">Hide Overlay</string>
     <string name="gesture_hide_overlay_desc">Hide gesture trigger area</string>
+
+    <!-- Service Status Card -->
+    <string name="gesture_service_running">Running</string>
+    <string name="gesture_service_stopped">Stopped</string>
+    <string name="gesture_service_subtitle">Accessibility Service · Edge Gesture</string>
+    <string name="gesture_service_start">Start Service</string>
+    <string name="gesture_service_stop">Stop Service</string>
+    <string name="gesture_service_title">Service Status</string>
+    <string name="gesture_count_label">Gestures</string>
+
+    <!-- Gesture Preview -->
+    <string name="gesture_preview_title">Trigger Area Preview</string>
 
     <!-- Hide from Recents -->
     <string name="gesture_hide_recents_title">Hide from Recents</string>
@@ -58,11 +62,6 @@
     <!-- Avoid Keyboard Overlap -->
     <string name="gesture_avoid_keyboard_overlap_title">Avoid Overlap</string>
     <string name="gesture_avoid_keyboard_overlap_desc">Auto-disable gesture area when keyboard is shown</string>
-
-    <!-- Edge Area Titles -->
-    <string name="gesture_left_edge_title">Left Edge Gestures</string>
-    <string name="gesture_right_edge_title">Right Edge Gestures</string>
-    <string name="gesture_bottom_edge_title">Bottom Edge Gestures</string>
 
     <!-- Gesture Action Types -->
     <string name="gesture_swipe_right">Swipe Right</string>
@@ -88,15 +87,62 @@
     <string name="gesture_action_lock_screen">Lock Screen</string>
     <string name="gesture_action_screenshot">Screenshot</string>
     <string name="gesture_action_expand_panel">Expand Panel</string>
+    <string name="gesture_action_alipay_scan">Alipay Scan</string>
+    <string name="gesture_action_wechat_scan">WeChat Scan</string>
+
+    <!-- Remind -->
+    <string name="gesture_action_remind_1m">Remind in 1 min</string>
+    <string name="gesture_action_remind_3m">Remind in 3 mins</string>
+    <string name="gesture_action_remind_5m">Remind in 5 mins</string>
+    <string name="gesture_action_remind_10m">Remind in 10 mins</string>
+    <string name="gesture_action_remind_15m">Remind in 15 mins</string>
+    <string name="gesture_remind_feedback">Reminder set for %d minutes later</string>
+    <string name="gesture_remind_channel_name">Gesture Reminder</string>
+    <string name="gesture_remind_notify_title">Gesture Reminder</string>
+    <string name="gesture_remind_notify_body">Your %d-minute reminder is up</string>
+    <string name="gesture_remind_timer_label">Gesture Reminder</string>
 
     <!-- Gesture Action Selection Dialog -->
     <string name="gesture_select_action_title">Select Action</string>
 
+    <!-- Trigger Area Settings -->
+    <string name="trigger_area_settings_title">Trigger Area Settings</string>
+
+    <!-- Statistics -->
+    <string name="stats_gesture_count">Count</string>
+    <string name="stats_block_count">Blocked</string>
+    <string name="stats_period_title">Statistics Period</string>
+    <string name="stats_period_1d">Last 1 day</string>
+    <string name="stats_period_7d">Last 7 days</string>
+    <string name="stats_period_30d">Last 30 days</string>
+    <string name="stats_period_hint">Period: </string>
+
+    <!-- More Features -->
+    <string name="more_section_title">More Features</string>
+    <string name="more_expand_panel">Expand Panel</string>
+    <string name="more_blacklist">App Blacklist</string>
+    <string name="more_launch_block">Launch Block</string>
+    <string name="more_settings">More Settings</string>
+
+    <!-- Gesture Config Summary -->
+    <string name="gesture_config_section_title">Gesture Configuration</string>
+    <string name="gesture_operation_section_title">Gesture Operations</string>
+    <string name="gesture_config_left">Left Edge Gestures</string>
+    <string name="gesture_config_right">Right Edge Gestures</string>
+    <string name="gesture_config_bottom">Bottom Edge Gestures</string>
+
+    <!-- Advanced Gestures -->
+    <string name="advanced_gesture_section_title">Advanced Gestures</string>
+    <string name="advanced_gesture_back_tap_title">Back Tap</string>
+    <string name="advanced_gesture_back_tap_disabled">Not enabled</string>
+    <string name="advanced_gesture_back_tap_enabled">Enabled</string>
+
+    <!-- Navigation -->
+    <string name="nav_back">Back</string>
+
     <!-- App Blacklist -->
     <string name="settings_more">More Settings</string>
-    <string name="settings_section_gesture">Gesture</string>
     <string name="settings_blacklist_title">App Switch Blacklist</string>
-    <string name="settings_blacklist_desc">Ignore blacklisted apps when switching to last app</string>
     <string name="settings_blacklist_dialog_title">App Switch Blacklist</string>
     <string name="settings_blacklist_search_hint">Search apps</string>
     <string name="settings_blacklist_system_tag">System</string>
@@ -113,22 +159,15 @@
     <string name="edge_height_percent">Height Percent</string>
     <string name="edge_width_percent">Width Percent</string>
     <string name="edge_position_percent">Position Percent</string>
-    <string name="gesture_left_edge_actions">Left Edge Actions</string>
-    <string name="gesture_left_edge_actions_2">Left Edge Actions - Segment 2</string>
-    <string name="gesture_left_edge_actions_3">Left Edge Actions - Segment 3</string>
-    <string name="gesture_right_edge_actions">Right Edge Actions</string>
-    <string name="gesture_right_edge_actions_2">Right Edge Actions - Segment 2</string>
-    <string name="gesture_right_edge_actions_3">Right Edge Actions - Segment 3</string>
-    <string name="gesture_bottom_edge_actions">Bottom Edge Actions</string>
-    <string name="gesture_bottom_edge_actions_2">Bottom Edge Actions - Segment 2</string>
-    <string name="gesture_bottom_edge_actions_3">Bottom Edge Actions - Segment 3</string>
     <string name="edge_segment_count">Segments</string>
     <string name="edge_segment_unit">seg</string>
+    <string name="gesture_segment_label">Segment %d</string>
     <string name="gesture_disabled">Disabled</string>
 
     <!-- Permission Requests -->
     <string name="permission_status_title">Permission Status</string>
     <string name="permission_request_button">Grant</string>
+    <string name="permission_granted">Granted</string>
     <string name="permission_overlay_title">Overlay Permission</string>
     <string name="permission_overlay_desc">Overlay permission is required to display edge gesture areas</string>
     <string name="permission_notification_title">Notification Permission</string>
@@ -146,6 +185,8 @@
 
     <!-- Accessibility Service -->
     <string name="accessibility_service_description">Edge Gesture requires accessibility permission to perform system operations such as back, home, recent tasks, etc.</string>
+
+    <string name="expand_panel_freeform_label">Small</string>
 
     <!-- Expand Panel -->
     <string name="expand_panel_brightness">Brightness</string>
@@ -209,6 +250,8 @@
 
     <!-- Back Tap -->
     <string name="back_tap_title">Back Tap</string>
+    <string name="back_tap_summary_no_action">Sensitivity %d · Range %d</string>
+    <string name="back_tap_summary_with_action">Sensitivity %d · Range %d · %s</string>
     <string name="back_tap_enable_title">Back Tap</string>
     <string name="back_tap_enable_desc">Double tap the back of phone to trigger action</string>
     <string name="back_tap_sensitivity">Sensitivity</string>

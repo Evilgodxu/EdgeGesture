@@ -20,6 +20,7 @@ import android.provider.AlarmClock
 import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
+import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
@@ -471,7 +472,7 @@ class AccessibilityActionExecutor(
         try {
             Toast.makeText(
                 service,
-                "已设置${minutes}分钟后提醒",
+                service.getString(R.string.gesture_remind_feedback, minutes),
                 Toast.LENGTH_SHORT
             ).show()
         } catch (_: Exception) {}
@@ -482,7 +483,7 @@ class AccessibilityActionExecutor(
             val intent = Intent(AlarmClock.ACTION_SET_TIMER).apply {
                 putExtra(AlarmClock.EXTRA_LENGTH, minutes * 60) // 单位：秒
                 putExtra(AlarmClock.EXTRA_SKIP_UI, true)
-                putExtra(AlarmClock.EXTRA_MESSAGE, "手势提醒")
+                putExtra(AlarmClock.EXTRA_MESSAGE, service.getString(R.string.gesture_remind_timer_label))
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
             service.startActivity(intent)

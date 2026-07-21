@@ -1056,10 +1056,10 @@ private fun StatItem(
 @Composable
 private fun buildBackTapDescription(settings: GestureSettingsState): String {
     if (!settings.backTapEnabled) {
-        return "灵敏度 ${settings.backTapSensitivity} · 范围 ${settings.backTapRange}"
+        return stringResource(R.string.back_tap_summary_no_action, settings.backTapSensitivity, settings.backTapRange)
     }
     val actionName = getActionDisplayName(settings.backTapAction)
-    return "灵敏度 ${settings.backTapSensitivity} · 范围 ${settings.backTapRange} · $actionName"
+    return stringResource(R.string.back_tap_summary_with_action, settings.backTapSensitivity, settings.backTapRange, actionName)
 }
 
 @Composable
