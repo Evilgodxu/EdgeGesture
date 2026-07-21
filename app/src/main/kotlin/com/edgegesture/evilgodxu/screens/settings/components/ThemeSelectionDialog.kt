@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -27,6 +28,8 @@ fun ThemeSelectionDialog(
     onDismiss: () -> Unit,
     onThemeSelected: (ThemeMode) -> Unit
 ) {
+    val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -54,18 +57,20 @@ fun ThemeSelectionDialog(
                             .padding(horizontal = 24.dp, vertical = 4.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(
-                                if (isSelected)
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                else
-                                    MaterialTheme.colorScheme.surface
+                                when {
+                                    isSelected && isDarkTheme -> MaterialTheme.colorScheme.primaryContainer
+                                    isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                    else -> MaterialTheme.colorScheme.surface
+                                }
                             )
                             .clickable { onThemeSelected(themeMode) }
                             .padding(vertical = 14.dp),
                         textAlign = TextAlign.Center,
-                        color = if (isSelected)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onSurface,
+                        color = when {
+                            isSelected && isDarkTheme -> MaterialTheme.colorScheme.onPrimaryContainer
+                            isSelected -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onSurface
+                        },
                         fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                     )
                 }

@@ -100,6 +100,21 @@
     <string name="gesture_action_screenshot">截屏</string>
     <string name="gesture_action_expand_panel">扩展面板</string>
 
+    <!-- 扫一扫 -->
+    <string name="gesture_action_alipay_scan">支付宝扫一扫</string>
+    <string name="gesture_action_wechat_scan">微信扫一扫</string>
+    <string name="gesture_action_qq_scan">QQ扫一扫</string>
+
+    <!-- 延时提醒 -->
+    <string name="gesture_action_remind_1m">1分钟后提醒</string>
+    <string name="gesture_action_remind_3m">3分钟后提醒</string>
+    <string name="gesture_action_remind_5m">5分钟后提醒</string>
+    <string name="gesture_action_remind_10m">10分钟后提醒</string>
+    <string name="gesture_action_remind_15m">15分钟后提醒</string>
+    <string name="gesture_remind_channel_name">手势提醒</string>
+    <string name="gesture_remind_notify_title">手势提醒</string>
+    <string name="gesture_remind_notify_body">您设置的提醒时间到了</string>
+
     <!-- 手势操作选择对话框 -->
     <string name="gesture_select_action_title">选择操作</string>
 
@@ -127,6 +142,14 @@
 
     <string name="stats_gesture_count">次数</string>
     <string name="stats_block_count">拦截</string>
+
+    <!-- 统计周期 -->
+    <string name="stats_period_title">统计周期</string>
+    <string name="stats_period_1d">近1天</string>
+    <string name="stats_period_7d">近7天</string>
+    <string name="stats_period_30d">近30天</string>
+    <string name="stats_period_hint">周期：</string>
+    <string name="stats_period_long_press_hint">长按统计信息切换周期</string>
 
     <!-- 更多功能 -->
     <string name="more_section_title">更多功能</string>

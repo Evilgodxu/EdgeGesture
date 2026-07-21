@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -323,7 +324,7 @@ fun LaunchBlockRuleDialog(
                         Text(
                             text = stringResource(R.string.launch_block_allow_kill_system_desc),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.error
                         )
                         if (shizukuState !is ShizukuState.Granted) {
                             val shizukuHint = when (shizukuState) {
@@ -388,7 +389,7 @@ fun LaunchBlockRuleDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
                     ) {
                         listOf(0, 500, 1000).forEach { delay ->
                             val isSelected = blockDelay == delay
@@ -400,7 +401,13 @@ fun LaunchBlockRuleDialog(
                             androidx.compose.material3.FilterChip(
                                 selected = isSelected,
                                 onClick = { blockDelay = delay },
-                                label = { Text(label, style = MaterialTheme.typography.bodySmall) }
+                                label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
                             )
                         }
                     }
@@ -477,8 +484,8 @@ fun LaunchBlockRuleDialog(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurface
                         )
                     ) {
                         Text(

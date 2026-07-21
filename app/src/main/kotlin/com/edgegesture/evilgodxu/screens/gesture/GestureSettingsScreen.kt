@@ -13,7 +13,9 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +59,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
 
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -66,22 +69,25 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
@@ -91,12 +97,14 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowSizeClass
 import com.edgegesture.evilgodxu.R
+import kotlinx.coroutines.launch
 import com.composables.icons.materialsymbols.outlined.R.drawable as MsRDrawable
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
 import com.edgegesture.evilgodxu.data.gesture.GestureStats
 import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
+import com.edgegesture.evilgodxu.data.gesture.StatsPeriod
 import com.edgegesture.evilgodxu.data.permission.PermissionType
 import com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService
 import com.edgegesture.evilgodxu.ui.adaptive.rememberWindowSizeClass
@@ -377,6 +385,23 @@ private fun GestureSettingsSwitchesColumn(
 ) {
     val context = LocalContext.current
     val stats by GestureStatsManager.stats.collectAsState()
+    val statsPeriod by GestureStatsManager.period.collectAsState()
+    var showStatsPeriodDialog by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+
+    // 统计周期选择对话框
+    if (showStatsPeriodDialog) {
+        StatsPeriodSelectionDialog(
+            currentPeriod = statsPeriod,
+            onDismiss = { showStatsPeriodDialog = false },
+            onPeriodSelected = { period ->
+                coroutineScope.launch {
+                    GestureStatsManager.setPeriod(context, period)
+                }
+                showStatsPeriodDialog = false
+            }
+        )
+    }
 
     // 启动服务状态卡片
     Text(
@@ -394,6 +419,7 @@ private fun GestureSettingsSwitchesColumn(
         totalSegments = settings.leftSegmentCount + settings.rightSegmentCount + settings.bottomSegmentCount,
         totalGestures = countNonNoneGestures(settings),
         stats = stats,
+        statsPeriod = statsPeriod,
         onToggleService = { enable ->
             if (enable && !uiState.isAccessibilityEnabled) {
                 if (activity != null) {
@@ -409,7 +435,8 @@ private fun GestureSettingsSwitchesColumn(
             } else {
                 EdgeGestureAccessibilityService.stopGesture(context)
             }
-        }
+        },
+        onLongPressStats = { showStatsPeriodDialog = true }
     )
 
     // 权限状态分组卡片（全部授权后自动隐藏）
@@ -714,6 +741,7 @@ private fun countNonNoneGestures(settings: GestureSettingsState): Int {
  * 启动服务状态卡片
  * 匹配新版 UI 设计：状态标题 + 圆点指示器 + 按钮 + 统计信息
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ServiceStatusCard(
     enabled: Boolean,
@@ -721,7 +749,9 @@ private fun ServiceStatusCard(
     totalSegments: Int,
     totalGestures: Int,
     stats: GestureStats,
+    statsPeriod: StatsPeriod,
     onToggleService: (Boolean) -> Unit,
+    onLongPressStats: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -807,101 +837,128 @@ private fun ServiceStatusCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 统计信息网格
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+            // 统计信息网格（含长按切换周期）
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = onLongPressStats
+                    ),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 段数统计
-                StatItem(
-                    icon = {
-                        Box(
-                            modifier = Modifier.size(20.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // 段数统计
+                    StatItem(
+                        icon = {
                             Box(
-                                modifier = Modifier
-                                    .size(16.dp, 20.dp)
-                                    .border(
-                                        1.5.dp,
-                                        MaterialTheme.colorScheme.onSurfaceVariant,
-                                        RoundedCornerShape(3.dp)
-                                    )
+                                modifier = Modifier.size(20.dp),
+                                contentAlignment = Alignment.Center
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .align(Alignment.CenterStart)
-                                        .size(2.dp, 10.dp)
-                                        .background(
-                                            MaterialTheme.colorScheme.primary,
-                                            RoundedCornerShape(1.dp)
+                                        .size(16.dp, 20.dp)
+                                        .border(
+                                            1.5.dp,
+                                            MaterialTheme.colorScheme.onSurfaceVariant,
+                                            RoundedCornerShape(3.dp)
                                         )
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.CenterEnd)
-                                        .size(2.dp, 10.dp)
-                                        .background(
-                                            MaterialTheme.colorScheme.primary,
-                                            RoundedCornerShape(1.dp)
-                                        )
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.BottomCenter)
-                                        .size(8.dp, 2.dp)
-                                        .background(
-                                            MaterialTheme.colorScheme.primary,
-                                            RoundedCornerShape(1.dp)
-                                        )
-                                )
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.CenterStart)
+                                            .size(2.dp, 10.dp)
+                                            .background(
+                                                MaterialTheme.colorScheme.primary,
+                                                RoundedCornerShape(1.dp)
+                                            )
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.CenterEnd)
+                                            .size(2.dp, 10.dp)
+                                            .background(
+                                                MaterialTheme.colorScheme.primary,
+                                                RoundedCornerShape(1.dp)
+                                            )
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .size(8.dp, 2.dp)
+                                            .background(
+                                                MaterialTheme.colorScheme.primary,
+                                                RoundedCornerShape(1.dp)
+                                            )
+                                    )
+                                }
                             }
+                        },
+                        value = totalSegments.toString(),
+                        label = stringResource(R.string.edge_segment_count)
+                    )
+
+                    // 手势配置数统计
+                    StatItem(
+                        icon = {
+                            Icon(
+                                painter = painterResource(MsRDrawable.materialsymbols_ic_mobile_hand_outlined),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        value = totalGestures.toString(),
+                        label = stringResource(R.string.gesture_count_label)
+                    )
+
+                    // 统计周期手势次数
+                    StatItem(
+                        icon = {
+                            Icon(
+                                painter = painterResource(MsRDrawable.materialsymbols_ic_bar_chart_outlined),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        },
+                        value = stats.gestureCount.toString(),
+                        label = stringResource(R.string.stats_gesture_count)
+                    )
+
+                    // 统计周期拦截次数
+                    StatItem(
+                        icon = {
+                            Icon(
+                                painter = painterResource(MsRDrawable.materialsymbols_ic_dangerous_outlined),
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        },
+                        value = stats.blockCount.toString(),
+                        label = stringResource(R.string.stats_block_count)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // 周期指示器（可点击切换）
+                Text(
+                    text = stringResource(
+                        R.string.stats_period_hint
+                    ) + stringResource(
+                        when (statsPeriod) {
+                            StatsPeriod.DAY_1 -> R.string.stats_period_1d
+                            StatsPeriod.DAY_7 -> R.string.stats_period_7d
+                            StatsPeriod.DAY_30 -> R.string.stats_period_30d
                         }
-                    },
-                    value = totalSegments.toString(),
-                    label = stringResource(R.string.edge_segment_count)
-                )
-
-                // 手势配置数统计
-                StatItem(
-                    icon = {
-                        Icon(
-                            painter = painterResource(MsRDrawable.materialsymbols_ic_mobile_hand_outlined),
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    value = totalGestures.toString(),
-                    label = stringResource(R.string.gesture_count_label)
-                )
-
-                // 今日手势次数
-                StatItem(
-                    icon = {
-                        Icon(
-                            painter = painterResource(MsRDrawable.materialsymbols_ic_bar_chart_outlined),
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    },
-                    value = stats.todayGestureCount.toString(),
-                    label = stringResource(R.string.stats_gesture_count)
-                )
-
-                // 今日拦截次数
-                StatItem(
-                    icon = {
-                        Icon(
-                            painter = painterResource(MsRDrawable.materialsymbols_ic_dangerous_outlined),
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    },
-                    value = stats.todayBlockCount.toString(),
-                    label = stringResource(R.string.stats_block_count)
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
             }
         }
@@ -1498,3 +1555,64 @@ private fun MoreGridItem(
 }
 
 const val REQUEST_OVERLAY = 1001
+
+// 统计周期选择对话框
+@Composable
+private fun StatsPeriodSelectionDialog(
+    currentPeriod: StatsPeriod,
+    onDismiss: () -> Unit,
+    onPeriodSelected: (StatsPeriod) -> Unit
+) {
+    val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = stringResource(R.string.stats_period_title),
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                StatsPeriod.entries.forEach { period ->
+                    val isSelected = currentPeriod == period
+                    Text(
+                        text = stringResource(
+                            when (period) {
+                                StatsPeriod.DAY_1 -> R.string.stats_period_1d
+                                StatsPeriod.DAY_7 -> R.string.stats_period_7d
+                                StatsPeriod.DAY_30 -> R.string.stats_period_30d
+                            }
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 4.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                when {
+                                    isSelected && isDarkTheme -> MaterialTheme.colorScheme.primaryContainer
+                                    isSelected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                    else -> MaterialTheme.colorScheme.surface
+                                }
+                            )
+                            .clickable { onPeriodSelected(period) }
+                            .padding(vertical = 14.dp),
+                        textAlign = TextAlign.Center,
+                        color = when {
+                            isSelected && isDarkTheme -> MaterialTheme.colorScheme.onPrimaryContainer
+                            isSelected -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onSurface
+                        },
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                    )
+                }
+            }
+        },
+        confirmButton = {}
+    )
+}

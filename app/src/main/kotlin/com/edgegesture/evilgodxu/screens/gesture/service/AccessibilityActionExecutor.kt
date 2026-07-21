@@ -1,17 +1,24 @@
 package com.edgegesture.evilgodxu.screens.gesture.service
 
 import android.accessibilityservice.AccessibilityService
+import android.app.AlarmManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
 import android.os.VibratorManager
+import android.provider.AlarmClock
 import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
+import android.widget.Toast
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
@@ -75,6 +82,14 @@ class AccessibilityActionExecutor(
             GestureAction.LOCK_SCREEN -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN)
             GestureAction.SCREENSHOT -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT)
             GestureAction.EXPAND_PANEL -> showExpandPanel()
+            GestureAction.ALIPAY_SCAN -> launchScanAlipay()
+            GestureAction.WECHAT_SCAN -> launchScanWechat()
+            GestureAction.QQ_SCAN -> launchScanQQ()
+            GestureAction.REMIND_1M -> scheduleReminder(1)
+            GestureAction.REMIND_3M -> scheduleReminder(3)
+            GestureAction.REMIND_5M -> scheduleReminder(5)
+            GestureAction.REMIND_10M -> scheduleReminder(10)
+            GestureAction.REMIND_15M -> scheduleReminder(15)
             GestureAction.NONE -> {}
         }
     }
@@ -381,7 +396,160 @@ class AccessibilityActionExecutor(
         vibrator.vibrate(VibrationEffect.createOneShot(50, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
+    // ============================================================
+    // 扫一扫
+    // ============================================================
+
+    private fun launchScanAlipay() {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("alipays://platformapi/startapp?saId=10000007")
+                setPackage("com.eg.android.AlipayGphone")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            service.startActivity(intent)
+        } catch (_: Exception) {
+            try {
+                val launchIntent = service.packageManager.getLaunchIntentForPackage("com.eg.android.AlipayGphone")
+                if (launchIntent != null) {
+                    launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    service.startActivity(launchIntent)
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
+    private fun launchScanWechat() {
+        // 依次尝试多个扫一扫 URI Scheme
+        val uris = listOf("weixin://dl/scan", "weixin://scanqrcode")
+        for (uri in uris) {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse(uri)
+                    setPackage("com.tencent.mm")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                service.startActivity(intent)
+                return
+            } catch (_: Exception) { /* 继续尝试下一个 */ }
+        }
+        // 最后尝试直接打开微信
+        try {
+            val launchIntent = service.packageManager.getLaunchIntentForPackage("com.tencent.mm")
+            if (launchIntent != null) {
+                launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                service.startActivity(launchIntent)
+            }
+        } catch (_: Exception) {}
+    }
+
+    private fun launchScanQQ() {
+        // 依次尝试多个扫一扫 URI Scheme
+        val uris = listOf("mqqapi://qrcode/scan", "mqqapi://scan/scan_qrcode", "mqqapi://scan/scan")
+        for (uri in uris) {
+            try {
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    data = Uri.parse(uri)
+                    setPackage("com.tencent.mobileqq")
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                }
+                service.startActivity(intent)
+                return
+            } catch (_: Exception) { /* 继续尝试下一个 */ }
+        }
+        // 最后尝试直接打开 QQ
+        try {
+            val launchIntent = service.packageManager.getLaunchIntentForPackage("com.tencent.mobileqq")
+            if (launchIntent != null) {
+                launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                service.startActivity(launchIntent)
+            }
+        } catch (_: Exception) {}
+    }
+
+    // ============================================================
+    // 延时提醒
+    // ============================================================
+
+    private fun scheduleReminder(minutes: Int) {
+        // 1. 立即显示反馈
+        showRemindFeedback(minutes)
+
+        // 2. 优先使用系统时钟倒计时
+        if (trySystemClockTimer(minutes)) return
+
+        // 3. 备用方案：使用 AlarmManager 调度
+        scheduleOwnAlarm(minutes)
+    }
+
+    private fun showRemindFeedback(minutes: Int) {
+        try {
+            Toast.makeText(
+                service,
+                "已设置${minutes}分钟后提醒",
+                Toast.LENGTH_SHORT
+            ).show()
+        } catch (_: Exception) {}
+    }
+
+    private fun trySystemClockTimer(minutes: Int): Boolean {
+        return try {
+            val intent = Intent(AlarmClock.ACTION_SET_TIMER).apply {
+                putExtra(AlarmClock.EXTRA_LENGTH, minutes * 60) // 单位：秒
+                putExtra(AlarmClock.EXTRA_SKIP_UI, true)
+                putExtra(AlarmClock.EXTRA_MESSAGE, "手势提醒")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            service.startActivity(intent)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    private fun scheduleOwnAlarm(minutes: Int) {
+        try {
+            val alarmManager = service.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val triggerTime = System.currentTimeMillis() + minutes * 60 * 1000L
+
+            val intent = Intent(service, RemindAlarmReceiver::class.java).apply {
+                action = RemindAlarmReceiver.ACTION_REMIND
+                putExtra(RemindAlarmReceiver.EXTRA_MINUTES, minutes)
+            }
+            val pendingIntent = PendingIntent.getBroadcast(
+                service,
+                REMIND_REQUEST_CODE_BASE + minutes,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                triggerTime,
+                pendingIntent
+            )
+        } catch (_: SecurityException) {
+            // 没有 USE_EXACT_ALARM 权限时，使用非精确闹钟
+            try {
+                val alarmManager = service.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+                val triggerTime = System.currentTimeMillis() + minutes * 60 * 1000L
+                val intent = Intent(service, RemindAlarmReceiver::class.java).apply {
+                    action = RemindAlarmReceiver.ACTION_REMIND
+                    putExtra(RemindAlarmReceiver.EXTRA_MINUTES, minutes)
+                }
+                val pendingIntent = PendingIntent.getBroadcast(
+                    service,
+                    REMIND_REQUEST_CODE_BASE + minutes,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                alarmManager.set(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+            } catch (_: Exception) {}
+        } catch (_: Exception) {}
+    }
+
     companion object {
         private const val TAG = "ActionExecutor"
+        private const val REMIND_REQUEST_CODE_BASE = 3000
     }
 }

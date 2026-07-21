@@ -137,7 +137,17 @@ enum class GestureAction(val value: String) {
     POWER_MENU("power_menu"),
     LOCK_SCREEN("lock_screen"),
     SCREENSHOT("screenshot"),
-    EXPAND_PANEL("expand_panel");
+    EXPAND_PANEL("expand_panel"),
+    // 扫一扫
+    ALIPAY_SCAN("alipay_scan"),
+    WECHAT_SCAN("wechat_scan"),
+    QQ_SCAN("qq_scan"),
+    // 延时提醒
+    REMIND_1M("remind_1m"),
+    REMIND_3M("remind_3m"),
+    REMIND_5M("remind_5m"),
+    REMIND_10M("remind_10m"),
+    REMIND_15M("remind_15m");
 
     companion object {
         fun fromValue(value: String): GestureAction = entries.find { it.value == value } ?: NONE
