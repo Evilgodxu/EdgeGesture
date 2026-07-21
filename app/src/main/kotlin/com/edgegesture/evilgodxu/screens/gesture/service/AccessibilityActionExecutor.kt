@@ -5,6 +5,7 @@ import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.hardware.camera2.CameraAccessException
@@ -84,7 +85,6 @@ class AccessibilityActionExecutor(
             GestureAction.EXPAND_PANEL -> showExpandPanel()
             GestureAction.ALIPAY_SCAN -> launchScanAlipay()
             GestureAction.WECHAT_SCAN -> launchScanWechat()
-            GestureAction.QQ_SCAN -> launchScanQQ()
             GestureAction.REMIND_1M -> scheduleReminder(1)
             GestureAction.REMIND_3M -> scheduleReminder(3)
             GestureAction.REMIND_5M -> scheduleReminder(5)
@@ -400,6 +400,39 @@ class AccessibilityActionExecutor(
     // 扫一扫
     // ============================================================
 
+    // 微信扫一扫：LauncherUI + From.Scaner.Shortcut extra
+    private fun launchScanWechat() {
+        try {
+            val intent = Intent().apply {
+                component = ComponentName("com.tencent.mm", "com.tencent.mm.ui.LauncherUI")
+                putExtra("LauncherUI.From.Scaner.Shortcut", true)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            service.startActivity(intent)
+            return
+        } catch (_: Exception) {}
+
+        // 备用 BaseCaptureUI（部分微信版本）
+        try {
+            val intent = Intent().apply {
+                component = ComponentName("com.tencent.mm", "com.tencent.mm.plugin.scanner.ui.BaseCaptureUI")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            service.startActivity(intent)
+            return
+        } catch (_: Exception) {}
+
+        // 兜底：打开微信
+        try {
+            val launchIntent = service.packageManager.getLaunchIntentForPackage("com.tencent.mm")
+            if (launchIntent != null) {
+                launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                service.startActivity(launchIntent)
+            }
+        } catch (_: Exception) {}
+    }
+
+    // 支付宝扫一扫
     private fun launchScanAlipay() {
         try {
             val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -417,54 +450,6 @@ class AccessibilityActionExecutor(
                 }
             } catch (_: Exception) {}
         }
-    }
-
-    private fun launchScanWechat() {
-        // 依次尝试多个扫一扫 URI Scheme
-        val uris = listOf("weixin://dl/scan", "weixin://scanqrcode")
-        for (uri in uris) {
-            try {
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    data = Uri.parse(uri)
-                    setPackage("com.tencent.mm")
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }
-                service.startActivity(intent)
-                return
-            } catch (_: Exception) { /* 继续尝试下一个 */ }
-        }
-        // 最后尝试直接打开微信
-        try {
-            val launchIntent = service.packageManager.getLaunchIntentForPackage("com.tencent.mm")
-            if (launchIntent != null) {
-                launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                service.startActivity(launchIntent)
-            }
-        } catch (_: Exception) {}
-    }
-
-    private fun launchScanQQ() {
-        // 依次尝试多个扫一扫 URI Scheme
-        val uris = listOf("mqqapi://qrcode/scan", "mqqapi://scan/scan_qrcode", "mqqapi://scan/scan")
-        for (uri in uris) {
-            try {
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    data = Uri.parse(uri)
-                    setPackage("com.tencent.mobileqq")
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }
-                service.startActivity(intent)
-                return
-            } catch (_: Exception) { /* 继续尝试下一个 */ }
-        }
-        // 最后尝试直接打开 QQ
-        try {
-            val launchIntent = service.packageManager.getLaunchIntentForPackage("com.tencent.mobileqq")
-            if (launchIntent != null) {
-                launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                service.startActivity(launchIntent)
-            }
-        } catch (_: Exception) {}
     }
 
     // ============================================================

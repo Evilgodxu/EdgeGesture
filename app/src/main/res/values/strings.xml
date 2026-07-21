@@ -103,7 +103,6 @@
     <!-- 扫一扫 -->
     <string name="gesture_action_alipay_scan">支付宝扫一扫</string>
     <string name="gesture_action_wechat_scan">微信扫一扫</string>
-    <string name="gesture_action_qq_scan">QQ扫一扫</string>
 
     <!-- 延时提醒 -->
     <string name="gesture_action_remind_1m">1分钟后提醒</string>

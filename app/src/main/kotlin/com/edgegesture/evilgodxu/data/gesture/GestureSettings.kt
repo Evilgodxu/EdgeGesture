@@ -141,7 +141,6 @@ enum class GestureAction(val value: String) {
     // 扫一扫
     ALIPAY_SCAN("alipay_scan"),
     WECHAT_SCAN("wechat_scan"),
-    QQ_SCAN("qq_scan"),
     // 延时提醒
     REMIND_1M("remind_1m"),
     REMIND_3M("remind_3m"),
