@@ -24,6 +24,7 @@ window = "1.5.1"
 material3Adaptive = "1.2.0"
 koin = "4.2.2"
 hiddenApiBypass = "6.1"
+composablesIcons = "2.2.1"
 
 [libraries]
 
@@ -66,3 +67,6 @@ shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version = "
 
 # Hidden API Bypass
 hidden-api-bypass = { group = "org.lsposed.hiddenapibypass", name = "hiddenapibypass", version.ref = "hiddenApiBypass" }
+
+# Compose Icons (Material Symbols)
+composables-icons-material-symbols-outlined = { group = "com.composables", name = "icons-material-symbols-outlined-android", version.ref = "composablesIcons" }

@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -35,7 +36,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +59,7 @@ import com.edgegesture.evilgodxu.data.app.AppInfo
 import com.edgegesture.evilgodxu.data.gesture.addToAppSwitchBlacklist
 import com.edgegesture.evilgodxu.data.gesture.appSwitchBlacklistFlow
 import com.edgegesture.evilgodxu.data.gesture.removeFromAppSwitchBlacklist
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -74,18 +78,41 @@ fun AppBlacklistScreen(
     val hasPermission = remember { appRepository.hasQueryPermission() }
 
     var searchQuery by remember { mutableStateOf("") }
+    var debouncedQuery by remember { mutableStateOf("") }
 
-    val filteredApps = remember(allApps, searchQuery) {
-        if (searchQuery.isBlank()) {
-            allApps
-        } else {
-            val lowerQuery = searchQuery.lowercase()
-            allApps.filter {
-                it.appName.lowercase().contains(lowerQuery) ||
-                it.packageName.lowercase().contains(lowerQuery)
+    // 防抖：用户停止输入 300ms 后才触发搜索过滤
+    LaunchedEffect(searchQuery) {
+        delay(300)
+        debouncedQuery = searchQuery
+    }
+
+    val filteredApps by remember(allApps, debouncedQuery) {
+        derivedStateOf {
+            if (debouncedQuery.isBlank()) {
+                allApps
+            } else {
+                val lowerQuery = debouncedQuery.lowercase()
+                allApps
+                    .filter {
+                        it.appName.lowercase().contains(lowerQuery) ||
+                        it.packageName.lowercase().contains(lowerQuery)
+                    }
+                    .sortedByDescending { app ->
+                        val name = app.appName.lowercase()
+                        val pkg = app.packageName.lowercase()
+                        when {
+                            name == lowerQuery -> 4
+                            name.startsWith(lowerQuery) -> 3
+                            name.contains(lowerQuery) -> 2
+                            pkg.contains(lowerQuery) -> 1
+                            else -> 0
+                        }
+                    }
             }
         }
     }
+
+    val isSearching = debouncedQuery.isNotBlank()
 
     val showEmptyState = !isLoading && allApps.isEmpty()
 
@@ -156,44 +183,65 @@ fun AppBlacklistScreen(
                     }
                 }
                 else -> {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    ) {
-                        items(filteredApps, key = { it.packageName }) { app ->
-                            val isBlacklisted = app.packageName in blacklist
-                            AppListItem(
-                                app = app,
-                                isBlacklisted = isBlacklisted,
-                                onToggle = { checked ->
-                                    scope.launch {
-                                        if (checked) {
-                                            context.addToAppSwitchBlacklist(setOf(app.packageName))
-                                        } else {
-                                            context.removeFromAppSwitchBlacklist(setOf(app.packageName))
-                                        }
-                                    }
-                                }
+                    // 应用列表（或搜索无结果提示）
+                    if (filteredApps.isEmpty() && isSearching) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_blacklist_no_results, debouncedQuery),
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        ) {
+                            items(filteredApps, key = { it.packageName }) { app ->
+                                val isBlacklisted = app.packageName in blacklist
+                                AppListItem(
+                                    app = app,
+                                    isBlacklisted = isBlacklisted,
+                                    onToggle = { checked ->
+                                        scope.launch {
+                                            if (checked) {
+                                                context.addToAppSwitchBlacklist(setOf(app.packageName))
+                                            } else {
+                                                context.removeFromAppSwitchBlacklist(setOf(app.packageName))
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 搜索框在底部
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text(stringResource(R.string.settings_blacklist_search_hint)) },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Close, contentDescription = null)
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
                 }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 搜索框
-            if (!showEmptyState) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(stringResource(R.string.settings_blacklist_search_hint)) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp)
-                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))

@@ -856,13 +856,39 @@ private fun getGestureActions(
                 3 -> settings.leftEdgeSegment3
                 else -> settings.leftEdge
             }
+            val keys = when (segment) {
+                2 -> listOf(
+                    GestureSettingsKeys.LEFT_2_SWIPE_RIGHT,
+                    GestureSettingsKeys.LEFT_2_SWIPE_RIGHT_LONG,
+                    GestureSettingsKeys.LEFT_2_SWIPE_UP,
+                    GestureSettingsKeys.LEFT_2_SWIPE_UP_LONG,
+                    GestureSettingsKeys.LEFT_2_SWIPE_DOWN,
+                    GestureSettingsKeys.LEFT_2_SWIPE_DOWN_LONG
+                )
+                3 -> listOf(
+                    GestureSettingsKeys.LEFT_3_SWIPE_RIGHT,
+                    GestureSettingsKeys.LEFT_3_SWIPE_RIGHT_LONG,
+                    GestureSettingsKeys.LEFT_3_SWIPE_UP,
+                    GestureSettingsKeys.LEFT_3_SWIPE_UP_LONG,
+                    GestureSettingsKeys.LEFT_3_SWIPE_DOWN,
+                    GestureSettingsKeys.LEFT_3_SWIPE_DOWN_LONG
+                )
+                else -> listOf(
+                    GestureSettingsKeys.LEFT_SWIPE_RIGHT,
+                    GestureSettingsKeys.LEFT_SWIPE_RIGHT_LONG,
+                    GestureSettingsKeys.LEFT_SWIPE_UP,
+                    GestureSettingsKeys.LEFT_SWIPE_UP_LONG,
+                    GestureSettingsKeys.LEFT_SWIPE_DOWN,
+                    GestureSettingsKeys.LEFT_SWIPE_DOWN_LONG
+                )
+            }
             listOf(
-                edge.swipeRight to GestureSettingsKeys.LEFT_SWIPE_RIGHT,
-                edge.swipeRightLong to GestureSettingsKeys.LEFT_SWIPE_RIGHT_LONG,
-                edge.swipeUp to GestureSettingsKeys.LEFT_SWIPE_UP,
-                edge.swipeUpLong to GestureSettingsKeys.LEFT_SWIPE_UP_LONG,
-                edge.swipeDown to GestureSettingsKeys.LEFT_SWIPE_DOWN,
-                edge.swipeDownLong to GestureSettingsKeys.LEFT_SWIPE_DOWN_LONG
+                edge.swipeRight to keys[0],
+                edge.swipeRightLong to keys[1],
+                edge.swipeUp to keys[2],
+                edge.swipeUpLong to keys[3],
+                edge.swipeDown to keys[4],
+                edge.swipeDownLong to keys[5]
             )
         }
         EdgeType.RIGHT -> {
@@ -871,13 +897,39 @@ private fun getGestureActions(
                 3 -> settings.rightEdgeSegment3
                 else -> settings.rightEdge
             }
+            val keys = when (segment) {
+                2 -> listOf(
+                    GestureSettingsKeys.RIGHT_2_SWIPE_LEFT,
+                    GestureSettingsKeys.RIGHT_2_SWIPE_LEFT_LONG,
+                    GestureSettingsKeys.RIGHT_2_SWIPE_UP,
+                    GestureSettingsKeys.RIGHT_2_SWIPE_UP_LONG,
+                    GestureSettingsKeys.RIGHT_2_SWIPE_DOWN,
+                    GestureSettingsKeys.RIGHT_2_SWIPE_DOWN_LONG
+                )
+                3 -> listOf(
+                    GestureSettingsKeys.RIGHT_3_SWIPE_LEFT,
+                    GestureSettingsKeys.RIGHT_3_SWIPE_LEFT_LONG,
+                    GestureSettingsKeys.RIGHT_3_SWIPE_UP,
+                    GestureSettingsKeys.RIGHT_3_SWIPE_UP_LONG,
+                    GestureSettingsKeys.RIGHT_3_SWIPE_DOWN,
+                    GestureSettingsKeys.RIGHT_3_SWIPE_DOWN_LONG
+                )
+                else -> listOf(
+                    GestureSettingsKeys.RIGHT_SWIPE_LEFT,
+                    GestureSettingsKeys.RIGHT_SWIPE_LEFT_LONG,
+                    GestureSettingsKeys.RIGHT_SWIPE_UP,
+                    GestureSettingsKeys.RIGHT_SWIPE_UP_LONG,
+                    GestureSettingsKeys.RIGHT_SWIPE_DOWN,
+                    GestureSettingsKeys.RIGHT_SWIPE_DOWN_LONG
+                )
+            }
             listOf(
-                edge.swipeLeft to GestureSettingsKeys.RIGHT_SWIPE_LEFT,
-                edge.swipeLeftLong to GestureSettingsKeys.RIGHT_SWIPE_LEFT_LONG,
-                edge.swipeUp to GestureSettingsKeys.RIGHT_SWIPE_UP,
-                edge.swipeUpLong to GestureSettingsKeys.RIGHT_SWIPE_UP_LONG,
-                edge.swipeDown to GestureSettingsKeys.RIGHT_SWIPE_DOWN,
-                edge.swipeDownLong to GestureSettingsKeys.RIGHT_SWIPE_DOWN_LONG
+                edge.swipeLeft to keys[0],
+                edge.swipeLeftLong to keys[1],
+                edge.swipeUp to keys[2],
+                edge.swipeUpLong to keys[3],
+                edge.swipeDown to keys[4],
+                edge.swipeDownLong to keys[5]
             )
         }
         EdgeType.BOTTOM -> {
@@ -886,13 +938,39 @@ private fun getGestureActions(
                 3 -> settings.bottomEdgeSegment3
                 else -> settings.bottomEdge
             }
+            val keys = when (segment) {
+                2 -> listOf(
+                    GestureSettingsKeys.BOTTOM_2_SWIPE_UP,
+                    GestureSettingsKeys.BOTTOM_2_SWIPE_UP_LONG,
+                    GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT,
+                    GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT_LONG,
+                    GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT,
+                    GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT_LONG
+                )
+                3 -> listOf(
+                    GestureSettingsKeys.BOTTOM_3_SWIPE_UP,
+                    GestureSettingsKeys.BOTTOM_3_SWIPE_UP_LONG,
+                    GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT,
+                    GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT_LONG,
+                    GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT,
+                    GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT_LONG
+                )
+                else -> listOf(
+                    GestureSettingsKeys.BOTTOM_SWIPE_UP,
+                    GestureSettingsKeys.BOTTOM_SWIPE_UP_LONG,
+                    GestureSettingsKeys.BOTTOM_SWIPE_LEFT,
+                    GestureSettingsKeys.BOTTOM_SWIPE_LEFT_LONG,
+                    GestureSettingsKeys.BOTTOM_SWIPE_RIGHT,
+                    GestureSettingsKeys.BOTTOM_SWIPE_RIGHT_LONG
+                )
+            }
             listOf(
-                edge.swipeUp to GestureSettingsKeys.BOTTOM_SWIPE_UP,
-                edge.swipeUpLong to GestureSettingsKeys.BOTTOM_SWIPE_UP_LONG,
-                edge.swipeLeft to GestureSettingsKeys.BOTTOM_SWIPE_LEFT,
-                edge.swipeLeftLong to GestureSettingsKeys.BOTTOM_SWIPE_LEFT_LONG,
-                edge.swipeRight to GestureSettingsKeys.BOTTOM_SWIPE_RIGHT,
-                edge.swipeRightLong to GestureSettingsKeys.BOTTOM_SWIPE_RIGHT_LONG
+                edge.swipeUp to keys[0],
+                edge.swipeUpLong to keys[1],
+                edge.swipeLeft to keys[2],
+                edge.swipeLeftLong to keys[3],
+                edge.swipeRight to keys[4],
+                edge.swipeRightLong to keys[5]
             )
         }
     }

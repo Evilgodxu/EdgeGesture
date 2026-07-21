@@ -15,6 +15,7 @@ import android.view.accessibility.AccessibilityEvent
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
+import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
 import com.edgegesture.evilgodxu.data.gesture.expandPanelShortcutsFlow
 import com.edgegesture.evilgodxu.data.gesture.gestureDataStore
 import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcut
@@ -59,6 +60,7 @@ class AccessibilityActionExecutor(
     fun performAction(action: GestureAction, settings: GestureSettingsState) {
         if (action == GestureAction.NONE) return
         vibrate(settings)
+        GestureStatsManager.incrementGestureCount(service)
 
         when (action) {
             GestureAction.HOME -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)

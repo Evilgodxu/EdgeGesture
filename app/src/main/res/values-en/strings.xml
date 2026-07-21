@@ -105,6 +105,7 @@
     <string name="settings_blacklist_no_permission">Missing query app permission</string>
     <string name="settings_blacklist_go_settings">Go to Settings</string>
     <string name="settings_blacklist_refresh">Refresh List</string>
+    <string name="settings_blacklist_no_results">No apps matching «%s»</string>
 
     <!-- Edge Dimension Settings -->
     <string name="edge_width">Width</string>

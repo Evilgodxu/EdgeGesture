@@ -125,6 +125,9 @@
     <!-- 触发区设置 -->
     <string name="trigger_area_settings_title">触发区设置</string>
 
+    <string name="stats_gesture_count">次数</string>
+    <string name="stats_block_count">拦截</string>
+
     <!-- 更多功能 -->
     <string name="more_section_title">更多功能</string>
     <string name="more_expand_panel">扩展面板</string>
@@ -159,6 +162,7 @@
     <string name="settings_blacklist_no_permission">缺少查询应用权限</string>
     <string name="settings_blacklist_go_settings">前往设置</string>
     <string name="settings_blacklist_refresh">刷新列表</string>
+    <string name="settings_blacklist_no_results">未找到与「%s」匹配的应用</string>
 
     <!-- 边缘尺寸设置 (Edge Size) -->
     <string name="edge_width">宽度</string>

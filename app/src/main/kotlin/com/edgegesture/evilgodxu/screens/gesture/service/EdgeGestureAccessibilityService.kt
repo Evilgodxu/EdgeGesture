@@ -18,6 +18,7 @@ import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
+import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
 import com.edgegesture.evilgodxu.data.gesture.gestureDataStore
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
 import com.edgegesture.evilgodxu.data.app.AppRepository
@@ -55,6 +56,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         fun isAvailable(): Boolean = weakInstance?.get() != null
 
         fun startGesture(context: Context) {
+            GestureStatsManager.startUptime(context)
             getInstance()?.apply {
                 serviceScope.launch {
                     loadSettings()
@@ -71,6 +73,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
 
         fun stopGesture(context: Context) {
+            GestureStatsManager.stopUptime(context)
             getInstance()?.edgeViewManager?.removeEdgeViews()
         }
 
@@ -142,6 +145,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     override fun onServiceConnected() {
         super.onServiceConnected()
         weakInstance = java.lang.ref.WeakReference(this)
+
+        GestureStatsManager.init(this)
 
         actionExecutor = AccessibilityActionExecutor(this)
         gestureDetector = AccessibilityGestureDetector(this, this)
@@ -356,6 +361,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     }
 
     private fun blockLaunch(rule: LaunchBlockRule, launcherPackage: String?, targetPackage: String) {
+        GestureStatsManager.incrementBlockCount(this)
         // 检查启动者是否为系统应用
         val isLauncherSystemApp = launcherPackage?.let { pkg ->
             try {

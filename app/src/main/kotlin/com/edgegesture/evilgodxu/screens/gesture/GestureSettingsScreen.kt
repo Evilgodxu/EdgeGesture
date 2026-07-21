@@ -36,12 +36,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.outlined.Android
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.BatteryFull
@@ -63,6 +62,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,6 +79,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -90,9 +91,12 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowSizeClass
 import com.edgegesture.evilgodxu.R
+import com.composables.icons.materialsymbols.outlined.R.drawable as MsRDrawable
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
-import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
+import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
+import com.edgegesture.evilgodxu.data.gesture.GestureStats
+import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
 import com.edgegesture.evilgodxu.data.permission.PermissionType
 import com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService
 import com.edgegesture.evilgodxu.ui.adaptive.rememberWindowSizeClass
@@ -367,6 +371,7 @@ private fun GestureSettingsSwitchesColumn(
     notificationPermissionLauncher: androidx.activity.result.ActivityResultLauncher<String>
 ) {
     val context = LocalContext.current
+    val stats by GestureStatsManager.stats.collectAsState()
 
     // 启动服务状态卡片
     Text(
@@ -383,6 +388,7 @@ private fun GestureSettingsSwitchesColumn(
         isAccessibilityEnabled = uiState.isAccessibilityEnabled,
         totalSegments = settings.leftSegmentCount + settings.rightSegmentCount + settings.bottomSegmentCount,
         totalGestures = countNonNoneGestures(settings),
+        stats = stats,
         onToggleService = { enable ->
             if (enable && !uiState.isAccessibilityEnabled) {
                 if (activity != null) {
@@ -574,7 +580,7 @@ private fun EdgeGestureHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                imageVector = Icons.Default.Layers,
+                painter = painterResource(MsRDrawable.materialsymbols_ic_layers_outlined),
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
                 tint = MaterialTheme.colorScheme.primary
@@ -709,6 +715,7 @@ private fun ServiceStatusCard(
     isAccessibilityEnabled: Boolean,
     totalSegments: Int,
     totalGestures: Int,
+    stats: GestureStats,
     onToggleService: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -728,7 +735,7 @@ private fun ServiceStatusCard(
         Column(
             modifier = Modifier.padding(20.dp)
         ) {
-            // 状态标题 + 圆点指示器
+            // 状态标题 + 圆点指示器 + 运行时长
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -753,6 +760,15 @@ private fun ServiceStatusCard(
                             shape = RoundedCornerShape(50)
                         )
                 )
+                // 运行时长
+                if (enabled) {
+                    Text(
+                        text = formatUptime(stats.uptimeMs),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -803,10 +819,8 @@ private fun ServiceStatusCard(
                 // 段数统计
                 StatItem(
                     icon = {
-                        // 手机轮廓示意
                         Box(
-                            modifier = Modifier
-                                .size(20.dp),
+                            modifier = Modifier.size(20.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
@@ -818,7 +832,6 @@ private fun ServiceStatusCard(
                                         RoundedCornerShape(3.dp)
                                     )
                             ) {
-                                // 左边缘指示
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.CenterStart)
@@ -828,7 +841,6 @@ private fun ServiceStatusCard(
                                             RoundedCornerShape(1.dp)
                                         )
                                 )
-                                // 右边缘指示
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.CenterEnd)
@@ -838,7 +850,6 @@ private fun ServiceStatusCard(
                                             RoundedCornerShape(1.dp)
                                         )
                                 )
-                                // 底边缘指示
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.BottomCenter)
@@ -855,15 +866,46 @@ private fun ServiceStatusCard(
                     label = stringResource(R.string.edge_segment_count)
                 )
 
-                // 手势数统计
+                // 手势配置数统计
                 StatItem(
                     icon = {
-                        GestureWaveIcon(
+                        Icon(
+                            painter = painterResource(MsRDrawable.materialsymbols_ic_mobile_hand_outlined),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                     value = totalGestures.toString(),
                     label = stringResource(R.string.gesture_count_label)
+                )
+
+                // 今日手势次数
+                StatItem(
+                    icon = {
+                        Icon(
+                            painter = painterResource(MsRDrawable.materialsymbols_ic_data_usage_outlined),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    value = stats.todayGestureCount.toString(),
+                    label = stringResource(R.string.stats_gesture_count)
+                )
+
+                // 今日拦截次数
+                StatItem(
+                    icon = {
+                        Icon(
+                            painter = painterResource(MsRDrawable.materialsymbols_ic_dangerous_outlined),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    },
+                    value = stats.todayBlockCount.toString(),
+                    label = stringResource(R.string.stats_block_count)
                 )
             }
         }
@@ -955,6 +997,19 @@ private fun StatItem(
     }
 }
 
+private fun formatUptime(ms: Long): String {
+    if (ms <= 0L) return ""
+    val totalSec = ms / 1000
+    val hours = totalSec / 3600
+    val minutes = (totalSec % 3600) / 60
+    val seconds = totalSec % 60
+    return if (hours > 0) {
+        String.format("%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format("%02d:%02d", minutes, seconds)
+    }
+}
+
 /**
  * 构建背面双击摘要描述文字
  */
@@ -1018,7 +1073,7 @@ private fun GestureConfigSummaryCard(
                     val edgeTop = py + ph * 0.25f
                     drawRoundRect(
                         color = accent,
-                        topLeft = Offset(px, edgeTop),
+                        topLeft = Offset(px + 1.dp.toPx(), edgeTop),
                         size = Size(edgeW, edgeH),
                         cornerRadius = CornerRadius(1.dp.toPx())
                     )
@@ -1058,7 +1113,7 @@ private fun GestureConfigSummaryCard(
                     val edgeTop = py + ph * 0.25f
                     drawRoundRect(
                         color = accent,
-                        topLeft = Offset(px + pw - edgeW, edgeTop),
+                        topLeft = Offset(px + pw - edgeW - 1.dp.toPx(), edgeTop),
                         size = Size(edgeW, edgeH),
                         cornerRadius = CornerRadius(1.dp.toPx())
                     )
@@ -1098,7 +1153,7 @@ private fun GestureConfigSummaryCard(
                     val edgeLeft = px + pw * 0.25f
                     drawRoundRect(
                         color = accent,
-                        topLeft = Offset(edgeLeft, py + ph - edgeH),
+                        topLeft = Offset(edgeLeft, py + ph - edgeH - 1.dp.toPx()),
                         size = Size(edgeW, edgeH),
                         cornerRadius = CornerRadius(1.dp.toPx())
                     )
@@ -1152,11 +1207,11 @@ private fun AdvancedGestureCard(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.TouchApp,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                            painter = painterResource(MsRDrawable.materialsymbols_ic_touch_double_outlined),
+                            contentDescription = null,
+                            modifier = Modifier.size(24.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(

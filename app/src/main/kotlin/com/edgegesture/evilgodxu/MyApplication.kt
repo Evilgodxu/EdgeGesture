@@ -2,6 +2,7 @@ package com.edgegesture.evilgodxu
 
 import android.app.Application
 import com.edgegesture.evilgodxu.data.app.AppRepository
+import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
 import com.edgegesture.evilgodxu.di.appModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -26,5 +27,8 @@ class MyApplication : Application() {
         // 尽早注册应用变更监听，确保安装/卸载事件被捕获
         // 广播接收器内部会处理权限检查，无权限时只会延迟刷新
         repository.registerAppChangeReceiver()
+
+        // 初始化手势统计数据管理器
+        GestureStatsManager.init(this)
     }
 }
