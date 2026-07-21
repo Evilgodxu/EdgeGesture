@@ -153,6 +153,7 @@
     <string name="expand_panel_ring_volume">Ring Volume</string>
     <string name="expand_panel_media_volume">Media Volume</string>
     <string name="expand_panel_shortcuts_title">Shortcuts</string>
+    <string name="expand_panel_controls_title">System Controls</string>
     <string name="expand_panel_add_shortcut_desc">Add shortcut</string>
     <string name="expand_panel_app_picker_title">Select App</string>
     <string name="expand_panel_cancel">Cancel</string>
@@ -174,8 +175,8 @@
     <string name="launch_block_target_hint">Enter package name, e.g., com.example.app</string>
     <string name="launch_block_target_supporting">Triggered when this app is launched</string>
     <string name="launch_block_target_required">Please enter target app</string>
-    <string name="launch_block_kill_switch_title">High-frequency Launch Detection</string>
-    <string name="launch_block_kill_switch_desc">Kill launcher process when launched too frequently</string>
+    <string name="launch_block_kill_switch_title">Kill Launcher</string>
+    <string name="launch_block_kill_switch_desc">Kill the launcher process every time a block is triggered (max 5 times, then 15s cooldown)</string>
     <string name="launch_block_kill_switch_disabled_hint">Requires launcher to be set</string>
     <string name="launch_block_kill_target_title">Kill Target</string>
     <string name="launch_block_kill_target_desc">Kill target app process immediately after blocking</string>

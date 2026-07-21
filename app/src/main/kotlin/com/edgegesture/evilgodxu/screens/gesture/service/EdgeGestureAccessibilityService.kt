@@ -56,7 +56,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         fun isAvailable(): Boolean = weakInstance?.get() != null
 
         fun startGesture(context: Context) {
-            GestureStatsManager.startUptime(context)
             getInstance()?.apply {
                 serviceScope.launch {
                     loadSettings()
@@ -73,7 +72,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
 
         fun stopGesture(context: Context) {
-            GestureStatsManager.stopUptime(context)
             getInstance()?.edgeViewManager?.removeEdgeViews()
         }
 
@@ -140,7 +138,10 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     // 启动拦截相关
     private var launchBlockState: LaunchBlockState = LaunchBlockState()
     private var currentPackage: String? = null
-    private val launchHistory = mutableMapOf<String, MutableList<Long>>() // 包名 -> 启动时间列表
+    // 防呆：每个启动者当前连续终止次数
+    private val launcherKillCount = mutableMapOf<String, Int>()
+    // 防呆：每个启动者冷却截止时间
+    private val launcherCooldownUntil = mutableMapOf<String, Long>()
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -415,11 +416,9 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             }
         }
 
-        // 检查是否需要高频检测
-        val shouldKillLauncher = rule.enableKillOnFrequentLaunch && launcherPackage != null
-        val isLauncherKillAllowed = !isLauncherSystemApp || rule.allowKillSystemApp
-        if (shouldKillLauncher && isLauncherKillAllowed) {
-            checkFrequentLaunchAndKill(launcherPackage, rule)
+        // 直接终止启动者（每次触发规则都终止，带防呆）
+        if (rule.enableKillOnFrequentLaunch && launcherPackage != null) {
+            killLauncher(launcherPackage, rule)
         }
 
         // 更新规则统计
@@ -432,31 +431,35 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
     }
 
-    // 检查是否高频启动，如果是则终止启动者进程
-    private fun checkFrequentLaunchAndKill(launcherPackage: String, rule: LaunchBlockRule) {
+    // 终止启动者进程（带防呆：连续最多终止5次，之后冷却15秒）
+    private fun killLauncher(launcherPackage: String, rule: LaunchBlockRule) {
         val now = System.currentTimeMillis()
-        val history = launchHistory.getOrPut(launcherPackage) { mutableListOf() }
 
-        // 清理超过1分钟的历史记录
-        history.removeAll { now - it > 60000 }
-        history.add(now)
+        // 检查是否在冷却中
+        val cooldownEnd = launcherCooldownUntil[launcherPackage] ?: 0L
+        if (now < cooldownEnd) return
 
-        // 1分钟内启动超过3次视为高频
-        if (history.size >= 3) {
-            // 检查是否为系统应用
-            val isSystemApp = try {
-                val appInfo = packageManager.getApplicationInfo(launcherPackage, 0)
-                (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
-            } catch (_: Exception) {
-                false
-            }
-
-            // 非系统应用才终止
-            if (!isSystemApp) {
-                killAppProcess(launcherPackage)
-                history.clear() // 清除历史避免重复终止
-            }
+        // 检查连续终止次数
+        val count = launcherKillCount[launcherPackage] ?: 0
+        if (count >= 5) {
+            // 达到上限，进入15秒冷却
+            launcherCooldownUntil[launcherPackage] = now + 15000L
+            launcherKillCount[launcherPackage] = 0
+            return
         }
+
+        // 检查是否为系统应用
+        val isSystemApp = try {
+            val appInfo = packageManager.getApplicationInfo(launcherPackage, 0)
+            (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
+        } catch (_: Exception) {
+            false
+        }
+
+        if (isSystemApp && !rule.allowKillSystemApp) return
+
+        killAppProcess(launcherPackage)
+        launcherKillCount[launcherPackage] = count + 1
     }
 
     private fun killAppProcess(packageName: String) {

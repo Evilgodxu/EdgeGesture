@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.edgegesture.evilgodxu.screens.backtap.BackTapScreen
 import com.edgegesture.evilgodxu.screens.blacklist.AppBlacklistScreen
+import com.edgegesture.evilgodxu.screens.expandpanel.ExpandPanelScreen
 import com.edgegesture.evilgodxu.screens.gesture.EdgeGestureConfigScreen
 import com.edgegesture.evilgodxu.screens.gesture.EdgeType
 import com.edgegesture.evilgodxu.screens.gesture.GestureSettingsScreen
@@ -37,6 +38,9 @@ data object RightEdgeConfigRoute
 
 @Serializable
 data object BottomEdgeConfigRoute
+
+@Serializable
+data object ExpandPanelRoute
 
 @Composable
 fun NavGraph(
@@ -70,6 +74,9 @@ fun NavGraph(
                 },
                 onNavigateToBottomEdge = {
                     navController.navigate(BottomEdgeConfigRoute)
+                },
+                onNavigateToExpandPanel = {
+                    navController.navigate(ExpandPanelRoute)
                 }
             )
         }
@@ -142,6 +149,16 @@ fun NavGraph(
         composable<BottomEdgeConfigRoute> {
             EdgeGestureConfigScreen(
                 edgeType = EdgeType.BOTTOM,
+                onNavigateBack = {
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    }
+                }
+            )
+        }
+
+        composable<ExpandPanelRoute> {
+            ExpandPanelScreen(
                 onNavigateBack = {
                     if (navController.previousBackStackEntry != null) {
                         navController.popBackStack()

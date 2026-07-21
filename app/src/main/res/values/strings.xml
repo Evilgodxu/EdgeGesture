@@ -199,6 +199,7 @@
     <string name="expand_panel_ring_volume">铃声音量</string>
     <string name="expand_panel_media_volume">媒体音量</string>
     <string name="expand_panel_shortcuts_title">快捷方式</string>
+    <string name="expand_panel_controls_title">系统控制</string>
     <string name="expand_panel_add_shortcut_desc">添加快捷方式</string>
     <string name="expand_panel_app_picker_title">选择应用</string>
     <string name="expand_panel_cancel">取消</string>
@@ -220,8 +221,8 @@
     <string name="launch_block_target_hint">输入应用包名，如 com.example.app</string>
     <string name="launch_block_target_supporting">当此应用被启动时将触发拦截</string>
     <string name="launch_block_target_required">请输入被启动应用</string>
-    <string name="launch_block_kill_switch_title">高频启动检测</string>
-    <string name="launch_block_kill_switch_desc">短时间内高频启动时终止启动者进程</string>
+    <string name="launch_block_kill_switch_title">终止启动者</string>
+    <string name="launch_block_kill_switch_desc">每次触发拦截时直接终止启动者进程（连续最多5次，之后冷却15秒）</string>
     <string name="launch_block_kill_switch_disabled_hint">需要先输入试图启动者才能启用</string>
     <string name="launch_block_kill_target_title">终止被启动者</string>
     <string name="launch_block_kill_target_desc">拦截后立即终止被启动应用进程</string>

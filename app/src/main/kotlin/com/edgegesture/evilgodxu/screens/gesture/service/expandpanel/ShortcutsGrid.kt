@@ -53,6 +53,7 @@ fun ShortcutsGrid(
     onShortcutSet: (index: Int, packageName: String?) -> Unit,
     onLaunchApp: (String, Int) -> Unit,
     onFreeformToggle: (Int, Boolean) -> Unit,
+    showTitle: Boolean = true,
     appRepository: AppRepository = koinInject()
 ) {
     // 从缓存仓库获取应用列表，实现图标预加载
@@ -64,14 +65,18 @@ fun ShortcutsGrid(
     }
 
     Column {
-        Text(
-            text = stringResource(R.string.expand_panel_shortcuts_title),
-            style = MaterialTheme.typography.bodyMedium,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        if (showTitle) {
+            Text(
+                text = stringResource(R.string.expand_panel_shortcuts_title),
+                style = MaterialTheme.typography.bodyMedium,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         repeat(2) { row ->
             Row(

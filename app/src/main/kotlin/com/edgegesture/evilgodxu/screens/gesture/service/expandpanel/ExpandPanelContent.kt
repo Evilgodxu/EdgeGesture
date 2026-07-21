@@ -97,6 +97,7 @@ fun ExpandPanelContent(
                     ShortcutsGrid(
                         shortcuts = shortcuts,
                         freeformFlags = freeformFlags,
+                        showTitle = false,
                         onShortcutSet = { index, packageName ->
                             if (packageName == null) {
                                 selectedIndex = index

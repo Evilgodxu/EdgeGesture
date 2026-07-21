@@ -120,6 +120,7 @@ fun GestureSettingsScreen(
     onNavigateToLeftEdge: () -> Unit = {},
     onNavigateToRightEdge: () -> Unit = {},
     onNavigateToBottomEdge: () -> Unit = {},
+    onNavigateToExpandPanel: () -> Unit = {},
     viewModel: GestureSettingsViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
@@ -201,6 +202,7 @@ fun GestureSettingsScreen(
             onNavigateToLeftEdge = onNavigateToLeftEdge,
             onNavigateToRightEdge = onNavigateToRightEdge,
             onNavigateToBottomEdge = onNavigateToBottomEdge,
+            onNavigateToExpandPanel = onNavigateToExpandPanel,
         )
     }
 
@@ -222,6 +224,7 @@ private fun GestureSettingsContent(
     onNavigateToLeftEdge: () -> Unit = {},
     onNavigateToRightEdge: () -> Unit = {},
     onNavigateToBottomEdge: () -> Unit = {},
+    onNavigateToExpandPanel: () -> Unit = {},
 ) {
     val context = LocalContext.current
     // 判断是否使用双列布局：横屏或大屏幕设备
@@ -293,7 +296,8 @@ private fun GestureSettingsContent(
                 MoreGridCard(
                     onSettings = onNavigateToSettings,
                     onBlacklist = onNavigateToBlacklist,
-                    onLaunchBlock = onNavigateToLaunchBlock
+                    onLaunchBlock = onNavigateToLaunchBlock,
+                    onExpandPanel = onNavigateToExpandPanel
                 )
             }
         }
@@ -355,7 +359,8 @@ private fun GestureSettingsContent(
                 MoreGridCard(
                     onSettings = onNavigateToSettings,
                     onBlacklist = onNavigateToBlacklist,
-                    onLaunchBlock = onNavigateToLaunchBlock
+                    onLaunchBlock = onNavigateToLaunchBlock,
+                    onExpandPanel = onNavigateToExpandPanel
                 )
             }
         }
@@ -760,15 +765,6 @@ private fun ServiceStatusCard(
                             shape = RoundedCornerShape(50)
                         )
                 )
-                // 运行时长
-                if (enabled) {
-                    Text(
-                        text = formatUptime(stats.uptimeMs),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
-                }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -884,7 +880,7 @@ private fun ServiceStatusCard(
                 StatItem(
                     icon = {
                         Icon(
-                            painter = painterResource(MsRDrawable.materialsymbols_ic_data_usage_outlined),
+                            painter = painterResource(MsRDrawable.materialsymbols_ic_bar_chart_outlined),
                             contentDescription = null,
                             modifier = Modifier.size(20.dp),
                             tint = MaterialTheme.colorScheme.primary
@@ -994,19 +990,6 @@ private fun StatItem(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-    }
-}
-
-private fun formatUptime(ms: Long): String {
-    if (ms <= 0L) return ""
-    val totalSec = ms / 1000
-    val hours = totalSec / 3600
-    val minutes = (totalSec % 3600) / 60
-    val seconds = totalSec % 60
-    return if (hours > 0) {
-        String.format("%d:%02d:%02d", hours, minutes, seconds)
-    } else {
-        String.format("%02d:%02d", minutes, seconds)
     }
 }
 
