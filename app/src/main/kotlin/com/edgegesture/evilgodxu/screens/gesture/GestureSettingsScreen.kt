@@ -36,11 +36,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.outlined.Android
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.BatteryFull
@@ -351,11 +353,13 @@ private fun GestureSettingsContent(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp)
             ) {
-                GestureSettingsExpandableColumn(
-                    settings = settings,
-                    viewModel = viewModel,
-                    onShowActionDialog = onShowActionDialog,
-                    onShowBackTapActionDialog = onShowBackTapActionDialog
+                GestureConfigSummaryCard(
+                    settings = settings
+                )
+
+                AdvancedGestureCard(
+                    backTapEnabled = settings.backTapEnabled,
+                    backTapDescription = buildBackTapDescription(settings)
                 )
 
                 TriggerAreaSettingsCard(
@@ -365,6 +369,13 @@ private fun GestureSettingsContent(
 
                 MoreGridCard(
                     onSettings = onNavigateToSettings
+                )
+
+                GestureSettingsExpandableColumn(
+                    settings = settings,
+                    viewModel = viewModel,
+                    onShowActionDialog = onShowActionDialog,
+                    onShowBackTapActionDialog = onShowBackTapActionDialog
                 )
             }
         }
@@ -399,11 +410,15 @@ private fun GestureSettingsContent(
             }
 
             AnimatedVisibility(visible = settings.gestureEnabled) {
-                GestureSettingsExpandableColumn(
-                    settings = settings,
-                    viewModel = viewModel,
-                    onShowActionDialog = onShowActionDialog,
-                    onShowBackTapActionDialog = onShowBackTapActionDialog
+                GestureConfigSummaryCard(
+                    settings = settings
+                )
+            }
+
+            AnimatedVisibility(visible = settings.gestureEnabled) {
+                AdvancedGestureCard(
+                    backTapEnabled = settings.backTapEnabled,
+                    backTapDescription = buildBackTapDescription(settings)
                 )
             }
 
@@ -417,6 +432,15 @@ private fun GestureSettingsContent(
             AnimatedVisibility(visible = settings.gestureEnabled) {
                 MoreGridCard(
                     onSettings = onNavigateToSettings
+                )
+            }
+
+            AnimatedVisibility(visible = settings.gestureEnabled) {
+                GestureSettingsExpandableColumn(
+                    settings = settings,
+                    viewModel = viewModel,
+                    onShowActionDialog = onShowActionDialog,
+                    onShowBackTapActionDialog = onShowBackTapActionDialog
                 )
             }
         }
@@ -463,7 +487,18 @@ private fun GestureSettingsSwitchesColumn(
         enter = expandVertically(),
         exit = shrinkVertically()
     ) {
-        PermissionGroupCard(
+        Column {
+            Text(
+                text = stringResource(R.string.permission_status_title),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.2.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 10.dp)
+            )
+
+            PermissionGroupCard(
             modifier = Modifier.padding(vertical = 4.dp)
         ) {
         // 无障碍权限
@@ -594,6 +629,7 @@ private fun GestureSettingsSwitchesColumn(
                 )
             }
         )
+    }
     }
     }
 
@@ -1244,19 +1280,284 @@ private fun StatItem(
     }
 }
 
+/**
+ * 构建背面双击摘要描述文字
+ */
 @Composable
-private fun TriggerAreaSettingsCard(
+private fun buildBackTapDescription(settings: GestureSettingsState): String {
+    if (!settings.backTapEnabled) {
+        return "灵敏度 ${settings.backTapSensitivity} · 范围 ${settings.backTapRange}"
+    }
+    val actionName = getActionDisplayName(settings.backTapAction)
+    return "灵敏度 ${settings.backTapSensitivity} · 范围 ${settings.backTapRange} · $actionName"
+}
+
+@Composable
+private fun GestureConfigSummaryCard(
     settings: GestureSettingsState,
-    viewModel: GestureSettingsViewModel,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onLeftClick: (() -> Unit)? = null,
+    onRightClick: (() -> Unit)? = null,
+    onBottomClick: (() -> Unit)? = null
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.gesture_config_section_title),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 1.2.sp
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 10.dp)
+        )
+
+        SummaryCard(
+            icon = {
+                val accent = MaterialTheme.colorScheme.primary
+                val outline = MaterialTheme.colorScheme.outlineVariant
+                val phoneBg = MaterialTheme.colorScheme.surface
+                Canvas(modifier = Modifier.size(width = 26.dp, height = 42.dp)) {
+                    val pw = size.width * 0.82f
+                    val ph = size.height * 0.85f
+                    val px = (size.width - pw) / 2f
+                    val py = (size.height - ph) / 2f
+                    val cr = 3.dp.toPx()
+                    // phone background fill
+                    drawRoundRect(
+                        color = phoneBg,
+                        topLeft = Offset(px, py),
+                        size = Size(pw, ph),
+                        cornerRadius = CornerRadius(cr)
+                    )
+                    // phone outline border
+                    drawRoundRect(
+                        color = outline,
+                        topLeft = Offset(px, py),
+                        size = Size(pw, ph),
+                        cornerRadius = CornerRadius(cr),
+                        style = Stroke(2.dp.toPx())
+                    )
+                    // left edge zone: 3px wide, 50% height, at 25% from top
+                    val edgeW = 3.dp.toPx()
+                    val edgeH = ph * 0.5f
+                    val edgeTop = py + ph * 0.25f
+                    drawRoundRect(
+                        color = accent,
+                        topLeft = Offset(px, edgeTop),
+                        size = Size(edgeW, edgeH),
+                        cornerRadius = CornerRadius(1.dp.toPx())
+                    )
+                }
+            },
+            title = stringResource(R.string.gesture_config_left),
+            onClick = onLeftClick
+        )
+
+        SummaryCard(
+            icon = {
+                val accent = MaterialTheme.colorScheme.primary
+                val outline = MaterialTheme.colorScheme.outlineVariant
+                val phoneBg = MaterialTheme.colorScheme.surface
+                Canvas(modifier = Modifier.size(width = 26.dp, height = 42.dp)) {
+                    val pw = size.width * 0.82f
+                    val ph = size.height * 0.85f
+                    val px = (size.width - pw) / 2f
+                    val py = (size.height - ph) / 2f
+                    val cr = 3.dp.toPx()
+                    drawRoundRect(
+                        color = phoneBg,
+                        topLeft = Offset(px, py),
+                        size = Size(pw, ph),
+                        cornerRadius = CornerRadius(cr)
+                    )
+                    drawRoundRect(
+                        color = outline,
+                        topLeft = Offset(px, py),
+                        size = Size(pw, ph),
+                        cornerRadius = CornerRadius(cr),
+                        style = Stroke(2.dp.toPx())
+                    )
+                    // right edge zone: 3px wide, 50% height, at 25% from top
+                    val edgeW = 3.dp.toPx()
+                    val edgeH = ph * 0.5f
+                    val edgeTop = py + ph * 0.25f
+                    drawRoundRect(
+                        color = accent,
+                        topLeft = Offset(px + pw - edgeW, edgeTop),
+                        size = Size(edgeW, edgeH),
+                        cornerRadius = CornerRadius(1.dp.toPx())
+                    )
+                }
+            },
+            title = stringResource(R.string.gesture_config_right),
+            onClick = onRightClick
+        )
+
+        SummaryCard(
+            icon = {
+                val accent = MaterialTheme.colorScheme.primary
+                val outline = MaterialTheme.colorScheme.outlineVariant
+                val phoneBg = MaterialTheme.colorScheme.surface
+                Canvas(modifier = Modifier.size(width = 26.dp, height = 42.dp)) {
+                    val pw = size.width * 0.82f
+                    val ph = size.height * 0.85f
+                    val px = (size.width - pw) / 2f
+                    val py = (size.height - ph) / 2f
+                    val cr = 3.dp.toPx()
+                    drawRoundRect(
+                        color = phoneBg,
+                        topLeft = Offset(px, py),
+                        size = Size(pw, ph),
+                        cornerRadius = CornerRadius(cr)
+                    )
+                    drawRoundRect(
+                        color = outline,
+                        topLeft = Offset(px, py),
+                        size = Size(pw, ph),
+                        cornerRadius = CornerRadius(cr),
+                        style = Stroke(2.dp.toPx())
+                    )
+                    // bottom edge zone: 3px tall, 50% width, at 25% from left
+                    val edgeH = 3.dp.toPx()
+                    val edgeW = pw * 0.5f
+                    val edgeLeft = px + pw * 0.25f
+                    drawRoundRect(
+                        color = accent,
+                        topLeft = Offset(edgeLeft, py + ph - edgeH),
+                        size = Size(edgeW, edgeH),
+                        cornerRadius = CornerRadius(1.dp.toPx())
+                    )
+                }
+            },
+            title = stringResource(R.string.gesture_config_bottom),
+            onClick = onBottomClick
+        )
+    }
+}
+
+@Composable
+private fun AdvancedGestureCard(
+    backTapEnabled: Boolean,
+    backTapDescription: String,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.advanced_gesture_section_title),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 1.2.sp
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 10.dp)
+        )
+
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth(0.95f)
+                    .then(
+                        if (onClick != null) Modifier.clickable { onClick() }
+                        else Modifier
+                    ),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(10.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.TouchApp,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.advanced_gesture_back_tap_title),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = backTapDescription,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    // 状态标签
+                    Text(
+                        text = if (backTapEnabled) stringResource(R.string.advanced_gesture_back_tap_enabled)
+                               else stringResource(R.string.advanced_gesture_back_tap_disabled),
+                        fontSize = 11.sp,
+                        color = if (backTapEnabled) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .background(
+                                color = if (backTapEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                        else MaterialTheme.colorScheme.surfaceVariant,
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+
+                    Icon(
+                        imageVector = Icons.Filled.ChevronRight,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryCard(
+    icon: @Composable () -> Unit,
+    title: String,
+    onClick: (() -> Unit)? = null
 ) {
     Box(
-        modifier = modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
     ) {
         Card(
-            modifier = Modifier.fillMaxWidth(0.95f),
-            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .padding(vertical = 4.dp)
+                .then(
+                    if (onClick != null) Modifier.clickable { onClick() }
+                    else Modifier
+                ),
+            shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
@@ -1265,50 +1566,88 @@ private fun TriggerAreaSettingsCard(
                 MaterialTheme.colorScheme.outlineVariant
             )
         ) {
-            Column(
-                modifier = Modifier.padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // 卡片头部: 闪电图标 + "触发区设置"
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                Box(
+                    modifier = Modifier.size(40.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(10.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "\u26A1",
-                            fontSize = 16.sp
-                        )
-                    }
-                    Text(
-                        text = stringResource(R.string.trigger_area_settings_title),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    icon()
                 }
 
-                // 隐藏显示
-                GestureSettingsSwitchItem(
-                    title = stringResource(R.string.gesture_hide_overlay_title),
-                    subtitle = stringResource(R.string.gesture_hide_overlay_desc),
-                    checked = settings.hideOverlay,
-                    onCheckedChange = { hide ->
-                        viewModel.setHideOverlay(hide)
-                    }
+                Text(
+                    text = title,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
 
-                // 隐藏后台
-                GestureSettingsSwitchItem(
-                    title = stringResource(R.string.gesture_hide_recents_title),
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TriggerAreaSettingsCard(
+    settings: GestureSettingsState,
+    viewModel: GestureSettingsViewModel,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(R.string.trigger_area_settings_title),
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 1.2.sp
+            ),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 10.dp)
+        )
+
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(0.95f),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // 隐藏显示
+                    GestureSettingsSwitchItem(
+                        title = stringResource(R.string.gesture_hide_overlay_title),
+                        subtitle = stringResource(R.string.gesture_hide_overlay_desc),
+                        checked = settings.hideOverlay,
+                        onCheckedChange = { hide ->
+                            viewModel.setHideOverlay(hide)
+                        }
+                    )
+
+                    // 隐藏后台
+                    GestureSettingsSwitchItem(
+                        title = stringResource(R.string.gesture_hide_recents_title),
                     subtitle = stringResource(R.string.gesture_hide_recents_desc),
                     checked = settings.hideFromRecents,
                     onCheckedChange = { hide ->
@@ -1327,6 +1666,7 @@ private fun TriggerAreaSettingsCard(
                 )
             }
         }
+    }
     }
 }
 

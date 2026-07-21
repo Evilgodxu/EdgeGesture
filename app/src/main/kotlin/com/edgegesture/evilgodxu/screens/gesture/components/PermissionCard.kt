@@ -2,7 +2,6 @@ package com.edgegesture.evilgodxu.screens.gesture.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,7 +31,7 @@ import com.edgegesture.evilgodxu.R
 
 /**
  * 权限状态分组卡片 - 新版 UI 设计
- * 一个大卡片内含"权限状态"标题 + 内容插槽
+ * 一个大卡片内含内容插槽（无标题头，标题由外部提供）
  */
 @Composable
 fun PermissionGroupCard(
@@ -58,33 +57,6 @@ fun PermissionGroupCard(
                 modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // 卡片头部: 闪电图标 + "权限状态"
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                shape = RoundedCornerShape(10.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "\u26A1",
-                            fontSize = 16.sp
-                        )
-                    }
-                    Text(
-                        text = stringResource(R.string.permission_status_title),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-
                 // 权限条目内容插槽
                 content()
             }

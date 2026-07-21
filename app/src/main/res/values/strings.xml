@@ -131,6 +131,18 @@
     <string name="more_launch_block">启动拦截</string>
     <string name="more_settings">更多设置</string>
 
+    <!-- 手势配置摘要 -->
+    <string name="gesture_config_section_title">手势配置</string>
+    <string name="gesture_config_left">左侧手势</string>
+    <string name="gesture_config_right">右侧手势</string>
+    <string name="gesture_config_bottom">底部手势</string>
+
+    <!-- 高级手势 -->
+    <string name="advanced_gesture_section_title">高级手势</string>
+    <string name="advanced_gesture_back_tap_title">背面双击</string>
+    <string name="advanced_gesture_back_tap_disabled">未启用</string>
+    <string name="advanced_gesture_back_tap_enabled">已启用</string>
+
     <!-- 应用黑名单 (App Blacklist) -->
     <string name="settings_more">更多设置</string>
     <string name="settings_section_gesture">手势</string>
