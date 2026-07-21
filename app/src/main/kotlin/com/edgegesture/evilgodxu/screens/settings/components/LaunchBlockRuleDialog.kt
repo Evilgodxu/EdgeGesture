@@ -18,7 +18,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
+import com.edgegesture.evilgodxu.ui.theme.AppSwitch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -75,7 +75,7 @@ fun LaunchBlockRuleDialog(
         ShizukuManager.addPermissionListener(listener)
 
         onDispose {
-            ShizukuManager.removePermissionListener()
+            ShizukuManager.removePermissionListener(listener)
         }
     }
 
@@ -162,7 +162,7 @@ fun LaunchBlockRuleDialog(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Switch(
+                    AppSwitch(
                         checked = ruleEnabled,
                         onCheckedChange = { ruleEnabled = it }
                     )
@@ -207,7 +207,7 @@ fun LaunchBlockRuleDialog(
                             }
                         }
                     }
-                    Switch(
+                    AppSwitch(
                         checked = enableKill,
                         onCheckedChange = { checked ->
                             if (checked && shizukuState !is ShizukuState.Granted) {
@@ -272,7 +272,7 @@ fun LaunchBlockRuleDialog(
                             }
                         }
                     }
-                    Switch(
+                    AppSwitch(
                         checked = enableKillTarget,
                         onCheckedChange = { checked ->
                             if (checked && shizukuState !is ShizukuState.Granted) {
@@ -341,7 +341,7 @@ fun LaunchBlockRuleDialog(
                             }
                         }
                     }
-                    Switch(
+                    AppSwitch(
                         checked = allowKillSystemApp,
                         onCheckedChange = { checked ->
                             if (checked && shizukuState !is ShizukuState.Granted) {

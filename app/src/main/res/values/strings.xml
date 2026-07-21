@@ -109,6 +109,7 @@
     <string name="gesture_service_subtitle">无障碍服务 · 边缘手势</string>
     <string name="gesture_service_start">启动服务</string>
     <string name="gesture_service_stop">停止服务</string>
+    <string name="gesture_service_title">服务状态</string>
     <string name="gesture_count_label">手势</string>
 
     <!-- 权限 -->
@@ -124,8 +125,8 @@
     <!-- 触发区设置 -->
     <string name="trigger_area_settings_title">触发区设置</string>
 
-    <!-- 更多 -->
-    <string name="more_section_title">更多</string>
+    <!-- 更多功能 -->
+    <string name="more_section_title">更多功能</string>
     <string name="more_expand_panel">扩展面板</string>
     <string name="more_blacklist">应用黑名单</string>
     <string name="more_launch_block">启动拦截</string>
@@ -133,6 +134,7 @@
 
     <!-- 手势配置摘要 -->
     <string name="gesture_config_section_title">手势配置</string>
+    <string name="gesture_operation_section_title">手势操作</string>
     <string name="gesture_config_left">左侧手势</string>
     <string name="gesture_config_right">右侧手势</string>
     <string name="gesture_config_bottom">底部手势</string>
@@ -166,6 +168,7 @@
     <string name="edge_position_percent">位置百分比</string>
     <string name="edge_segment_count">段数</string>
     <string name="edge_segment_unit">段</string>
+    <string name="gesture_segment_label">第%d段</string>
     <string name="gesture_disabled">禁用</string>
 
     <!-- 权限申请 (Permissions) -->
@@ -254,8 +257,8 @@
     <string name="back_tap_action">背面双击操作</string>
     <string name="back_tap_mode">工作模式</string>
     <string name="back_tap_mode_always">始终激活</string>
-    <string name="back_tap_mode_screen_off">仅黑屏激活</string>
-    <string name="back_tap_mode_screen_on">仅亮屏激活</string>
+    <string name="back_tap_mode_screen_off">熄屏激活</string>
+    <string name="back_tap_mode_screen_on">亮屏激活</string>
     <string name="back_tap_pause_on_charging_title">充电时暂停</string>
     <string name="back_tap_pause_on_charging_desc">充电时自动暂停背面双击以节省电量</string>
 </resources>

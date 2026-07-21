@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -58,7 +57,6 @@ import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuState
-import com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService
 import com.edgegesture.evilgodxu.ui.adaptive.rememberWindowSizeClass
 import com.edgegesture.evilgodxu.screens.settings.components.DonateDialog
 import com.edgegesture.evilgodxu.screens.settings.components.LanguageSelectionDialog
@@ -202,7 +200,7 @@ fun SettingsScreen(
         ShizukuManager.addPermissionListener(listener)
 
         onDispose {
-            ShizukuManager.removePermissionListener()
+            ShizukuManager.removePermissionListener(listener)
         }
     }
 
@@ -263,20 +261,6 @@ fun SettingsScreen(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
-                    // 手势反馈设置
-                    SettingsSection(title = stringResource(R.string.settings_section_gesture)) {
-                        SettingsSwitchItem(
-                            icon = Icons.Default.Vibration,
-                            title = stringResource(R.string.settings_vibration_title),
-                            subtitle = stringResource(R.string.settings_vibration_desc),
-                            checked = uiState.vibrationEnabled,
-                            onCheckedChange = { enabled ->
-                                viewModel.setVibrationEnabled(enabled)
-                                EdgeGestureAccessibilityService.updateSettings(context)
-                            }
-                        )
-                    }
-
                     // 更多设置项
                     SettingsSection(title = stringResource(R.string.settings_more)) {
                         SettingsClickableItem(
@@ -325,20 +309,6 @@ fun SettingsScreen(
                             AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
                         },
                         onClick = { showLanguageDialog = true }
-                    )
-                }
-
-                // 手势反馈设置
-                SettingsSection(title = stringResource(R.string.settings_section_gesture)) {
-                    SettingsSwitchItem(
-                        icon = Icons.Default.Vibration,
-                        title = stringResource(R.string.settings_vibration_title),
-                        subtitle = stringResource(R.string.settings_vibration_desc),
-                        checked = uiState.vibrationEnabled,
-                        onCheckedChange = { enabled ->
-                            viewModel.setVibrationEnabled(enabled)
-                            EdgeGestureAccessibilityService.updateSettings(context)
-                        }
                     )
                 }
 

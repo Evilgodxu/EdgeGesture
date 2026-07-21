@@ -81,11 +81,11 @@ object ShizukuManager {
         Shizuku.addRequestPermissionResultListener(listener)
     }
 
-    fun removePermissionListener() {
-        permissionListener?.let {
-            Shizuku.removeRequestPermissionResultListener(it)
+    fun removePermissionListener(listener: Shizuku.OnRequestPermissionResultListener) {
+        Shizuku.removeRequestPermissionResultListener(listener)
+        if (permissionListener == listener) {
+            permissionListener = null
         }
-        permissionListener = null
     }
 
     fun requestPermission(requestCode: Int) {

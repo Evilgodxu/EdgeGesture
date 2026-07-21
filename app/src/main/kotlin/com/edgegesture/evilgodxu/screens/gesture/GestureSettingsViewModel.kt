@@ -40,6 +40,7 @@ import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeHeightPercent
 import com.edgegesture.evilgodxu.data.gesture.saveRightEdgePositionPercent
 import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeWidth
 import com.edgegesture.evilgodxu.data.gesture.saveRightSegmentCount
+import com.edgegesture.evilgodxu.data.gesture.saveVibrationEnabled
 import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.permission.PermissionMonitor
 import com.edgegesture.evilgodxu.data.permission.PermissionType
@@ -387,6 +388,14 @@ class GestureSettingsViewModel(
     fun setBackTapPauseOnCharging(pause: Boolean) {
         viewModelScope.launch {
             context.saveBackTapPauseOnCharging(pause)
+        }
+    }
+
+    // 设置震动反馈开关
+    fun setVibrationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            context.saveVibrationEnabled(enabled)
+            com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService.updateSettings(context)
         }
     }
 

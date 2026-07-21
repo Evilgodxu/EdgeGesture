@@ -4,7 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.edgegesture.evilgodxu.screens.backtap.BackTapScreen
 import com.edgegesture.evilgodxu.screens.blacklist.AppBlacklistScreen
+import com.edgegesture.evilgodxu.screens.gesture.EdgeGestureConfigScreen
+import com.edgegesture.evilgodxu.screens.gesture.EdgeType
 import com.edgegesture.evilgodxu.screens.gesture.GestureSettingsScreen
 import com.edgegesture.evilgodxu.screens.launchblock.LaunchBlockScreen
 import com.edgegesture.evilgodxu.screens.settings.SettingsScreen
@@ -22,6 +25,18 @@ data object BlacklistRoute
 
 @Serializable
 data object LaunchBlockRoute
+
+@Serializable
+data object BackTapRoute
+
+@Serializable
+data object LeftEdgeConfigRoute
+
+@Serializable
+data object RightEdgeConfigRoute
+
+@Serializable
+data object BottomEdgeConfigRoute
 
 @Composable
 fun NavGraph(
@@ -43,6 +58,18 @@ fun NavGraph(
                 },
                 onNavigateToLaunchBlock = {
                     navController.navigate(LaunchBlockRoute)
+                },
+                onNavigateToBackTap = {
+                    navController.navigate(BackTapRoute)
+                },
+                onNavigateToLeftEdge = {
+                    navController.navigate(LeftEdgeConfigRoute)
+                },
+                onNavigateToRightEdge = {
+                    navController.navigate(RightEdgeConfigRoute)
+                },
+                onNavigateToBottomEdge = {
+                    navController.navigate(BottomEdgeConfigRoute)
                 }
             )
         }
@@ -72,6 +99,49 @@ fun NavGraph(
 
         composable<LaunchBlockRoute> {
             LaunchBlockScreen(
+                onNavigateBack = {
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    }
+                }
+            )
+        }
+
+        composable<BackTapRoute> {
+            BackTapScreen(
+                onNavigateBack = {
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    }
+                }
+            )
+        }
+
+        composable<LeftEdgeConfigRoute> {
+            EdgeGestureConfigScreen(
+                edgeType = EdgeType.LEFT,
+                onNavigateBack = {
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    }
+                }
+            )
+        }
+
+        composable<RightEdgeConfigRoute> {
+            EdgeGestureConfigScreen(
+                edgeType = EdgeType.RIGHT,
+                onNavigateBack = {
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    }
+                }
+            )
+        }
+
+        composable<BottomEdgeConfigRoute> {
+            EdgeGestureConfigScreen(
+                edgeType = EdgeType.BOTTOM,
                 onNavigateBack = {
                     if (navController.previousBackStackEntry != null) {
                         navController.popBackStack()
