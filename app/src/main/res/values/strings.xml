@@ -146,6 +146,7 @@
     <!-- 应用黑名单 (App Blacklist) -->
     <string name="settings_more">更多设置</string>
     <string name="settings_section_gesture">手势</string>
+    <string name="nav_back">返回</string>
     <string name="settings_blacklist_title">应用切换黑名单</string>
     <string name="settings_blacklist_desc">切换上一个应用时忽略黑名单中的应用</string>
     <string name="settings_blacklist_dialog_title">应用切换黑名单</string>

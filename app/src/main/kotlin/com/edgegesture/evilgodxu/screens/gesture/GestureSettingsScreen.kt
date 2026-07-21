@@ -112,6 +112,8 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun GestureSettingsScreen(
     onNavigateToSettings: () -> Unit,
+    onNavigateToBlacklist: () -> Unit = {},
+    onNavigateToLaunchBlock: () -> Unit = {},
     viewModel: GestureSettingsViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
@@ -192,12 +194,16 @@ fun GestureSettingsScreen(
             activity = activity,
             notificationPermissionLauncher = notificationPermissionLauncher,
             onNavigateToSettings = onNavigateToSettings,
+            onNavigateToBlacklist = onNavigateToBlacklist,
+            onNavigateToLaunchBlock = onNavigateToLaunchBlock,
             onShowActionDialog = { key, action ->
                 currentActionKey = key
                 currentActionValue = action
                 showActionDialog = true
             },
-            onShowBackTapActionDialog = { showBackTapActionDialog = true }
+            onShowBackTapActionDialog = {
+                showBackTapActionDialog = true
+            }
         )
     }
 
@@ -301,6 +307,8 @@ private fun GestureSettingsContent(
     activity: Activity?,
     notificationPermissionLauncher: androidx.activity.result.ActivityResultLauncher<String>,
     onNavigateToSettings: () -> Unit,
+    onNavigateToBlacklist: () -> Unit = {},
+    onNavigateToLaunchBlock: () -> Unit = {},
     onShowActionDialog: (androidx.datastore.preferences.core.Preferences.Key<String>, GestureAction) -> Unit,
     onShowBackTapActionDialog: () -> Unit
 ) {
@@ -368,7 +376,9 @@ private fun GestureSettingsContent(
                 )
 
                 MoreGridCard(
-                    onSettings = onNavigateToSettings
+                    onSettings = onNavigateToSettings,
+                    onBlacklist = onNavigateToBlacklist,
+                    onLaunchBlock = onNavigateToLaunchBlock
                 )
 
                 GestureSettingsExpandableColumn(
@@ -431,7 +441,9 @@ private fun GestureSettingsContent(
 
             AnimatedVisibility(visible = settings.gestureEnabled) {
                 MoreGridCard(
-                    onSettings = onNavigateToSettings
+                    onSettings = onNavigateToSettings,
+                    onBlacklist = onNavigateToBlacklist,
+                    onLaunchBlock = onNavigateToLaunchBlock
                 )
             }
 

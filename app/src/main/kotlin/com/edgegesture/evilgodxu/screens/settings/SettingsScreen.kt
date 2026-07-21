@@ -24,13 +24,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material.icons.filled.Policy
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -59,16 +56,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowSizeClass
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
-import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockRule
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuState
 import com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService
 import com.edgegesture.evilgodxu.ui.adaptive.rememberWindowSizeClass
-import com.edgegesture.evilgodxu.screens.settings.components.AppSwitchBlacklistDialog
 import com.edgegesture.evilgodxu.screens.settings.components.DonateDialog
 import com.edgegesture.evilgodxu.screens.settings.components.LanguageSelectionDialog
-import com.edgegesture.evilgodxu.screens.settings.components.LaunchBlockRuleDialog
-import com.edgegesture.evilgodxu.screens.settings.components.LaunchBlockRulesList
 import com.edgegesture.evilgodxu.screens.settings.components.OpenSourceLicensesDialog
 import com.edgegesture.evilgodxu.screens.settings.components.SettingsClickableItem
 import com.edgegesture.evilgodxu.screens.settings.components.SettingsSection
@@ -186,11 +179,8 @@ fun SettingsScreen(
     // 各对话框显示状态管理
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
-    var showBlacklistDialog by remember { mutableStateOf(false) }
     var showDonateDialog by remember { mutableStateOf(false) }
     var showOpenSourceDialog by remember { mutableStateOf(false) }
-    var showLaunchBlockRuleDialog by remember { mutableStateOf(false) }
-    var editingLaunchBlockRule by remember { mutableStateOf<LaunchBlockRule?>(null) }
 
     // Shizuku 状态
     var shizukuState by remember { mutableStateOf<ShizukuState>(ShizukuState.NotRunning) }
@@ -285,42 +275,10 @@ fun SettingsScreen(
                                 EdgeGestureAccessibilityService.updateSettings(context)
                             }
                         )
-                        SettingsClickableItem(
-                            icon = Icons.Default.Block,
-                            title = stringResource(R.string.settings_blacklist_title),
-                            subtitle = stringResource(R.string.settings_blacklist_desc),
-                            onClick = { showBlacklistDialog = true }
-                        )
                     }
 
                     // 更多设置项
                     SettingsSection(title = stringResource(R.string.settings_more)) {
-                        SettingsSwitchItem(
-                            icon = Icons.Default.Security,
-                            title = stringResource(R.string.settings_launch_block_title),
-                            subtitle = stringResource(R.string.settings_launch_block_desc),
-                            checked = uiState.launchBlockEnabled,
-                            onCheckedChange = { enabled ->
-                                viewModel.setLaunchBlockEnabled(enabled)
-                            }
-                        )
-                        if (uiState.launchBlockEnabled) {
-                            LaunchBlockRulesList(
-                                rules = uiState.launchBlockRules,
-                                onAddRule = {
-                                    editingLaunchBlockRule = null
-                                    showLaunchBlockRuleDialog = true
-                                },
-                                onEditRule = { rule ->
-                                    editingLaunchBlockRule = rule
-                                    showLaunchBlockRuleDialog = true
-                                },
-                                onDeleteRule = { ruleId ->
-                                    viewModel.removeLaunchBlockRule(ruleId)
-                                },
-                                modifier = Modifier.padding(top = 8.dp)
-                            )
-                        }
                         SettingsClickableItem(
                             icon = Icons.Default.Favorite,
                             title = stringResource(R.string.settings_donate),
@@ -382,42 +340,10 @@ fun SettingsScreen(
                             EdgeGestureAccessibilityService.updateSettings(context)
                         }
                     )
-                    SettingsClickableItem(
-                        icon = Icons.Default.Block,
-                        title = stringResource(R.string.settings_blacklist_title),
-                        subtitle = stringResource(R.string.settings_blacklist_desc),
-                        onClick = { showBlacklistDialog = true }
-                    )
                 }
 
                 // 更多设置项
                 SettingsSection(title = stringResource(R.string.settings_more)) {
-                    SettingsSwitchItem(
-                        icon = Icons.Default.Security,
-                        title = stringResource(R.string.settings_launch_block_title),
-                        subtitle = stringResource(R.string.settings_launch_block_desc),
-                        checked = uiState.launchBlockEnabled,
-                        onCheckedChange = { enabled ->
-                            viewModel.setLaunchBlockEnabled(enabled)
-                        }
-                    )
-                    if (uiState.launchBlockEnabled) {
-                        LaunchBlockRulesList(
-                            rules = uiState.launchBlockRules,
-                            onAddRule = {
-                                editingLaunchBlockRule = null
-                                showLaunchBlockRuleDialog = true
-                            },
-                            onEditRule = { rule ->
-                                editingLaunchBlockRule = rule
-                                showLaunchBlockRuleDialog = true
-                            },
-                            onDeleteRule = { ruleId ->
-                                viewModel.removeLaunchBlockRule(ruleId)
-                            },
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
                     SettingsClickableItem(
                         icon = Icons.Default.Favorite,
                         title = stringResource(R.string.settings_donate),
@@ -460,13 +386,6 @@ fun SettingsScreen(
         )
     }
 
-    // 应用切换黑名单管理对话框
-    if (showBlacklistDialog) {
-        AppSwitchBlacklistDialog(
-            onDismiss = { showBlacklistDialog = false }
-        )
-    }
-
     // 捐赠支持对话框
     if (showDonateDialog) {
         DonateDialog(
@@ -478,31 +397,6 @@ fun SettingsScreen(
     if (showOpenSourceDialog) {
         OpenSourceLicensesDialog(
             onDismiss = { showOpenSourceDialog = false }
-        )
-    }
-
-    // 启动拦截规则对话框
-    if (showLaunchBlockRuleDialog) {
-        LaunchBlockRuleDialog(
-            rule = editingLaunchBlockRule,
-            onDismiss = {
-                showLaunchBlockRuleDialog = false
-                editingLaunchBlockRule = null
-            },
-            onConfirm = { rule ->
-                if (editingLaunchBlockRule != null) {
-                    viewModel.updateLaunchBlockRule(rule)
-                } else {
-                    viewModel.addLaunchBlockRule(rule)
-                }
-                showLaunchBlockRuleDialog = false
-                editingLaunchBlockRule = null
-            },
-            onDelete = { ruleId ->
-                viewModel.removeLaunchBlockRule(ruleId)
-                showLaunchBlockRuleDialog = false
-                editingLaunchBlockRule = null
-            }
         )
     }
 }

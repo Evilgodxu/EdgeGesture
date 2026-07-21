@@ -4,7 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.edgegesture.evilgodxu.screens.blacklist.AppBlacklistScreen
 import com.edgegesture.evilgodxu.screens.gesture.GestureSettingsScreen
+import com.edgegesture.evilgodxu.screens.launchblock.LaunchBlockScreen
 import com.edgegesture.evilgodxu.screens.settings.SettingsScreen
 import com.edgegesture.evilgodxu.screens.settings.ThemeMode
 import kotlinx.serialization.Serializable
@@ -14,6 +16,12 @@ data object GestureRoute
 
 @Serializable
 data object SettingsRoute
+
+@Serializable
+data object BlacklistRoute
+
+@Serializable
+data object LaunchBlockRoute
 
 @Composable
 fun NavGraph(
@@ -29,6 +37,12 @@ fun NavGraph(
             GestureSettingsScreen(
                 onNavigateToSettings = {
                     navController.navigate(SettingsRoute)
+                },
+                onNavigateToBlacklist = {
+                    navController.navigate(BlacklistRoute)
+                },
+                onNavigateToLaunchBlock = {
+                    navController.navigate(LaunchBlockRoute)
                 }
             )
         }
@@ -42,6 +56,26 @@ fun NavGraph(
                 },
                 onThemeChange = { themeMode ->
                     onThemeChange(themeMode)
+                }
+            )
+        }
+
+        composable<BlacklistRoute> {
+            AppBlacklistScreen(
+                onNavigateBack = {
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    }
+                }
+            )
+        }
+
+        composable<LaunchBlockRoute> {
+            LaunchBlockScreen(
+                onNavigateBack = {
+                    if (navController.previousBackStackEntry != null) {
+                        navController.popBackStack()
+                    }
                 }
             )
         }

@@ -8,16 +8,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -403,58 +405,91 @@ fun LaunchBlockRuleDialog(
                         }
                     }
                 }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    if (targetApp.isBlank()) {
-                        showError = true
-                        return@TextButton
+
+                // 按钮行 — 设计风格
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    if (isEditing && onDelete != null) {
+                        Button(
+                            onClick = { onDelete(rule.id) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        ) {
+                            Text(
+                                stringResource(R.string.dialog_delete),
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                            )
+                        }
                     }
-                    val newRule = if (isEditing && rule != null) {
-                        rule.copy(
-                            enabled = ruleEnabled,
-                            launcherApp = launcherApp.trim(),
-                            targetApp = targetApp.trim(),
-                            blockDelay = blockDelay,
-                            enableKillOnFrequentLaunch = enableKill,
-                            enableKillTarget = enableKillTarget,
-                            allowKillSystemApp = allowKillSystemApp
-                        )
-                    } else {
-                        LaunchBlockRule(
-                            enabled = ruleEnabled,
-                            launcherApp = launcherApp.trim(),
-                            targetApp = targetApp.trim(),
-                            blockDelay = blockDelay,
-                            enableKillOnFrequentLaunch = enableKill,
-                            enableKillTarget = enableKillTarget,
-                            allowKillSystemApp = allowKillSystemApp
-                        )
-                    }
-                    onConfirm(newRule)
-                }
-            ) {
-                Text(stringResource(R.string.dialog_confirm))
-            }
-        },
-        dismissButton = {
-            Row {
-                if (isEditing && onDelete != null && rule != null) {
-                    TextButton(
-                        onClick = { onDelete(rule.id) },
-                        colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
+
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurface
                         )
                     ) {
-                        Text(stringResource(R.string.dialog_delete))
+                        Text(
+                            stringResource(R.string.dialog_cancel),
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            if (targetApp.isBlank()) {
+                                showError = true
+                                return@Button
+                            }
+                            val newRule = if (isEditing) {
+                                rule.copy(
+                                    enabled = ruleEnabled,
+                                    launcherApp = launcherApp.trim(),
+                                    targetApp = targetApp.trim(),
+                                    blockDelay = blockDelay,
+                                    enableKillOnFrequentLaunch = enableKill,
+                                    enableKillTarget = enableKillTarget,
+                                    allowKillSystemApp = allowKillSystemApp
+                                )
+                            } else {
+                                LaunchBlockRule(
+                                    enabled = ruleEnabled,
+                                    launcherApp = launcherApp.trim(),
+                                    targetApp = targetApp.trim(),
+                                    blockDelay = blockDelay,
+                                    enableKillOnFrequentLaunch = enableKill,
+                                    enableKillTarget = enableKillTarget,
+                                    allowKillSystemApp = allowKillSystemApp
+                                )
+                            }
+                            onConfirm(newRule)
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Text(
+                            stringResource(R.string.dialog_confirm),
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                        )
                     }
                 }
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.dialog_cancel))
-                }
             }
-        }
+        },
+        confirmButton = {},
+        dismissButton = {}
     )
 }
