@@ -103,6 +103,18 @@
     <!-- 手势操作选择对话框 -->
     <string name="gesture_select_action_title">选择操作</string>
 
+    <!-- 服务状态卡片 -->
+    <string name="gesture_service_running">运行中</string>
+    <string name="gesture_service_stopped">已停止</string>
+    <string name="gesture_service_subtitle">无障碍服务 · 边缘手势引擎</string>
+    <string name="gesture_service_start">启动服务</string>
+    <string name="gesture_service_stop">停止服务</string>
+    <string name="gesture_count_label">手势</string>
+
+    <!-- 权限 -->
+    <string name="permission_accessibility_title">无障碍服务权限</string>
+    <string name="permission_accessibility_desc">实现系统级手势操作</string>
+
     <!-- 应用黑名单 (App Blacklist) -->
     <string name="settings_more">更多设置</string>
     <string name="settings_section_gesture">手势</string>
@@ -131,24 +143,18 @@
     <string name="permission_status_title">权限状态</string>
     <string name="permission_request_button">去授权</string>
     <string name="permission_overlay_title">悬浮窗权限</string>
-    <string name="permission_overlay_desc">需要悬浮窗权限创建边缘手势触发区域</string>
+    <string name="permission_overlay_desc">创建手势触发区域与扩展面板所需</string>
     <string name="permission_notification_title">通知权限</string>
-    <string name="permission_notification_desc">需要通知权限来保持服务在后台运行</string>
-    <string name="permission_battery_title">电池优化白名单</string>
-    <string name="permission_battery_desc">需要关闭电池优化以确保手势服务在后台持续运行</string>
+    <string name="permission_notification_desc">保持手势服务在后台运行所需</string>
+    <string name="permission_battery_title">省电优化权限</string>
+    <string name="permission_battery_desc">避免系统省电终止手势服务所需</string>
     <string name="permission_usage_stats_title">使用情况访问权限</string>
-    <string name="permission_usage_stats_desc">需要使用情况访问权限来实现上一个应用切换</string>
-    <string name="permission_query_packages_title">获取已安装应用列表</string>
-    <string name="permission_query_packages_desc">需要获取已安装应用权限来管理应用切换黑名单</string>
+    <string name="permission_usage_stats_desc">切换到上一个应用所需</string>
+    <string name="permission_query_packages_title">获取已安装应用权限</string>
+    <string name="permission_query_packages_desc">创建应用切换黑名单所需</string>
 
-    <!-- 无障碍服务 (Accessibility) -->
+    <!-- 无障碍服务 (Accessibility Service) -->
     <string name="accessibility_service_description">边缘手势需要无障碍权限来实现覆盖系统手势操作</string>
-    <string name="accessibility_permission_required">需要无障碍权限</string>
-    <string name="accessibility_permission_desc">边缘手势需要无障碍权限来执行系统操作，点击前往开启</string>
-    <string name="accessibility_dialog_title">开启无障碍权限</string>
-    <string name="accessibility_dialog_message">边缘手势需要无障碍权限才能执行主页、返回、最近任务等系统操作。请在设置中找到"边缘手势"并开启。</string>
-    <string name="accessibility_go_settings">前往设置</string>
-    <string name="accessibility_cancel">取消</string>
 
     <!-- 扩展面板 (Expand Panel) -->
     <string name="expand_panel_brightness">屏幕亮度</string>

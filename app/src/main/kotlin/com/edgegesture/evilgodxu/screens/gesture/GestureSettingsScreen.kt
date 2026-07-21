@@ -10,9 +10,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,24 +27,36 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material.icons.outlined.Android
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.BatteryFull
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.outlined.PictureInPicture
+import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
+
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -51,6 +67,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -76,10 +97,10 @@ import com.edgegesture.evilgodxu.screens.gesture.components.EdgeGestureSection
 import com.edgegesture.evilgodxu.screens.gesture.components.EdgeSettingsSection
 import com.edgegesture.evilgodxu.screens.gesture.components.GestureSettingsSwitchItem
 import com.edgegesture.evilgodxu.screens.gesture.components.PermissionCard
+import com.edgegesture.evilgodxu.screens.gesture.components.PermissionGroupCard
 import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
 import org.koin.androidx.compose.koinViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GestureSettingsScreen(
     onNavigateToSettings: () -> Unit,
@@ -145,31 +166,9 @@ fun GestureSettingsScreen(
         }
     }
 
-    val topBarInsets = if (!windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)) {
-        WindowInsets.statusBars
-    } else {
-        WindowInsets(0, 0, 0, 0)
-    }
-
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.gesture_settings_title)) },
-                actions = {
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.settings_title),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                windowInsets = topBarInsets,
-            )
+            EdgeGestureHeader(onNavigateToSettings = onNavigateToSettings)
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { innerPadding ->
@@ -373,142 +372,171 @@ private fun GestureSettingsSwitchesColumn(
 ) {
     val context = LocalContext.current
 
-    // 无障碍权限未开启时显示警告卡片，点击直接跳转系统无障碍设置
-    if (!uiState.isAccessibilityEnabled) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-                .clickable {
-                    if (activity != null) {
-                        viewModel.startPermissionMonitor(PermissionType.ACCESSIBILITY, activity)
-                    }
-                    val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                    context.startActivity(intent)
-                },
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.accessibility_permission_required),
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = stringResource(R.string.accessibility_permission_desc),
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    fontSize = 12.sp
-                )
-            }
-        }
-    }
-
-    // 权限状态卡片 - 每个权限独立卡片，授予后自动隐藏
-    PermissionCard(
-        title = stringResource(R.string.permission_overlay_title),
-        description = stringResource(R.string.permission_overlay_desc),
-        granted = uiState.overlayGranted,
-        onRequest = {
-            if (activity != null) {
-                viewModel.startPermissionMonitor(PermissionType.OVERLAY, activity)
-            }
-            val intent = Intent(
-                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                "package:${context.packageName}".toUri()
-            )
-            activity?.startActivity(intent)
-        },
-        modifier = Modifier.padding(vertical = 4.dp)
-    )
-
-    PermissionCard(
-        title = stringResource(R.string.permission_notification_title),
-        description = stringResource(R.string.permission_notification_desc),
-        granted = uiState.notificationGranted,
-        onRequest = {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        },
-        modifier = Modifier.padding(vertical = 4.dp)
-    )
-
-    PermissionCard(
-        title = stringResource(R.string.permission_battery_title),
-        description = stringResource(R.string.permission_battery_desc),
-        granted = uiState.batteryOptimized,
-        onRequest = {
-            if (activity != null) {
-                viewModel.startPermissionMonitor(PermissionType.BATTERY_OPTIMIZATION, activity)
-            }
-            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                data = "package:${context.packageName}".toUri()
-            }
-            activity?.startActivity(intent)
-        },
-        modifier = Modifier.padding(vertical = 4.dp)
-    )
-
-    PermissionCard(
-        title = stringResource(R.string.permission_usage_stats_title),
-        description = stringResource(R.string.permission_usage_stats_desc),
-        granted = uiState.usageStatsGranted,
-        onRequest = {
-            if (activity != null) {
-                viewModel.startPermissionMonitor(PermissionType.USAGE_STATS, activity)
-            }
-            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
-                data = "package:${context.packageName}".toUri()
-            }
-            activity?.startActivity(intent)
-        },
-        modifier = Modifier.padding(vertical = 4.dp)
-    )
-
-    PermissionCard(
-        title = stringResource(R.string.permission_query_packages_title),
-        description = stringResource(R.string.permission_query_packages_desc),
-        granted = uiState.queryAllPackagesGranted,
-        onRequest = {
-            if (activity != null) {
-                viewModel.startPermissionMonitor(PermissionType.QUERY_ALL_PACKAGES, activity)
-            }
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = "package:${context.packageName}".toUri()
-            }
-            activity?.startActivity(intent)
-        },
-        modifier = Modifier.padding(vertical = 4.dp)
-    )
-
-    Spacer(modifier = Modifier.height(8.dp))
-
-    // 边缘手势功能总开关，依赖无障碍权限
-    GestureSettingsSwitchItem(
-        title = stringResource(R.string.gesture_enable_title),
-        subtitle = stringResource(R.string.gesture_enable_desc),
-        checked = settings.gestureEnabled,
-        onCheckedChange = { enabled ->
-            if (enabled && !uiState.isAccessibilityEnabled) {
+    // 启动服务状态卡片
+    ServiceStatusCard(
+        enabled = settings.gestureEnabled,
+        isAccessibilityEnabled = uiState.isAccessibilityEnabled,
+        totalSegments = settings.leftSegmentCount + settings.rightSegmentCount + settings.bottomSegmentCount,
+        totalGestures = countNonNoneGestures(settings),
+        onToggleService = { enable ->
+            if (enable && !uiState.isAccessibilityEnabled) {
                 if (activity != null) {
                     viewModel.startPermissionMonitor(PermissionType.ACCESSIBILITY, activity)
                 }
                 val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
                 context.startActivity(intent)
-                return@GestureSettingsSwitchItem
+                return@ServiceStatusCard
             }
-            viewModel.setGestureEnabled(enabled)
-            if (enabled) {
+            viewModel.setGestureEnabled(enable)
+            if (enable) {
                 EdgeGestureAccessibilityService.startGesture(context)
             } else {
                 EdgeGestureAccessibilityService.stopGesture(context)
             }
         }
     )
+
+    // 权限状态分组卡片（全部授权后自动隐藏）
+    AnimatedVisibility(
+        visible = !uiState.isAccessibilityEnabled || !uiState.allPermissionsGranted,
+        enter = expandVertically(),
+        exit = shrinkVertically()
+    ) {
+        PermissionGroupCard(
+            modifier = Modifier.padding(vertical = 4.dp)
+        ) {
+        // 无障碍权限
+        PermissionCard(
+            title = stringResource(R.string.permission_accessibility_title),
+            description = stringResource(R.string.permission_accessibility_desc),
+            granted = uiState.isAccessibilityEnabled,
+            onRequest = {
+                if (activity != null) {
+                    viewModel.startPermissionMonitor(PermissionType.ACCESSIBILITY, activity)
+                }
+                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                context.startActivity(intent)
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.Security,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        )
+        PermissionCard(
+            title = stringResource(R.string.permission_overlay_title),
+            description = stringResource(R.string.permission_overlay_desc),
+            granted = uiState.overlayGranted,
+            onRequest = {
+                if (activity != null) {
+                    viewModel.startPermissionMonitor(PermissionType.OVERLAY, activity)
+                }
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    "package:${context.packageName}".toUri()
+                )
+                activity?.startActivity(intent)
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.PictureInPicture,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        )
+        PermissionCard(
+            title = stringResource(R.string.permission_notification_title),
+            description = stringResource(R.string.permission_notification_desc),
+            granted = uiState.notificationGranted,
+            onRequest = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.Notifications,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        )
+        PermissionCard(
+            title = stringResource(R.string.permission_battery_title),
+            description = stringResource(R.string.permission_battery_desc),
+            granted = uiState.batteryOptimized,
+            onRequest = {
+                if (activity != null) {
+                    viewModel.startPermissionMonitor(PermissionType.BATTERY_OPTIMIZATION, activity)
+                }
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                    data = "package:${context.packageName}".toUri()
+                }
+                activity?.startActivity(intent)
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.BatteryFull,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        )
+        PermissionCard(
+            title = stringResource(R.string.permission_usage_stats_title),
+            description = stringResource(R.string.permission_usage_stats_desc),
+            granted = uiState.usageStatsGranted,
+            onRequest = {
+                if (activity != null) {
+                    viewModel.startPermissionMonitor(PermissionType.USAGE_STATS, activity)
+                }
+                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
+                    data = "package:${context.packageName}".toUri()
+                }
+                activity?.startActivity(intent)
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.BarChart,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        )
+        PermissionCard(
+            title = stringResource(R.string.permission_query_packages_title),
+            description = stringResource(R.string.permission_query_packages_desc),
+            granted = uiState.queryAllPackagesGranted,
+            onRequest = {
+                if (activity != null) {
+                    viewModel.startPermissionMonitor(PermissionType.QUERY_ALL_PACKAGES, activity)
+                }
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = "package:${context.packageName}".toUri()
+                }
+                activity?.startActivity(intent)
+            },
+            icon = {
+                Icon(
+                    imageVector = Icons.Outlined.Android,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        )
+    }
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
 
     AnimatedVisibility(visible = settings.gestureEnabled) {
         Column {
@@ -771,6 +799,420 @@ private fun GestureSettingsExpandableColumn(
             onModeChange = { viewModel.setBackTapMode(it) },
             onPauseOnChargingChange = { viewModel.setBackTapPauseOnCharging(it) },
             getActionDisplayName = { getActionDisplayName(it) }
+        )
+    }
+}
+
+@Composable
+private fun EdgeGestureHeader(
+    onNavigateToSettings: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 图标容器(匹配设计: 32x32, border-radius 8, icon-bg 背景)
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(10.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Layers,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            Text(
+                text = "EdgeGesture",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        IconButton(onClick = onNavigateToSettings) {
+            Icon(
+                imageVector = Icons.Outlined.Settings,
+                contentDescription = stringResource(R.string.settings_title),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/**
+ * 统计所有非 NONE 的手势动作总数
+ */
+private fun countNonNoneGestures(settings: GestureSettingsState): Int {
+    var count = 0
+    // 左侧第1段
+    with(settings.leftEdge) {
+        if (swipeRight != GestureAction.NONE) count++
+        if (swipeRightLong != GestureAction.NONE) count++
+        if (swipeUp != GestureAction.NONE) count++
+        if (swipeUpLong != GestureAction.NONE) count++
+        if (swipeDown != GestureAction.NONE) count++
+        if (swipeDownLong != GestureAction.NONE) count++
+    }
+    // 左侧第2段
+    if (settings.leftSegmentCount >= 2) {
+        with(settings.leftEdgeSegment2) {
+            if (swipeRight != GestureAction.NONE) count++
+            if (swipeRightLong != GestureAction.NONE) count++
+            if (swipeUp != GestureAction.NONE) count++
+            if (swipeUpLong != GestureAction.NONE) count++
+            if (swipeDown != GestureAction.NONE) count++
+            if (swipeDownLong != GestureAction.NONE) count++
+        }
+    }
+    // 左侧第3段
+    if (settings.leftSegmentCount >= 3) {
+        with(settings.leftEdgeSegment3) {
+            if (swipeRight != GestureAction.NONE) count++
+            if (swipeRightLong != GestureAction.NONE) count++
+            if (swipeUp != GestureAction.NONE) count++
+            if (swipeUpLong != GestureAction.NONE) count++
+            if (swipeDown != GestureAction.NONE) count++
+            if (swipeDownLong != GestureAction.NONE) count++
+        }
+    }
+    // 右侧第1段
+    with(settings.rightEdge) {
+        if (swipeLeft != GestureAction.NONE) count++
+        if (swipeLeftLong != GestureAction.NONE) count++
+        if (swipeUp != GestureAction.NONE) count++
+        if (swipeUpLong != GestureAction.NONE) count++
+        if (swipeDown != GestureAction.NONE) count++
+        if (swipeDownLong != GestureAction.NONE) count++
+    }
+    // 右侧第2段
+    if (settings.rightSegmentCount >= 2) {
+        with(settings.rightEdgeSegment2) {
+            if (swipeLeft != GestureAction.NONE) count++
+            if (swipeLeftLong != GestureAction.NONE) count++
+            if (swipeUp != GestureAction.NONE) count++
+            if (swipeUpLong != GestureAction.NONE) count++
+            if (swipeDown != GestureAction.NONE) count++
+            if (swipeDownLong != GestureAction.NONE) count++
+        }
+    }
+    // 右侧第3段
+    if (settings.rightSegmentCount >= 3) {
+        with(settings.rightEdgeSegment3) {
+            if (swipeLeft != GestureAction.NONE) count++
+            if (swipeLeftLong != GestureAction.NONE) count++
+            if (swipeUp != GestureAction.NONE) count++
+            if (swipeUpLong != GestureAction.NONE) count++
+            if (swipeDown != GestureAction.NONE) count++
+            if (swipeDownLong != GestureAction.NONE) count++
+        }
+    }
+    // 底部第1段
+    with(settings.bottomEdge) {
+        if (swipeUp != GestureAction.NONE) count++
+        if (swipeUpLong != GestureAction.NONE) count++
+        if (swipeLeft != GestureAction.NONE) count++
+        if (swipeLeftLong != GestureAction.NONE) count++
+        if (swipeRight != GestureAction.NONE) count++
+        if (swipeRightLong != GestureAction.NONE) count++
+    }
+    // 底部第2段
+    if (settings.bottomSegmentCount >= 2) {
+        with(settings.bottomEdgeSegment2) {
+            if (swipeUp != GestureAction.NONE) count++
+            if (swipeUpLong != GestureAction.NONE) count++
+            if (swipeLeft != GestureAction.NONE) count++
+            if (swipeLeftLong != GestureAction.NONE) count++
+            if (swipeRight != GestureAction.NONE) count++
+            if (swipeRightLong != GestureAction.NONE) count++
+        }
+    }
+    // 底部第3段
+    if (settings.bottomSegmentCount >= 3) {
+        with(settings.bottomEdgeSegment3) {
+            if (swipeUp != GestureAction.NONE) count++
+            if (swipeUpLong != GestureAction.NONE) count++
+            if (swipeLeft != GestureAction.NONE) count++
+            if (swipeLeftLong != GestureAction.NONE) count++
+            if (swipeRight != GestureAction.NONE) count++
+            if (swipeRightLong != GestureAction.NONE) count++
+        }
+    }
+    return count
+}
+
+/**
+ * 启动服务状态卡片
+ * 匹配新版 UI 设计：状态标题 + 圆点指示器 + 按钮 + 统计信息
+ */
+@Composable
+private fun ServiceStatusCard(
+    enabled: Boolean,
+    isAccessibilityEnabled: Boolean,
+    totalSegments: Int,
+    totalGestures: Int,
+    onToggleService: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = modifier
+                .fillMaxWidth(0.95f)
+                .padding(vertical = 8.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            border = BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant
+            )
+        ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            // 状态标题 + 圆点指示器
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = if (enabled) stringResource(R.string.gesture_service_running)
+                           else stringResource(R.string.gesture_service_stopped),
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontWeight = FontWeight.Light,
+                        letterSpacing = 2.sp
+                    ),
+                    color = if (enabled) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                // 状态圆点
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .background(
+                            color = if (enabled) Color(0xFF3FB950)
+                                    else MaterialTheme.colorScheme.error,
+                            shape = RoundedCornerShape(50)
+                        )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // 副标题
+            Text(
+                text = stringResource(R.string.gesture_service_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // 启动/停止 按钮
+            Button(
+                onClick = { onToggleService(!enabled) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (enabled) MaterialTheme.colorScheme.error
+                                    else MaterialTheme.colorScheme.primary,
+                    contentColor = if (enabled) MaterialTheme.colorScheme.onError
+                                   else MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Icon(
+                    imageVector = if (enabled) Icons.Default.Stop else Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (enabled) stringResource(R.string.gesture_service_stop)
+                           else stringResource(R.string.gesture_service_start),
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontWeight = FontWeight.SemiBold
+                    )
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // 统计信息网格
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                // 段数统计
+                StatItem(
+                    icon = {
+                        // 手机轮廓示意
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(16.dp, 20.dp)
+                                    .border(
+                                        1.5.dp,
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                        RoundedCornerShape(3.dp)
+                                    )
+                            ) {
+                                // 左边缘指示
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.CenterStart)
+                                        .size(2.dp, 10.dp)
+                                        .background(
+                                            MaterialTheme.colorScheme.primary,
+                                            RoundedCornerShape(1.dp)
+                                        )
+                                )
+                                // 右边缘指示
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.CenterEnd)
+                                        .size(2.dp, 10.dp)
+                                        .background(
+                                            MaterialTheme.colorScheme.primary,
+                                            RoundedCornerShape(1.dp)
+                                        )
+                                )
+                                // 底边缘指示
+                                Box(
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .size(8.dp, 2.dp)
+                                        .background(
+                                            MaterialTheme.colorScheme.primary,
+                                            RoundedCornerShape(1.dp)
+                                        )
+                                )
+                            }
+                        }
+                    },
+                    value = totalSegments.toString(),
+                    label = stringResource(R.string.edge_segment_count)
+                )
+
+                // 手势数统计
+                StatItem(
+                    icon = {
+                        GestureWaveIcon(
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    value = totalGestures.toString(),
+                    label = stringResource(R.string.gesture_count_label)
+                )
+            }
+        }
+        }
+    }
+}
+
+/**
+ * 手势波浪图标 - 匹配新版 UI 设计
+ * SVG: circle(cx=4,cy=12,r=2) + cubic bezier wave
+ */
+@Composable
+private fun GestureWaveIcon(
+    modifier: Modifier = Modifier,
+    tint: Color = MaterialTheme.colorScheme.onSurfaceVariant
+) {
+    Canvas(modifier = modifier.size(20.dp)) {
+        val w = size.width
+        val h = size.height
+        val strokeWidth = 1.8.dp.toPx()
+        val halfH = h / 2f
+
+        // 左侧圆点
+        drawCircle(
+            color = tint,
+            radius = 2.dp.toPx(),
+            center = Offset(5.dp.toPx(), halfH)
+        )
+
+        // 波浪路径 (cubic bezier)
+        val path = Path().apply {
+            val startX = 9.dp.toPx()
+            val cp1x = 9.dp.toPx() + 2.dp.toPx()
+            val cp2x = 9.dp.toPx() + 6.dp.toPx()
+            val endX = 9.dp.toPx() + 8.dp.toPx()
+            val amplitude = 6.dp.toPx()
+
+            moveTo(startX, halfH)
+            cubicTo(
+                cp1x, halfH - amplitude,
+                cp2x, halfH - amplitude,
+                endX, halfH
+            )
+            // 第二段波浪 (smooth cubic)
+            val cp3x = endX + 6.dp.toPx()
+            val endX2 = endX + 8.dp.toPx()
+            cubicTo(
+                cp3x, halfH + amplitude,
+                cp3x, halfH + amplitude,
+                endX2, halfH
+            )
+        }
+
+        drawPath(
+            path = path,
+            color = tint,
+            style = Stroke(
+                width = strokeWidth,
+                cap = StrokeCap.Round
+            )
+        )
+    }
+}
+
+@Composable
+private fun StatItem(
+    icon: @Composable () -> Unit,
+    value: String,
+    label: String
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        icon()
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.SemiBold
+            ),
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
