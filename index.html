@@ -1369,50 +1369,52 @@
                     </div>
                 </div>
 
-                <!-- 权限状态 -->
-                <span class="section-title">权限状态</span>
-                <div class="card" id="permCard">
-                    <div class="permission-card">
-                        <div class="permission-card-left">
-                            <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                            <div><div class="permission-title">无障碍服务权限</div><div class="permission-desc">实现系统级手势操作</div></div>
+                <!-- 权限状态 (标题与卡片统一容器) -->
+                <div id="permSection">
+                    <span class="section-title">权限状态</span>
+                    <div class="card" id="permCard">
+                        <div class="permission-card">
+                            <div class="permission-card-left">
+                                <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                                <div><div class="permission-title">无障碍服务权限</div><div class="permission-desc">实现系统级手势操作</div></div>
+                            </div>
+                            <div class="permission-status denied" id="permAccessibility" onclick="grantPermission('permAccessibility')">去授权</div>
                         </div>
-                        <div class="permission-status denied" id="permAccessibility" onclick="grantPermission('permAccessibility')">去授权</div>
-                    </div>
-                    <div class="permission-card">
-                        <div class="permission-card-left">
-                            <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><rect x="6" y="2" width="12" height="20" rx="2" fill="none"/><rect x="7" y="4" width="5" height="4" rx="1" fill="none"/><line x1="7" y1="6" x2="12" y2="6"/></svg></div>
-                            <div><div class="permission-title">悬浮窗权限</div><div class="permission-desc">创建手势触发区域与扩展面板所需</div></div>
+                        <div class="permission-card">
+                            <div class="permission-card-left">
+                                <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><rect x="6" y="2" width="12" height="20" rx="2" fill="none"/><rect x="7" y="4" width="5" height="4" rx="1" fill="none"/><line x1="7" y1="6" x2="12" y2="6"/></svg></div>
+                                <div><div class="permission-title">悬浮窗权限</div><div class="permission-desc">创建手势触发区域与扩展面板所需</div></div>
+                            </div>
+                            <div class="permission-status denied" id="permOverlay" onclick="grantPermission('permOverlay')">去授权</div>
                         </div>
-                        <div class="permission-status denied" id="permOverlay" onclick="grantPermission('permOverlay')">去授权</div>
-                    </div>
-                    <div class="permission-card">
-                        <div class="permission-card-left">
-                            <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
-                            <div><div class="permission-title">通知权限</div><div class="permission-desc">保持手势服务在后台运行所需</div></div>
+                        <div class="permission-card">
+                            <div class="permission-card-left">
+                                <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+                                <div><div class="permission-title">通知权限</div><div class="permission-desc">保持手势服务在后台运行所需</div></div>
+                            </div>
+                            <div class="permission-status denied" id="permNotification" onclick="grantPermission('permNotification')">去授权</div>
                         </div>
-                        <div class="permission-status denied" id="permNotification" onclick="grantPermission('permNotification')">去授权</div>
-                    </div>
-                    <div class="permission-card">
-                        <div class="permission-card-left">
-                            <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><rect x="7" y="4" width="10" height="18" rx="2" fill="none"/><path d="M10 2h4"/></svg></div>
-                            <div><div class="permission-title">省电优化权限</div><div class="permission-desc">避免系统省电终止手势服务所需</div></div>
+                        <div class="permission-card">
+                            <div class="permission-card-left">
+                                <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><rect x="7" y="4" width="10" height="18" rx="2" fill="none"/><path d="M10 2h4"/></svg></div>
+                                <div><div class="permission-title">省电优化权限</div><div class="permission-desc">避免系统省电终止手势服务所需</div></div>
+                            </div>
+                            <div class="permission-status denied" id="permBattery" onclick="grantPermission('permBattery')">去授权</div>
                         </div>
-                        <div class="permission-status denied" id="permBattery" onclick="grantPermission('permBattery')">去授权</div>
-                    </div>
-                    <div class="permission-card">
-                        <div class="permission-card-left">
-                            <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-                            <div><div class="permission-title">使用情况访问权限</div><div class="permission-desc">切换到上一个应用所需</div></div>
+                        <div class="permission-card">
+                            <div class="permission-card-left">
+                                <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+                                <div><div class="permission-title">使用情况访问权限</div><div class="permission-desc">切换到上一个应用所需</div></div>
+                            </div>
+                            <div class="permission-status denied" id="permUsage" onclick="grantPermission('permUsage')">去授权</div>
                         </div>
-                        <div class="permission-status denied" id="permUsage" onclick="grantPermission('permUsage')">去授权</div>
-                    </div>
-                    <div class="permission-card">
-                        <div class="permission-card-left">
-                            <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
-                            <div><div class="permission-title">获取已安装应用权限</div><div class="permission-desc">创建应用切换黑名单所需</div></div>
+                        <div class="permission-card">
+                            <div class="permission-card-left">
+                                <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+                                <div><div class="permission-title">获取已安装应用权限</div><div class="permission-desc">创建应用切换黑名单所需</div></div>
+                            </div>
+                            <div class="permission-status denied" id="permQuery" onclick="grantPermission('permQuery')">去授权</div>
                         </div>
-                        <div class="permission-status denied" id="permQuery" onclick="grantPermission('permQuery')">去授权</div>
                     </div>
                 </div>
 
@@ -2283,7 +2285,8 @@
                 const all = document.querySelectorAll('#permCard .permission-status');
                 const allGranted = Array.from(all).every(p => p.classList.contains('granted'));
                 if (allGranted) {
-                    document.getElementById('permCard').style.display = 'none';
+                    // 隐藏整个权限区块（标题 + 卡片）
+                    document.getElementById('permSection').style.display = 'none';
                 }
             }
 
