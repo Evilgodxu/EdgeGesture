@@ -191,21 +191,13 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             // 黑名单初始化由 initializeWithScan() 中的 initBlacklistFromApps() 完成，
             // 它会根据实际权限状态正确处理（有权限时扫描全部系统应用，无权限时使用已扫描的可启动应用兜底）
             loadSettings()
-            if (settings.gestureEnabled) {
-                withContext(Dispatchers.Main) {
-                    edgeViewManager.createEdgeViews(settings, settingsProvider)
-                    edgeViewManager.showEdgeViews(settings)
-                }
-            }
-            if (settings.backTapEnabled) {
-                startBackTapDetector(settings)
-                updateBackTapPauseState()
-            }
+            // 注意：边缘视图的创建由 startSettingsFlow() 的初始发射值处理，
+            // 背面双击检测器的启动也由 updateBackTapDetector() 管理，
+            // 这里只负责加载设置到内存，不重复创建视图/检测器。
         }
 
-        // 等待所有协程完成初始化后，主动检查键盘状态。
-        // startSettingsFlow() 和 loadSettings() 都可能创建边缘视图，
-        // 延迟检查确保最后一次创建完成后也能同步键盘状态。
+        // 初始化完成后延迟检查键盘状态，确保在 startSettingsFlow()
+        // 完成边缘视图创建后同步键盘可见性。
         Handler(Looper.getMainLooper()).postDelayed({
             checkKeyboardVisibility()
         }, 1000)
