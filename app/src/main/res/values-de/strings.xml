@@ -30,13 +30,13 @@
 
     <!-- Donate Settings -->
     <string name="settings_donate">Spenden</string>
-    <string name="settings_donate_desc">Unterstützen Sie die Weiterentwicklung der App</string>
+    <string name="settings_donate_desc">Unterstützen Sie die App-Entwicklung</string>
     <string name="settings_donate_alipay">Alipay</string>
     <string name="settings_donate_thanks">Vielen Dank für Ihre Unterstützung!</string>
 
     <!-- Open Source Licenses -->
     <string name="settings_open_source">Open-Source-Lizenzen</string>
-    <string name="settings_open_source_desc">Open-Source-Bibliotheken dieses Projekts anzeigen</string>
+    <string name="settings_open_source_desc">Open-Source-Bibliotheken anzeigen</string>
     <string name="settings_open_source_title">Open-Source-Lizenzen</string>
 
     <!-- Vibration Settings -->
@@ -65,7 +65,7 @@
 
     <!-- Avoid Keyboard Overlap -->
     <string name="gesture_avoid_keyboard_overlap_title">Überlappung vermeiden</string>
-    <string name="gesture_avoid_keyboard_overlap_desc">Gestenbereich bei eingeblendeter Tastatur automatisch deaktivieren</string>
+    <string name="gesture_avoid_keyboard_overlap_desc">Gestenbereich bei Tastatur automatisch deaktivieren</string>
 
     <!-- Gesture Action Types -->
     <string name="gesture_swipe_right">Nach rechts wischen</string>
@@ -103,7 +103,7 @@
     <string name="gesture_remind_feedback">Erinnerung in %d Minuten eingestellt</string>
     <string name="gesture_remind_channel_name">Gesten-Erinnerung</string>
     <string name="gesture_remind_notify_title">Gesten-Erinnerung</string>
-    <string name="gesture_remind_notify_body">Ihre %d-minütige Erinnerung ist abgelaufen</string>
+    <string name="gesture_remind_notify_body">%d-minütige Erinnerung abgelaufen</string>
     <string name="gesture_remind_timer_label">Gesten-Erinnerung</string>
 
     <!-- Gesture Action Selection Dialog -->
@@ -157,7 +157,7 @@
     <string name="settings_blacklist_no_permission">Fehlende App-Abfrageberechtigung</string>
     <string name="settings_blacklist_go_settings">Zu den Einstellungen</string>
     <string name="settings_blacklist_refresh">Liste aktualisieren</string>
-    <string name="settings_blacklist_no_results">Keine Apps gefunden, die "%s" entsprechen</string>
+    <string name="settings_blacklist_no_results">Keine Apps gefunden für "%s"</string>
 
     <!-- Edge Dimension Settings -->
     <string name="edge_width">Breite</string>
@@ -175,22 +175,22 @@
     <string name="permission_request_button">Erteilen</string>
     <string name="permission_granted">Erteilt</string>
     <string name="permission_overlay_title">Overlay-Berechtigung</string>
-    <string name="permission_overlay_desc">Erforderlich zur Anzeige des Gesten-Triggerbereichs und des erweiterten Panels</string>
+    <string name="permission_overlay_desc">Für Gesten-Triggerbereich und erweitertes Panel</string>
     <string name="permission_notification_title">Benachrichtigungsberechtigung</string>
-    <string name="permission_notification_desc">Erforderlich, um den Dienst im Hintergrund auszuführen</string>
+    <string name="permission_notification_desc">Erforderlich für den Hintergrunddienst</string>
     <string name="permission_battery_title">Akku-Optimierungs-Whitelist</string>
-    <string name="permission_battery_desc">Verhindert, dass das System den Gestendienst im Hintergrund beendet</string>
+    <string name="permission_battery_desc">Schützt den Gestendienst vor Systemoptimierung</string>
     <string name="permission_usage_stats_title">Nutzungszugriff</string>
-    <string name="permission_usage_stats_desc">Nutzungszugriff ist erforderlich, um zur letzten App zu wechseln</string>
+    <string name="permission_usage_stats_desc">Nutzungszugriff für App-Wechsel erforderlich</string>
     <string name="permission_query_packages_title">Alle Pakete abfragen</string>
-    <string name="permission_query_packages_desc">Erforderlich zur Verwaltung der App-Wechsel-Blacklist</string>
+    <string name="permission_query_packages_desc">Für die App-Wechsel-Blacklist erforderlich</string>
 
     <!-- Permissions -->
     <string name="permission_accessibility_title">Barrierefreiheitsdienst</string>
-    <string name="permission_accessibility_desc">Ermöglicht systemweite Gestenoperationen wie Zurück, Startbildschirm usw.</string>
+    <string name="permission_accessibility_desc">Ermöglicht systemweite Gestenoperationen</string>
 
     <!-- Accessibility Service -->
-    <string name="accessibility_service_description">Edge Gesture benötigt die Barrierefreiheitsberechtigung, um Systemoperationen wie Zurück, Startbildschirm und letzte Apps durchzuführen.</string>
+    <string name="accessibility_service_description">Edge Gesture benötigt die Barrierefreiheitsberechtigung für systemweite Gesten.</string>
 
     <string name="expand_panel_freeform_label">Klein</string>
 
@@ -223,7 +223,7 @@
     <string name="launch_block_target_supporting">Wird ausgelöst, wenn diese App gestartet wird</string>
     <string name="launch_block_target_required">Bitte Ziel-App eingeben</string>
     <string name="launch_block_kill_switch_title">Starter beenden</string>
-    <string name="launch_block_kill_switch_desc">Starter bei jeder Blockierung beenden (max. 5× hintereinander, dann 15s Abkühlphase)</string>
+    <string name="launch_block_kill_switch_desc">Starter bei Blockierung beenden (max. 5×, dann 15s Pause)</string>
     <string name="launch_block_kill_switch_disabled_hint">Erfordert einen festgelegten Starter</string>
     <string name="launch_block_kill_target_title">Ziel beenden</string>
     <string name="launch_block_kill_target_desc">Ziel-App-Prozess sofort nach Blockierung beenden</string>
@@ -236,7 +236,7 @@
     <string name="launch_block_delete_rule">Löschen</string>
     <string name="launch_block_expand">Ausklappen</string>
     <string name="launch_block_collapse">Einklappen</string>
-    <string name="launch_block_no_rules">Noch keine Regeln. Tippen Sie auf +, um eine hinzuzufügen</string>
+    <string name="launch_block_no_rules">Keine Regeln. Tippen Sie auf +</string>
     <string name="launch_block_rule_launcher">Starter: %s</string>
     <string name="launch_block_rule_target">Ziel: %s</string>
     <string name="launch_block_rule_kill_enabled">Prozessbeendigungsschutz aktiviert</string>
@@ -259,15 +259,15 @@
     <string name="back_tap_summary_no_action">Empfindlichkeit %d · Bereich %d</string>
     <string name="back_tap_summary_with_action">Empfindlichkeit %d · Bereich %d · %s</string>
     <string name="back_tap_enable_title">Rückseite tippen</string>
-    <string name="back_tap_enable_desc">Doppeltippen auf die Rückseite des Geräts, um eine Aktion auszuführen</string>
+    <string name="back_tap_enable_desc">Doppeltippen auf die Rückseite für eine Aktion</string>
     <string name="back_tap_sensitivity">Empfindlichkeit</string>
     <string name="back_tap_range">Erkennungsbereich</string>
     <string name="back_tap_action">Rückseiten-Tippaktion</string>
     <string name="back_tap_mode">Modus</string>
     <string name="back_tap_mode_always">Immer</string>
-    <string name="back_tap_mode_screen_off">Nur bei ausgeschaltetem Bildschirm</string>
-    <string name="back_tap_mode_screen_on">Nur bei eingeschaltetem Bildschirm</string>
+    <string name="back_tap_mode_screen_off">Nur ausgeschaltet</string>
+    <string name="back_tap_mode_screen_on">Nur eingeschaltet</string>
     <string name="back_tap_pause_on_charging_title">Während des Ladens pausieren</string>
-    <string name="back_tap_pause_on_charging_desc">Rückseite tippen während des Ladens automatisch pausieren, um Akku zu sparen</string>
+    <string name="back_tap_pause_on_charging_desc">Rückseite tippen während des Ladens pausieren</string>
 
 </resources>

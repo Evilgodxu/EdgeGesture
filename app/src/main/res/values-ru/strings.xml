@@ -30,13 +30,13 @@
 
     <!-- Donation settings -->
     <string name="settings_donate">Пожертвовать</string>
-    <string name="settings_donate_desc">Поддержите разработчика для улучшения приложения</string>
+    <string name="settings_donate_desc">Поддержать разработчика</string>
     <string name="settings_donate_alipay">Alipay</string>
     <string name="settings_donate_thanks">Спасибо за вашу поддержку!</string>
 
     <!-- Open source licenses -->
     <string name="settings_open_source">Открытая лицензия</string>
-    <string name="settings_open_source_desc">Просмотр библиотек с открытым исходным кодом</string>
+    <string name="settings_open_source_desc">Библиотеки с открытым кодом</string>
     <string name="settings_open_source_title">Открытая лицензия</string>
 
     <!-- Vibration settings -->
@@ -49,11 +49,11 @@
 
     <!-- Hide from recents -->
     <string name="gesture_hide_recents_title">Скрыть из списка</string>
-    <string name="gesture_hide_recents_desc">Скрыть приложение из списка последних задач</string>
+    <string name="gesture_hide_recents_desc">Скрыть из списка задач</string>
 
     <!-- Avoid keyboard overlap -->
     <string name="gesture_avoid_keyboard_overlap_title">Избегать перекрытия</string>
-    <string name="gesture_avoid_keyboard_overlap_desc">Автоматически отключать область жестов при появлении клавиатуры</string>
+    <string name="gesture_avoid_keyboard_overlap_desc">Отключать жесты при появлении клавиатуры</string>
 
     <!-- Gesture operation types -->
     <string name="gesture_swipe_right">Свайп вправо</string>
@@ -93,7 +93,7 @@
     <string name="gesture_remind_feedback">Напоминание установлено на %d мин</string>
     <string name="gesture_remind_channel_name">Напоминание жестов</string>
     <string name="gesture_remind_notify_title">Напоминание жестов</string>
-    <string name="gesture_remind_notify_body">Установленное напоминание на %d мин сработало</string>
+    <string name="gesture_remind_notify_body">Напоминание на %d мин сработало</string>
     <string name="gesture_remind_timer_label">Напоминание жестов</string>
 
     <!-- Gesture action selection dialog -->
@@ -162,15 +162,15 @@
     <string name="settings_blacklist_no_permission">Отсутствует разрешение на запрос приложений</string>
     <string name="settings_blacklist_go_settings">Перейти в настройки</string>
     <string name="settings_blacklist_refresh">Обновить список</string>
-    <string name="settings_blacklist_no_results">Приложения по запросу «%s» не найдены</string>
+    <string name="settings_blacklist_no_results">По запросу «%s» ничего не найдено</string>
 
     <!-- Edge Size -->
     <string name="edge_width">Ширина</string>
     <string name="edge_height">Высота</string>
-    <string name="edge_height_percent">Высота в процентах</string>
-    <string name="edge_width_percent">Ширина в процентах</string>
-    <string name="edge_position_percent">Позиция в процентах</string>
-    <string name="edge_segment_count">Количество сегментов</string>
+    <string name="edge_height_percent">Высота %</string>
+    <string name="edge_width_percent">Ширина %</string>
+    <string name="edge_position_percent">Позиция %</string>
+    <string name="edge_segment_count">Сегментов</string>
     <string name="edge_segment_unit">сегм.</string>
     <string name="gesture_segment_label">Сегмент %d</string>
     <string name="gesture_disabled">Отключено</string>
@@ -180,18 +180,18 @@
     <string name="permission_granted">Предоставлено</string>
     <string name="permission_request_button">Запросить</string>
     <string name="permission_overlay_title">Разрешение на наложение</string>
-    <string name="permission_overlay_desc">Для создания области жестов и расширенной панели</string>
+    <string name="permission_overlay_desc">Для отображения жестов и панели</string>
     <string name="permission_notification_title">Разрешение на уведомления</string>
-    <string name="permission_notification_desc">Для работы службы жестов в фоновом режиме</string>
+    <string name="permission_notification_desc">Для фоновой работы службы жестов</string>
     <string name="permission_battery_title">Оптимизация батареи</string>
-    <string name="permission_battery_desc">Чтобы система не останавливала службу жестов</string>
+    <string name="permission_battery_desc">Защита от остановки службы жестов</string>
     <string name="permission_usage_stats_title">Доступ к использованию</string>
-    <string name="permission_usage_stats_desc">Для переключения на предыдущее приложение</string>
+    <string name="permission_usage_stats_desc">Для переключения между приложениями</string>
     <string name="permission_query_packages_title">Разрешение на получение списка приложений</string>
-    <string name="permission_query_packages_desc">Для создания чёрного списка приложений</string>
+    <string name="permission_query_packages_desc">Для чёрного списка приложений</string>
 
     <!-- Accessibility Service -->
-    <string name="accessibility_service_description">Краевые жесты требуют разрешение службы специальных возможностей для перехвата системных жестов</string>
+    <string name="accessibility_service_description">Краевые жесты требуют службу спец. возможностей для системных жестов</string>
 
     <string name="expand_panel_freeform_label">Малый</string>
 
@@ -224,7 +224,7 @@
     <string name="launch_block_target_supporting">Блокировка сработает при запуске этого приложения</string>
     <string name="launch_block_target_required">Введите целевое приложение</string>
     <string name="launch_block_kill_switch_title">Завершить запускающее</string>
-    <string name="launch_block_kill_switch_desc">При каждой блокировке завершать процесс запускающего приложения (макс. 5 раз подряд, затем пауза 15 с)</string>
+    <string name="launch_block_kill_switch_desc">При блокировке завершать запускающее (макс. 5 раз, пауза 15 с)</string>
     <string name="launch_block_kill_switch_disabled_hint">Требуется указать запускающее приложение для активации</string>
     <string name="launch_block_kill_target_title">Завершить целевое</string>
     <string name="launch_block_kill_target_desc">Завершить процесс целевого приложения после блокировки</string>
@@ -237,7 +237,7 @@
     <string name="launch_block_delete_rule">Удалить</string>
     <string name="launch_block_expand">Развернуть</string>
     <string name="launch_block_collapse">Свернуть</string>
-    <string name="launch_block_no_rules">Нет правил блокировки, нажмите + чтобы добавить</string>
+    <string name="launch_block_no_rules">Нет правил. Нажмите +</string>
     <string name="launch_block_rule_launcher">Запускающее: %s</string>
     <string name="launch_block_rule_target">Цель: %s</string>
     <string name="launch_block_rule_kill_enabled">Завершение процесса включено</string>
@@ -260,7 +260,7 @@
     <string name="back_tap_summary_no_action">Чувствительность %d · Диапазон %d</string>
     <string name="back_tap_summary_with_action">Чувствительность %d · Диапазон %d · %s</string>
     <string name="back_tap_enable_title">Двойное касание сзади</string>
-    <string name="back_tap_enable_desc">Дважды коснитесь задней панели для выполнения действия</string>
+    <string name="back_tap_enable_desc">Дважды коснитесь сзади для действия</string>
     <string name="back_tap_sensitivity">Чувствительность</string>
     <string name="back_tap_range">Диапазон</string>
     <string name="back_tap_action">Действие двойного касания</string>
@@ -269,5 +269,5 @@
     <string name="back_tap_mode_screen_off">При выключенном экране</string>
     <string name="back_tap_mode_screen_on">При включённом экране</string>
     <string name="back_tap_pause_on_charging_title">Пауза при зарядке</string>
-    <string name="back_tap_pause_on_charging_desc">Автоматически приостанавливать двойное касание при зарядке для экономии энергии</string>
+    <string name="back_tap_pause_on_charging_desc">Пауза двойного касания при зарядке</string>
 </resources>
