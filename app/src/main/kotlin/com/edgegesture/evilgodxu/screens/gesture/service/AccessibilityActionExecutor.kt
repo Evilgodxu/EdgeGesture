@@ -16,7 +16,6 @@ import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
 import android.os.VibratorManager
-import android.provider.AlarmClock
 import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
@@ -458,13 +457,25 @@ class AccessibilityActionExecutor(
     // ============================================================
 
     private fun scheduleReminder(minutes: Int) {
-        // 1. 立即显示反馈
+        // 开关模式：检查是否已有同一时长的待触发闹钟
+        val alarmIntent = Intent(service, RemindAlarmReceiver::class.java).apply {
+            action = RemindAlarmReceiver.ACTION_REMIND
+            putExtra(RemindAlarmReceiver.EXTRA_MINUTES, minutes)
+        }
+        val existingPI = PendingIntent.getBroadcast(
+            service,
+            REMIND_REQUEST_CODE_BASE + minutes,
+            alarmIntent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        )
+        if (existingPI != null) {
+            // 已有闹钟 → 注销
+            cancelRemind(minutes, existingPI)
+            return
+        }
+
+        // 没有闹钟 → 创建
         showRemindFeedback(minutes)
-
-        // 2. 优先使用系统时钟倒计时
-        if (trySystemClockTimer(minutes)) return
-
-        // 3. 备用方案：使用 AlarmManager 调度
         scheduleOwnAlarm(minutes)
     }
 
@@ -478,19 +489,19 @@ class AccessibilityActionExecutor(
         } catch (_: Exception) {}
     }
 
-    private fun trySystemClockTimer(minutes: Int): Boolean {
-        return try {
-            val intent = Intent(AlarmClock.ACTION_SET_TIMER).apply {
-                putExtra(AlarmClock.EXTRA_LENGTH, minutes * 60) // 单位：秒
-                putExtra(AlarmClock.EXTRA_SKIP_UI, true)
-                putExtra(AlarmClock.EXTRA_MESSAGE, service.getString(R.string.gesture_remind_timer_label))
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            service.startActivity(intent)
-            true
-        } catch (_: Exception) {
-            false
-        }
+    private fun cancelRemind(minutes: Int, pi: PendingIntent) {
+        try {
+            val alarmManager = service.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarmManager.cancel(pi)
+            pi.cancel()
+        } catch (_: Exception) {}
+        try {
+            Toast.makeText(
+                service,
+                service.getString(R.string.gesture_remind_cancelled, minutes),
+                Toast.LENGTH_SHORT
+            ).show()
+        } catch (_: Exception) {}
     }
 
     private fun scheduleOwnAlarm(minutes: Int) {

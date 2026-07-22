@@ -91,6 +91,7 @@
     <string name="gesture_action_remind_10m">Напомнить через 10 мин</string>
     <string name="gesture_action_remind_15m">Напомнить через 15 мин</string>
     <string name="gesture_remind_feedback">Напоминание установлено на %d мин</string>
+    <string name="gesture_remind_cancelled">Напоминание на %d мин отменено</string>
     <string name="gesture_remind_channel_name">Напоминание жестов</string>
     <string name="gesture_remind_notify_title">Напоминание жестов</string>
     <string name="gesture_remind_notify_body">Напоминание на %d мин сработало</string>

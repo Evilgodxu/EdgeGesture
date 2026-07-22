@@ -81,13 +81,13 @@ class RemindAlarmService : Service() {
         // 3. 弹出系统级悬浮窗（类似闹钟）
         showAlarmOverlay(minutes)
 
-        // 3. 播放系统闹钟铃声（循环）
+        // 4. 播放系统闹钟铃声（循环）
         playAlarmSound()
 
-        // 4. 震动
+        // 5. 震动
         vibrate()
 
-        // 5. 自动超时停止（5 分钟后）
+        // 6. 自动超时停止（5 分钟后）
         HandlerExecutor.handler.postDelayed({ stopAlarm() }, 5 * 60 * 1000L)
     }
 

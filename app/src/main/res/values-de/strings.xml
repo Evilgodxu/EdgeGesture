@@ -101,6 +101,7 @@
     <string name="gesture_action_remind_10m">In 10 Min. erinnern</string>
     <string name="gesture_action_remind_15m">In 15 Min. erinnern</string>
     <string name="gesture_remind_feedback">Erinnerung in %d Minuten eingestellt</string>
+    <string name="gesture_remind_cancelled">%d-Minuten-Erinnerung abgebrochen</string>
     <string name="gesture_remind_channel_name">Gesten-Erinnerung</string>
     <string name="gesture_remind_notify_title">Gesten-Erinnerung</string>
     <string name="gesture_remind_notify_body">%d-minütige Erinnerung abgelaufen</string>
