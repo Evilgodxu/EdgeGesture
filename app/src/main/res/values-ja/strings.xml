@@ -272,4 +272,5 @@
     <string name="back_tap_mode_screen_on">画面オン時のみ</string>
     <string name="back_tap_pause_on_charging_title">充電中は一時停止</string>
     <string name="back_tap_pause_on_charging_desc">充電中は背面ダブルタップを自動的に一時停止してバッテリーを節約します</string>
+    <string name="back_tap_config_title">背面ダブルタップ設定</string>
 </resources>

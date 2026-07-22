@@ -270,5 +270,6 @@
     <string name="back_tap_mode_screen_on">화면 켜졌을 때만</string>
     <string name="back_tap_pause_on_charging_title">충전 중 일시 중지</string>
     <string name="back_tap_pause_on_charging_desc">충전 중 뒷면 탭을 자동으로 일시 중지하여 배터리 절약</string>
+    <string name="back_tap_config_title">뒷면 탭 설정</string>
 
 </resources>

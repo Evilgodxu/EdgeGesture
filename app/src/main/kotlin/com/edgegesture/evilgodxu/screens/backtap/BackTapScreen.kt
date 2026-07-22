@@ -113,6 +113,17 @@ fun BackTapScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
+            // 背面双击配置标题（卡片上方左上角）
+            Text(
+                text = stringResource(R.string.back_tap_config_title),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.2.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, bottom = 10.dp)
+            )
+
             // 设置卡片
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -122,27 +133,6 @@ fun BackTapScreen(
                 )
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
-                    // 卡片头部
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Icon(
-                            painter = painterResource(MsRDrawable.materialsymbols_ic_touch_double_outlined),
-                            contentDescription = null,
-                            modifier = Modifier.size(22.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = stringResource(R.string.back_tap_title),
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
                     // 启用开关
                     SettingsToggleRow(
                         title = stringResource(R.string.back_tap_enable_title),

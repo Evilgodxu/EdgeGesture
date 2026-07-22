@@ -270,5 +270,6 @@
     <string name="back_tap_mode_screen_on">Nur eingeschaltet</string>
     <string name="back_tap_pause_on_charging_title">Während des Ladens pausieren</string>
     <string name="back_tap_pause_on_charging_desc">Rückseite tippen während des Ladens pausieren</string>
+    <string name="back_tap_config_title">Rückseite tippen Konfiguration</string>
 
 </resources>

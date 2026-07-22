@@ -271,4 +271,5 @@
     <string name="back_tap_mode_screen_on">При включённом экране</string>
     <string name="back_tap_pause_on_charging_title">Пауза при зарядке</string>
     <string name="back_tap_pause_on_charging_desc">Пауза двойного касания при зарядке</string>
+    <string name="back_tap_config_title">Конфигурация двойного касания</string>
 </resources>

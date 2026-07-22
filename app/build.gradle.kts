@@ -23,8 +23,8 @@ android {
         applicationId = "com.edgegesture.evilgodxu"
         minSdk = 33
         targetSdk = 37
-        versionCode = 14
-        versionName = "3.1.4"
+        versionCode = 15
+        versionName = "3.1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
