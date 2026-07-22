@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -45,7 +46,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -159,6 +162,11 @@ fun SettingsScreen(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val currentLanguage = remember(configuration) { context.getAppLanguage() }
+    val versionName = remember {
+        try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: ""
+        } catch (_: Exception) { "" }
+    }
 
     // 通过 ViewModel 获取设置状态，自动响应设置变更
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -225,7 +233,6 @@ fun SettingsScreen(
                 // 外观与语言设置列
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
                     // 主题设置
                     SettingsSection(title = stringResource(R.string.settings_section_appearance)) {
@@ -259,16 +266,16 @@ fun SettingsScreen(
                 // 手势与更多设置列
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
                     // 更多设置项
-                    SettingsSection(title = stringResource(R.string.settings_more)) {
+                    SettingsSection(title = stringResource(R.string.settings_about)) {
                         SettingsClickableItem(
                             icon = Icons.Default.Favorite,
                             title = stringResource(R.string.settings_donate),
                             subtitle = stringResource(R.string.settings_donate_desc),
                             onClick = { showDonateDialog = true }
                         )
+                        HorizontalDivider()
                         SettingsClickableItem(
                             icon = Icons.Default.Code,
                             title = stringResource(R.string.settings_open_source),
@@ -278,11 +285,21 @@ fun SettingsScreen(
                     }
                 }
             }
+
+            // 版本信息（宽屏）
+            Text(
+                text = "${stringResource(R.string.settings_version)} $versionName",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp, bottom = 24.dp)
+            )
         } else {
             // 窄屏设备使用单列布局
             Column(
                 modifier = contentModifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
                 // 主题设置
                 SettingsSection(title = stringResource(R.string.settings_section_appearance)) {
@@ -313,13 +330,14 @@ fun SettingsScreen(
                 }
 
                 // 更多设置项
-                SettingsSection(title = stringResource(R.string.settings_more)) {
+                SettingsSection(title = stringResource(R.string.settings_about)) {
                     SettingsClickableItem(
                         icon = Icons.Default.Favorite,
                         title = stringResource(R.string.settings_donate),
                         subtitle = stringResource(R.string.settings_donate_desc),
                         onClick = { showDonateDialog = true }
                     )
+                    HorizontalDivider()
                     SettingsClickableItem(
                         icon = Icons.Default.Code,
                         title = stringResource(R.string.settings_open_source),
@@ -327,6 +345,17 @@ fun SettingsScreen(
                         onClick = { showOpenSourceDialog = true }
                     )
                 }
+
+                // 版本信息
+                Text(
+                    text = "${stringResource(R.string.settings_version)} $versionName",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp, bottom = 24.dp)
+                )
             }
         }
     }

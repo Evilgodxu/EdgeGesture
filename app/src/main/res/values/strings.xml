@@ -146,6 +146,8 @@
 
     <!-- 应用黑名单 (App Blacklist) -->
     <string name="settings_more">更多设置</string>
+    <string name="settings_about">关于</string>
+    <string name="settings_version">版本</string>
     <string name="nav_back">返回</string>
     <string name="settings_blacklist_title">应用切换黑名单</string>
     <string name="settings_blacklist_dialog_title">应用切换黑名单</string>
