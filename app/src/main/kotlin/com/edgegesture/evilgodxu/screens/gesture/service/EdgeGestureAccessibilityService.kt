@@ -148,6 +148,9 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         super.onServiceConnected()
         weakInstance = java.lang.ref.WeakReference(this)
 
+        // 重置连续失败计数，每次服务重新连接都从头开始
+        consecutiveAttachFailures = 0
+
         GestureStatsManager.init(this)
 
         actionExecutor = AccessibilityActionExecutor(this)
