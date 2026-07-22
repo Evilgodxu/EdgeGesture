@@ -58,7 +58,7 @@ android {
     }
     androidResources {
         // 禁用按语言分包，支持应用内语言切换
-        localeFilters += listOf("zh", "en")
+        localeFilters += listOf("zh", "en", "ja", "ko", "ru", "de")
     }
 
     packaging {

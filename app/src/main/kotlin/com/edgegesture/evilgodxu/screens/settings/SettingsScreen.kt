@@ -3,6 +3,7 @@ package com.edgegesture.evilgodxu.screens.settings
 import android.app.LocaleManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.content.pm.PackageManager
 import android.os.LocaleList
 import androidx.compose.foundation.clickable
@@ -43,10 +44,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
@@ -76,6 +78,8 @@ import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import rikka.shizuku.Shizuku
 
+private const val GITHUB_URL = "https://github.com/Evilgodxu/EdgeGesture"
+
 // 应用设置 DataStore 实例
 val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -99,7 +103,11 @@ enum class ThemeMode(val value: String) {
 enum class AppLanguage(val languageTag: String?) {
     SYSTEM(null),
     CHINESE("zh"),
-    ENGLISH("en");
+    ENGLISH("en"),
+    JAPANESE("ja"),
+    KOREAN("ko"),
+    RUSSIAN("ru"),
+    GERMAN("de");
 
     companion object {
         fun fromLocaleList(localeList: LocaleList): AppLanguage {
@@ -257,6 +265,10 @@ fun SettingsScreen(
                                 AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
                                 AppLanguage.CHINESE -> stringResource(R.string.settings_language_chinese)
                                 AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
+                                AppLanguage.JAPANESE -> stringResource(R.string.settings_language_japanese)
+                                AppLanguage.KOREAN -> stringResource(R.string.settings_language_korean)
+                                AppLanguage.RUSSIAN -> stringResource(R.string.settings_language_russian)
+                                AppLanguage.GERMAN -> stringResource(R.string.settings_language_german)
                             },
                             onClick = { showLanguageDialog = true }
                         )
@@ -288,14 +300,57 @@ fun SettingsScreen(
 
             // 版本信息（宽屏）
             Text(
+                text = "Evilgodxu",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp, bottom = 2.dp)
+            )
+            Text(
                 text = stringResource(R.string.settings_version, versionName),
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp, bottom = 24.dp)
+                    .padding(bottom = 6.dp)
             )
+
+            // 项目链接
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier
+                        .clickable {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_URL))
+                            context.startActivity(intent)
+                        }
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Code,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = GITHUB_URL,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.primary,
+                        textDecoration = TextDecoration.Underline
+                    )
+                }
+            }
         } else {
             // 窄屏设备使用单列布局
             Column(
@@ -324,6 +379,10 @@ fun SettingsScreen(
                             AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
                             AppLanguage.CHINESE -> stringResource(R.string.settings_language_chinese)
                             AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
+                            AppLanguage.JAPANESE -> stringResource(R.string.settings_language_japanese)
+                            AppLanguage.KOREAN -> stringResource(R.string.settings_language_korean)
+                            AppLanguage.RUSSIAN -> stringResource(R.string.settings_language_russian)
+                            AppLanguage.GERMAN -> stringResource(R.string.settings_language_german)
                         },
                         onClick = { showLanguageDialog = true }
                     )
@@ -348,14 +407,57 @@ fun SettingsScreen(
 
                 // 版本信息
                 Text(
+                    text = "Evilgodxu",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp, bottom = 2.dp)
+                )
+                Text(
                     text = stringResource(R.string.settings_version, versionName),
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp, bottom = 24.dp)
+                        .padding(bottom = 6.dp)
                 )
+
+                // 项目链接
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .clickable {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_URL))
+                                context.startActivity(intent)
+                            }
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Code,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = GITHUB_URL,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            textDecoration = TextDecoration.Underline
+                        )
+                    }
+                }
             }
         }
     }

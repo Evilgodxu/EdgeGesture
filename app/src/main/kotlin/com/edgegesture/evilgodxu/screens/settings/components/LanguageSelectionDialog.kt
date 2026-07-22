@@ -51,6 +51,10 @@ fun LanguageSelectionDialog(
                             AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
                             AppLanguage.CHINESE -> stringResource(R.string.settings_language_chinese)
                             AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
+                            AppLanguage.JAPANESE -> stringResource(R.string.settings_language_japanese)
+                            AppLanguage.KOREAN -> stringResource(R.string.settings_language_korean)
+                            AppLanguage.RUSSIAN -> stringResource(R.string.settings_language_russian)
+                            AppLanguage.GERMAN -> stringResource(R.string.settings_language_german)
                         },
                         modifier = Modifier
                             .fillMaxWidth()

@@ -23,6 +23,10 @@
     <string name="settings_language_dialog_title">选择语言</string>
     <string name="settings_language_chinese">简体中文</string>
     <string name="settings_language_english">English</string>
+    <string name="settings_language_japanese">日本語</string>
+    <string name="settings_language_korean">한국어</string>
+    <string name="settings_language_russian">Русский</string>
+    <string name="settings_language_german">Deutsch</string>
 
     <!-- 捐赠设置 -->
     <string name="settings_donate">捐赠打赏</string>

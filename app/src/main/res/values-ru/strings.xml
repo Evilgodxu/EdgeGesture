@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App general -->
+    <string name="app_name">Краевые жесты</string>
+
+    <!-- Settings page -->
+    <!-- Page common -->
+    <string name="settings_title">Дополнительные настройки</string>
+    <string name="settings_back_content_description">Назад</string>
+
+    <!-- Appearance settings -->
+    <string name="settings_section_appearance">Внешний вид</string>
+    <string name="settings_theme_title">Тема</string>
+    <string name="settings_theme_system">Как в системе</string>
+    <string name="settings_theme_dark">Тёмная</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dialog_title">Выбор темы</string>
+
+    <!-- Language settings -->
+    <string name="settings_section_language">Язык</string>
+    <string name="settings_language_title">Язык приложения</string>
+    <string name="settings_language_system">Как в системе</string>
+    <string name="settings_language_dialog_title">Выбор языка</string>
+    <string name="settings_language_chinese">简体中文</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_japanese">日本語</string>
+    <string name="settings_language_korean">한국어</string>
+    <string name="settings_language_russian">Русский</string>
+    <string name="settings_language_german">Deutsch</string>
+
+    <!-- Donation settings -->
+    <string name="settings_donate">Пожертвовать</string>
+    <string name="settings_donate_desc">Поддержите разработчика для улучшения приложения</string>
+    <string name="settings_donate_alipay">Alipay</string>
+    <string name="settings_donate_thanks">Спасибо за вашу поддержку!</string>
+
+    <!-- Open source licenses -->
+    <string name="settings_open_source">Открытая лицензия</string>
+    <string name="settings_open_source_desc">Просмотр библиотек с открытым исходным кодом</string>
+    <string name="settings_open_source_title">Открытая лицензия</string>
+
+    <!-- Vibration settings -->
+    <string name="settings_vibration_title">Тактильная обратная связь</string>
+    <string name="settings_vibration_desc">Виброотклик при выполнении жестов</string>
+
+    <!-- Gesture trigger area hide -->
+    <string name="gesture_hide_overlay_title">Скрыть область</string>
+    <string name="gesture_hide_overlay_desc">Скрыть область жестов</string>
+
+    <!-- Hide from recents -->
+    <string name="gesture_hide_recents_title">Скрыть из списка</string>
+    <string name="gesture_hide_recents_desc">Скрыть приложение из списка последних задач</string>
+
+    <!-- Avoid keyboard overlap -->
+    <string name="gesture_avoid_keyboard_overlap_title">Избегать перекрытия</string>
+    <string name="gesture_avoid_keyboard_overlap_desc">Автоматически отключать область жестов при появлении клавиатуры</string>
+
+    <!-- Gesture operation types -->
+    <string name="gesture_swipe_right">Свайп вправо</string>
+    <string name="gesture_swipe_right_long">Долгий свайп вправо</string>
+    <string name="gesture_swipe_left">Свайп влево</string>
+    <string name="gesture_swipe_left_long">Долгий свайп влево</string>
+    <string name="gesture_swipe_up">Свайп вверх</string>
+    <string name="gesture_swipe_up_long">Долгий свайп вверх</string>
+    <string name="gesture_swipe_down">Свайп вниз</string>
+    <string name="gesture_swipe_down_long">Долгий свайп вниз</string>
+
+    <!-- Gesture action options -->
+    <string name="gesture_action_none">Нет</string>
+    <string name="gesture_action_home">Домой</string>
+    <string name="gesture_action_recent">Последние</string>
+    <string name="gesture_action_back">Назад</string>
+    <string name="gesture_action_last_app">Предыдущее приложение</string>
+    <string name="gesture_action_previous_track">Предыдущий трек</string>
+    <string name="gesture_action_next_track">Следующий трек</string>
+    <string name="gesture_action_flashlight">Фонарик</string>
+    <string name="gesture_action_voice_assistant">Голосовой ассистент</string>
+    <string name="gesture_action_power_menu">Меню питания</string>
+    <string name="gesture_action_lock_screen">Блокировка</string>
+    <string name="gesture_action_screenshot">Снимок экрана</string>
+    <string name="gesture_action_expand_panel">Расширенная панель</string>
+
+    <!-- Scan -->
+    <string name="gesture_action_alipay_scan">Alipay сканер</string>
+    <string name="gesture_action_wechat_scan">WeChat сканер</string>
+
+    <!-- Reminder -->
+    <string name="gesture_action_remind_1m">Напомнить через 1 мин</string>
+    <string name="gesture_action_remind_3m">Напомнить через 3 мин</string>
+    <string name="gesture_action_remind_5m">Напомнить через 5 мин</string>
+    <string name="gesture_action_remind_10m">Напомнить через 10 мин</string>
+    <string name="gesture_action_remind_15m">Напомнить через 15 мин</string>
+    <string name="gesture_remind_feedback">Напоминание установлено на %d мин</string>
+    <string name="gesture_remind_channel_name">Напоминание жестов</string>
+    <string name="gesture_remind_notify_title">Напоминание жестов</string>
+    <string name="gesture_remind_notify_body">Установленное напоминание на %d мин сработало</string>
+    <string name="gesture_remind_timer_label">Напоминание жестов</string>
+
+    <!-- Gesture action selection dialog -->
+    <string name="gesture_select_action_title">Выберите действие</string>
+
+    <!-- Service status card -->
+    <string name="gesture_service_running">Работает</string>
+    <string name="gesture_service_stopped">Остановлено</string>
+    <string name="gesture_service_subtitle">Служба спец. возможностей · Краевые жесты</string>
+    <string name="gesture_service_start">Запустить</string>
+    <string name="gesture_service_stop">Остановить</string>
+    <string name="gesture_service_title">Состояние службы</string>
+    <string name="gesture_count_label">Жесты</string>
+
+    <!-- Permissions -->
+    <string name="permission_accessibility_title">Служба специальных возможностей</string>
+    <string name="permission_accessibility_desc">Для системных жестов</string>
+
+    <!-- Gesture trigger area preview -->
+    <string name="gesture_preview_title">Предпросмотр области жестов</string>
+
+    <!-- Trigger area settings -->
+    <string name="trigger_area_settings_title">Настройки области жестов</string>
+
+    <string name="stats_gesture_count">Счётчик</string>
+    <string name="stats_block_count">Блокировки</string>
+
+    <!-- Stats period -->
+    <string name="stats_period_title">Период статистики</string>
+    <string name="stats_period_1d">За 1 день</string>
+    <string name="stats_period_7d">За 7 дней</string>
+    <string name="stats_period_30d">За 30 дней</string>
+    <string name="stats_period_hint">Период:</string>
+
+    <!-- More features -->
+    <string name="more_section_title">Дополнительно</string>
+    <string name="more_expand_panel">Расширенная панель</string>
+    <string name="more_blacklist">Чёрный список приложений</string>
+    <string name="more_launch_block">Блокировка запуска</string>
+    <string name="more_settings">Дополнительные настройки</string>
+
+    <!-- Gesture config summary -->
+    <string name="gesture_config_section_title">Настройка жестов</string>
+    <string name="gesture_operation_section_title">Действия жестов</string>
+    <string name="gesture_config_left">Левый край</string>
+    <string name="gesture_config_right">Правый край</string>
+    <string name="gesture_config_bottom">Нижний край</string>
+
+    <!-- Advanced gestures -->
+    <string name="advanced_gesture_section_title">Расширенные жесты</string>
+    <string name="advanced_gesture_back_tap_title">Двойное касание сзади</string>
+    <string name="advanced_gesture_back_tap_disabled">Не активно</string>
+    <string name="advanced_gesture_back_tap_enabled">Активно</string>
+
+    <!-- App Blacklist -->
+    <string name="settings_more">Дополнительные настройки</string>
+    <string name="settings_about">О приложении</string>
+    <string name="settings_version">Версия %s</string>
+    <string name="nav_back">Назад</string>
+    <string name="settings_blacklist_title">Чёрный список приложений</string>
+    <string name="settings_blacklist_dialog_title">Чёрный список приложений</string>
+    <string name="settings_blacklist_search_hint">Поиск приложений</string>
+    <string name="settings_blacklist_system_tag">Системное</string>
+    <string name="settings_blacklist_loading">Загрузка…</string>
+    <string name="settings_blacklist_empty">Нет данных о приложениях</string>
+    <string name="settings_blacklist_no_permission">Отсутствует разрешение на запрос приложений</string>
+    <string name="settings_blacklist_go_settings">Перейти в настройки</string>
+    <string name="settings_blacklist_refresh">Обновить список</string>
+    <string name="settings_blacklist_no_results">Приложения по запросу «%s» не найдены</string>
+
+    <!-- Edge Size -->
+    <string name="edge_width">Ширина</string>
+    <string name="edge_height">Высота</string>
+    <string name="edge_height_percent">Высота в процентах</string>
+    <string name="edge_width_percent">Ширина в процентах</string>
+    <string name="edge_position_percent">Позиция в процентах</string>
+    <string name="edge_segment_count">Количество сегментов</string>
+    <string name="edge_segment_unit">сегм.</string>
+    <string name="gesture_segment_label">Сегмент %d</string>
+    <string name="gesture_disabled">Отключено</string>
+
+    <!-- Permissions -->
+    <string name="permission_status_title">Состояние разрешений</string>
+    <string name="permission_granted">Предоставлено</string>
+    <string name="permission_request_button">Запросить</string>
+    <string name="permission_overlay_title">Разрешение на наложение</string>
+    <string name="permission_overlay_desc">Для создания области жестов и расширенной панели</string>
+    <string name="permission_notification_title">Разрешение на уведомления</string>
+    <string name="permission_notification_desc">Для работы службы жестов в фоновом режиме</string>
+    <string name="permission_battery_title">Оптимизация батареи</string>
+    <string name="permission_battery_desc">Чтобы система не останавливала службу жестов</string>
+    <string name="permission_usage_stats_title">Доступ к использованию</string>
+    <string name="permission_usage_stats_desc">Для переключения на предыдущее приложение</string>
+    <string name="permission_query_packages_title">Разрешение на получение списка приложений</string>
+    <string name="permission_query_packages_desc">Для создания чёрного списка приложений</string>
+
+    <!-- Accessibility Service -->
+    <string name="accessibility_service_description">Краевые жесты требуют разрешение службы специальных возможностей для перехвата системных жестов</string>
+
+    <string name="expand_panel_freeform_label">Малый</string>
+
+    <!-- Expand Panel -->
+    <string name="expand_panel_brightness">Яркость экрана</string>
+    <string name="expand_panel_alarm_volume">Громкость будильника</string>
+    <string name="expand_panel_ring_volume">Громкость звонка</string>
+    <string name="expand_panel_media_volume">Громкость медиа</string>
+    <string name="expand_panel_shortcuts_title">Ярлыки</string>
+    <string name="expand_panel_controls_title">Управление системой</string>
+    <string name="expand_panel_add_shortcut_desc">Добавить ярлык</string>
+    <string name="expand_panel_app_picker_title">Выберите приложение</string>
+    <string name="expand_panel_cancel">Отмена</string>
+    <string name="expand_panel_search_hint">Поиск по названию или пакету</string>
+    <string name="expand_panel_loading_apps">Загрузка списка приложений…</string>
+
+    <!-- Launch Block -->
+    <string name="settings_launch_block_title">Блокировка запуска</string>
+    <string name="settings_launch_block_desc">Блокировка запуска указанных приложений</string>
+    <string name="launch_block_shizuku_not_installed_short">Требуется Shizuku</string>
+    <string name="launch_block_shizuku_not_running_short">Запустите Shizuku</string>
+    <string name="launch_block_shizuku_denied_short">Требуется Shizuku</string>
+    <string name="launch_block_add_title">Добавить правило</string>
+    <string name="launch_block_edit_title">Редактировать правило</string>
+    <string name="launch_block_launcher_label">Запускающее приложение (необязательно)</string>
+    <string name="launch_block_launcher_hint">Введите пакет приложения, например com.example.app</string>
+    <string name="launch_block_launcher_supporting">Оставьте пустым для блокировки всех запускающих приложений</string>
+    <string name="launch_block_target_label">Целевое приложение (обязательно)</string>
+    <string name="launch_block_target_hint">Введите пакет приложения, например com.example.app</string>
+    <string name="launch_block_target_supporting">Блокировка сработает при запуске этого приложения</string>
+    <string name="launch_block_target_required">Введите целевое приложение</string>
+    <string name="launch_block_kill_switch_title">Завершить запускающее</string>
+    <string name="launch_block_kill_switch_desc">При каждой блокировке завершать процесс запускающего приложения (макс. 5 раз подряд, затем пауза 15 с)</string>
+    <string name="launch_block_kill_switch_disabled_hint">Требуется указать запускающее приложение для активации</string>
+    <string name="launch_block_kill_target_title">Завершить целевое</string>
+    <string name="launch_block_kill_target_desc">Завершить процесс целевого приложения после блокировки</string>
+    <string name="launch_block_allow_kill_system_title">Разрешить завершение системных</string>
+    <string name="launch_block_allow_kill_system_desc">Внимание: завершение системных приложений может привести к нестабильности</string>
+    <string name="launch_block_rules_title">Правила блокировки</string>
+    <string name="launch_block_rules_count">Всего правил: %d</string>
+    <string name="launch_block_add_rule">Добавить правило</string>
+    <string name="launch_block_edit_rule">Редактировать</string>
+    <string name="launch_block_delete_rule">Удалить</string>
+    <string name="launch_block_expand">Развернуть</string>
+    <string name="launch_block_collapse">Свернуть</string>
+    <string name="launch_block_no_rules">Нет правил блокировки, нажмите + чтобы добавить</string>
+    <string name="launch_block_rule_launcher">Запускающее: %s</string>
+    <string name="launch_block_rule_target">Цель: %s</string>
+    <string name="launch_block_rule_kill_enabled">Завершение процесса включено</string>
+    <string name="launch_block_rule_enabled_title">Включить правило</string>
+    <string name="launch_block_rule_enabled_desc">При включении блокирует запуск целевого приложения</string>
+    <string name="launch_block_rule_disabled">Отключено</string>
+    <string name="launch_block_delay_title">Время блокировки</string>
+    <string name="launch_block_delay_desc">Выберите момент срабатывания блокировки</string>
+    <string name="launch_block_delay_immediate">Немедленно</string>
+    <string name="launch_block_delay_500ms">С задержкой</string>
+    <string name="launch_block_delay_1000ms">С отсрочкой</string>
+
+    <!-- Common dialog buttons -->
+    <string name="dialog_confirm">ОК</string>
+    <string name="dialog_cancel">Отмена</string>
+    <string name="dialog_delete">Удалить</string>
+
+    <!-- Back Tap -->
+    <string name="back_tap_title">Двойное касание сзади</string>
+    <string name="back_tap_summary_no_action">Чувствительность %d · Диапазон %d</string>
+    <string name="back_tap_summary_with_action">Чувствительность %d · Диапазон %d · %s</string>
+    <string name="back_tap_enable_title">Двойное касание сзади</string>
+    <string name="back_tap_enable_desc">Дважды коснитесь задней панели для выполнения действия</string>
+    <string name="back_tap_sensitivity">Чувствительность</string>
+    <string name="back_tap_range">Диапазон</string>
+    <string name="back_tap_action">Действие двойного касания</string>
+    <string name="back_tap_mode">Режим работы</string>
+    <string name="back_tap_mode_always">Всегда активен</string>
+    <string name="back_tap_mode_screen_off">При выключенном экране</string>
+    <string name="back_tap_mode_screen_on">При включённом экране</string>
+    <string name="back_tap_pause_on_charging_title">Пауза при зарядке</string>
+    <string name="back_tap_pause_on_charging_desc">Автоматически приостанавливать двойное касание при зарядке для экономии энергии</string>
+</resources>

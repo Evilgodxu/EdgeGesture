@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App 일반 -->
+    <string name="app_name">Edge Gesture</string>
+
+    <!-- 설정 화면 -->
+    <!-- 페이지 일반 -->
+    <string name="settings_title">설정</string>
+    <string name="settings_back_content_description">뒤로 가기</string>
+
+    <!-- 디자인 설정 -->
+    <string name="settings_section_appearance">디자인</string>
+    <string name="settings_theme_title">테마</string>
+    <string name="settings_theme_system">시스템 기본값</string>
+    <string name="settings_theme_dark">항상 다크 모드</string>
+    <string name="settings_theme_light">항상 라이트 모드</string>
+    <string name="settings_theme_dialog_title">테마 선택</string>
+
+    <!-- 언어 설정 -->
+    <string name="settings_section_language">언어</string>
+    <string name="settings_language_title">앱 언어</string>
+    <string name="settings_language_system">시스템 기본값</string>
+    <string name="settings_language_dialog_title">언어 선택</string>
+    <string name="settings_language_chinese">简体中文</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_japanese">日本語</string>
+    <string name="settings_language_korean">한국어</string>
+    <string name="settings_language_russian">Русский</string>
+    <string name="settings_language_german">Deutsch</string>
+
+    <!-- 후원 설정 -->
+    <string name="settings_donate">후원하기</string>
+    <string name="settings_donate_desc">앱 개선을 위해 개발자를 후원해 주세요</string>
+    <string name="settings_donate_alipay">알리페이</string>
+    <string name="settings_donate_thanks">후원해 주셔서 감사합니다!</string>
+
+    <!-- 오픈소스 라이선스 -->
+    <string name="settings_open_source">오픈소스 라이선스</string>
+    <string name="settings_open_source_desc">이 프로젝트에서 사용하는 오픈소스 라이브러리 확인</string>
+    <string name="settings_open_source_title">오픈소스 라이선스</string>
+
+    <!-- 진동 설정 -->
+    <string name="settings_vibration_title">진동 피드백</string>
+    <string name="settings_vibration_desc">스와이프 동작 시 진동 효과 실행</string>
+
+    <!-- 제스처 오버레이 표시 -->
+    <string name="gesture_hide_overlay_title">오버레이 숨기기</string>
+    <string name="gesture_hide_overlay_desc">제스처 트리거 영역 숨기기</string>
+
+    <!-- 서비스 상태 카드 -->
+    <string name="gesture_service_running">실행 중</string>
+    <string name="gesture_service_stopped">중지됨</string>
+    <string name="gesture_service_subtitle">접근성 서비스 · Edge Gesture</string>
+    <string name="gesture_service_start">서비스 시작</string>
+    <string name="gesture_service_stop">서비스 중지</string>
+    <string name="gesture_service_title">서비스 상태</string>
+    <string name="gesture_count_label">제스처</string>
+
+    <!-- 제스처 미리보기 -->
+    <string name="gesture_preview_title">트리거 영역 미리보기</string>
+
+    <!-- 최근 작업에서 숨기기 -->
+    <string name="gesture_hide_recents_title">최근 작업에서 숨기기</string>
+    <string name="gesture_hide_recents_desc">작업 목록에서 이 앱 숨기기</string>
+
+    <!-- 키보드 회피 -->
+    <string name="gesture_avoid_keyboard_overlap_title">키보드 회피</string>
+    <string name="gesture_avoid_keyboard_overlap_desc">키보드가 표시되면 제스처 영역 자동 비활성화</string>
+
+    <!-- 제스처 동작 유형 -->
+    <string name="gesture_swipe_right">오른쪽으로 스와이프</string>
+    <string name="gesture_swipe_right_long">길게 눌러 오른쪽으로 스와이프</string>
+    <string name="gesture_swipe_left">왼쪽으로 스와이프</string>
+    <string name="gesture_swipe_left_long">길게 눌러 왼쪽으로 스와이프</string>
+    <string name="gesture_swipe_up">위로 스와이프</string>
+    <string name="gesture_swipe_up_long">길게 눌러 위로 스와이프</string>
+    <string name="gesture_swipe_down">아래로 스와이프</string>
+    <string name="gesture_swipe_down_long">길게 눌러 아래로 스와이프</string>
+
+    <!-- 제스처 동작 옵션 -->
+    <string name="gesture_action_none">없음</string>
+    <string name="gesture_action_home">홈</string>
+    <string name="gesture_action_recent">최근 앱</string>
+    <string name="gesture_action_back">뒤로 가기</string>
+    <string name="gesture_action_last_app">마지막 앱</string>
+    <string name="gesture_action_previous_track">이전 트랙</string>
+    <string name="gesture_action_next_track">다음 트랙</string>
+    <string name="gesture_action_flashlight">손전등</string>
+    <string name="gesture_action_voice_assistant">음성 어시스턴트</string>
+    <string name="gesture_action_power_menu">전원 메뉴</string>
+    <string name="gesture_action_lock_screen">화면 잠금</string>
+    <string name="gesture_action_screenshot">스크린샷</string>
+    <string name="gesture_action_expand_panel">확장 패널</string>
+    <string name="gesture_action_alipay_scan">알리페이 스캔</string>
+    <string name="gesture_action_wechat_scan">위챗 스캔</string>
+
+    <!-- 알림 -->
+    <string name="gesture_action_remind_1m">1분 후 알림</string>
+    <string name="gesture_action_remind_3m">3분 후 알림</string>
+    <string name="gesture_action_remind_5m">5분 후 알림</string>
+    <string name="gesture_action_remind_10m">10분 후 알림</string>
+    <string name="gesture_action_remind_15m">15분 후 알림</string>
+    <string name="gesture_remind_feedback">%d분 후 알림이 설정되었습니다</string>
+    <string name="gesture_remind_channel_name">제스처 알림</string>
+    <string name="gesture_remind_notify_title">제스처 알림</string>
+    <string name="gesture_remind_notify_body">%d분 알림이 울렸습니다</string>
+    <string name="gesture_remind_timer_label">제스처 알림</string>
+
+    <!-- 제스처 동작 선택 대화상자 -->
+    <string name="gesture_select_action_title">동작 선택</string>
+
+    <!-- 트리거 영역 설정 -->
+    <string name="trigger_area_settings_title">트리거 영역 설정</string>
+
+    <!-- 통계 -->
+    <string name="stats_gesture_count">횟수</string>
+    <string name="stats_block_count">차단됨</string>
+    <string name="stats_period_title">통계 기간</string>
+    <string name="stats_period_1d">최근 1일</string>
+    <string name="stats_period_7d">최근 7일</string>
+    <string name="stats_period_30d">최근 30일</string>
+    <string name="stats_period_hint">기간: </string>
+
+    <!-- 더 많은 기능 -->
+    <string name="more_section_title">더 많은 기능</string>
+    <string name="more_expand_panel">확장 패널</string>
+    <string name="more_blacklist">앱 블랙리스트</string>
+    <string name="more_launch_block">실행 차단</string>
+    <string name="more_settings">더 많은 설정</string>
+
+    <!-- 제스처 구성 요약 -->
+    <string name="gesture_config_section_title">제스처 구성</string>
+    <string name="gesture_operation_section_title">제스처 동작</string>
+    <string name="gesture_config_left">왼쪽 가장자리 제스처</string>
+    <string name="gesture_config_right">오른쪽 가장자리 제스처</string>
+    <string name="gesture_config_bottom">아래쪽 가장자리 제스처</string>
+
+    <!-- 고급 제스처 -->
+    <string name="advanced_gesture_section_title">고급 제스처</string>
+    <string name="advanced_gesture_back_tap_title">뒷면 탭</string>
+    <string name="advanced_gesture_back_tap_disabled">사용 안 함</string>
+    <string name="advanced_gesture_back_tap_enabled">사용 중</string>
+
+    <!-- 탐색 -->
+    <string name="nav_back">뒤로 가기</string>
+
+    <!-- 앱 블랙리스트 -->
+    <string name="settings_more">더 많은 설정</string>
+    <string name="settings_about">정보</string>
+    <string name="settings_version">버전 %s</string>
+    <string name="settings_blacklist_title">앱 전환 블랙리스트</string>
+    <string name="settings_blacklist_dialog_title">앱 전환 블랙리스트</string>
+    <string name="settings_blacklist_search_hint">앱 검색</string>
+    <string name="settings_blacklist_system_tag">시스템</string>
+    <string name="settings_blacklist_loading">불러오는 중…</string>
+    <string name="settings_blacklist_empty">앱 데이터가 없습니다</string>
+    <string name="settings_blacklist_no_permission">앱 쿼리 권한이 없습니다</string>
+    <string name="settings_blacklist_go_settings">설정으로 이동</string>
+    <string name="settings_blacklist_refresh">목록 새로고침</string>
+    <string name="settings_blacklist_no_results">"%s"와(과) 일치하는 앱이 없습니다</string>
+
+    <!-- 가장자리 크기 설정 -->
+    <string name="edge_width">너비</string>
+    <string name="edge_height">높이</string>
+    <string name="edge_height_percent">높이 비율</string>
+    <string name="edge_width_percent">너비 비율</string>
+    <string name="edge_position_percent">위치 비율</string>
+    <string name="edge_segment_count">세그먼트</string>
+    <string name="edge_segment_unit">seg</string>
+    <string name="gesture_segment_label">세그먼트 %d</string>
+    <string name="gesture_disabled">사용 안 함</string>
+
+    <!-- 권한 요청 -->
+    <string name="permission_status_title">권한 상태</string>
+    <string name="permission_request_button">허용</string>
+    <string name="permission_granted">허용됨</string>
+    <string name="permission_overlay_title">오버레이 권한</string>
+    <string name="permission_overlay_desc">제스처 트리거 영역 및 확장 패널 표시에 필요</string>
+    <string name="permission_notification_title">알림 권한</string>
+    <string name="permission_notification_desc">백그라운드에서 서비스 유지에 필요</string>
+    <string name="permission_battery_title">배터리 최적화 화이트리스트</string>
+    <string name="permission_battery_desc">시스템이 백그라운드에서 제스처 서비스를 중지하지 못하도록 방지</string>
+    <string name="permission_usage_stats_title">사용량 접근</string>
+    <string name="permission_usage_stats_desc">마지막 앱으로 전환하려면 사용량 접근 권한이 필요합니다</string>
+    <string name="permission_query_packages_title">모든 패키지 조회</string>
+    <string name="permission_query_packages_desc">앱 전환 블랙리스트 관리에 필요</string>
+
+    <!-- 권한 -->
+    <string name="permission_accessibility_title">접근성 서비스</string>
+    <string name="permission_accessibility_desc">뒤로 가기, 홈 등 시스템 전역 제스처 동작을 활성화합니다</string>
+
+    <!-- 접근성 서비스 -->
+    <string name="accessibility_service_description">Edge Gesture는 뒤로 가기, 홈, 최근 작업 등 시스템 동작을 수행하기 위해 접근성 권한이 필요합니다.</string>
+
+    <string name="expand_panel_freeform_label">소형</string>
+
+    <!-- 확장 패널 -->
+    <string name="expand_panel_brightness">밝기</string>
+    <string name="expand_panel_alarm_volume">알람 볼륨</string>
+    <string name="expand_panel_ring_volume">벨소리 볼륨</string>
+    <string name="expand_panel_media_volume">미디어 볼륨</string>
+    <string name="expand_panel_shortcuts_title">바로가기</string>
+    <string name="expand_panel_controls_title">시스템 제어</string>
+    <string name="expand_panel_add_shortcut_desc">바로가기 추가</string>
+    <string name="expand_panel_app_picker_title">앱 선택</string>
+    <string name="expand_panel_cancel">취소</string>
+    <string name="expand_panel_search_hint">이름 또는 패키지명으로 검색</string>
+    <string name="expand_panel_loading_apps">앱을 불러오는 중…</string>
+
+    <!-- 실행 차단 -->
+    <string name="settings_launch_block_title">실행 차단</string>
+    <string name="settings_launch_block_desc">지정된 앱의 실행 동작 차단</string>
+    <string name="launch_block_shizuku_not_installed_short">Shizuku 필요</string>
+    <string name="launch_block_shizuku_not_running_short">Shizuku 시작</string>
+    <string name="launch_block_shizuku_denied_short">Shizuku 권한</string>
+    <string name="launch_block_add_title">차단 규칙 추가</string>
+    <string name="launch_block_edit_title">차단 규칙 편집</string>
+    <string name="launch_block_launcher_label">실행 앱 (선택사항)</string>
+    <string name="launch_block_launcher_hint">패키지명 입력, 예: com.example.app</string>
+    <string name="launch_block_launcher_supporting">비워두면 모든 앱의 대상 실행을 차단합니다</string>
+    <string name="launch_block_target_label">대상 (필수)</string>
+    <string name="launch_block_target_hint">패키지명 입력, 예: com.example.app</string>
+    <string name="launch_block_target_supporting">이 앱이 실행될 때 트리거됩니다</string>
+    <string name="launch_block_target_required">대상 앱을 입력해 주세요</string>
+    <string name="launch_block_kill_switch_title">실행 앱 종료</string>
+    <string name="launch_block_kill_switch_desc">차단 시 실행 앱 종료 (최대 5회 연속, 이후 15초 대기)</string>
+    <string name="launch_block_kill_switch_disabled_hint">실행 앱을 설정해야 합니다</string>
+    <string name="launch_block_kill_target_title">대상 종료</string>
+    <string name="launch_block_kill_target_desc">차단 후 대상 앱 프로세스 즉시 종료</string>
+    <string name="launch_block_allow_kill_system_title">시스템 앱 종료 허용</string>
+    <string name="launch_block_allow_kill_system_desc">경고: 시스템 앱 종료는 불안정을 초래할 수 있습니다</string>
+    <string name="launch_block_rules_title">차단 규칙</string>
+    <string name="launch_block_rules_count">%d개 규칙</string>
+    <string name="launch_block_add_rule">규칙 추가</string>
+    <string name="launch_block_edit_rule">편집</string>
+    <string name="launch_block_delete_rule">삭제</string>
+    <string name="launch_block_expand">펼치기</string>
+    <string name="launch_block_collapse">접기</string>
+    <string name="launch_block_no_rules">아직 규칙이 없습니다. +를 눌러 추가하세요</string>
+    <string name="launch_block_rule_launcher">실행 앱: %s</string>
+    <string name="launch_block_rule_target">대상: %s</string>
+    <string name="launch_block_rule_kill_enabled">프로세스 종료 방지 활성화됨</string>
+    <string name="launch_block_rule_enabled_title">규칙 활성화</string>
+    <string name="launch_block_rule_enabled_desc">활성화하면 대상 앱 실행이 차단됩니다</string>
+    <string name="launch_block_rule_disabled">비활성화됨</string>
+    <string name="launch_block_delay_title">차단 시점</string>
+    <string name="launch_block_delay_desc">차단 효과가 실행될 시점 선택</string>
+    <string name="launch_block_delay_immediate">즉시</string>
+    <string name="launch_block_delay_500ms">지연</string>
+    <string name="launch_block_delay_1000ms">지연 (느림)</string>
+
+    <!-- 공통 대화상자 버튼 -->
+    <string name="dialog_confirm">확인</string>
+    <string name="dialog_cancel">취소</string>
+    <string name="dialog_delete">삭제</string>
+
+    <!-- 뒷면 탭 -->
+    <string name="back_tap_title">뒷면 탭</string>
+    <string name="back_tap_summary_no_action">민감도 %d · 범위 %d</string>
+    <string name="back_tap_summary_with_action">민감도 %d · 범위 %d · %s</string>
+    <string name="back_tap_enable_title">뒷면 탭</string>
+    <string name="back_tap_enable_desc">휴대폰 뒷면을 두 번 탭하여 동작 실행</string>
+    <string name="back_tap_sensitivity">민감도</string>
+    <string name="back_tap_range">감지 범위</string>
+    <string name="back_tap_action">뒷면 탭 동작</string>
+    <string name="back_tap_mode">모드</string>
+    <string name="back_tap_mode_always">항상</string>
+    <string name="back_tap_mode_screen_off">화면 꺼졌을 때만</string>
+    <string name="back_tap_mode_screen_on">화면 켜졌을 때만</string>
+    <string name="back_tap_pause_on_charging_title">충전 중 일시 중지</string>
+    <string name="back_tap_pause_on_charging_desc">충전 중 뒷면 탭을 자동으로 일시 중지하여 배터리 절약</string>
+
+</resources>

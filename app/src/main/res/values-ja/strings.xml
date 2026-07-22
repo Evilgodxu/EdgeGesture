@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- アプリ一般 -->
+    <string name="app_name">Edge Gesture</string>
+
+    <!-- 設定画面 -->
+    <!-- ページ共通 -->
+    <string name="settings_title">設定</string>
+    <string name="settings_back_content_description">戻る</string>
+
+    <!-- 外観設定 -->
+    <string name="settings_section_appearance">外観</string>
+    <string name="settings_theme_title">テーマモード</string>
+    <string name="settings_theme_system">システムに合わせる</string>
+    <string name="settings_theme_dark">常にダーク</string>
+    <string name="settings_theme_light">常にライト</string>
+    <string name="settings_theme_dialog_title">テーマを選択</string>
+
+    <!-- 言語設定 -->
+    <string name="settings_section_language">言語</string>
+    <string name="settings_language_title">アプリの言語</string>
+    <string name="settings_language_system">システムに合わせる</string>
+    <string name="settings_language_dialog_title">言語を選択</string>
+    <string name="settings_language_chinese">简体中文</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_japanese">日本語</string>
+    <string name="settings_language_korean">한국어</string>
+    <string name="settings_language_russian">Русский</string>
+    <string name="settings_language_german">Deutsch</string>
+
+    <!-- 寄付設定 -->
+    <string name="settings_donate">寄付・支援</string>
+    <string name="settings_donate_desc">開発者のアプリ改善を支援します</string>
+    <string name="settings_donate_alipay">Alipay</string>
+    <string name="settings_donate_thanks">ご支援ありがとうございます！</string>
+
+    <!-- オープンソースライセンス -->
+    <string name="settings_open_source">オープンソースライセンス</string>
+    <string name="settings_open_source_desc">本プロジェクトで使用しているライブラリを表示</string>
+    <string name="settings_open_source_title">オープンソースライセンス</string>
+
+    <!-- 振動設定 -->
+    <string name="settings_vibration_title">振動フィードバック</string>
+    <string name="settings_vibration_desc">スワイプ操作時に振動を発生させます</string>
+
+    <!-- ジェスチャーオーバーレイの表示 -->
+    <string name="gesture_hide_overlay_title">オーバーレイを非表示</string>
+    <string name="gesture_hide_overlay_desc">ジェスチャー領域を非表示にします</string>
+
+    <!-- サービス状態カード -->
+    <string name="gesture_service_running">実行中</string>
+    <string name="gesture_service_stopped">停止中</string>
+    <string name="gesture_service_subtitle">アクセシビリティサービス · Edge Gesture</string>
+    <string name="gesture_service_start">サービスを開始</string>
+    <string name="gesture_service_stop">サービスを停止</string>
+    <string name="gesture_service_title">サービス状態</string>
+    <string name="gesture_count_label">ジェスチャー</string>
+
+    <!-- ジェスチャープレビュー -->
+    <string name="gesture_preview_title">トリガー領域のプレビュー</string>
+
+    <!-- 最近使用したアプリから隠す -->
+    <string name="gesture_hide_recents_title">履歴から隠す</string>
+    <string name="gesture_hide_recents_desc">最近使用したアプリ一覧からこのアプリを非表示にします</string>
+
+    <!-- キーボードとの重なりを回避 -->
+    <string name="gesture_avoid_keyboard_overlap_title">重なりを回避</string>
+    <string name="gesture_avoid_keyboard_overlap_desc">キーボード表示時にジェスチャー領域を自動的に無効化します</string>
+
+    <!-- ジェスチャー操作タイプ -->
+    <string name="gesture_swipe_right">右スワイプ</string>
+    <string name="gesture_swipe_right_long">長押し右スワイプ</string>
+    <string name="gesture_swipe_left">左スワイプ</string>
+    <string name="gesture_swipe_left_long">長押し左スワイプ</string>
+    <string name="gesture_swipe_up">上スワイプ</string>
+    <string name="gesture_swipe_up_long">長押し上スワイプ</string>
+    <string name="gesture_swipe_down">下スワイプ</string>
+    <string name="gesture_swipe_down_long">長押し下スワイプ</string>
+
+    <!-- ジェスチャーアクションオプション -->
+    <string name="gesture_action_none">なし</string>
+    <string name="gesture_action_home">ホーム</string>
+    <string name="gesture_action_recent">履歴</string>
+    <string name="gesture_action_back">戻る</string>
+    <string name="gesture_action_last_app">前のアプリ</string>
+    <string name="gesture_action_previous_track">前の曲</string>
+    <string name="gesture_action_next_track">次の曲</string>
+    <string name="gesture_action_flashlight">懐中電灯</string>
+    <string name="gesture_action_voice_assistant">音声アシスタント</string>
+    <string name="gesture_action_power_menu">電源メニュー</string>
+    <string name="gesture_action_lock_screen">画面ロック</string>
+    <string name="gesture_action_screenshot">スクリーンショット</string>
+    <string name="gesture_action_expand_panel">拡張パネル</string>
+
+    <!-- スキャン -->
+    <string name="gesture_action_alipay_scan">Alipay スキャン</string>
+    <string name="gesture_action_wechat_scan">WeChat スキャン</string>
+
+    <!-- リマインダー -->
+    <string name="gesture_action_remind_1m">1分後に通知</string>
+    <string name="gesture_action_remind_3m">3分後に通知</string>
+    <string name="gesture_action_remind_5m">5分後に通知</string>
+    <string name="gesture_action_remind_10m">10分後に通知</string>
+    <string name="gesture_action_remind_15m">15分後に通知</string>
+    <string name="gesture_remind_feedback">%d分後に通知を設定しました</string>
+    <string name="gesture_remind_channel_name">ジェスチャー通知</string>
+    <string name="gesture_remind_notify_title">ジェスチャー通知</string>
+    <string name="gesture_remind_notify_body">%d分の通知時間になりました</string>
+    <string name="gesture_remind_timer_label">ジェスチャー通知</string>
+
+    <!-- ジェスチャー操作選択ダイアログ -->
+    <string name="gesture_select_action_title">操作を選択</string>
+
+    <!-- トリガー領域設定 -->
+    <string name="trigger_area_settings_title">トリガー領域設定</string>
+
+    <!-- 統計 -->
+    <string name="stats_gesture_count">回数</string>
+    <string name="stats_block_count">ブロック</string>
+    <string name="stats_period_title">統計期間</string>
+    <string name="stats_period_1d">過去1日</string>
+    <string name="stats_period_7d">過去7日</string>
+    <string name="stats_period_30d">過去30日</string>
+    <string name="stats_period_hint">期間：</string>
+
+    <!-- その他の機能 -->
+    <string name="more_section_title">その他の機能</string>
+    <string name="more_expand_panel">拡張パネル</string>
+    <string name="more_blacklist">アプリブラックリスト</string>
+    <string name="more_launch_block">起動ブロック</string>
+    <string name="more_settings">その他の設定</string>
+
+    <!-- ジェスチャー設定サマリー -->
+    <string name="gesture_config_section_title">ジェスチャー設定</string>
+    <string name="gesture_operation_section_title">ジェスチャー操作</string>
+    <string name="gesture_config_left">左端ジェスチャー</string>
+    <string name="gesture_config_right">右端ジェスチャー</string>
+    <string name="gesture_config_bottom">下端ジェスチャー</string>
+
+    <!-- 高度なジェスチャー -->
+    <string name="advanced_gesture_section_title">高度なジェスチャー</string>
+    <string name="advanced_gesture_back_tap_title">背面ダブルタップ</string>
+    <string name="advanced_gesture_back_tap_disabled">未設定</string>
+    <string name="advanced_gesture_back_tap_enabled">設定済み</string>
+
+    <!-- ナビゲーション -->
+    <string name="nav_back">戻る</string>
+
+    <!-- アプリブラックリスト -->
+    <string name="settings_more">その他の設定</string>
+    <string name="settings_about">このアプリについて</string>
+    <string name="settings_version">バージョン %s</string>
+    <string name="settings_blacklist_title">アプリ切り替えブラックリスト</string>
+    <string name="settings_blacklist_dialog_title">アプリ切り替えブラックリスト</string>
+    <string name="settings_blacklist_search_hint">アプリを検索</string>
+    <string name="settings_blacklist_system_tag">システム</string>
+    <string name="settings_blacklist_loading">読み込み中…</string>
+    <string name="settings_blacklist_empty">アプリデータがありません</string>
+    <string name="settings_blacklist_no_permission">アプリのクエリ権限が不足しています</string>
+    <string name="settings_blacklist_go_settings">設定に移動</string>
+    <string name="settings_blacklist_refresh">リストを更新</string>
+    <string name="settings_blacklist_no_results">「%s」に一致するアプリが見つかりませんでした</string>
+
+    <!-- エッジ寸法設定 -->
+    <string name="edge_width">幅</string>
+    <string name="edge_height">高さ</string>
+    <string name="edge_height_percent">高さ比率</string>
+    <string name="edge_width_percent">幅比率</string>
+    <string name="edge_position_percent">位置比率</string>
+    <string name="edge_segment_count">セグメント数</string>
+    <string name="edge_segment_unit">セグ</string>
+    <string name="gesture_segment_label">セグメント%d</string>
+    <string name="gesture_disabled">無効</string>
+
+    <!-- 権限申請 -->
+    <string name="permission_status_title">権限状態</string>
+    <string name="permission_granted">許可済み</string>
+    <string name="permission_request_button">許可する</string>
+    <string name="permission_overlay_title">オーバーレイ権限</string>
+    <string name="permission_overlay_desc">ジェスチャートリガー領域と拡張パネルの表示に必要です</string>
+    <string name="permission_notification_title">通知権限</string>
+    <string name="permission_notification_desc">サービスをバックグラウンドで動作させるために必要です</string>
+    <string name="permission_battery_title">バッテリー最適化の除外</string>
+    <string name="permission_battery_desc">システムによるジェスチャーサービスの停止を防ぐために必要です</string>
+    <string name="permission_usage_stats_title">使用状況アクセス権限</string>
+    <string name="permission_usage_stats_desc">前のアプリに切り替えるために必要です</string>
+    <string name="permission_query_packages_title">インストール済みアプリの取得</string>
+    <string name="permission_query_packages_desc">アプリ切り替えブラックリストの管理に必要です</string>
+
+    <!-- アクセシビリティサービス -->
+    <string name="permission_accessibility_title">アクセシビリティサービス</string>
+    <string name="permission_accessibility_desc">戻る、ホームなどのシステム全体のジェスチャー操作を実現します</string>
+
+    <!-- アクセシビリティサービスの説明 -->
+    <string name="accessibility_service_description">Edge Gesture は、戻る、ホーム、履歴などのシステム操作を実行するためにアクセシビリティ権限を必要とします。</string>
+
+    <string name="expand_panel_freeform_label">小</string>
+
+    <!-- 拡張パネル -->
+    <string name="expand_panel_brightness">画面の明るさ</string>
+    <string name="expand_panel_alarm_volume">アラーム音量</string>
+    <string name="expand_panel_ring_volume">着信音量</string>
+    <string name="expand_panel_media_volume">メディア音量</string>
+    <string name="expand_panel_shortcuts_title">ショートカット</string>
+    <string name="expand_panel_controls_title">システムコントロール</string>
+    <string name="expand_panel_add_shortcut_desc">ショートカットを追加</string>
+    <string name="expand_panel_app_picker_title">アプリを選択</string>
+    <string name="expand_panel_cancel">キャンセル</string>
+    <string name="expand_panel_search_hint">アプリ名またはパッケージ名で検索</string>
+    <string name="expand_panel_loading_apps">アプリ一覧を読み込み中…</string>
+
+    <!-- 起動ブロック -->
+    <string name="settings_launch_block_title">起動ブロック</string>
+    <string name="settings_launch_block_desc">指定したアプリの起動をブロックします</string>
+    <string name="launch_block_shizuku_not_installed_short">Shizuku が必要です</string>
+    <string name="launch_block_shizuku_not_running_short">Shizuku を起動</string>
+    <string name="launch_block_shizuku_denied_short">Shizuku の許可が必要</string>
+    <string name="launch_block_add_title">ブロックルールを追加</string>
+    <string name="launch_block_edit_title">ブロックルールを編集</string>
+    <string name="launch_block_launcher_label">起動元（任意）</string>
+    <string name="launch_block_launcher_hint">パッケージ名を入力（例：com.example.app）</string>
+    <string name="launch_block_launcher_supporting">空欄にするとすべてのアプリからの起動をブロックします</string>
+    <string name="launch_block_target_label">対象アプリ（必須）</string>
+    <string name="launch_block_target_hint">パッケージ名を入力（例：com.example.app）</string>
+    <string name="launch_block_target_supporting">このアプリが起動されたときにブロックが発動します</string>
+    <string name="launch_block_target_required">対象アプリを入力してください</string>
+    <string name="launch_block_kill_switch_title">起動元を強制停止</string>
+    <string name="launch_block_kill_switch_desc">ブロック発動時に起動元プロセスを強制停止します（最大連続5回、以降は15秒クールダウン）</string>
+    <string name="launch_block_kill_switch_disabled_hint">起動元を入力すると有効化されます</string>
+    <string name="launch_block_kill_target_title">対象アプリを強制停止</string>
+    <string name="launch_block_kill_target_desc">ブロック後、すぐに対象アプリのプロセスを強制停止します</string>
+    <string name="launch_block_allow_kill_system_title">システムアプリの強制停止を許可</string>
+    <string name="launch_block_allow_kill_system_desc">警告：システムアプリを強制停止するとシステムが不安定になる可能性があります</string>
+    <string name="launch_block_rules_title">ブロックルール</string>
+    <string name="launch_block_rules_count">全%d件のルール</string>
+    <string name="launch_block_add_rule">ルールを追加</string>
+    <string name="launch_block_edit_rule">編集</string>
+    <string name="launch_block_delete_rule">削除</string>
+    <string name="launch_block_expand">展開</string>
+    <string name="launch_block_collapse">折りたたむ</string>
+    <string name="launch_block_no_rules">ブロックルールがありません。+ をタップして追加</string>
+    <string name="launch_block_rule_launcher">起動元：%s</string>
+    <string name="launch_block_rule_target">対象：%s</string>
+    <string name="launch_block_rule_kill_enabled">プロセス強制停止が有効です</string>
+    <string name="launch_block_rule_enabled_title">ルールを有効化</string>
+    <string name="launch_block_rule_enabled_desc">有効にすると対象アプリの起動をブロックします</string>
+    <string name="launch_block_rule_disabled">無効</string>
+    <string name="launch_block_delay_title">ブロックタイミング</string>
+    <string name="launch_block_delay_desc">ブロック効果を発動するタイミングを選択</string>
+    <string name="launch_block_delay_immediate">即時</string>
+    <string name="launch_block_delay_500ms">やや遅延</string>
+    <string name="launch_block_delay_1000ms">遅延</string>
+
+    <!-- 共通ダイアログボタン -->
+    <string name="dialog_confirm">確定</string>
+    <string name="dialog_cancel">キャンセル</string>
+    <string name="dialog_delete">削除</string>
+
+    <!-- 背面ダブルタップ -->
+    <string name="back_tap_title">背面ダブルタップ</string>
+    <string name="back_tap_summary_no_action">感度 %d · 検出範囲 %d</string>
+    <string name="back_tap_summary_with_action">感度 %d · 検出範囲 %d · %s</string>
+    <string name="back_tap_enable_title">背面ダブルタップ</string>
+    <string name="back_tap_enable_desc">端末の背面をダブルタップして操作を実行</string>
+    <string name="back_tap_sensitivity">感度</string>
+    <string name="back_tap_range">検出範囲</string>
+    <string name="back_tap_action">背面ダブルタップの操作</string>
+    <string name="back_tap_mode">動作モード</string>
+    <string name="back_tap_mode_always">常時有効</string>
+    <string name="back_tap_mode_screen_off">画面オフ時のみ</string>
+    <string name="back_tap_mode_screen_on">画面オン時のみ</string>
+    <string name="back_tap_pause_on_charging_title">充電中は一時停止</string>
+    <string name="back_tap_pause_on_charging_desc">充電中は背面ダブルタップを自動的に一時停止してバッテリーを節約します</string>
+</resources>

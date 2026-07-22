@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App General -->
+    <string name="app_name">Edge Gesture</string>
+
+    <!-- Settings Screen -->
+    <!-- Page General -->
+    <string name="settings_title">Einstellungen</string>
+    <string name="settings_back_content_description">Zurück</string>
+
+    <!-- Appearance Settings -->
+    <string name="settings_section_appearance">Darstellung</string>
+    <string name="settings_theme_title">Design</string>
+    <string name="settings_theme_system">Systemstandard</string>
+    <string name="settings_theme_dark">Immer dunkel</string>
+    <string name="settings_theme_light">Immer hell</string>
+    <string name="settings_theme_dialog_title">Design auswählen</string>
+
+    <!-- Language Settings -->
+    <string name="settings_section_language">Sprache</string>
+    <string name="settings_language_title">App-Sprache</string>
+    <string name="settings_language_system">Systemstandard</string>
+    <string name="settings_language_dialog_title">Sprache auswählen</string>
+    <string name="settings_language_chinese">简体中文</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_japanese">日本語</string>
+    <string name="settings_language_korean">한국어</string>
+    <string name="settings_language_russian">Русский</string>
+    <string name="settings_language_german">Deutsch</string>
+
+    <!-- Donate Settings -->
+    <string name="settings_donate">Spenden</string>
+    <string name="settings_donate_desc">Unterstützen Sie die Weiterentwicklung der App</string>
+    <string name="settings_donate_alipay">Alipay</string>
+    <string name="settings_donate_thanks">Vielen Dank für Ihre Unterstützung!</string>
+
+    <!-- Open Source Licenses -->
+    <string name="settings_open_source">Open-Source-Lizenzen</string>
+    <string name="settings_open_source_desc">Open-Source-Bibliotheken dieses Projekts anzeigen</string>
+    <string name="settings_open_source_title">Open-Source-Lizenzen</string>
+
+    <!-- Vibration Settings -->
+    <string name="settings_vibration_title">Vibrationsfeedback</string>
+    <string name="settings_vibration_desc">Vibration bei Wischgesten auslösen</string>
+
+    <!-- Gesture Overlay Visibility -->
+    <string name="gesture_hide_overlay_title">Overlay ausblenden</string>
+    <string name="gesture_hide_overlay_desc">Gesten-Triggerbereich ausblenden</string>
+
+    <!-- Service Status Card -->
+    <string name="gesture_service_running">Aktiv</string>
+    <string name="gesture_service_stopped">Gestoppt</string>
+    <string name="gesture_service_subtitle">Barrierefreiheitsdienst · Edge Gesture</string>
+    <string name="gesture_service_start">Dienst starten</string>
+    <string name="gesture_service_stop">Dienst beenden</string>
+    <string name="gesture_service_title">Dienststatus</string>
+    <string name="gesture_count_label">Gesten</string>
+
+    <!-- Gesture Preview -->
+    <string name="gesture_preview_title">Triggerbereich-Vorschau</string>
+
+    <!-- Hide from Recents -->
+    <string name="gesture_hide_recents_title">Aus Übersicht ausblenden</string>
+    <string name="gesture_hide_recents_desc">App aus der Aufgabenliste ausblenden</string>
+
+    <!-- Avoid Keyboard Overlap -->
+    <string name="gesture_avoid_keyboard_overlap_title">Überlappung vermeiden</string>
+    <string name="gesture_avoid_keyboard_overlap_desc">Gestenbereich bei eingeblendeter Tastatur automatisch deaktivieren</string>
+
+    <!-- Gesture Action Types -->
+    <string name="gesture_swipe_right">Nach rechts wischen</string>
+    <string name="gesture_swipe_right_long">Langes Drücken + nach rechts wischen</string>
+    <string name="gesture_swipe_left">Nach links wischen</string>
+    <string name="gesture_swipe_left_long">Langes Drücken + nach links wischen</string>
+    <string name="gesture_swipe_up">Nach oben wischen</string>
+    <string name="gesture_swipe_up_long">Langes Drücken + nach oben wischen</string>
+    <string name="gesture_swipe_down">Nach unten wischen</string>
+    <string name="gesture_swipe_down_long">Langes Drücken + nach unten wischen</string>
+
+    <!-- Gesture Action Options -->
+    <string name="gesture_action_none">Keine</string>
+    <string name="gesture_action_home">Startbildschirm</string>
+    <string name="gesture_action_recent">Letzte Apps</string>
+    <string name="gesture_action_back">Zurück</string>
+    <string name="gesture_action_last_app">Letzte App</string>
+    <string name="gesture_action_previous_track">Vorheriger Titel</string>
+    <string name="gesture_action_next_track">Nächster Titel</string>
+    <string name="gesture_action_flashlight">Taschenlampe</string>
+    <string name="gesture_action_voice_assistant">Sprachassistent</string>
+    <string name="gesture_action_power_menu">Ausschaltmenü</string>
+    <string name="gesture_action_lock_screen">Bildschirm sperren</string>
+    <string name="gesture_action_screenshot">Bildschirmfoto</string>
+    <string name="gesture_action_expand_panel">Panel erweitern</string>
+    <string name="gesture_action_alipay_scan">Alipay-Scanner</string>
+    <string name="gesture_action_wechat_scan">WeChat-Scanner</string>
+
+    <!-- Remind -->
+    <string name="gesture_action_remind_1m">In 1 Min. erinnern</string>
+    <string name="gesture_action_remind_3m">In 3 Min. erinnern</string>
+    <string name="gesture_action_remind_5m">In 5 Min. erinnern</string>
+    <string name="gesture_action_remind_10m">In 10 Min. erinnern</string>
+    <string name="gesture_action_remind_15m">In 15 Min. erinnern</string>
+    <string name="gesture_remind_feedback">Erinnerung in %d Minuten eingestellt</string>
+    <string name="gesture_remind_channel_name">Gesten-Erinnerung</string>
+    <string name="gesture_remind_notify_title">Gesten-Erinnerung</string>
+    <string name="gesture_remind_notify_body">Ihre %d-minütige Erinnerung ist abgelaufen</string>
+    <string name="gesture_remind_timer_label">Gesten-Erinnerung</string>
+
+    <!-- Gesture Action Selection Dialog -->
+    <string name="gesture_select_action_title">Aktion auswählen</string>
+
+    <!-- Trigger Area Settings -->
+    <string name="trigger_area_settings_title">Triggerbereich-Einstellungen</string>
+
+    <!-- Statistics -->
+    <string name="stats_gesture_count">Zählung</string>
+    <string name="stats_block_count">Blockiert</string>
+    <string name="stats_period_title">Statistikzeitraum</string>
+    <string name="stats_period_1d">Letzter 1 Tag</string>
+    <string name="stats_period_7d">Letzte 7 Tage</string>
+    <string name="stats_period_30d">Letzte 30 Tage</string>
+    <string name="stats_period_hint">Zeitraum: </string>
+
+    <!-- More Features -->
+    <string name="more_section_title">Weitere Funktionen</string>
+    <string name="more_expand_panel">Panel erweitern</string>
+    <string name="more_blacklist">App-Blacklist</string>
+    <string name="more_launch_block">Start blockieren</string>
+    <string name="more_settings">Weitere Einstellungen</string>
+
+    <!-- Gesture Config Summary -->
+    <string name="gesture_config_section_title">Gestenkonfiguration</string>
+    <string name="gesture_operation_section_title">Gestenoperationen</string>
+    <string name="gesture_config_left">Linke Bildschirmseite</string>
+    <string name="gesture_config_right">Rechte Bildschirmseite</string>
+    <string name="gesture_config_bottom">Untere Bildschirmseite</string>
+
+    <!-- Advanced Gestures -->
+    <string name="advanced_gesture_section_title">Erweiterte Gesten</string>
+    <string name="advanced_gesture_back_tap_title">Rückseite tippen</string>
+    <string name="advanced_gesture_back_tap_disabled">Nicht aktiviert</string>
+    <string name="advanced_gesture_back_tap_enabled">Aktiviert</string>
+
+    <!-- Navigation -->
+    <string name="nav_back">Zurück</string>
+
+    <!-- App Blacklist -->
+    <string name="settings_more">Weitere Einstellungen</string>
+    <string name="settings_about">Über</string>
+    <string name="settings_version">Version %s</string>
+    <string name="settings_blacklist_title">Blacklist für App-Wechsel</string>
+    <string name="settings_blacklist_dialog_title">Blacklist für App-Wechsel</string>
+    <string name="settings_blacklist_search_hint">Apps durchsuchen</string>
+    <string name="settings_blacklist_system_tag">System</string>
+    <string name="settings_blacklist_loading">Wird geladen…</string>
+    <string name="settings_blacklist_empty">Keine App-Daten verfügbar</string>
+    <string name="settings_blacklist_no_permission">Fehlende App-Abfrageberechtigung</string>
+    <string name="settings_blacklist_go_settings">Zu den Einstellungen</string>
+    <string name="settings_blacklist_refresh">Liste aktualisieren</string>
+    <string name="settings_blacklist_no_results">Keine Apps gefunden, die "%s" entsprechen</string>
+
+    <!-- Edge Dimension Settings -->
+    <string name="edge_width">Breite</string>
+    <string name="edge_height">Höhe</string>
+    <string name="edge_height_percent">Höhenprozent</string>
+    <string name="edge_width_percent">Breitenprozent</string>
+    <string name="edge_position_percent">Positionsprozent</string>
+    <string name="edge_segment_count">Segmente</string>
+    <string name="edge_segment_unit">Seg.</string>
+    <string name="gesture_segment_label">Segment %d</string>
+    <string name="gesture_disabled">Deaktiviert</string>
+
+    <!-- Permission Requests -->
+    <string name="permission_status_title">Berechtigungsstatus</string>
+    <string name="permission_request_button">Erteilen</string>
+    <string name="permission_granted">Erteilt</string>
+    <string name="permission_overlay_title">Overlay-Berechtigung</string>
+    <string name="permission_overlay_desc">Erforderlich zur Anzeige des Gesten-Triggerbereichs und des erweiterten Panels</string>
+    <string name="permission_notification_title">Benachrichtigungsberechtigung</string>
+    <string name="permission_notification_desc">Erforderlich, um den Dienst im Hintergrund auszuführen</string>
+    <string name="permission_battery_title">Akku-Optimierungs-Whitelist</string>
+    <string name="permission_battery_desc">Verhindert, dass das System den Gestendienst im Hintergrund beendet</string>
+    <string name="permission_usage_stats_title">Nutzungszugriff</string>
+    <string name="permission_usage_stats_desc">Nutzungszugriff ist erforderlich, um zur letzten App zu wechseln</string>
+    <string name="permission_query_packages_title">Alle Pakete abfragen</string>
+    <string name="permission_query_packages_desc">Erforderlich zur Verwaltung der App-Wechsel-Blacklist</string>
+
+    <!-- Permissions -->
+    <string name="permission_accessibility_title">Barrierefreiheitsdienst</string>
+    <string name="permission_accessibility_desc">Ermöglicht systemweite Gestenoperationen wie Zurück, Startbildschirm usw.</string>
+
+    <!-- Accessibility Service -->
+    <string name="accessibility_service_description">Edge Gesture benötigt die Barrierefreiheitsberechtigung, um Systemoperationen wie Zurück, Startbildschirm und letzte Apps durchzuführen.</string>
+
+    <string name="expand_panel_freeform_label">Klein</string>
+
+    <!-- Expand Panel -->
+    <string name="expand_panel_brightness">Helligkeit</string>
+    <string name="expand_panel_alarm_volume">Alarmlautstärke</string>
+    <string name="expand_panel_ring_volume">Klingellautstärke</string>
+    <string name="expand_panel_media_volume">Medienlautstärke</string>
+    <string name="expand_panel_shortcuts_title">Verknüpfungen</string>
+    <string name="expand_panel_controls_title">Systemsteuerung</string>
+    <string name="expand_panel_add_shortcut_desc">Verknüpfung hinzufügen</string>
+    <string name="expand_panel_app_picker_title">App auswählen</string>
+    <string name="expand_panel_cancel">Abbrechen</string>
+    <string name="expand_panel_search_hint">Nach Name oder Paketname suchen</string>
+    <string name="expand_panel_loading_apps">Apps werden geladen…</string>
+
+    <!-- Launch Block -->
+    <string name="settings_launch_block_title">Start blockieren</string>
+    <string name="settings_launch_block_desc">Startverhalten bestimmter Apps blockieren</string>
+    <string name="launch_block_shizuku_not_installed_short">Shizuku erforderlich</string>
+    <string name="launch_block_shizuku_not_running_short">Shizuku starten</string>
+    <string name="launch_block_shizuku_denied_short">Shizuku-Berechtigung</string>
+    <string name="launch_block_add_title">Blockierregel hinzufügen</string>
+    <string name="launch_block_edit_title">Blockierregel bearbeiten</string>
+    <string name="launch_block_launcher_label">Starter (optional)</string>
+    <string name="launch_block_launcher_hint">Paketnamen eingeben, z. B. com.example.app</string>
+    <string name="launch_block_launcher_supporting">Leer lassen, um alle Apps am Starten des Ziels zu hindern</string>
+    <string name="launch_block_target_label">Ziel (erforderlich)</string>
+    <string name="launch_block_target_hint">Paketnamen eingeben, z. B. com.example.app</string>
+    <string name="launch_block_target_supporting">Wird ausgelöst, wenn diese App gestartet wird</string>
+    <string name="launch_block_target_required">Bitte Ziel-App eingeben</string>
+    <string name="launch_block_kill_switch_title">Starter beenden</string>
+    <string name="launch_block_kill_switch_desc">Starter bei jeder Blockierung beenden (max. 5× hintereinander, dann 15s Abkühlphase)</string>
+    <string name="launch_block_kill_switch_disabled_hint">Erfordert einen festgelegten Starter</string>
+    <string name="launch_block_kill_target_title">Ziel beenden</string>
+    <string name="launch_block_kill_target_desc">Ziel-App-Prozess sofort nach Blockierung beenden</string>
+    <string name="launch_block_allow_kill_system_title">System-Apps beenden erlauben</string>
+    <string name="launch_block_allow_kill_system_desc">Warnung: Das Beenden von System-Apps kann zu Instabilität führen</string>
+    <string name="launch_block_rules_title">Blockierregeln</string>
+    <string name="launch_block_rules_count">%d Regeln</string>
+    <string name="launch_block_add_rule">Regel hinzufügen</string>
+    <string name="launch_block_edit_rule">Bearbeiten</string>
+    <string name="launch_block_delete_rule">Löschen</string>
+    <string name="launch_block_expand">Ausklappen</string>
+    <string name="launch_block_collapse">Einklappen</string>
+    <string name="launch_block_no_rules">Noch keine Regeln. Tippen Sie auf +, um eine hinzuzufügen</string>
+    <string name="launch_block_rule_launcher">Starter: %s</string>
+    <string name="launch_block_rule_target">Ziel: %s</string>
+    <string name="launch_block_rule_kill_enabled">Prozessbeendigungsschutz aktiviert</string>
+    <string name="launch_block_rule_enabled_title">Regel aktivieren</string>
+    <string name="launch_block_rule_enabled_desc">Wenn aktiviert, werden App-Starts blockiert</string>
+    <string name="launch_block_rule_disabled">Deaktiviert</string>
+    <string name="launch_block_delay_title">Blockierzeitpunkt</string>
+    <string name="launch_block_delay_desc">Wählen Sie, wann der Blockiereffekt ausgelöst werden soll</string>
+    <string name="launch_block_delay_immediate">Sofort</string>
+    <string name="launch_block_delay_500ms">Verzögert</string>
+    <string name="launch_block_delay_1000ms">Aufgeschoben</string>
+
+    <!-- Common Dialog Buttons -->
+    <string name="dialog_confirm">Bestätigen</string>
+    <string name="dialog_cancel">Abbrechen</string>
+    <string name="dialog_delete">Löschen</string>
+
+    <!-- Back Tap -->
+    <string name="back_tap_title">Rückseite tippen</string>
+    <string name="back_tap_summary_no_action">Empfindlichkeit %d · Bereich %d</string>
+    <string name="back_tap_summary_with_action">Empfindlichkeit %d · Bereich %d · %s</string>
+    <string name="back_tap_enable_title">Rückseite tippen</string>
+    <string name="back_tap_enable_desc">Doppeltippen auf die Rückseite des Geräts, um eine Aktion auszuführen</string>
+    <string name="back_tap_sensitivity">Empfindlichkeit</string>
+    <string name="back_tap_range">Erkennungsbereich</string>
+    <string name="back_tap_action">Rückseiten-Tippaktion</string>
+    <string name="back_tap_mode">Modus</string>
+    <string name="back_tap_mode_always">Immer</string>
+    <string name="back_tap_mode_screen_off">Nur bei ausgeschaltetem Bildschirm</string>
+    <string name="back_tap_mode_screen_on">Nur bei eingeschaltetem Bildschirm</string>
+    <string name="back_tap_pause_on_charging_title">Während des Ladens pausieren</string>
+    <string name="back_tap_pause_on_charging_desc">Rückseite tippen während des Ladens automatisch pausieren, um Akku zu sparen</string>
+
+</resources>
