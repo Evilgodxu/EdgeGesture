@@ -26,7 +26,7 @@
 
     <!-- Donate Settings -->
     <string name="settings_donate">Donate</string>
-    <string name="settings_donate_desc">Support the developer to continue improving the app</string>
+    <string name="settings_donate_desc">Support the developer in improving the app</string>
     <string name="settings_donate_alipay">Alipay</string>
     <string name="settings_donate_thanks">Thank you for your support!</string>
 
@@ -37,11 +37,11 @@
 
     <!-- Vibration Settings -->
     <string name="settings_vibration_title">Vibration Feedback</string>
-    <string name="settings_vibration_desc">Trigger vibration effect during swipe operations</string>
+    <string name="settings_vibration_desc">Trigger a vibration effect during swipe operations</string>
 
     <!-- Gesture Overlay Visibility -->
     <string name="gesture_hide_overlay_title">Hide Overlay</string>
-    <string name="gesture_hide_overlay_desc">Hide gesture trigger area</string>
+    <string name="gesture_hide_overlay_desc">Hide the gesture trigger area</string>
 
     <!-- Service Status Card -->
     <string name="gesture_service_running">Running</string>
@@ -57,11 +57,11 @@
 
     <!-- Hide from Recents -->
     <string name="gesture_hide_recents_title">Hide from Recents</string>
-    <string name="gesture_hide_recents_desc">Hide this app from task list</string>
+    <string name="gesture_hide_recents_desc">Hide this app from the task list</string>
 
     <!-- Avoid Keyboard Overlap -->
     <string name="gesture_avoid_keyboard_overlap_title">Avoid Overlap</string>
-    <string name="gesture_avoid_keyboard_overlap_desc">Auto-disable gesture area when keyboard is shown</string>
+    <string name="gesture_avoid_keyboard_overlap_desc">Auto-disable gesture area when the keyboard is shown</string>
 
     <!-- Gesture Action Types -->
     <string name="gesture_swipe_right">Swipe Right</string>
@@ -96,7 +96,7 @@
     <string name="gesture_action_remind_5m">Remind in 5 mins</string>
     <string name="gesture_action_remind_10m">Remind in 10 mins</string>
     <string name="gesture_action_remind_15m">Remind in 15 mins</string>
-    <string name="gesture_remind_feedback">Reminder set for %d minutes later</string>
+    <string name="gesture_remind_feedback">Reminder set for %d minutes from now</string>
     <string name="gesture_remind_channel_name">Gesture Reminder</string>
     <string name="gesture_remind_notify_title">Gesture Reminder</string>
     <string name="gesture_remind_notify_body">Your %d-minute reminder is up</string>
@@ -142,16 +142,18 @@
 
     <!-- App Blacklist -->
     <string name="settings_more">More Settings</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %s</string>
     <string name="settings_blacklist_title">App Switch Blacklist</string>
     <string name="settings_blacklist_dialog_title">App Switch Blacklist</string>
     <string name="settings_blacklist_search_hint">Search apps</string>
     <string name="settings_blacklist_system_tag">System</string>
     <string name="settings_blacklist_loading">Loading…</string>
     <string name="settings_blacklist_empty">No app data available</string>
-    <string name="settings_blacklist_no_permission">Missing query app permission</string>
+    <string name="settings_blacklist_no_permission">Missing app query permission</string>
     <string name="settings_blacklist_go_settings">Go to Settings</string>
     <string name="settings_blacklist_refresh">Refresh List</string>
-    <string name="settings_blacklist_no_results">No apps matching «%s»</string>
+    <string name="settings_blacklist_no_results">No apps matching "%s"</string>
 
     <!-- Edge Dimension Settings -->
     <string name="edge_width">Width</string>
@@ -169,22 +171,22 @@
     <string name="permission_request_button">Grant</string>
     <string name="permission_granted">Granted</string>
     <string name="permission_overlay_title">Overlay Permission</string>
-    <string name="permission_overlay_desc">Overlay permission is required to display edge gesture areas</string>
+    <string name="permission_overlay_desc">Required to display the gesture trigger area and expand panel</string>
     <string name="permission_notification_title">Notification Permission</string>
-    <string name="permission_notification_desc">Notification permission is required to keep the service running in background</string>
+    <string name="permission_notification_desc">Required to keep the service running in the background</string>
     <string name="permission_battery_title">Battery Optimization Whitelist</string>
-    <string name="permission_battery_desc">Need to disable battery optimization to ensure gesture service runs continuously in background</string>
-    <string name="permission_usage_stats_title">Usage Access Permission</string>
-    <string name="permission_usage_stats_desc">Usage access permission is required to switch to the last app</string>
+    <string name="permission_battery_desc">Prevent the system from stopping the gesture service in the background</string>
+    <string name="permission_usage_stats_title">Usage Access</string>
+    <string name="permission_usage_stats_desc">Usage access is required to switch to the last app</string>
     <string name="permission_query_packages_title">Query All Packages</string>
-    <string name="permission_query_packages_desc">Required to manage app switch blacklist</string>
+    <string name="permission_query_packages_desc">Required to manage the app switch blacklist</string>
 
     <!-- Permissions -->
     <string name="permission_accessibility_title">Accessibility Service</string>
     <string name="permission_accessibility_desc">Enables system-wide gesture operations like Back, Home, etc.</string>
 
     <!-- Accessibility Service -->
-    <string name="accessibility_service_description">Edge Gesture requires accessibility permission to perform system operations such as back, home, recent tasks, etc.</string>
+    <string name="accessibility_service_description">Edge Gesture requires accessibility permission to perform system operations like back, home, and recent tasks.</string>
 
     <string name="expand_panel_freeform_label">Small</string>
 
@@ -198,7 +200,7 @@
     <string name="expand_panel_add_shortcut_desc">Add shortcut</string>
     <string name="expand_panel_app_picker_title">Select App</string>
     <string name="expand_panel_cancel">Cancel</string>
-    <string name="expand_panel_search_hint">Search by name or package</string>
+    <string name="expand_panel_search_hint">Search by name or package name</string>
     <string name="expand_panel_loading_apps">Loading apps…</string>
 
     <!-- Launch Block -->
@@ -217,10 +219,10 @@
     <string name="launch_block_target_supporting">Triggered when this app is launched</string>
     <string name="launch_block_target_required">Please enter target app</string>
     <string name="launch_block_kill_switch_title">Kill Launcher</string>
-    <string name="launch_block_kill_switch_desc">Kill the launcher process every time a block is triggered (max 5 times, then 15s cooldown)</string>
+    <string name="launch_block_kill_switch_desc">Kill the launcher on each block (max 5 consecutive, then 15s cooldown)</string>
     <string name="launch_block_kill_switch_disabled_hint">Requires launcher to be set</string>
     <string name="launch_block_kill_target_title">Kill Target</string>
-    <string name="launch_block_kill_target_desc">Kill target app process immediately after blocking</string>
+    <string name="launch_block_kill_target_desc">Kill the target app process immediately after blocking</string>
     <string name="launch_block_allow_kill_system_title">Allow Kill System Apps</string>
     <string name="launch_block_allow_kill_system_desc">Warning: Killing system apps may cause instability</string>
     <string name="launch_block_rules_title">Block Rules</string>
@@ -253,7 +255,7 @@
     <string name="back_tap_summary_no_action">Sensitivity %d · Range %d</string>
     <string name="back_tap_summary_with_action">Sensitivity %d · Range %d · %s</string>
     <string name="back_tap_enable_title">Back Tap</string>
-    <string name="back_tap_enable_desc">Double tap the back of phone to trigger action</string>
+    <string name="back_tap_enable_desc">Double tap the back of the phone to trigger action</string>
     <string name="back_tap_sensitivity">Sensitivity</string>
     <string name="back_tap_range">Detection Range</string>
     <string name="back_tap_action">Back Tap Action</string>

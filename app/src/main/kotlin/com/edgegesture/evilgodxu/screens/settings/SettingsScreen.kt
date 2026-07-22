@@ -288,7 +288,7 @@ fun SettingsScreen(
 
             // 版本信息（宽屏）
             Text(
-                text = "${stringResource(R.string.settings_version)} $versionName",
+                text = stringResource(R.string.settings_version, versionName),
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 textAlign = TextAlign.Center,
@@ -348,7 +348,7 @@ fun SettingsScreen(
 
                 // 版本信息
                 Text(
-                    text = "${stringResource(R.string.settings_version)} $versionName",
+                    text = stringResource(R.string.settings_version, versionName),
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     textAlign = TextAlign.Center,
