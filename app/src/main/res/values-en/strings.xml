@@ -272,4 +272,10 @@
     <string name="back_tap_pause_on_charging_desc">Automatically pause back tap while charging to save battery</string>
     <string name="back_tap_config_title">Back Tap Config</string>
 
+    <!-- App Update -->
+    <string name="update_channel_name">App Updates</string>
+    <string name="update_channel_desc">New version update notifications</string>
+    <string name="update_notification_title">New Version Available</string>
+    <string name="update_notification_text">EdgeGesture %s is available</string>
+
 </resources>

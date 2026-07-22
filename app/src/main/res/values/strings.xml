@@ -272,4 +272,10 @@
     <string name="back_tap_pause_on_charging_title">充电时暂停</string>
     <string name="back_tap_pause_on_charging_desc">充电时自动暂停背面双击以节省电量</string>
     <string name="back_tap_config_title">背面双击配置</string>
+
+    <!-- 应用更新 (App Update) -->
+    <string name="update_channel_name">应用更新</string>
+    <string name="update_channel_desc">新版本更新通知</string>
+    <string name="update_notification_title">发现新版本</string>
+    <string name="update_notification_text">边缘手势 %s 已可用</string>
 </resources>

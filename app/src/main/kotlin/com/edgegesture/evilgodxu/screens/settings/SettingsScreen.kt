@@ -29,12 +29,14 @@ import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -59,6 +61,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowSizeClass
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.UpdateInfo
+import com.edgegesture.evilgodxu.UpdateManager
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuState
@@ -74,6 +78,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.androidx.compose.koinViewModel
 import rikka.shizuku.Shizuku
@@ -199,6 +204,12 @@ fun SettingsScreen(
     // Shizuku 状态
     var shizukuState by remember { mutableStateOf<ShizukuState>(ShizukuState.NotRunning) }
     val shizukuPermissionCode = 1001
+
+    // 更新检测状态
+    var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    var showUpToDate by remember { mutableStateOf(false) }
+    val checkScope = androidx.compose.runtime.rememberCoroutineScope()
 
     DisposableEffect(Unit) {
         ShizukuManager.init(context)
@@ -405,7 +416,7 @@ fun SettingsScreen(
                     )
                 }
 
-                // 版本信息
+                // 版本信息（点击检查更新）
                 Text(
                     text = "Evilgodxu",
                     fontSize = 14.sp,
@@ -423,6 +434,17 @@ fun SettingsScreen(
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clickable {
+                            checkScope.launch {
+                                val result = UpdateManager.checkForUpdate(context, force = true)
+                                if (result != null) {
+                                    updateInfo = result
+                                    showUpdateDialog = true
+                                } else {
+                                    showUpToDate = true
+                                }
+                            }
+                        }
                         .padding(bottom = 6.dp)
                 )
 
@@ -499,6 +521,66 @@ fun SettingsScreen(
         OpenSourceLicensesDialog(
             onDismiss = { showOpenSourceDialog = false }
         )
+    }
+
+    // 更新检测对话框
+    if (showUpdateDialog && updateInfo != null) {
+        AlertDialog(
+            onDismissRequest = { showUpdateDialog = false },
+            title = {
+                Text(
+                    text = "发现新版本 ${updateInfo!!.latestVersion}",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = "是否下载并安装新版本？",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    if (updateInfo!!.changelog.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "更新日志：",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = updateInfo!!.changelog,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showUpdateDialog = false
+                    checkScope.launch {
+                        UpdateManager.downloadAndInstall(context, updateInfo!!)
+                    }
+                }) {
+                    Text("下载")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUpdateDialog = false }) {
+                    Text("稍后")
+                }
+            }
+        )
+    }
+
+    // 已是最新版本提示
+    if (showUpToDate) {
+        android.widget.Toast.makeText(context, "已是最新版本", android.widget.Toast.LENGTH_SHORT).show()
+        showUpToDate = false
     }
 }
 
