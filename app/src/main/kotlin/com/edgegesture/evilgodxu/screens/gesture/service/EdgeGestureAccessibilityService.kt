@@ -64,6 +64,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                                 edgeViewManager.createEdgeViews(settings, settingsProvider)
                                 edgeViewManager.showEdgeViews(settings)
                             }
+                            // 视图创建/恢复后同步检查键盘状态
+                            checkKeyboardVisibility()
                         }
                     }
                 }
@@ -201,6 +203,13 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             }
         }
 
+        // 等待所有协程完成初始化后，主动检查键盘状态。
+        // startSettingsFlow() 和 loadSettings() 都可能创建边缘视图，
+        // 延迟检查确保最后一次创建完成后也能同步键盘状态。
+        Handler(Looper.getMainLooper()).postDelayed({
+            checkKeyboardVisibility()
+        }, 1000)
+
         // 预加载应用列表到缓存，确保扩展面板的应用选择器能快速显示
         // 在后台线程执行，避免阻塞服务启动
         serviceScope.launch {
@@ -238,6 +247,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                         if (newSettings.gestureEnabled) {
                             edgeViewManager.createEdgeViews(settings, settingsProvider)
                             edgeViewManager.showEdgeViews(settings)
+                            // 启用手势后同步检查键盘状态
+                            checkKeyboardVisibility()
                         } else {
                             edgeViewManager.removeEdgeViews()
                         }
@@ -249,6 +260,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                             edgeViewManager.removeEdgeViews()
                             edgeViewManager.createEdgeViews(settings, settingsProvider)
                             edgeViewManager.showEdgeViews(settings)
+                            // 视图重建后同步检查键盘状态
+                            checkKeyboardVisibility()
                         }
                     }
                 }
@@ -605,6 +618,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                     if (settings.gestureEnabled) {
                         edgeViewManager.createEdgeViews(settings, settingsProvider)
                         edgeViewManager.showEdgeViews(settings)
+                        checkKeyboardVisibility()
                     }
                 } else if (settings.gestureEnabled) {
                     if (oldSettings.hideOverlay != settings.hideOverlay) {
@@ -614,7 +628,13 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                         edgeViewManager.removeEdgeViews()
                         edgeViewManager.createEdgeViews(settings, settingsProvider)
                         edgeViewManager.showEdgeViews(settings)
+                        checkKeyboardVisibility()
                     }
+                }
+                // 即使设置未变化，也可能只切换了 avoidKeyboardOverlap 开关，
+                // 每次 refresh 都重新同步键盘状态确保一致性
+                if (settings.gestureEnabled) {
+                    checkKeyboardVisibility()
                 }
             }
         }
