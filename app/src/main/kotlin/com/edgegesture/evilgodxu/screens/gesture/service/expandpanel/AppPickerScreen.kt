@@ -26,6 +26,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +63,14 @@ fun AppPickerScreen(
     val apps by appRepository.appsFlow.collectAsState()
     val isLoading by appRepository.isLoading.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
+
+    // 当应用列表为空时触发后台扫描，确保用户能看到可选应用
+    // 适用于无障碍服务未启动或缓存为空的情况
+    LaunchedEffect(Unit) {
+        if (apps.isEmpty()) {
+            appRepository.refreshAppsIfPermitted()
+        }
+    }
 
     // 本地搜索过滤，无需重新扫描
     val filteredApps = remember(apps, searchQuery) {

@@ -7,14 +7,17 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
+import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.PixelFormat
-import android.graphics.drawable.GradientDrawable
 import android.media.AudioAttributes
 import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Build
 import android.os.IBinder
 import android.os.VibrationEffect
 import android.os.VibratorManager
@@ -22,6 +25,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
@@ -91,6 +95,14 @@ class RemindAlarmService : Service() {
     // 悬浮窗弹窗
     // ============================================================
 
+    // 使用 WindowManager 创建 TYPE_APPLICATION_OVERLAY 覆盖层。
+    // FLAG_TURN_SCREEN_ON 用于息屏时唤醒屏幕。
+    //
+    // 该 flag 自 API 27 标记废弃，官方建议用 Activity.setTurnScreenOn(true) 替代，
+    // 但此方法仅适用于 Activity 的 Window 对象，不适用于 Service 的 WindowManager.addView() 场景。
+    // 而 Service 路径下 Android 未提供等价的非废弃 API，属于 SDK 在该路径上的迭代遗漏。
+    // 保留使用，未来若 Google 在 Service 窗口路径提供替代方案再行迁移。
+    @Suppress("DEPRECATION")
     private fun showAlarmOverlay(minutes: Int) {
         try {
             val wm = getSystemService(WINDOW_SERVICE) as WindowManager
@@ -100,74 +112,77 @@ class RemindAlarmService : Service() {
             // 检测当前主题
             val isDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                     Configuration.UI_MODE_NIGHT_YES
-            val bgCard = if (isDark) 0xFF161B22.toInt() else 0xFFFFFFFF.toInt()
-            val textTitle = if (isDark) 0xFFF0F6FC.toInt() else 0xFF1F2328.toInt()
-            val textBody = if (isDark) 0xFF8B949E.toInt() else 0xFF656D76.toInt()
+            val textColor = if (isDark) 0xFFF0F6FC.toInt() else 0xFF1F2328.toInt()
+            val textBodyColor = if (isDark) 0xFF8B949E.toInt() else 0xFF656D76.toInt()
 
-            // 窗口参数：全屏、覆盖锁屏、点亮屏幕（不加 KEEP_SCREEN_ON 让电源键可关屏）
+            // 窗口参数：全屏、点亮屏幕（不加 KEEP_SCREEN_ON 让电源键可关屏）
             val params = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
-                        WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
                         WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                 PixelFormat.TRANSLUCENT
             )
 
-            // 根布局：半透明遮罩，点击任意位置关闭
-            val maskColor = if (isDark) Color.argb(200, 0, 0, 0) else Color.argb(180, 0, 0, 0)
+            // API 31+: 全屏窗口背景模糊
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                params.blurBehindRadius = 25
+            }
+
+            // 根布局：模糊/半透明遮罩，点击任意位置关闭
+            val bgColor = if (isDark) Color.argb(180, 0, 0, 0) else Color.argb(160, 255, 255, 255)
             val root = LinearLayout(this).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
                 gravity = Gravity.CENTER
-                setBackgroundColor(maskColor)
+                orientation = LinearLayout.VERTICAL
+                setBackgroundColor(bgColor)
                 setOnClickListener { stopAlarm() }
             }
 
-            // 卡片
-            val card = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER_HORIZONTAL
-                val p = dp(24)
-                setPadding(p, dp(32), p, dp(24))
-                val cardWidth = (density * 300).toInt()
-                layoutParams = LinearLayout.LayoutParams(cardWidth, ViewGroup.LayoutParams.WRAP_CONTENT)
-                elevation = dp(8).toFloat()
-                background = GradientDrawable().apply {
-                    setColor(bgCard)
-                    cornerRadius = dp(16).toFloat()
-                }
+            // 闹钟图标（左右晃动动画）
+            val iconSize = dp(80)
+            val iconView = ImageView(this).apply {
+                setImageResource(R.drawable.ic_alarm)
+                layoutParams = ViewGroup.LayoutParams(iconSize, iconSize)
+                imageTintList = ColorStateList.valueOf(textColor)
+                setLayerType(View.LAYER_TYPE_HARDWARE, null)
             }
+            root.addView(iconView)
 
-            // 标题
-            card.addView(TextView(this).apply {
-                text = getString(R.string.gesture_remind_notify_title)
-                textSize = 22f
-                setTextColor(textTitle)
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-                gravity = Gravity.CENTER
+            // 晃动动画：左右旋转摇晃
+            val shakeAnim = ObjectAnimator.ofFloat(iconView, "rotation", -15f, 15f).apply {
+                duration = 500
+                repeatMode = ValueAnimator.REVERSE
+                repeatCount = ValueAnimator.INFINITE
+            }
+            shakeAnim.start()
+
+            // 图标移除时取消动画
+            iconView.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                override fun onViewAttachedToWindow(v: View) {}
+                override fun onViewDetachedFromWindow(v: View) { shakeAnim.cancel() }
             })
 
             // 消息
-            card.addView(TextView(this).apply {
+            root.addView(TextView(this).apply {
                 text = getString(R.string.gesture_remind_notify_body, minutes)
                 textSize = 16f
-                setTextColor(textBody)
+                setTextColor(textBodyColor)
                 gravity = Gravity.CENTER
-                val p = dp(20)
+                val p = dp(32)
                 setPadding(0, p, 0, 0)
             })
 
-            // 关闭后自动停止
-            card.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            // 窗口移除时自动停止闹钟
+            root.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
                 override fun onViewAttachedToWindow(v: View) {}
                 override fun onViewDetachedFromWindow(v: View) { stopAlarm() }
             })
 
-            root.addView(card)
             wm.addView(root, params)
             alarmOverlayView = root
         } catch (_: SecurityException) {

@@ -22,7 +22,6 @@ import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
 import com.edgegesture.evilgodxu.data.gesture.gestureDataStore
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
 import com.edgegesture.evilgodxu.data.app.AppRepository
-import com.edgegesture.evilgodxu.data.gesture.initBlacklistIfNeeded
 import com.edgegesture.evilgodxu.data.gesture.toGestureSettingsState
 import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockRule
 import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockState
@@ -187,8 +186,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         startLaunchBlockFlow()
 
         serviceScope.launch {
-            // 黑名单初始化不应阻塞服务启动，失败时仅打印日志
-            runCatching { initBlacklistIfNeeded() }.onFailure { it.printStackTrace() }
+            // 黑名单初始化由 initializeWithScan() 中的 initBlacklistFromApps() 完成，
+            // 它会根据实际权限状态正确处理（有权限时扫描全部系统应用，无权限时使用已扫描的可启动应用兜底）
             loadSettings()
             if (settings.gestureEnabled) {
                 withContext(Dispatchers.Main) {
@@ -387,7 +386,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         if (rule.enabled) {
             val blockAction = Runnable {
                 // 执行拦截：切换应用或返回桌面
-                if (isLauncherSystemApp && launcherPackage != null) {
+                if (isLauncherSystemApp) {
                     performGlobalAction(GLOBAL_ACTION_HOME)
                 } else if (launcherPackage != null && launcherPackage != packageName) {
                     actionExecutor.performAction(GestureAction.LAST_APP, settings)

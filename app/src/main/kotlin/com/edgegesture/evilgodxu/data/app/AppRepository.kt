@@ -100,6 +100,7 @@ class AppRepository private constructor(private val context: Context) {
 
     // 基于已扫描应用初始化黑名单
     // 有完整权限时包含所有系统应用（包括无入口的），无权限时仅包含已扫描出的可启动系统应用
+    // 注意：不要在此重置 BLACKLIST_INITIALIZED 标志，否则每次扫描都会覆盖用户的自定义黑名单设置
     private suspend fun initBlacklistFromApps(apps: List<AppInfo>) {
         if (hasQueryPermission()) {
             context.initBlacklistIfNeeded()

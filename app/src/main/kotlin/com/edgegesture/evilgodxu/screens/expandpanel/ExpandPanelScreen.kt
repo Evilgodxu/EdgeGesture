@@ -10,7 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -69,7 +69,7 @@ fun ExpandPanelScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.nav_back)
                         )
                     }
@@ -190,8 +190,10 @@ fun ExpandPanelScreen(
             text = {
                 AppPickerScreen(
                     onAppSelected = { packageName ->
+                        // 必须提前捕获 selectedIndex，避免协程调度时被下方 reset 覆盖
+                        val targetIndex = selectedIndex
                         scope.launch {
-                            context.saveExpandPanelShortcut(selectedIndex, packageName)
+                            context.saveExpandPanelShortcut(targetIndex, packageName)
                         }
                         showAppPicker = false
                         selectedIndex = -1
