@@ -272,4 +272,20 @@
     <string name="back_tap_pause_on_charging_desc">Rückseite tippen während des Ladens pausieren</string>
     <string name="back_tap_config_title">Rückseite tippen Konfiguration</string>
 
+    <!-- App-Update -->
+    <string name="update_channel_name">App-Updates</string>
+    <string name="update_channel_desc">Benachrichtigungen zu neuen Versionen</string>
+    <string name="update_notification_title">Neue Version verfügbar</string>
+    <string name="update_notification_text">EdgeGesture %s ist verfügbar</string>
+    <string name="update_dialog_title">Neue Version %s verfügbar</string>
+    <string name="update_dialog_description">Eine neue Version ist verfügbar. Jetzt herunterladen?</string>
+    <string name="update_dialog_description_alt">Neue Version herunterladen und installieren?</string>
+    <string name="update_dialog_downloading">Wird heruntergeladen...</string>
+    <string name="update_dialog_download_failed">Download fehlgeschlagen. Bitte über den Browser herunterladen.</string>
+    <string name="update_dialog_up_to_date">Bereits auf dem neuesten Stand</string>
+    <string name="update_dialog_changelog_title">Änderungsprotokoll:</string>
+    <string name="update_dialog_download">Herunterladen</string>
+    <string name="update_dialog_later">Später</string>
+    <string name="update_dialog_open_browser">Im Browser öffnen</string>
+
 </resources>

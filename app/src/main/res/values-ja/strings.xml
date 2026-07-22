@@ -273,4 +273,20 @@
     <string name="back_tap_pause_on_charging_title">充電中は一時停止</string>
     <string name="back_tap_pause_on_charging_desc">充電中は背面ダブルタップを自動的に一時停止してバッテリーを節約します</string>
     <string name="back_tap_config_title">背面ダブルタップ設定</string>
+
+    <!-- アプリ更新 -->
+    <string name="update_channel_name">アプリ更新</string>
+    <string name="update_channel_desc">新バージョンの更新通知</string>
+    <string name="update_notification_title">新バージョンがあります</string>
+    <string name="update_notification_text">EdgeGesture %s が利用可能です</string>
+    <string name="update_dialog_title">新バージョン %s があります</string>
+    <string name="update_dialog_description">新しいバージョンが利用可能です。ダウンロードしますか？</string>
+    <string name="update_dialog_description_alt">新しいバージョンをダウンロードしてインストールしますか？</string>
+    <string name="update_dialog_downloading">ダウンロード中...</string>
+    <string name="update_dialog_download_failed">ダウンロードに失敗しました。ブラウザからダウンロードしてください。</string>
+    <string name="update_dialog_up_to_date">最新バージョンです</string>
+    <string name="update_dialog_changelog_title">更新履歴：</string>
+    <string name="update_dialog_download">ダウンロード</string>
+    <string name="update_dialog_later">後で</string>
+    <string name="update_dialog_open_browser">ブラウザで開く</string>
 </resources>

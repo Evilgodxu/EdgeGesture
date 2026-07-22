@@ -278,4 +278,14 @@
     <string name="update_channel_desc">新版本更新通知</string>
     <string name="update_notification_title">发现新版本</string>
     <string name="update_notification_text">边缘手势 %s 已可用</string>
+    <string name="update_dialog_title">发现新版本 %s</string>
+    <string name="update_dialog_description">新版本已可用，是否前往下载？</string>
+    <string name="update_dialog_description_alt">是否下载并安装新版本？</string>
+    <string name="update_dialog_downloading">正在下载...</string>
+    <string name="update_dialog_download_failed">下载失败，请尝试使用浏览器下载</string>
+    <string name="update_dialog_up_to_date">已是最新版本</string>
+    <string name="update_dialog_changelog_title">更新日志：</string>
+    <string name="update_dialog_download">下载</string>
+    <string name="update_dialog_later">稍后</string>
+    <string name="update_dialog_open_browser">在浏览器中打开</string>
 </resources>

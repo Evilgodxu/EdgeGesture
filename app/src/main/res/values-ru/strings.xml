@@ -272,4 +272,20 @@
     <string name="back_tap_pause_on_charging_title">Пауза при зарядке</string>
     <string name="back_tap_pause_on_charging_desc">Пауза двойного касания при зарядке</string>
     <string name="back_tap_config_title">Конфигурация двойного касания</string>
+
+    <!-- Обновление приложения -->
+    <string name="update_channel_name">Обновления</string>
+    <string name="update_channel_desc">Уведомления о новых версиях</string>
+    <string name="update_notification_title">Доступна новая версия</string>
+    <string name="update_notification_text">EdgeGesture %s доступна</string>
+    <string name="update_dialog_title">Новая версия %s доступна</string>
+    <string name="update_dialog_description">Доступна новая версия. Скачать?</string>
+    <string name="update_dialog_description_alt">Скачать и установить новую версию?</string>
+    <string name="update_dialog_downloading">Загрузка...</string>
+    <string name="update_dialog_download_failed">Ошибка загрузки. Попробуйте скачать через браузер.</string>
+    <string name="update_dialog_up_to_date">Уже последняя версия</string>
+    <string name="update_dialog_changelog_title">Список изменений:</string>
+    <string name="update_dialog_download">Скачать</string>
+    <string name="update_dialog_later">Позже</string>
+    <string name="update_dialog_open_browser">Открыть в браузере</string>
 </resources>

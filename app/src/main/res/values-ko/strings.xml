@@ -272,4 +272,20 @@
     <string name="back_tap_pause_on_charging_desc">충전 중 뒷면 탭을 자동으로 일시 중지하여 배터리 절약</string>
     <string name="back_tap_config_title">뒷면 탭 설정</string>
 
+    <!-- 앱 업데이트 -->
+    <string name="update_channel_name">앱 업데이트</string>
+    <string name="update_channel_desc">새 버전 업데이트 알림</string>
+    <string name="update_notification_title">새 버전 발견</string>
+    <string name="update_notification_text">EdgeGesture %s 사용 가능</string>
+    <string name="update_dialog_title">새 버전 %s 발견</string>
+    <string name="update_dialog_description">새 버전이 있습니다. 다운로드하시겠습니까?</string>
+    <string name="update_dialog_description_alt">새 버전을 다운로드하여 설치하시겠습니까?</string>
+    <string name="update_dialog_downloading">다운로드 중...</string>
+    <string name="update_dialog_download_failed">다운로드에 실패했습니다. 브라우저에서 다운로드해 주세요.</string>
+    <string name="update_dialog_up_to_date">최신 버전입니다</string>
+    <string name="update_dialog_changelog_title">변경 로그:</string>
+    <string name="update_dialog_download">다운로드</string>
+    <string name="update_dialog_later">나중에</string>
+    <string name="update_dialog_open_browser">브라우저에서 열기</string>
+
 </resources>

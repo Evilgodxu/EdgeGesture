@@ -277,5 +277,15 @@
     <string name="update_channel_desc">New version update notifications</string>
     <string name="update_notification_title">New Version Available</string>
     <string name="update_notification_text">EdgeGesture %s is available</string>
+    <string name="update_dialog_title">New Version %s Available</string>
+    <string name="update_dialog_description">A new version is available. Download now?</string>
+    <string name="update_dialog_description_alt">Download and install the new version?</string>
+    <string name="update_dialog_downloading">Downloading...</string>
+    <string name="update_dialog_download_failed">Download failed. Please try downloading from the browser.</string>
+    <string name="update_dialog_up_to_date">Already up to date</string>
+    <string name="update_dialog_changelog_title">Changelog:</string>
+    <string name="update_dialog_download">Download</string>
+    <string name="update_dialog_later">Later</string>
+    <string name="update_dialog_open_browser">Open in Browser</string>
 
 </resources>

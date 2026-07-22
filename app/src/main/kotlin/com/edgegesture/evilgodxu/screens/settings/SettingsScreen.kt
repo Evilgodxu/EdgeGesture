@@ -60,6 +60,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowSizeClass
+import com.edgegesture.evilgodxu.DownloadState
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.UpdateInfo
 import com.edgegesture.evilgodxu.UpdateManager
@@ -209,6 +210,7 @@ fun SettingsScreen(
     var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
     var showUpdateDialog by remember { mutableStateOf(false) }
     var showUpToDate by remember { mutableStateOf(false) }
+    var downloadState by remember { mutableStateOf<DownloadState>(DownloadState.Idle) }
     val checkScope = androidx.compose.runtime.rememberCoroutineScope()
 
     DisposableEffect(Unit) {
@@ -525,11 +527,15 @@ fun SettingsScreen(
 
     // 更新检测对话框
     if (showUpdateDialog && updateInfo != null) {
+        val isDownloading = downloadState is DownloadState.Downloading
+        val isFailed = downloadState is DownloadState.Failed
+        val progress = (downloadState as? DownloadState.Downloading)?.progress ?: 0f
+
         AlertDialog(
-            onDismissRequest = { showUpdateDialog = false },
+            onDismissRequest = { if (!isDownloading) { showUpdateDialog = false; downloadState = DownloadState.Idle } },
             title = {
                 Text(
-                    text = "发现新版本 ${updateInfo!!.latestVersion}",
+                    text = stringResource(R.string.update_dialog_title, updateInfo!!.latestVersion),
                     fontWeight = FontWeight.Bold
                 )
             },
@@ -539,14 +545,44 @@ fun SettingsScreen(
                         .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
                 ) {
-                    Text(
-                        text = "是否下载并安装新版本？",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                    if (isFailed) {
+                        Text(
+                            text = stringResource(R.string.update_dialog_download_failed),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    } else if (isDownloading) {
+                        Text(
+                            text = stringResource(R.string.update_dialog_downloading),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier.size(48.dp),
+                                strokeWidth = 4.dp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "${(progress * 100).toInt()}%",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = stringResource(R.string.update_dialog_description_alt),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                     if (updateInfo!!.changelog.isNotBlank()) {
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "更新日志：",
+                            text = stringResource(R.string.update_dialog_changelog_title),
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -560,18 +596,44 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    showUpdateDialog = false
-                    checkScope.launch {
-                        UpdateManager.downloadAndInstall(context, updateInfo!!)
+                when {
+                    isFailed -> TextButton(onClick = {
+                        showUpdateDialog = false
+                        downloadState = DownloadState.Idle
+                        val url = updateInfo!!.downloadUrl
+                        if (url.startsWith("http")) {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        }
+                    }) {
+                        Text(stringResource(R.string.update_dialog_open_browser))
                     }
-                }) {
-                    Text("下载")
+                    !isDownloading -> TextButton(onClick = {
+                        downloadState = DownloadState.Downloading(0f)
+                        checkScope.launch {
+                            val success = UpdateManager.downloadAndInstall(
+                                context, updateInfo!!,
+                                onProgress = { p ->
+                                    downloadState = if (p < 0f) DownloadState.Failed("download_failed")
+                                    else DownloadState.Downloading(p)
+                                }
+                            )
+                            if (success) {
+                                downloadState = DownloadState.Success
+                                showUpdateDialog = false
+                            } else if (downloadState !is DownloadState.Failed) {
+                                downloadState = DownloadState.Failed("download_failed")
+                            }
+                        }
+                    }) {
+                        Text(stringResource(R.string.update_dialog_download))
+                    }
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showUpdateDialog = false }) {
-                    Text("稍后")
+                if (!isDownloading) {
+                    TextButton(onClick = { showUpdateDialog = false; downloadState = DownloadState.Idle }) {
+                        Text(stringResource(R.string.update_dialog_later))
+                    }
                 }
             }
         )
@@ -579,7 +641,7 @@ fun SettingsScreen(
 
     // 已是最新版本提示
     if (showUpToDate) {
-        android.widget.Toast.makeText(context, "已是最新版本", android.widget.Toast.LENGTH_SHORT).show()
+        android.widget.Toast.makeText(context, context.getString(R.string.update_dialog_up_to_date), android.widget.Toast.LENGTH_SHORT).show()
         showUpToDate = false
     }
 }
