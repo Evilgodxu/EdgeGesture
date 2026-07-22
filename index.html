@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EdgeGesture Demo</title>
+    <title>边缘手势</title>
     <style>
         :root {
             --bg:#0d1117;
@@ -99,15 +99,13 @@
         .header-icon {
             width:32px;
             height:32px;
-            background:var(--icon-bg);
-            border-radius:8px;
             display:flex;
             align-items:center;
             justify-content:center;
         }
         .header-icon svg {
-            width:18px;
-            height:18px;
+            width:24px;
+            height:24px;
             stroke:var(--accent);
             fill:none;
             stroke-width:2;
@@ -156,43 +154,6 @@
             margin-bottom:16px;
             box-shadow:var(--card-shadow, 0 4px 16px rgba(0,0,0,.35));
         }
-        .card-label {
-            font-size:11px;
-            font-weight:600;
-            color:var(--muted);
-            text-transform:uppercase;
-            letter-spacing:1px;
-            margin-bottom:8px;
-            display:block;
-        }
-
-        .card-header {
-            display:flex;
-            align-items:center;
-            gap:10px;
-            margin-bottom:16px;
-        }
-        .card-header-icon {
-            width:32px;
-            height:32px;
-            background:var(--icon-bg);
-            border-radius:10px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-        }
-        .card-header-icon svg {
-            width:16px;
-            height:16px;
-            stroke-width:2;
-            fill:none;
-        }
-        .card-header-title {
-            font-size:15px;
-            font-weight:500;
-            color:var(--title);
-        }
-
         .status-card h1 {
             font-size:36px;
             font-weight:300;
@@ -323,13 +284,11 @@
             gap:12px;
         }
         .permission-icon {
-            width:34px;
-            height:34px;
-            border-radius:10px;
+            width:24px;
+            height:24px;
             display:flex;
             align-items:center;
             justify-content:center;
-            background:var(--icon-bg);
             flex-shrink:0;
         }
         .permission-icon svg {
@@ -443,8 +402,6 @@
             position:relative;
             width:100%;
             height:180px;
-            border-radius:16px;
-            overflow:hidden;
             display:flex;
             align-items:center;
             justify-content:center;
@@ -455,7 +412,6 @@
             height:170px;
             border:2px solid var(--border);
             border-radius:16px;
-            background:var(--card);
         }
         .edge-zone {
             position:absolute;
@@ -553,17 +509,15 @@
             gap:12px;
         }
         .summary-icon {
-            width:36px;
-            height:36px;
-            background:var(--icon-bg);
-            border-radius:10px;
+            width:28px;
+            height:28px;
             display:flex;
             align-items:center;
             justify-content:center;
         }
         .summary-icon svg {
-            width:18px;
-            height:18px;
+            width:22px;
+            height:22px;
             stroke-width:2;
             fill:none;
         }
@@ -586,12 +540,13 @@
         }
 
         .section-title {
+            display:block;
             font-size:12px;
             font-weight:600;
             color:var(--muted);
             text-transform:uppercase;
             letter-spacing:1.2px;
-            margin:20px 0 10px 4px;
+            margin:24px 0 12px 4px;
         }
 
         .backtap-summary {
@@ -724,9 +679,8 @@
             gap:10px;
         }
         .action-row-icon {
-            width:28px;
-            height:28px;
-            border-radius:8px;
+            width:20px;
+            height:20px;
             display:flex;
             align-items:center;
             justify-content:center;
@@ -862,10 +816,8 @@
             background:var(--icon-bg);
         }
         .picker-item-icon {
-            width:32px;
-            height:32px;
-            background:var(--icon-bg);
-            border-radius:8px;
+            width:24px;
+            height:24px;
             display:flex;
             align-items:center;
             justify-content:center;
@@ -1289,6 +1241,51 @@
             height:40px;
         }
 
+        /* Settings item */
+        .settings-item {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            padding:12px 16px;
+            cursor:pointer;
+            transition:all .15s;
+        }
+        .settings-item:hover {
+            background:var(--icon-bg);
+        }
+        .settings-item-left {
+            display:flex;
+            align-items:center;
+            gap:16px;
+            flex:1;
+            min-width:0;
+        }
+        .settings-item-icon {
+            width:20px;
+            height:20px;
+            stroke:var(--muted);
+            fill:none;
+            stroke-width:2;
+            flex-shrink:0;
+        }
+        .settings-item-title {
+            font-size:16px;
+            color:var(--title);
+        }
+        .settings-item-subtitle {
+            font-size:14px;
+            color:var(--muted);
+            margin-top:2px;
+        }
+        .settings-item-arrow {
+            width:16px;
+            height:16px;
+            stroke:var(--muted);
+            fill:none;
+            stroke-width:2;
+            flex-shrink:0;
+        }
+
         @media (max-width:480px) {
             #app {
                 padding:12px;
@@ -1335,11 +1332,11 @@
                     </div>
                 </div>
 
-                <!-- 启动服务卡片 -->
+                <!-- 服务状态 -->
+                <span class="section-title">服务状态</span>
                 <div class="card status-card" id="statusCard">
-                    <span class="card-label">服务状态</span>
                     <div style="display:flex;align-items:center;gap:8px;"><h1 id="statusTitle">已停止</h1><div id="headerStatusDot" style="width:8px;height:8px;background:var(--red);border-radius:50%;flex-shrink:0;"></div></div>
-                    <p class="subtitle">无障碍服务 · 边缘手势引擎</p>
+                    <p class="subtitle">无障碍服务 · 边缘手势</p>
                     <div class="btn-row">
                         <button class="btn btn-primary" id="startBtn" onclick="toggleService()">
                             <svg id="playIcon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21"/></svg>
@@ -1357,11 +1354,11 @@
                             <div class="spec-value" id="gestureCount">6</div>
                             <div class="spec-label">手势</div>
                         </div>
-                        <div class="spec-item">
+                        <div class="spec-item" style="cursor:pointer;" onclick="cycleStatsPeriod()" title="点击切换统计周期">
                             <!-- 次数图标：三个条形图 -->
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="4" height="10"/><rect x="10" y="4" width="4" height="16"/><rect x="16" y="6" width="4" height="14"/></svg>
                             <div class="spec-value" id="triggerCount">0</div>
-                            <div class="spec-label">次数</div>
+                            <div class="spec-label" id="statsPeriodLabel">近1天</div>
                         </div>
                         <div class="spec-item">
                             <!-- 拦截图标：带X的八边形 -->
@@ -1372,48 +1369,48 @@
                     </div>
                 </div>
 
-                <!-- 权限状态卡片 -->
+                <!-- 权限状态 -->
+                <span class="section-title">权限状态</span>
                 <div class="card" id="permCard">
-                    <span class="card-label">权限状态</span>
                     <div class="permission-card">
                         <div class="permission-card-left">
                             <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                            <div><div class="permission-title">无障碍服务</div><div class="permission-desc">实现覆盖系统手势操作并执行返回、主页等系统操作</div></div>
+                            <div><div class="permission-title">无障碍服务权限</div><div class="permission-desc">实现系统级手势操作</div></div>
                         </div>
                         <div class="permission-status denied" id="permAccessibility" onclick="grantPermission('permAccessibility')">去授权</div>
                     </div>
                     <div class="permission-card">
                         <div class="permission-card-left">
                             <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><rect x="6" y="2" width="12" height="20" rx="2" fill="none"/><rect x="7" y="4" width="5" height="4" rx="1" fill="none"/><line x1="7" y1="6" x2="12" y2="6"/></svg></div>
-                            <div><div class="permission-title">悬浮窗权限</div><div class="permission-desc">创建边缘手势触发区域</div></div>
+                            <div><div class="permission-title">悬浮窗权限</div><div class="permission-desc">创建手势触发区域与扩展面板所需</div></div>
                         </div>
                         <div class="permission-status denied" id="permOverlay" onclick="grantPermission('permOverlay')">去授权</div>
                     </div>
                     <div class="permission-card">
                         <div class="permission-card-left">
                             <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
-                            <div><div class="permission-title">通知权限</div><div class="permission-desc">保持服务在后台运行</div></div>
+                            <div><div class="permission-title">通知权限</div><div class="permission-desc">保持手势服务在后台运行所需</div></div>
                         </div>
                         <div class="permission-status denied" id="permNotification" onclick="grantPermission('permNotification')">去授权</div>
                     </div>
                     <div class="permission-card">
                         <div class="permission-card-left">
                             <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><rect x="7" y="4" width="10" height="18" rx="2" fill="none"/><path d="M10 2h4"/></svg></div>
-                            <div><div class="permission-title">电池优化白名单</div><div class="permission-desc">确保后台持续运行</div></div>
+                            <div><div class="permission-title">省电优化权限</div><div class="permission-desc">避免系统省电终止手势服务所需</div></div>
                         </div>
                         <div class="permission-status denied" id="permBattery" onclick="grantPermission('permBattery')">去授权</div>
                     </div>
                     <div class="permission-card">
                         <div class="permission-card-left">
                             <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-                            <div><div class="permission-title">使用情况访问权限</div><div class="permission-desc">实现上一个应用切换</div></div>
+                            <div><div class="permission-title">使用情况访问权限</div><div class="permission-desc">切换到上一个应用所需</div></div>
                         </div>
                         <div class="permission-status denied" id="permUsage" onclick="grantPermission('permUsage')">去授权</div>
                     </div>
                     <div class="permission-card">
                         <div class="permission-card-left">
                             <div class="permission-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
-                            <div><div class="permission-title">获取已安装应用列表</div><div class="permission-desc">管理应用切换黑名单</div></div>
+                            <div><div class="permission-title">获取已安装应用权限</div><div class="permission-desc">创建应用切换黑名单所需</div></div>
                         </div>
                         <div class="permission-status denied" id="permQuery" onclick="grantPermission('permQuery')">去授权</div>
                     </div>
@@ -1461,7 +1458,7 @@
                 <div class="backtap-summary" onclick="goToBackTap()">
                     <div class="summary-card-left">
                         <div class="summary-icon"><svg viewBox="0 0 24 24" style="stroke:var(--orange)"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/><path d="M8 8l2 2 4-4"/></svg></div>
-                        <div><div class="summary-title">背面双击</div><div class="summary-desc">灵敏度5 · 范围5 · 主页键</div></div>
+                        <div><div class="summary-title">背面双击</div><div class="summary-desc">灵敏度5 · 范围5</div></div>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;">
                         <span class="backtap-tag" id="backtapTag">未启用</span>
@@ -1469,14 +1466,12 @@
                     </div>
                 </div>
 
+                <span class="section-title">触发区设置</span>
                 <div class="card">
-                    <div class="card-header">
-                        <div class="card-header-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-                        <span class="card-header-title">触发区设置</span>
-                    </div>
-                    <div class="toggle-row"><div class="toggle-info"><span class="toggle-title">隐藏显示</span><span class="toggle-desc">隐藏手势触发区视觉指示</span></div><label class="switch"><input type="checkbox" id="swHideOverlay"><span class="switch-slider"></span></label></div>
+                    <div class="toggle-row"><div class="toggle-info"><span class="toggle-title">隐藏显示</span><span class="toggle-desc">隐藏手势触发区</span></div><label class="switch"><input type="checkbox" id="swHideOverlay"><span class="switch-slider"></span></label></div>
                     <div class="toggle-row"><div class="toggle-info"><span class="toggle-title">隐藏后台</span><span class="toggle-desc">在最近任务列表中隐藏本应用</span></div><label class="switch"><input type="checkbox" id="swHideRecents"><span class="switch-slider"></span></label></div>
-                    <div class="toggle-row"><div class="toggle-info"><span class="toggle-title">避免遮挡</span><span class="toggle-desc">输入法弹出时自动禁用手势</span></div><label class="switch"><input type="checkbox" id="swAvoidKeyboard"><span class="switch-slider"></span></label></div>
+                    <div class="toggle-row"><div class="toggle-info"><span class="toggle-title">避免遮挡</span><span class="toggle-desc">输入法弹出时自动禁用手势触发区</span></div><label class="switch"><input type="checkbox" id="swAvoidKeyboard"><span class="switch-slider"></span></label></div>
+                    <div class="toggle-row" style="border-bottom:none;"><div class="toggle-info"><span class="toggle-title">震动反馈</span><span class="toggle-desc">滑动操作时触发震动效果</span></div><label class="switch"><input type="checkbox" id="swVibration"><span class="switch-slider"></span></label></div>
                 </div>
 
                 <div class="section-title">更多功能</div>
@@ -1492,12 +1487,9 @@
             <!-- ==================== EDGE CONFIG ==================== -->
             <div id="page-edge" class="page">
                 <div class="back-nav" onclick="goBack()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg><span id="edgeBackTitle">手势配置</span></div>
+                <span class="section-title" id="edgeConfigTitle">左侧手势配置</span>
                 <div class="card">
-                    <div class="card-header">
-                        <div class="card-header-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg></div>
-                        <span class="card-header-title" id="edgeConfigTitle">左侧手势配置</span>
-                    </div>
-                    <div style="width:100%;height:120px;background:var(--icon-bg);border-radius:14px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);">
+                    <div style="width:100%;height:120px;border-radius:14px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;">
                         <div class="phone-frame" style="width:90px;height:100px;">
                             <div id="previewEdge" style="position:absolute;left:0;top:20%;width:5px;height:60%;background:var(--accent);border-radius:0 3px 3px 0;"></div>
                             <div id="previewDividers" style="position:absolute;inset:0;pointer-events:none;"></div>
@@ -1519,7 +1511,7 @@
 
                 <div class="section-title">手势操作</div>
                 <div class="segment-tabs" id="segmentTabs">
-                    <div class="segment-tab active" onclick="setSegment(1)" data-segment="1">第1段</div>
+                    <div class="segment-tab hidden" onclick="setSegment(1)" data-segment="1">第1段</div>
                     <div class="segment-tab hidden" onclick="setSegment(2)" data-segment="2">第2段</div>
                     <div class="segment-tab hidden" onclick="setSegment(3)" data-segment="3">第3段</div>
                 </div>
@@ -1558,16 +1550,13 @@
             <!-- ==================== BACK TAP ==================== -->
             <div id="page-backtap" class="page">
                 <div class="back-nav" onclick="goBack()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg><span>返回</span></div>
+                <span class="section-title">背面双击</span>
                 <div class="card">
-                    <div class="card-header">
-                        <div class="card-header-icon"><svg viewBox="0 0 24 24" style="stroke:var(--orange)"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/><path d="M8 8l2 2 4-4"/></svg></div>
-                        <span class="card-header-title">背面双击</span>
-                    </div>
-                    <div class="toggle-row" style="border-bottom:1px solid var(--border);margin-bottom:16px;"><div class="toggle-info"><span class="toggle-title">启用背面双击</span><span class="toggle-desc">通过加速度计检测背面双击</span></div><label class="switch"><input type="checkbox" id="swBackTap" onchange="onBackTapToggle()"><span class="switch-slider"></span></label></div>
+                    <div class="toggle-row" style="border-bottom:1px solid var(--border);margin-bottom:16px;"><div class="toggle-info"><span class="toggle-title">背面双击</span><span class="toggle-desc">双击手机背面触发操作</span></div><label class="switch"><input type="checkbox" id="swBackTap" onchange="onBackTapToggle()"><span class="switch-slider"></span></label></div>
                     <div class="slider-row" data-slider="btSensitivity"><div class="slider-label"><span>灵敏度</span><span class="val" id="valBtSensitivity">5</span></div><div class="slider-track" data-min="1" data-max="10" data-value="5"><div class="slider-fill" style="width:44%"></div><div class="slider-thumb" style="left:44%"></div></div></div>
                     <div class="slider-row" data-slider="btRange"><div class="slider-label"><span>检测范围</span><span class="val" id="valBtRange">5</span></div><div class="slider-track" data-min="1" data-max="10" data-value="5"><div class="slider-fill" style="width:44%"></div><div class="slider-thumb" style="left:44%"></div></div></div>
-                    <div style="margin-top:8px;"><span style="font-size:13px;color:var(--title);display:block;margin-bottom:8px;">工作模式</span><div class="mode-selector" id="backTapModeSelector"><div class="mode-btn active" data-value="always">始终激活</div><div class="mode-btn" data-value="screen_off">仅黑屏激活</div><div class="mode-btn" data-value="screen_on">仅亮屏激活</div></div></div>
-                    <div class="toggle-row" style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;"><div class="toggle-info"><span class="toggle-title">充电时暂停</span><span class="toggle-desc">充电时自动暂停背面双击以节省电量</span></div><label class="switch"><input type="checkbox"><span class="switch-slider"></span></label></div>
+                    <div style="margin-top:8px;"><span style="font-size:13px;color:var(--title);display:block;margin-bottom:8px;">工作模式</span><div class="mode-selector" id="backTapModeSelector"><div class="mode-btn active" data-value="always">始终激活</div><div class="mode-btn" data-value="screen_off">熄屏激活</div><div class="mode-btn" data-value="screen_on">亮屏激活</div></div></div>
+                    <div class="toggle-row" style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;"><div class="toggle-info"><span class="toggle-title">充电时暂停</span><span class="toggle-desc">充电时自动暂停背面双击以节省电量</span></div><label class="switch"><input type="checkbox" id="swBackTapPauseCharging"><span class="switch-slider"></span></label></div>
                 </div>
                 <div class="card" style="padding:16px;">
                     <div class="action-row" onclick="openActionPicker('背面双击')"><div class="action-row-left"><div class="action-row-icon"><svg viewBox="0 0 24 24" style="stroke:var(--orange)"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div><span class="action-row-title">触发操作</span></div><span class="action-row-value">主页键</span><svg class="action-row-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
@@ -1576,19 +1565,63 @@
             </div>
 
             <!-- ==================== SETTINGS ==================== -->
+            <!-- 兼容旧版引用 -->
             <div id="page-settings" class="page">
                 <div class="back-nav" onclick="goBack()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg><span>返回</span></div>
-                <div class="card">
-                    <div class="card-header"><div class="card-header-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l-.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div><span class="card-header-title">设置</span></div>
-                    <div class="toggle-row" style="border-bottom:1px solid var(--border);"><div class="toggle-info"><span class="toggle-title">主题模式</span><span class="toggle-desc">切换深色/浅色主题</span></div><select style="background:var(--icon-bg);border:1px solid var(--border);border-radius:12px;padding:8px 12px;color:var(--title);font-size:13px;font-weight:500;outline:none;cursor:pointer;" onchange="setTheme(this.value)"><option value="system" selected>跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></div>
-                    <div class="toggle-row" style="border-bottom:1px solid var(--border);" onclick="alert('打开语言选择')"><div class="toggle-info"><span class="toggle-title">应用语言</span><span class="toggle-desc">简体中文</span></div><span style="color:var(--accent);font-size:14px;font-weight:500;">简体中文 ›</span></div>
-                    <div class="toggle-row"><div class="toggle-info"><span class="toggle-title">震动反馈</span><span class="toggle-desc">滑动操作时触发震动</span></div><label class="switch"><input type="checkbox" id="swVibration"><span class="switch-slider"></span></label></div>
+
+                <!-- 外观 -->
+                <span class="section-title">外观</span>
+                <div class="card" style="padding:4px 0;">
+                    <div class="settings-item" onclick="openThemeDialog()">
+                        <div class="settings-item-left">
+                            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l-.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            <div><div class="settings-item-title">主题模式</div><div class="settings-item-subtitle" id="settingsThemeLabel">跟随系统</div></div>
+                        </div>
+                        <svg class="settings-item-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
                 </div>
-                <div class="card">
-                    <div class="card-header"><div class="card-header-icon"><svg viewBox="0 0 24 24" style="stroke:var(--muted)"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div><span class="card-header-title">关于</span></div>
-                    <div class="toggle-row" style="border-bottom:1px solid var(--border);"><div class="toggle-info"><span class="toggle-title">版本</span></div><span style="color:var(--muted);font-size:14px;">v3.0.0</span></div>
-                    <div class="toggle-row" style="border-bottom:1px solid var(--border);" onclick="alert('打开开源许可')"><div class="toggle-info"><span class="toggle-title">开源许可</span></div><span style="color:var(--accent);font-size:14px;">查看 ›</span></div>
-                    <div class="toggle-row" onclick="alert('打开打赏')"><div class="toggle-info"><span class="toggle-title">打赏支持</span></div><span style="color:var(--accent);font-size:14px;">❤️ ›</span></div>
+
+                <!-- 语言 -->
+                <span class="section-title">语言</span>
+                <div class="card" style="padding:4px 0;">
+                    <div class="settings-item" onclick="openLanguageDialog()">
+                        <div class="settings-item-left">
+                            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            <div><div class="settings-item-title">应用语言</div><div class="settings-item-subtitle" id="currentLanguageDesc">简体中文</div></div>
+                        </div>
+                        <svg class="settings-item-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
+                </div>
+
+                <!-- 关于 -->
+                <span class="section-title">关于</span>
+                <div class="card" style="padding:4px 0;">
+                    <div class="settings-item" onclick="openDonateDialog()">
+                        <div class="settings-item-left">
+                            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg>
+                            <div><div class="settings-item-title">捐赠打赏</div><div class="settings-item-subtitle">支持开发者继续改进应用</div></div>
+                        </div>
+                        <svg class="settings-item-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
+                    <div style="height:1px;background:var(--border);margin:0 16px;"></div>
+                    <div class="settings-item" onclick="openOpenSourceDialog()">
+                        <div class="settings-item-left">
+                            <svg class="settings-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                            <div><div class="settings-item-title">开源许可</div><div class="settings-item-subtitle">查看本项目使用的开源库</div></div>
+                        </div>
+                        <svg class="settings-item-arrow" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+                    </div>
+                </div>
+
+                <!-- 底部版本信息 -->
+                <div style="text-align:center;padding-top:16px;padding-bottom:2px;">
+                    <span style="font-size:14px;font-weight:500;color:var(--muted);">Evilgodxu</span>
+                </div>
+                <div style="text-align:center;padding-bottom:6px;">
+                    <span style="font-size:13px;color:var(--muted);opacity:.6;">版本 v3.1.4</span>
+                </div>
+                <div style="text-align:center;padding-bottom:24px;">
+                    <a href="https://github.com/Evilgodxu/EdgeGesture" target="_blank" style="color:var(--accent);font-size:12px;text-decoration:underline;">https://github.com/Evilgodxu/EdgeGesture</a>
                 </div>
                 <div class="spacer"></div>
             </div>
@@ -1596,11 +1629,10 @@
             <!-- ==================== EXPAND PANEL ==================== -->
             <div id="page-expand" class="page">
                 <div class="back-nav" onclick="goBack()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg><span>返回</span></div>
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-header-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div>
-                        <span class="card-header-title">扩展面板</span>
-                    </div>
+
+                <!-- 系统控制 -->
+                <span class="section-title">系统控制</span>
+                <div class="card" style="padding:20px;">
                     <div class="vertical-sliders">
                         <div class="vertical-slider" data-value="0.6">
                             <div class="vertical-slider-track" onclick="onVerticalSliderClick(event,this)">
@@ -1648,11 +1680,8 @@
             <!-- ==================== BLACKLIST ==================== -->
             <div id="page-blacklist" class="page">
                 <div class="back-nav" onclick="goBack()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg><span>返回</span></div>
+                <span class="section-title">应用黑名单</span>
                 <div class="card">
-                    <div class="card-header">
-                        <div class="card-header-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
-                        <span class="card-header-title">应用切换黑名单</span>
-                    </div>
                     <div id="blacklistState" class="blacklist-state">
                         <div class="loading-spinner"></div>
                         <div>加载中…</div>
@@ -1668,11 +1697,8 @@
             <!-- ==================== LAUNCH BLOCK ==================== -->
             <div id="page-launchblock" class="page">
                 <div class="back-nav" onclick="goBack()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg><span>返回</span></div>
+                <span class="section-title">启动拦截</span>
                 <div class="card">
-                    <div class="card-header">
-                        <div class="card-header-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-                        <span class="card-header-title">启动拦截</span>
-                    </div>
                     <div class="toggle-row"><div class="toggle-info"><span class="toggle-title">启用启动拦截</span><span class="toggle-desc">拦截指定应用的启动行为</span></div><label class="switch"><input type="checkbox" id="swLaunchBlock" onchange="onLaunchBlockToggle()"><span class="switch-slider"></span></label></div>
                 </div>
                 <div class="section-title">拦截规则 <span style="color:var(--muted);font-weight:400;">(共 1 条)</span></div>
@@ -1702,6 +1728,13 @@
                     <div class="picker-item" onclick="selectAction('锁屏')"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><span>锁屏</span></div>
                     <div class="picker-item" onclick="selectAction('截屏')"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div><span>截屏</span></div>
                     <div class="picker-item" onclick="selectAction('扩展面板')"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></div><span>扩展面板</span></div>
+                    <div class="picker-item" onclick="selectAction('支付宝扫一扫')"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg></div><span>支付宝扫一扫</span></div>
+                    <div class="picker-item" onclick="selectAction('微信扫一扫')"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg></div><span>微信扫一扫</span></div>
+                    <div class="picker-item" onclick="selectAction('1分钟后提醒')"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--orange)"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><span>1分钟后提醒</span></div>
+                    <div class="picker-item" onclick="selectAction('3分钟后提醒')"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--orange)"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><span>3分钟后提醒</span></div>
+                    <div class="picker-item" onclick="selectAction('5分钟后提醒')"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--orange)"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><span>5分钟后提醒</span></div>
+                    <div class="picker-item" onclick="selectAction('10分钟后提醒')"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--orange)"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><span>10分钟后提醒</span></div>
+                    <div class="picker-item" onclick="selectAction('15分钟后提醒')"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--orange)"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><span>15分钟后提醒</span></div>
                 </div>
             </div>
 
@@ -1741,6 +1774,63 @@
                         <!-- JS fills -->
                     </div>
                     <input type="text" class="dialog-input" id="appPickerSearch" placeholder="搜索应用名称或包名" oninput="filterAppPicker()" style="margin-bottom:0;">
+                </div>
+            </div>
+
+            <!-- ==================== THEME SELECTION DIALOG ==================== -->
+            <div id="theme-dialog" class="dialog-overlay" onclick="closeThemeDialog(event)">
+                <div class="dialog" onclick="event.stopPropagation()">
+                    <div class="dialog-title">选择主题</div>
+                    <div class="picker-item" onclick="selectTheme('system')"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20z"/></svg></div><span>跟随系统</span></div>
+                    <div class="picker-item" onclick="selectTheme('dark')"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></div><span>始终深色</span></div>
+                    <div class="picker-item" onclick="selectTheme('light')"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></div><span>始终浅色</span></div>
+                </div>
+            </div>
+
+            <!-- ==================== LANGUAGE SELECTION DIALOG ==================== -->
+            <div id="language-dialog" class="dialog-overlay" onclick="closeLanguageDialog(event)">
+                <div class="dialog" onclick="event.stopPropagation()">
+                    <div class="dialog-title">选择语言</div>
+                    <div class="picker-item" onclick="selectLanguage('简体中文', true)"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div><span>简体中文</span></div>
+                    <div class="picker-item" onclick="selectLanguage('English', true)"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--accent)"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div><span>English</span></div>
+                    <div class="picker-item" onclick="selectLanguage('日本語', false)" style="opacity:0.5;"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--muted)"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><span>日本語</span></div>
+                    <div class="picker-item" onclick="selectLanguage('한국어', false)" style="opacity:0.5;"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--muted)"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><span>한국어</span></div>
+                    <div class="picker-item" onclick="selectLanguage('Русский', false)" style="opacity:0.5;"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--muted)"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><span>Русский</span></div>
+                    <div class="picker-item" onclick="selectLanguage('Deutsch', false)" style="opacity:0.5;"><div class="picker-item-icon"><svg viewBox="0 0 24 24" style="stroke:var(--muted)"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div><span>Deutsch</span></div>
+                </div>
+            </div>
+
+            <!-- ==================== DONATE DIALOG ==================== -->
+            <div id="donate-dialog" class="dialog-overlay" onclick="closeDonateDialog(event)">
+                <div class="dialog" onclick="event.stopPropagation()">
+                    <div class="dialog-title">捐赠打赏</div>
+                    <div style="text-align:center;padding:12px 0;color:var(--body);font-size:14px;line-height:1.6;">
+                        <div style="margin-bottom:12px;">支持开发者继续改进应用</div>
+                        <div style="display:flex;flex-direction:column;gap:12px;align-items:center;">
+                            <div style="display:flex;align-items:center;gap:8px;background:var(--icon-bg);padding:12px 20px;border-radius:12px;">
+                                <svg viewBox="0 0 24 24" style="width:24px;height:24px;stroke:var(--accent);fill:none;stroke-width:2;"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z"/></svg>
+                                <span style="color:var(--title);font-weight:500;">支付宝</span>
+                            </div>
+                            <div style="color:var(--muted);font-size:12px;">感谢您的支持！</div>
+                        </div>
+                    </div>
+                    <div class="dialog-btn-row">
+                        <button class="dialog-btn dialog-btn-secondary" onclick="closeDonateDialogDirect()" style="width:100%;">关闭</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== OPEN SOURCE DIALOG ==================== -->
+            <div id="opensource-dialog" class="dialog-overlay" onclick="closeOpenSourceDialog(event)">
+                <div class="dialog" onclick="event.stopPropagation()">
+                    <div class="dialog-title">开源许可</div>
+                    <div style="padding:8px 0;color:var(--body);font-size:13px;line-height:1.8;">
+                        <div style="margin-bottom:8px;">本项目使用 <a href="https://github.com/Evilgodxu/EdgeGesture" target="_blank" style="color:var(--accent);">Apache License 2.0</a> 开源协议</div>
+                        <div style="color:var(--muted);font-size:12px;">查看本项目使用的开源库详情请访问 GitHub 仓库。</div>
+                    </div>
+                    <div class="dialog-btn-row">
+                        <button class="dialog-btn dialog-btn-secondary" onclick="closeOpenSourceDialogDirect()" style="width:100%;">关闭</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1817,6 +1907,15 @@
             let triggerCount = parseInt(localStorage.getItem('eg_trigger_count') || '0', 10);
             let blockCount = parseInt(localStorage.getItem('eg_block_count') || '0', 10);
 
+            let currentStatsPeriod = 0;
+            const statsPeriods = ['近1天', '近7天', '近30天'];
+
+            function cycleStatsPeriod() {
+                currentStatsPeriod = (currentStatsPeriod + 1) % statsPeriods.length;
+                document.getElementById('statsPeriodLabel').textContent = statsPeriods[currentStatsPeriod];
+                showToast('已切换周期：' + statsPeriods[currentStatsPeriod]);
+            }
+
             function updateCountersUI() {
                 document.getElementById('triggerCount').textContent = triggerCount;
                 document.getElementById('blockCount').textContent = blockCount;
@@ -1890,10 +1989,8 @@
                 if (!container) return;
                 container.innerHTML = '';
                 if (segCount <= 1) return;
-                const edgeOffset = 20;
-                const edgeSize = 60;
                 for (let i = 1; i < segCount; i++) {
-                    const pos = edgeOffset + (i / segCount) * edgeSize;
+                    const pos = (i / segCount) * 100;
                     const div = document.createElement('div');
                     div.className = 'segment-divider';
                     if (isHorizontal) {
@@ -2018,12 +2115,6 @@
                     blacklistLoading = false;
                     renderBlacklist();
                 }, 800);
-            }
-
-            function setTheme(mode) {
-                const html = document.documentElement;
-                if (mode === 'light') html.setAttribute('data-theme', 'light');
-                else html.removeAttribute('data-theme');
             }
 
             let isRunning = false;
@@ -2162,7 +2253,7 @@
             function updateSegmentTabsVisibility() {
                 document.querySelectorAll('.segment-tab').forEach(tab => {
                     const seg = parseInt(tab.getAttribute('data-segment'), 10);
-                    tab.classList.toggle('hidden', seg > getSegCount());
+                    tab.classList.toggle('hidden', getSegCount() <= 1 || seg > getSegCount());
                 });
             }
 
@@ -2578,6 +2669,88 @@
                 }
             }
 
+            // ==================== THEME DIALOG ====================
+            function openThemeDialog() {
+                document.getElementById('theme-dialog').classList.add('active');
+            }
+
+            function closeThemeDialog(e) {
+                if (e.target === document.getElementById('theme-dialog')) {
+                    document.getElementById('theme-dialog').classList.remove('active');
+                }
+            }
+
+            function selectTheme(mode) {
+                const labels = { system: '跟随系统', dark: '始终深色', light: '始终浅色' };
+                document.getElementById('settingsThemeLabel').textContent = labels[mode] || '跟随系统';
+                setTheme(mode);
+                document.getElementById('theme-dialog').classList.remove('active');
+                showToast('已切换主题：' + labels[mode]);
+            }
+
+            function setTheme(mode) {
+                const html = document.documentElement;
+                if (mode === 'light') html.setAttribute('data-theme', 'light');
+                else if (mode === 'dark') html.removeAttribute('data-theme');
+                else {
+                    // system: 跟随系统 - 简化实现仅使用 dark
+                    html.removeAttribute('data-theme');
+                }
+            }
+
+            // ==================== LANGUAGE DIALOG ====================
+            function openLanguageDialog() {
+                document.getElementById('language-dialog').classList.add('active');
+            }
+
+            function closeLanguageDialog(e) {
+                if (e.target === document.getElementById('language-dialog')) {
+                    document.getElementById('language-dialog').classList.remove('active');
+                }
+            }
+
+            function selectLanguage(name, available) {
+                if (!available) {
+                    showToast('该语言暂不可用');
+                    return;
+                }
+                document.getElementById('currentLanguageLabel').textContent = name + ' ›';
+                document.getElementById('currentLanguageDesc').textContent = name;
+                document.getElementById('language-dialog').classList.remove('active');
+                showToast('已切换语言：' + name);
+            }
+
+            // ==================== DONATE DIALOG ====================
+            function openDonateDialog() {
+                document.getElementById('donate-dialog').classList.add('active');
+            }
+
+            function closeDonateDialog(e) {
+                if (e.target === document.getElementById('donate-dialog')) {
+                    document.getElementById('donate-dialog').classList.remove('active');
+                }
+            }
+
+            function closeDonateDialogDirect() {
+                document.getElementById('donate-dialog').classList.remove('active');
+            }
+
+            // ==================== OPEN SOURCE DIALOG ====================
+            function openOpenSourceDialog() {
+                document.getElementById('opensource-dialog').classList.add('active');
+            }
+
+            function closeOpenSourceDialog(e) {
+                if (e.target === document.getElementById('opensource-dialog')) {
+                    document.getElementById('opensource-dialog').classList.remove('active');
+                }
+            }
+
+            function closeOpenSourceDialogDirect() {
+                document.getElementById('opensource-dialog').classList.remove('active');
+            }
+
+            // ==================== TOAST ====================
             function showToast(msg) {
                 const toast = document.createElement('div');
                 toast.style.cssText =
