@@ -4,7 +4,7 @@
 
 ## 📱 UI 设计预览
 
-[点击体验](https://evilgodxu.github.io/EdgeGesture/Demo.html)
+[点击体验](https://evilgodxu.github.io/EdgeGesture/)
 
 ### 边缘手势
 
