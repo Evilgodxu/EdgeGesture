@@ -118,15 +118,16 @@ object UpdateManager {
                 val downloadUrl = apkAsset?.browser_download_url
                     ?: "https://github.com/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
 
+                val cleanVersion = release.tag_name.trimStart('v', 'V')
                 prefs.edit()
                     .putLong(KEY_LAST_CHECK, now)
-                    .putString(KEY_PENDING_VERSION, release.tag_name)
+                    .putString(KEY_PENDING_VERSION, cleanVersion)
                     .putString(KEY_PENDING_URL, downloadUrl)
                     .putString(KEY_PENDING_CHANGELOG, release.body)
                     .apply()
 
                 UpdateInfo(
-                    latestVersion = release.tag_name,
+                    latestVersion = cleanVersion,
                     downloadUrl = downloadUrl,
                     changelog = release.body
                 )
