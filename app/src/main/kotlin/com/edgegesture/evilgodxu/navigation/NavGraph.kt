@@ -7,8 +7,8 @@ import androidx.navigation.compose.composable
 import com.edgegesture.evilgodxu.screens.backtap.BackTapScreen
 import com.edgegesture.evilgodxu.screens.blacklist.AppBlacklistScreen
 import com.edgegesture.evilgodxu.screens.expandpanel.ExpandPanelScreen
-import com.edgegesture.evilgodxu.screens.gesture.EdgeGestureConfigScreen
-import com.edgegesture.evilgodxu.screens.gesture.EdgeType
+import com.edgegesture.evilgodxu.screens.edge_config.EdgeGestureConfigScreen
+import com.edgegesture.evilgodxu.screens.edge_config.EdgeType
 import com.edgegesture.evilgodxu.screens.gesture.GestureSettingsScreen
 import com.edgegesture.evilgodxu.screens.launchblock.LaunchBlockScreen
 import com.edgegesture.evilgodxu.screens.settings.SettingsScreen

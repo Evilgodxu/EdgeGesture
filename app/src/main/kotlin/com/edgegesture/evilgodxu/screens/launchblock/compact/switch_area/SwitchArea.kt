@@ -1,8 +1,6 @@
 package com.edgegesture.evilgodxu.screens.launchblock.compact.switch_area
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -11,16 +9,15 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.edgegesture.evilgodxu.R
-import com.edgegesture.evilgodxu.ui.theme.AppSwitch
+import com.edgegesture.evilgodxu.screens.launchblock.compact.switch_area.enable_switch_row.EnableSwitchRow
 
-// 启动拦截开关 Area — 标题在卡片外左上角，开关在卡片内
+// 启动拦截开关 Area — 仅负责组件排列
 @Composable
 fun SwitchArea(
     enabled: Boolean,
@@ -40,34 +37,9 @@ fun SwitchArea(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.launch_block_rule_enabled_title),
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_launch_block_desc),
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-                AppSwitch(
-                    checked = enabled,
-                    onCheckedChange = onToggleEnabled
-                )
-            }
+            EnableSwitchRow(enabled = enabled, onToggleEnabled = onToggleEnabled)
         }
     }
 }
