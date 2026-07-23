@@ -218,12 +218,14 @@ object UpdateManager {
 
         // 轮询下载进度
         while (true) {
-            val cursor = dm.query(DownloadManager.Query().setFilterById(downloadId))
-            if (!cursor.moveToFirst()) { cursor.close(); break }
-            val status = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS))
-            val done = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
-            val total = cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
-            cursor.close()
+            val (status, done, total) = dm.query(DownloadManager.Query().setFilterById(downloadId)).use { cursor ->
+                if (!cursor.moveToFirst()) return@use null
+                Triple(
+                    cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)),
+                    cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)),
+                    cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+                )
+            } ?: break
 
             when (status) {
                 DownloadManager.STATUS_SUCCESSFUL -> {
