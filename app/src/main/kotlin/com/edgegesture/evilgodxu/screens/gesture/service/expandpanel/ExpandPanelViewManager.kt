@@ -21,7 +21,7 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.edgegesture.evilgodxu.data.gesture.ExpandPanelShortcutsState
-import com.edgegesture.evilgodxu.screens.settings.ThemeMode
+import com.edgegesture.evilgodxu.screens.settings.data.ThemeMode
 import kotlinx.coroutines.flow.Flow
 
 // 扩展面板悬浮窗管理器

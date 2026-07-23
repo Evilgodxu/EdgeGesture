@@ -10,8 +10,8 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import com.edgegesture.evilgodxu.screens.settings.ThemeMode
-import com.edgegesture.evilgodxu.screens.settings.settingsFlow
+import com.edgegesture.evilgodxu.screens.settings.data.ThemeMode
+import com.edgegesture.evilgodxu.screens.settings.data.settingsFlow
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 

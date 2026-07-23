@@ -1,4 +1,4 @@
-package com.edgegesture.evilgodxu.screens.settings.components
+package com.edgegesture.evilgodxu.screens.launchblock.overlay
 
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockRule
@@ -56,7 +57,6 @@ fun LaunchBlockRuleDialog(
     var blockDelay by remember { mutableStateOf(rule?.blockDelay ?: 0) }
     var showError by remember { mutableStateOf(false) }
 
-    // Shizuku 状态
     var shizukuState by remember { mutableStateOf<ShizukuState>(ShizukuState.NotRunning) }
     val shizukuPermissionCode = 1002
 
@@ -83,7 +83,6 @@ fun LaunchBlockRuleDialog(
     val isEditing = rule != null
     val isKillSwitchEnabled = launcherApp.isNotBlank()
 
-    // 当高频启动检测和终止被启动者都关闭时，自动关闭允许终止系统程序
     LaunchedEffect(enableKill, enableKillTarget) {
         if (!enableKill && !enableKillTarget && allowKillSystemApp) {
             allowKillSystemApp = false
@@ -94,9 +93,9 @@ fun LaunchBlockRuleDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                if (isEditing) 
-                    stringResource(R.string.launch_block_edit_title) 
-                else 
+                if (isEditing)
+                    stringResource(R.string.launch_block_edit_title)
+                else
                     stringResource(R.string.launch_block_add_title)
             )
         },
@@ -110,7 +109,7 @@ fun LaunchBlockRuleDialog(
             ) {
                 OutlinedTextField(
                     value = launcherApp,
-                    onValueChange = { 
+                    onValueChange = {
                         launcherApp = it
                         if (it.isBlank()) enableKill = false
                     },
@@ -123,13 +122,13 @@ fun LaunchBlockRuleDialog(
 
                 OutlinedTextField(
                     value = targetApp,
-                    onValueChange = { 
+                    onValueChange = {
                         targetApp = it
                         showError = false
                     },
                     label = { Text(stringResource(R.string.launch_block_target_label)) },
                     placeholder = { Text(stringResource(R.string.launch_block_target_hint)) },
-                    supportingText = { 
+                    supportingText = {
                         if (showError && targetApp.isBlank()) {
                             Text(
                                 stringResource(R.string.launch_block_target_required),
@@ -146,7 +145,6 @@ fun LaunchBlockRuleDialog(
 
                 HorizontalDivider()
 
-                // 启用规则开关
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -212,7 +210,6 @@ fun LaunchBlockRuleDialog(
                         checked = enableKill,
                         onCheckedChange = { checked ->
                             if (checked && shizukuState !is ShizukuState.Granted) {
-                                // 需要 Shizuku 权限
                                 when (shizukuState) {
                                     is ShizukuState.NotInstalled -> {
                                         val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -241,7 +238,6 @@ fun LaunchBlockRuleDialog(
 
                 HorizontalDivider()
 
-                // 终止被启动者开关
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -304,7 +300,6 @@ fun LaunchBlockRuleDialog(
 
                 HorizontalDivider()
 
-                // 允许终止系统程序开关
                 val canEnableAllowKillSystem = enableKill || enableKillTarget
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -374,7 +369,6 @@ fun LaunchBlockRuleDialog(
 
                 HorizontalDivider()
 
-                // 拦截时机选择
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = stringResource(R.string.launch_block_delay_title),
@@ -413,7 +407,6 @@ fun LaunchBlockRuleDialog(
                     }
                 }
 
-                // 按钮行 — 设计风格
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -432,7 +425,7 @@ fun LaunchBlockRuleDialog(
                         ) {
                             Text(
                                 stringResource(R.string.dialog_delete),
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
@@ -448,7 +441,7 @@ fun LaunchBlockRuleDialog(
                     ) {
                         Text(
                             stringResource(R.string.dialog_cancel),
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
 
@@ -490,7 +483,7 @@ fun LaunchBlockRuleDialog(
                     ) {
                         Text(
                             stringResource(R.string.dialog_confirm),
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }

@@ -12,7 +12,7 @@ import com.edgegesture.evilgodxu.screens.gesture.EdgeType
 import com.edgegesture.evilgodxu.screens.gesture.GestureSettingsScreen
 import com.edgegesture.evilgodxu.screens.launchblock.LaunchBlockScreen
 import com.edgegesture.evilgodxu.screens.settings.SettingsScreen
-import com.edgegesture.evilgodxu.screens.settings.ThemeMode
+import com.edgegesture.evilgodxu.screens.settings.data.ThemeMode
 import kotlinx.serialization.Serializable
 
 @Serializable

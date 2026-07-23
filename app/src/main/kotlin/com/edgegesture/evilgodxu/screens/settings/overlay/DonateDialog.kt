@@ -1,4 +1,4 @@
-package com.edgegesture.evilgodxu.screens.settings.components
+package com.edgegesture.evilgodxu.screens.settings.overlay
 
 import android.content.Intent
 import androidx.compose.foundation.clickable
@@ -55,13 +55,11 @@ fun DonateDialog(
                         .fillMaxWidth()
                         .clickable {
                             try {
-                                // 优先尝试使用支付宝 scheme 直接打开支付宝应用
                                 val alipayIntent = Intent(Intent.ACTION_VIEW).apply {
                                     data = "alipays://platformapi/startapp?appId=20000067&url=https://qr.alipay.com/fkx19806mp7pzmxerluwrfd".toUri()
                                 }
                                 context.startActivity(alipayIntent)
                             } catch (e: Exception) {
-                                // 如果支付宝应用未安装，降级到浏览器打开
                                 try {
                                     val browserIntent = Intent(Intent.ACTION_VIEW).apply {
                                         data = "https://qr.alipay.com/fkx19806mp7pzmxerluwrfd".toUri()
@@ -82,8 +80,6 @@ fun DonateDialog(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-
-
             }
         },
         confirmButton = {}

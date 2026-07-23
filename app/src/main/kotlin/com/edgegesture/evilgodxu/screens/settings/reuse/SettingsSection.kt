@@ -1,4 +1,4 @@
-package com.edgegesture.evilgodxu.screens.settings.components
+package com.edgegesture.evilgodxu.screens.settings.reuse
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding

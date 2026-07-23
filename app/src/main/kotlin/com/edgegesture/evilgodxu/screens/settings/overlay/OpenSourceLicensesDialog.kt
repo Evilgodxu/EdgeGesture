@@ -1,4 +1,4 @@
-package com.edgegesture.evilgodxu.screens.settings.components
+package com.edgegesture.evilgodxu.screens.settings.overlay
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth

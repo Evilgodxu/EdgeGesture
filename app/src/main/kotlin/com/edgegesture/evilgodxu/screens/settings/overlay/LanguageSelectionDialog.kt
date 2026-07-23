@@ -1,4 +1,4 @@
-package com.edgegesture.evilgodxu.screens.settings.components
+package com.edgegesture.evilgodxu.screens.settings.overlay
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.edgegesture.evilgodxu.R
-import com.edgegesture.evilgodxu.screens.settings.AppLanguage
+import com.edgegesture.evilgodxu.screens.settings.data.AppLanguage
 
 // 语言选择对话框
 @Composable

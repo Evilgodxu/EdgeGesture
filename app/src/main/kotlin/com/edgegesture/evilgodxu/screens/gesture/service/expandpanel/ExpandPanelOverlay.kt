@@ -27,7 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.edgegesture.evilgodxu.data.gesture.ExpandPanelShortcutsState
-import com.edgegesture.evilgodxu.screens.settings.ThemeMode
+import com.edgegesture.evilgodxu.screens.settings.data.ThemeMode
 import com.edgegesture.evilgodxu.ui.theme.DarkColorScheme
 import com.edgegesture.evilgodxu.ui.theme.LightColorScheme
 import kotlinx.coroutines.flow.Flow

@@ -33,7 +33,7 @@ import com.edgegesture.evilgodxu.data.permission.PermissionType
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelPermissionCallback
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelViewManager
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.sendMediaKeyEvent
-import com.edgegesture.evilgodxu.screens.settings.themeModeFlow
+import com.edgegesture.evilgodxu.screens.settings.data.themeModeFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

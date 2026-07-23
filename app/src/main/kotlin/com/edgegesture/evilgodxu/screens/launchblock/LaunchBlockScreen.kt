@@ -53,8 +53,8 @@ import com.edgegesture.evilgodxu.data.launchblock.addLaunchBlockRule
 import com.edgegesture.evilgodxu.data.launchblock.removeLaunchBlockRule
 import com.edgegesture.evilgodxu.data.launchblock.updateLaunchBlockRule
 import com.edgegesture.evilgodxu.data.launchblock.setLaunchBlockEnabled
-import com.edgegesture.evilgodxu.screens.settings.components.LaunchBlockRuleDialog
-import com.edgegesture.evilgodxu.screens.settings.components.LaunchBlockRulesList
+import com.edgegesture.evilgodxu.screens.launchblock.overlay.LaunchBlockRuleDialog
+import com.edgegesture.evilgodxu.screens.launchblock.reuse.LaunchBlockRulesList
 import android.content.Context
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -105,7 +105,16 @@ fun LaunchBlockScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // 启动拦截开关卡片
+            // 启动拦截开关 — 标题在卡片外左上角，与更多设置页风格统一
+            Text(
+                text = stringResource(R.string.settings_launch_block_title),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.2.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 10.dp)
+            )
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
@@ -113,66 +122,33 @@ fun LaunchBlockScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    // 卡片头部
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = RoundedCornerShape(10.dp)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Security,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(R.string.settings_launch_block_title),
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
+                            text = stringResource(R.string.launch_block_rule_enabled_title),
+                            fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 启用开关行
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.launch_block_rule_enabled_title),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_launch_block_desc),
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        AppSwitch(
-                            checked = launchBlockState.enabled,
-                            onCheckedChange = { enabled ->
-                                scope.launch {
-                                    context.setLaunchBlockEnabled(enabled)
-                                }
-                            }
+                        Text(
+                            text = stringResource(R.string.settings_launch_block_desc),
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     }
+                    AppSwitch(
+                        checked = launchBlockState.enabled,
+                        onCheckedChange = { enabled ->
+                            scope.launch {
+                                context.setLaunchBlockEnabled(enabled)
+                            }
+                        }
+                    )
                 }
             }
 

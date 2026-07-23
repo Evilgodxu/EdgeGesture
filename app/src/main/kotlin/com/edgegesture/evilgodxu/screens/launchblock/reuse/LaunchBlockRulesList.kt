@@ -1,7 +1,6 @@
-package com.edgegesture.evilgodxu.screens.settings.components
+package com.edgegesture.evilgodxu.screens.launchblock.reuse
 
 import android.content.Context
-import android.content.pm.ApplicationInfo
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
@@ -77,7 +76,7 @@ fun LaunchBlockRulesList(
                         )
                         Text(
                             text = stringResource(
-                                R.string.launch_block_rules_count, 
+                                R.string.launch_block_rules_count,
                                 rules.size
                             ),
                             style = MaterialTheme.typography.bodySmall,
@@ -96,9 +95,9 @@ fun LaunchBlockRulesList(
                     IconButton(onClick = { isExpanded = !isExpanded }) {
                         Icon(
                             imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (isExpanded) 
-                                stringResource(R.string.launch_block_collapse) 
-                            else 
+                            contentDescription = if (isExpanded)
+                                stringResource(R.string.launch_block_collapse)
+                            else
                                 stringResource(R.string.launch_block_expand)
                         )
                     }
@@ -141,7 +140,6 @@ fun LaunchBlockRulesList(
     }
 }
 
-// 获取应用名称，如果获取失败则返回包名
 private fun getAppName(context: Context, packageName: String): String {
     return try {
         val pm = context.packageManager
