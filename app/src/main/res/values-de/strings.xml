@@ -43,6 +43,10 @@
     <string name="settings_vibration_title">Vibrationsfeedback</string>
     <string name="settings_vibration_desc">Vibration bei Wischgesten auslösen</string>
 
+    <!-- Doppelter Wisch -->
+    <string name="gesture_double_swipe_title">Doppelter Wisch</string>
+    <string name="gesture_double_swipe_desc">Im Vollbild- oder Querformat zweimal hintereinander wischen, um auszulösen</string>
+
     <!-- Gesture Overlay Visibility -->
     <string name="gesture_hide_overlay_title">Overlay ausblenden</string>
     <string name="gesture_hide_overlay_desc">Gesten-Triggerbereich ausblenden</string>

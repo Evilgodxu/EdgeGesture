@@ -43,6 +43,10 @@
     <string name="settings_vibration_title">震动反馈</string>
     <string name="settings_vibration_desc">滑动操作时触发震动效果</string>
 
+    <!-- 二次滑动 -->
+    <string name="gesture_double_swipe_title">二次滑动</string>
+    <string name="gesture_double_swipe_desc">全屏或横屏模式下需连续滑动两次方可触发</string>
+
     <!-- 手势触发区显示设置 -->
     <string name="gesture_hide_overlay_title">隐藏显示</string>
     <string name="gesture_hide_overlay_desc">隐藏手势触发区</string>

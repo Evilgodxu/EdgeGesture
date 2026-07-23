@@ -36,6 +36,8 @@ class AccessibilityGestureDetector(
         var isLongPressTriggered = false
         var isSwipeStarted = false
         var swipeDirection: SwipeDirection? = null
+        // 二次滑动模式下的待确认方向，跨触摸会话持久保持
+        var pendingDirection: SwipeDirection? = null
         val swipeThreshold = 80f // 滑动触发阈值（像素）
         val longPressThreshold = 200L // 长按触发阈值（毫秒）
 
@@ -53,13 +55,28 @@ class AccessibilityGestureDetector(
 
                     val runnable = Runnable {
                         isLongPressTriggered = true
-                        if (settingsProvider().vibrationEnabled) {
+                        val settings = settingsProvider()
+                        if (settings.vibrationEnabled) {
                             view.performHapticFeedback(android.view.HapticFeedbackConstants.LONG_PRESS)
                         }
-                        swipeDirection?.let { direction ->
-                            val action = resolveAction(position, segmentIndex, direction, true, settingsProvider())
-                            if (action != GestureAction.NONE) {
-                                callback.onSwipeAction(action)
+                        if (settings.doubleSwipeEnabled) {
+                            // 二次滑动模式：只有待确认方向匹配时才触发长按操作
+                            swipeDirection?.let { direction ->
+                                if (pendingDirection == direction) {
+                                    val action = resolveAction(position, segmentIndex, direction, true, settings)
+                                    if (action != GestureAction.NONE) {
+                                        callback.onSwipeAction(action)
+                                    }
+                                    pendingDirection = null
+                                }
+                                // 方向不匹配时静默消耗，不设置待确认方向
+                            }
+                        } else {
+                            swipeDirection?.let { direction ->
+                                val action = resolveAction(position, segmentIndex, direction, true, settings)
+                                if (action != GestureAction.NONE) {
+                                    callback.onSwipeAction(action)
+                                }
                             }
                         }
                     }
@@ -113,9 +130,24 @@ class AccessibilityGestureDetector(
                                 if (deltaX > 0) SwipeDirection.RIGHT else SwipeDirection.LEFT
                             }
                         }
-                        val action = resolveAction(position, segmentIndex, direction, false, settingsProvider())
-                        if (action != GestureAction.NONE) {
-                            callback.onSwipeAction(action)
+                        val settings = settingsProvider()
+                        if (settings.doubleSwipeEnabled) {
+                            if (pendingDirection == direction) {
+                                // 第二次滑动相同方向：触发操作并清除待确认状态
+                                val action = resolveAction(position, segmentIndex, direction, false, settings)
+                                if (action != GestureAction.NONE) {
+                                    callback.onSwipeAction(action)
+                                }
+                                pendingDirection = null
+                            } else {
+                                // 第一次滑动（或方向变更）：设为待确认，不触发操作
+                                pendingDirection = direction
+                            }
+                        } else {
+                            val action = resolveAction(position, segmentIndex, direction, false, settings)
+                            if (action != GestureAction.NONE) {
+                                callback.onSwipeAction(action)
+                            }
                         }
                         true
                     } else {
@@ -124,6 +156,7 @@ class AccessibilityGestureDetector(
                 }
                 MotionEvent.ACTION_CANCEL -> {
                     longPressRunnable?.let { handler.removeCallbacks(it) }
+                    pendingDirection = null
                     false
                 }
                 else -> false

@@ -43,6 +43,10 @@
     <string name="settings_vibration_title">振動フィードバック</string>
     <string name="settings_vibration_desc">スワイプ操作時に振動を発生させます</string>
 
+    <!-- ダブルスワイプ -->
+    <string name="gesture_double_swipe_title">ダブルスワイプ</string>
+    <string name="gesture_double_swipe_desc">全画面または横画面モードでは、連続して2回スワイプすることで操作をトリガーします</string>
+
     <!-- ジェスチャーオーバーレイの表示 -->
     <string name="gesture_hide_overlay_title">オーバーレイを非表示</string>
     <string name="gesture_hide_overlay_desc">ジェスチャー領域を非表示にします</string>

@@ -14,8 +14,8 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
-import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityWindowInfo
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
 import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
@@ -83,12 +83,24 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var settings: GestureSettingsState = GestureSettingsState()
-    private val settingsProvider: () -> GestureSettingsState = { settings }
+    private val settingsProvider: () -> GestureSettingsState = {
+        val s = settings
+        if (s.doubleSwipeEnabled && !isLandscapeMode()) {
+            s.copy(doubleSwipeEnabled = false)
+        } else {
+            s
+        }
+    }
 
     private lateinit var edgeViewManager: AccessibilityEdgeViewManager
     private lateinit var actionExecutor: AccessibilityActionExecutor
     private lateinit var gestureDetector: AccessibilityGestureDetector
     private var backTapDetector: BackTapDetector? = null
+
+    // 检测当前是否为横屏模式（二次滑动仅需在横屏下生效）
+    private fun isLandscapeMode(): Boolean {
+        return resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    }
 
     private val settingsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {

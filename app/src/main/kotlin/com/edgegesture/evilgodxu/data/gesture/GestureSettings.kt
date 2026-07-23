@@ -121,6 +121,7 @@ object GestureSettingsKeys {
     val APP_SWITCH_BLACKLIST = stringSetPreferencesKey("app_switch_blacklist")
     val BLACKLIST_INITIALIZED = booleanPreferencesKey("blacklist_initialized")
     val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
+    val DOUBLE_SWIPE_ENABLED = booleanPreferencesKey("double_swipe_enabled")
 }
 
 // 手势动作枚举，显示名称通过 [getActionDisplayName] 函数从字符串资源获取，支持多语言
@@ -205,6 +206,7 @@ data class GestureSettingsState(
     val hideFromRecents: Boolean = false,
     val avoidKeyboardOverlap: Boolean = false,
     val vibrationEnabled: Boolean = false,
+    val doubleSwipeEnabled: Boolean = false,
     // 背面双击设置
     val backTapEnabled: Boolean = false,
     val backTapSensitivity: Int = 5,
@@ -290,6 +292,7 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
         hideFromRecents = this[GestureSettingsKeys.HIDE_FROM_RECENTS] ?: false,
         avoidKeyboardOverlap = this[GestureSettingsKeys.AVOID_KEYBOARD_OVERLAP] ?: false,
         vibrationEnabled = this[GestureSettingsKeys.VIBRATION_ENABLED] ?: false,
+        doubleSwipeEnabled = this[GestureSettingsKeys.DOUBLE_SWIPE_ENABLED] ?: false,
         // 背面双击
         backTapEnabled = this[GestureSettingsKeys.BACK_TAP_ENABLED] ?: false,
         backTapSensitivity = this[GestureSettingsKeys.BACK_TAP_SENSITIVITY] ?: 5,
@@ -558,6 +561,12 @@ suspend fun Context.resetBlacklistInitialized() = withContext(Dispatchers.IO) {
 suspend fun Context.saveVibrationEnabled(enabled: Boolean) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         prefs[GestureSettingsKeys.VIBRATION_ENABLED] = enabled
+    }
+}
+
+suspend fun Context.saveDoubleSwipeEnabled(enabled: Boolean) = withContext(Dispatchers.IO) {
+    gestureDataStore.edit { prefs ->
+        prefs[GestureSettingsKeys.DOUBLE_SWIPE_ENABLED] = enabled
     }
 }
 

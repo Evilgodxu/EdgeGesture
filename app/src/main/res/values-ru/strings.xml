@@ -43,6 +43,10 @@
     <string name="settings_vibration_title">Тактильная обратная связь</string>
     <string name="settings_vibration_desc">Виброотклик при выполнении жестов</string>
 
+    <!-- Двойной свайп -->
+    <string name="gesture_double_swipe_title">Двойной свайп</string>
+    <string name="gesture_double_swipe_desc">В полноэкранном или альбомном режиме нужно провести дважды для активации</string>
+
     <!-- Gesture trigger area hide -->
     <string name="gesture_hide_overlay_title">Скрыть область</string>
     <string name="gesture_hide_overlay_desc">Скрыть область жестов</string>

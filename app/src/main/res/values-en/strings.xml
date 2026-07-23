@@ -43,6 +43,10 @@
     <string name="settings_vibration_title">Vibration Feedback</string>
     <string name="settings_vibration_desc">Trigger a vibration effect during swipe operations</string>
 
+    <!-- Double Swipe -->
+    <string name="gesture_double_swipe_title">Double Swipe</string>
+    <string name="gesture_double_swipe_desc">Swipe twice consecutively in fullscreen or landscape mode to trigger</string>
+
     <!-- Gesture Overlay Visibility -->
     <string name="gesture_hide_overlay_title">Hide Overlay</string>
     <string name="gesture_hide_overlay_desc">Hide the gesture trigger area</string>

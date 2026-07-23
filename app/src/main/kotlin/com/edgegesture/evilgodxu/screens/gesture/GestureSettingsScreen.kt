@@ -1423,6 +1423,16 @@ private fun TriggerAreaSettingsCard(
                         viewModel.setVibrationEnabled(enabled)
                     }
                 )
+
+                // 二次滑动
+                GestureSettingsSwitchItem(
+                    title = stringResource(R.string.gesture_double_swipe_title),
+                    subtitle = stringResource(R.string.gesture_double_swipe_desc),
+                    checked = settings.doubleSwipeEnabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.setDoubleSwipeEnabled(enabled)
+                    }
+                )
             }
         }
     }
