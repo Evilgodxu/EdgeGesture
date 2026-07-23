@@ -40,10 +40,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowSizeClass
-import com.edgegesture.evilgodxu.DownloadState
 import com.edgegesture.evilgodxu.R
-import com.edgegesture.evilgodxu.UpdateInfo
-import com.edgegesture.evilgodxu.UpdateManager
+import com.edgegesture.evilgodxu.data.update.DownloadState
+import com.edgegesture.evilgodxu.data.update.UpdateInfo
+import com.edgegesture.evilgodxu.data.update.UpdateManager
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuState
 import com.edgegesture.evilgodxu.screens.settings.compact.CompactAssembly

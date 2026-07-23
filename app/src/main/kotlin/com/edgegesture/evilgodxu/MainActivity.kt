@@ -38,9 +38,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
-import com.edgegesture.evilgodxu.DownloadState
-import com.edgegesture.evilgodxu.UpdateInfo
-import com.edgegesture.evilgodxu.UpdateManager
+import com.edgegesture.evilgodxu.data.update.DownloadState
+import com.edgegesture.evilgodxu.data.update.UpdateInfo
+import com.edgegesture.evilgodxu.data.update.UpdateCheckWorker
+import com.edgegesture.evilgodxu.data.update.UpdateManager
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
 import com.edgegesture.evilgodxu.navigation.NavGraph
 import com.edgegesture.evilgodxu.ui.adaptive.ProvideWindowSizeClass

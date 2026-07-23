@@ -1,4 +1,4 @@
-package com.edgegesture.evilgodxu
+package com.edgegesture.evilgodxu.data.update
 
 import android.app.DownloadManager
 import android.content.Context
@@ -168,25 +168,21 @@ object UpdateManager {
     fun downloadApk(context: Context, updateInfo: UpdateInfo): Long {
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val req = DownloadManager.Request(Uri.parse(updateInfo.downloadUrl))
-            .setTitle(context.getString(R.string.app_name) + " 更新")
+            .setTitle(context.getString(com.edgegesture.evilgodxu.R.string.app_name) + " 更新")
             .setDescription("正在下载 ${updateInfo.latestVersion}")
             .setDestinationInExternalPublicDir(
                 Environment.DIRECTORY_DOWNLOADS,
                 "EdgeGesture_${updateInfo.latestVersion}.apk"
             )
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setAllowedOverMetered(false)   // 仅在 WiFi 下允许
+            .setAllowedOverMetered(false)
             .setAllowedOverRoaming(false)
 
         return dm.enqueue(req)
     }
 
     /**
-     * 下载 APK 并引导安装（用于对话框点击「下载」）
-     * 下载到应用私有目录，通过 onProgress 回调进度，完成后通过 FileProvider 打开安装界面
-     * 长时间无进度变动（30 秒）判定为超时失败
-     *
-     * @return true 表示下载成功并启动了安装界面，false 表示下载失败
+     * 下载 APK 并引导安装
      */
     suspend fun downloadAndInstall(
         context: Context,
@@ -199,12 +195,11 @@ object UpdateManager {
             fileName
         )
 
-        // 删除已存在的旧文件
         if (outFile.exists()) outFile.delete()
 
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val req = DownloadManager.Request(Uri.parse(updateInfo.downloadUrl))
-            .setTitle(context.getString(R.string.app_name) + " 更新")
+            .setTitle(context.getString(com.edgegesture.evilgodxu.R.string.app_name) + " 更新")
             .setDescription("正在下载 ${updateInfo.latestVersion}")
             .setDestinationUri(Uri.fromFile(outFile))
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
@@ -214,9 +209,8 @@ object UpdateManager {
         val downloadId = dm.enqueue(req)
         var lastProgressBytes = -1L
         var stallCount = 0
-        val STALL_TIMEOUT = 60  // 60 次无进度 * 500ms = 30 秒
+        val STALL_TIMEOUT = 60
 
-        // 轮询下载进度
         while (true) {
             val (status, done, total) = dm.query(DownloadManager.Query().setFilterById(downloadId)).use { cursor ->
                 if (!cursor.moveToFirst()) return@use null
@@ -230,7 +224,6 @@ object UpdateManager {
             when (status) {
                 DownloadManager.STATUS_SUCCESSFUL -> {
                     onProgress(1f)
-                    // 下载完成，通过 FileProvider 打开安装界面
                     val uri = androidx.core.content.FileProvider.getUriForFile(
                         context,
                         "${context.packageName}.fileprovider",
@@ -251,12 +244,9 @@ object UpdateManager {
                     return false
                 }
                 else -> {
-                    // 上报进度
                     if (total > 0) {
                         onProgress(done.toFloat() / total)
                     }
-
-                    // 检测进度停滞超时
                     if (done == lastProgressBytes) {
                         stallCount++
                         if (stallCount >= STALL_TIMEOUT) {
@@ -300,9 +290,6 @@ object UpdateManager {
             .apply()
     }
 
-    /**
-     * 版本号语义比较
-     */
     private fun isNewerVersion(latest: String, current: String): Boolean {
         val l = latest.split(".").mapNotNull { it.toIntOrNull() }
         val c = current.split(".").mapNotNull { it.toIntOrNull() }

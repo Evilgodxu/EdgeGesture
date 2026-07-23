@@ -10,6 +10,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
+import com.edgegesture.evilgodxu.data.update.UpdateCheckWorker
 import com.edgegesture.evilgodxu.di.appModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
