@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -543,6 +544,7 @@ fun SettingsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .heightIn(max = 360.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
                     if (isFailed) {
@@ -579,7 +581,8 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                    if (updateInfo!!.changelog.isNotBlank()) {
+                    // 非下载/失败状态才显示更新日志，让下载进度更聚焦
+                    if (!isDownloading && !isFailed && updateInfo!!.changelog.isNotBlank()) {
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = stringResource(R.string.update_dialog_changelog_title),
@@ -631,7 +634,7 @@ fun SettingsScreen(
             },
             dismissButton = {
                 if (!isDownloading) {
-                    TextButton(onClick = { showUpdateDialog = false; downloadState = DownloadState.Idle }) {
+                    TextButton(onClick = { showUpdateDialog = false; downloadState = DownloadState.Idle; UpdateManager.clearPendingUpdate(context) }) {
                         Text(stringResource(R.string.update_dialog_later))
                     }
                 }

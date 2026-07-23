@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -156,6 +157,7 @@ class MainActivity : ComponentActivity() {
                             onDismiss = {
                                 showUpdateDialog = false
                                 downloadState = DownloadState.Idle
+                                UpdateManager.clearPendingUpdate(this@MainActivity)
                             }
                         )
                     }
@@ -224,6 +226,7 @@ private fun UpdateDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(max = 360.dp)
                     .verticalScroll(rememberScrollState())
             ) {
                 if (isFailed) {
@@ -261,7 +264,8 @@ private fun UpdateDialog(
                     )
                 }
 
-                if (updateInfo.changelog.isNotBlank()) {
+                // 非下载/失败状态才显示更新日志，让下载进度更聚焦
+                if (!isDownloading && !isFailed && updateInfo.changelog.isNotBlank()) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = stringResource(R.string.update_dialog_changelog_title),
