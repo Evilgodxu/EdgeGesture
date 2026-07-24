@@ -57,7 +57,7 @@
         </activity>
 
         <service
-            android:name=".service.EdgeGestureAccessibilityService"
+            android:name=".service.core.EdgeGestureAccessibilityService"
             android:enabled="true"
             android:exported="false"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
@@ -70,7 +70,7 @@
         </service>
 
         <receiver
-            android:name=".service.ServiceRestartReceiver"
+            android:name=".service.lifecycle.ServiceRestartReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
