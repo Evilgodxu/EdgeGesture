@@ -1,6 +1,5 @@
 package com.edgegesture.evilgodxu.screens.launchblock
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import com.edgegesture.evilgodxu.ui.theme.AppSwitch
+import com.edgegesture.evilgodxu.screens.gesture.components.GestureSettingsSwitchItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -105,7 +104,16 @@ fun LaunchBlockScreen(
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState())
         ) {
-            // 启动拦截开关卡片
+            // 启动拦截开关
+            Text(
+                text = stringResource(R.string.settings_launch_block_title),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.2.sp
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 10.dp)
+            )
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
@@ -113,67 +121,16 @@ fun LaunchBlockScreen(
                     containerColor = MaterialTheme.colorScheme.surface
                 )
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    // 卡片头部
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = RoundedCornerShape(10.dp)
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Security,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
+                GestureSettingsSwitchItem(
+                    title = stringResource(R.string.launch_block_rule_enabled_title),
+                    subtitle = stringResource(R.string.settings_launch_block_desc),
+                    checked = launchBlockState.enabled,
+                    onCheckedChange = { enabled ->
+                        scope.launch {
+                            context.setLaunchBlockEnabled(enabled)
                         }
-                        Text(
-                            text = stringResource(R.string.settings_launch_block_title),
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
                     }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 启用开关行
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.launch_block_rule_enabled_title),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = stringResource(R.string.settings_launch_block_desc),
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        AppSwitch(
-                            checked = launchBlockState.enabled,
-                            onCheckedChange = { enabled ->
-                                scope.launch {
-                                    context.setLaunchBlockEnabled(enabled)
-                                }
-                            }
-                        )
-                    }
-                }
+                )
             }
 
             Spacer(modifier = Modifier.height(20.dp))

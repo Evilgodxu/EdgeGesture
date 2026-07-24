@@ -206,9 +206,18 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             // 黑名单初始化由 initializeWithScan() 中的 initBlacklistFromApps() 完成，
             // 它会根据实际权限状态正确处理（有权限时扫描全部系统应用，无权限时使用已扫描的可启动应用兜底）
             loadSettings()
-            // 注意：边缘视图的创建由 startSettingsFlow() 的初始发射值处理，
-            // 背面双击检测器的启动也由 updateBackTapDetector() 管理，
-            // 这里只负责加载设置到内存，不重复创建视图/检测器。
+            // 确保边缘视图已创建：loadSettings() 与 startSettingsFlow() 首次发射存在竞态，
+            // 若 loadSettings() 先完成，startSettingsFlow() 首次发射时 oldSettings 与 newSettings
+            // 的 gestureEnabled 均为 true，视图创建逻辑会被跳过，导致边缘触摸视图不显示。
+            if (settings.gestureEnabled) {
+                withContext(Dispatchers.Main) {
+                    if (!edgeViewManager.isViewAttached()) {
+                        edgeViewManager.createEdgeViews(settings, settingsProvider)
+                        edgeViewManager.showEdgeViews(settings)
+                        checkKeyboardVisibility()
+                    }
+                }
+            }
         }
 
         // 初始化完成后延迟检查键盘状态，确保在 startSettingsFlow()
@@ -497,16 +506,30 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
     }
 
-    // 检测输入法是否弹出，通过检查窗口列表中是否存在输入法窗口
+    // 检测输入法是否弹出
+    // 优先通过 AccessibilityService.getWindows() 检测 TYPE_INPUT_METHOD 窗口，
+    // 该方式能即时响应 TYPE_WINDOWS_CHANGED 事件，WindowInsets 更新有延迟。
+    // 兜底使用已附着的边缘视图的 WindowInsets，适配 getWindows() 为空的情况。
     private fun checkKeyboardVisibility() {
+        // 方法1：通过 AccessibilityService.getWindows() 检测 IME 窗口（主方案，能即时响应事件）
         val windowList = windows
-        if (windowList.isEmpty()) return
-
-        val hasKeyboardWindow = windowList.any { windowInfo ->
-            windowInfo.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD
+        if (windowList.isNotEmpty()) {
+            val hasKeyboardWindow = windowList.any { windowInfo ->
+                windowInfo.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD
+            }
+            updateKeyboardState(hasKeyboardWindow)
+            return
         }
 
-        updateKeyboardState(hasKeyboardWindow)
+        // 方法2：通过已附着的 View 的 WindowInsets 兜底（适配 getWindows() 为空的情况）
+        val edgeView = edgeViewManager.getFirstAttachedView()
+        if (edgeView != null) {
+            val insets = edgeView.rootWindowInsets
+            if (insets != null) {
+                val isImeVisible = insets.isVisible(android.view.WindowInsets.Type.ime())
+                updateKeyboardState(isImeVisible)
+            }
+        }
     }
 
     // 检测输入框是否获得焦点，作为输入法显示的辅助判断

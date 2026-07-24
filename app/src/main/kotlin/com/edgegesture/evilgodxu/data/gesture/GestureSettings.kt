@@ -537,7 +537,11 @@ suspend fun Context.removeFromAppSwitchBlacklist(packageNames: Set<String>) = wi
 // 无权限或调用失败时使用已扫描的可启动系统应用兜底。
 suspend fun Context.initBlacklistIfNeeded(launcherApps: Set<String>? = null) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
-        if (prefs[GestureSettingsKeys.BLACKLIST_INITIALIZED] != true) {
+        // 自愈检测：如果已初始化但黑名单中只有本应用（竞态导致的损坏状态），则重新初始化
+        val currentBlacklist = prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] ?: emptySet()
+        val onlySelf = currentBlacklist.size == 1 && currentBlacklist.contains(packageName)
+
+        if (prefs[GestureSettingsKeys.BLACKLIST_INITIALIZED] != true || onlySelf) {
             // 先尝试获取所有系统应用，失败再使用兜底集合
             val allSystemApps = runCatching { getSystemAppPackages() }.getOrNull()
                 ?: launcherApps

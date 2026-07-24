@@ -90,7 +90,7 @@ class AppRepository private constructor(private val context: Context) {
                 refreshAppsIfPossible()
             } else {
                 // 缓存有效，基于当前列表初始化黑名单
-                initBlacklistFromApps(_appsFlow.value)
+                initBlacklistFromCurrentApps()
             }
         }
 
@@ -108,6 +108,12 @@ class AppRepository private constructor(private val context: Context) {
             val systemAppPackages = apps.filter { it.isSystemApp }.map { it.packageName }.toSet()
             context.initBlacklistIfNeeded(systemAppPackages)
         }
+    }
+
+    // 在 mutex 保护下基于当前应用列表初始化黑名单
+    // 避免与 onQueryPermissionGranted() 中的 refreshAppsInternal() 产生竞态
+    private suspend fun initBlacklistFromCurrentApps() = mutex.withLock {
+        initBlacklistFromApps(_appsFlow.value)
     }
 
     // 尝试刷新应用列表

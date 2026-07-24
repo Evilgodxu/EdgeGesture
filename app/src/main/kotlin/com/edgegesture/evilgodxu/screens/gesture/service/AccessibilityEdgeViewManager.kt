@@ -333,6 +333,11 @@ class AccessibilityEdgeViewManager(
 
     fun isViewAttached(): Boolean = leftEdgeViews.isNotEmpty() && leftEdgeViews.firstOrNull()?.windowToken != null
 
+    // 获取第一个已附着的边缘视图，用于查询 WindowInsets 等信息
+    fun getFirstAttachedView(): View? {
+        return (leftEdgeViews + rightEdgeViews + bottomEdgeViews).firstOrNull { it.isAttachedToWindow }
+    }
+
     // 禁用边缘视图的触摸事件，触摸会穿透到下层窗口
     fun disableEdgeViewsTouch() {
         val allViews = leftEdgeViews + rightEdgeViews + bottomEdgeViews
