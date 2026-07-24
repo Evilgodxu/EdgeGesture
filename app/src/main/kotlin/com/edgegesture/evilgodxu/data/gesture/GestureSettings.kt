@@ -535,6 +535,11 @@ suspend fun Context.removeFromAppSwitchBlacklist(packageNames: Set<String>) = wi
 // 初始化黑名单，将所有系统应用（包括无入口的）和本应用加入黑名单
 // 有 QUERY_ALL_PACKAGES 权限时通过 getSystemAppPackages() 获取全部系统应用；
 // 无权限或调用失败时使用已扫描的可启动系统应用兜底。
+//
+// 采用"合并"策略而非"回退"策略：
+// - launcherApps 作为基础集合（来自已扫描的系统应用，总是由 AppRepository 传入）
+// - getSystemAppPackages() 补充获取无入口的系统应用（可能因权限或瞬态异常失败）
+// - 两者取并集，确保黑名单始终包含所有已知系统应用
 suspend fun Context.initBlacklistIfNeeded(launcherApps: Set<String>? = null) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         // 自愈检测：如果已初始化但黑名单中只有本应用（竞态导致的损坏状态），则重新初始化
@@ -542,12 +547,13 @@ suspend fun Context.initBlacklistIfNeeded(launcherApps: Set<String>? = null) = w
         val onlySelf = currentBlacklist.size == 1 && currentBlacklist.contains(packageName)
 
         if (prefs[GestureSettingsKeys.BLACKLIST_INITIALIZED] != true || onlySelf) {
-            // 先尝试获取所有系统应用，失败再使用兜底集合
-            val allSystemApps = runCatching { getSystemAppPackages() }.getOrNull()
-                ?: launcherApps
-                ?: emptySet()
-            val apps = allSystemApps.toMutableSet()
-            // 将本应用加入黑名单
+            // 以 launcherApps 为基础（来自已扫描的应用列表，最可靠）
+            val apps = launcherApps?.toMutableSet() ?: mutableSetOf()
+            // 补充获取系统应用（含无入口的），可能因权限不足或瞬态异常失败
+            runCatching { getSystemAppPackages() }.getOrNull()?.let { systemApps ->
+                apps.addAll(systemApps)
+            }
+            // 确保本应用始终在黑名单中
             apps.add(packageName)
             prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] = apps
             prefs[GestureSettingsKeys.BLACKLIST_INITIALIZED] = true
