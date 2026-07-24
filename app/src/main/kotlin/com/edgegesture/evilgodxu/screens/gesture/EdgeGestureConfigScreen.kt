@@ -49,9 +49,11 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -390,8 +392,12 @@ private fun EdgePreview(
             // 1. 手机主体背景
             drawRoundRect(color = surfaceColor, topLeft = Offset.Zero, size = Size(pw, ph), cornerRadius = CornerRadius(cr))
 
-            // 2. 边缘区域（复用 GesturePreview 的 drawEdgeRect 逻辑）
-            when (edgeType) {
+            // 2. 边缘区域（裁剪到手机圆角形状内，避免尖角从圆角边框露出）
+            val phoneClipPath = Path().apply {
+                addRoundRect(RoundRect(0f, 0f, pw, ph, cr, cr))
+            }
+            clipPath(phoneClipPath) {
+                when (edgeType) {
                 EdgeType.LEFT -> {
                     val zoneW = (width / 2f).dp.toPx().coerceAtLeast(3.dp.toPx())
                     val zoneH = ph * (heightPercent / 100f)
@@ -510,6 +516,7 @@ private fun EdgePreview(
                         drawPath(selPath, color = highlightColor.copy(alpha = 0.45f))
                     }
                 }
+            }
             }
 
             // 3. 手机边框（在最上层，形成边缘覆盖在边框上的视觉效果）

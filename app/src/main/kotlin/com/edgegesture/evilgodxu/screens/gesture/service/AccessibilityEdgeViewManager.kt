@@ -268,6 +268,11 @@ class AccessibilityEdgeViewManager(
             params.width = leftWidthPx
             params.height = height
             params.y = y
+            if (settings.hideOverlay) {
+                view.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            } else {
+                view.setBackgroundColor("#40FF0000".toColorInt())
+            }
             try {
                 windowManager.updateViewLayout(view, params)
             } catch (_: Exception) {
@@ -296,6 +301,11 @@ class AccessibilityEdgeViewManager(
             params.width = rightWidthPx
             params.height = height
             params.y = y
+            if (settings.hideOverlay) {
+                view.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            } else {
+                view.setBackgroundColor("#40FF0000".toColorInt())
+            }
             try {
                 windowManager.updateViewLayout(view, params)
             } catch (_: Exception) {
@@ -324,6 +334,11 @@ class AccessibilityEdgeViewManager(
             params.width = width
             params.height = bottomHeightPx
             params.x = x
+            if (settings.hideOverlay) {
+                view.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            } else {
+                view.setBackgroundColor("#40FF0000".toColorInt())
+            }
             try {
                 windowManager.updateViewLayout(view, params)
             } catch (_: Exception) {
