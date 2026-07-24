@@ -2,7 +2,6 @@ package com.edgegesture.evilgodxu.screens.gesture.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,11 +14,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,6 +54,7 @@ fun GesturePreview(
 ) {
     val accentColor = MaterialTheme.colorScheme.primary
     val surfaceColor = MaterialTheme.colorScheme.surface
+    val outlineColor = MaterialTheme.colorScheme.outlineVariant
 
     Column(modifier = modifier.fillMaxWidth()) {
         // 区域标题
@@ -65,16 +68,11 @@ fun GesturePreview(
             modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 10.dp)
         )
 
-        // 手机轮廓
+        // 手机轮廓（边框由 Canvas 在最上层绘制，确保边缘区域被边框覆盖）
         Box(
             modifier = Modifier
                 .align(Alignment.CenterHorizontally)
                 .size(width = 110.dp, height = 170.dp)
-                .border(
-                    width = 2.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    shape = RoundedCornerShape(16.dp)
-                )
                 .clip(RoundedCornerShape(16.dp))
                 .background(surfaceColor)
         ) {
@@ -83,7 +81,12 @@ fun GesturePreview(
                     val pw = size.width
                     val ph = size.height
                     val edgeAlpha = 0.7f
+                    val cr = 16.dp.toPx()
 
+                    // 1. 手机背景（填充色）
+                    drawRoundRect(color = surfaceColor, topLeft = Offset.Zero, size = Size(pw, ph), cornerRadius = CornerRadius(cr))
+
+                    // 2. 边缘触发区域
                     // ====== 左侧边缘（宽度减半以消除重叠） ======
                     val lw = ((leftEdgeWidth / 2).dp.toPx()).coerceAtLeast(3.dp.toPx())
                     val lh = ph * leftEdgeHeightPercent / 100f
@@ -119,6 +122,9 @@ fun GesturePreview(
                         dividerColor = surfaceColor,
                         roundTop = true
                     )
+
+                    // 3. 手机边框（在最上层绘制，边缘触发区域被边框覆盖在屏幕内）
+                    drawRoundRect(color = outlineColor, topLeft = Offset.Zero, size = Size(pw, ph), cornerRadius = CornerRadius(cr), style = Stroke(3.dp.toPx()))
                 }
             }
         }

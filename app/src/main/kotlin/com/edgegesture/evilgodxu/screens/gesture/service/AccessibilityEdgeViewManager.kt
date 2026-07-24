@@ -51,7 +51,7 @@ class AccessibilityEdgeViewManager(
         val leftSegmentHeight = if (settings.leftSegmentCount > 1) {
             (leftTotalHeightPx - leftGapPx * (settings.leftSegmentCount - 1)) / settings.leftSegmentCount
         } else {
-            leftTotalHeightPx / settings.leftSegmentCount
+            leftTotalHeightPx
         }
 
         for (i in 0 until settings.leftSegmentCount) {
@@ -80,7 +80,7 @@ class AccessibilityEdgeViewManager(
         val rightSegmentHeight = if (settings.rightSegmentCount > 1) {
             (rightTotalHeightPx - rightGapPx * (settings.rightSegmentCount - 1)) / settings.rightSegmentCount
         } else {
-            rightTotalHeightPx / settings.rightSegmentCount
+            rightTotalHeightPx
         }
 
         for (i in 0 until settings.rightSegmentCount) {
@@ -108,7 +108,7 @@ class AccessibilityEdgeViewManager(
         val bottomSegmentWidth = if (settings.bottomSegmentCount > 1) {
             (bottomTotalWidthPx - bottomGapPx * (settings.bottomSegmentCount - 1)) / settings.bottomSegmentCount
         } else {
-            bottomTotalWidthPx / settings.bottomSegmentCount
+            bottomTotalWidthPx
         }
         val bottomBaseX = (screenWidth - bottomTotalWidthPx) / 2
 
@@ -254,7 +254,7 @@ class AccessibilityEdgeViewManager(
         val leftSegmentHeight = if (settings.leftSegmentCount > 1) {
             (leftTotalHeightPx - leftGapPx * (settings.leftSegmentCount - 1)) / settings.leftSegmentCount
         } else {
-            leftTotalHeightPx / settings.leftSegmentCount
+            leftTotalHeightPx
         }
 
         leftEdgeViews.forEachIndexed { index, view ->
@@ -282,7 +282,7 @@ class AccessibilityEdgeViewManager(
         val rightSegmentHeight = if (settings.rightSegmentCount > 1) {
             (rightTotalHeightPx - rightGapPx * (settings.rightSegmentCount - 1)) / settings.rightSegmentCount
         } else {
-            rightTotalHeightPx / settings.rightSegmentCount
+            rightTotalHeightPx
         }
 
         rightEdgeViews.forEachIndexed { index, view ->
@@ -309,7 +309,7 @@ class AccessibilityEdgeViewManager(
         val bottomSegmentWidth = if (settings.bottomSegmentCount > 1) {
             (bottomTotalWidthPx - bottomGapPx * (settings.bottomSegmentCount - 1)) / settings.bottomSegmentCount
         } else {
-            bottomTotalWidthPx / settings.bottomSegmentCount
+            bottomTotalWidthPx
         }
         val bottomBaseX = (screenWidth - bottomTotalWidthPx) / 2
 
