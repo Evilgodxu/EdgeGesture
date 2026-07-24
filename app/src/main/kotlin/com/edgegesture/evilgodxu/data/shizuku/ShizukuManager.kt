@@ -7,7 +7,7 @@ import android.content.pm.PackageManager
 import android.os.IBinder
 import android.util.Log
 import com.edgegesture.evilgodxu.service.ICommandService
-import com.edgegesture.evilgodxu.service.CommandUserService
+import com.edgegesture.evilgodxu.service.lifecycle.CommandUserService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

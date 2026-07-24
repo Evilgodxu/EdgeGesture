@@ -57,7 +57,7 @@
         </activity>
 
         <service
-            android:name=".screens.gesture.service.EdgeGestureAccessibilityService"
+            android:name=".service.EdgeGestureAccessibilityService"
             android:enabled="true"
             android:exported="false"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
@@ -70,7 +70,7 @@
         </service>
 
         <receiver
-            android:name=".screens.gesture.service.ServiceRestartReceiver"
+            android:name=".service.ServiceRestartReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
@@ -80,12 +80,12 @@
         </receiver>
 
         <receiver
-            android:name=".screens.gesture.service.RemindAlarmReceiver"
+            android:name=".service.remind.RemindAlarmReceiver"
             android:enabled="true"
             android:exported="false" />
 
         <service
-            android:name=".screens.gesture.service.RemindAlarmService"
+            android:name=".service.remind.RemindAlarmService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />

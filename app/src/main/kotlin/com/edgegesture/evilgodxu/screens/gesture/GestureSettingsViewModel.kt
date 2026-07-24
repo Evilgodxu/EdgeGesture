@@ -396,7 +396,7 @@ class GestureSettingsViewModel(
     fun setVibrationEnabled(enabled: Boolean) {
         viewModelScope.launch {
             context.saveVibrationEnabled(enabled)
-            com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService.updateSettings(context)
+            com.edgegesture.evilgodxu.service.core.EdgeGestureAccessibilityService.updateSettings(context)
         }
     }
 

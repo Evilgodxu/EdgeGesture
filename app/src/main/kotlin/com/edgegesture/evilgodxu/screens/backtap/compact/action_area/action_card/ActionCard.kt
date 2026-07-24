@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.composables.icons.materialsymbols.outlined.R.drawable as MsRDrawable
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
-import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
+import com.edgegesture.evilgodxu.ui.action.getActionDisplayName
 
 // 触发操作卡片职责组件
 @Composable

@@ -44,8 +44,8 @@ import com.edgegesture.evilgodxu.data.gesture.saveRightEdgePositionPercent
 import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeWidth
 import com.edgegesture.evilgodxu.data.gesture.saveRightSegmentCount
 import com.edgegesture.evilgodxu.screens.edge_config.compact.CompactAssembly
-import com.edgegesture.evilgodxu.screens.gesture.components.ActionSelectionDialog
-import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
+import com.edgegesture.evilgodxu.ui.action.ActionSelectionDialog
+import com.edgegesture.evilgodxu.ui.action.getActionDisplayName
 import kotlinx.coroutines.launch
 
 // 边缘手势配置页 — 页面入口 Composable

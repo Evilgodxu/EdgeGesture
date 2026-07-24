@@ -33,8 +33,8 @@ import com.edgegesture.evilgodxu.data.gesture.saveBackTapPauseOnCharging
 import com.edgegesture.evilgodxu.data.gesture.saveBackTapRange
 import com.edgegesture.evilgodxu.data.gesture.saveBackTapSensitivity
 import com.edgegesture.evilgodxu.screens.backtap.compact.CompactAssembly
-import com.edgegesture.evilgodxu.screens.gesture.components.ActionSelectionDialog
-import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
+import com.edgegesture.evilgodxu.ui.action.ActionSelectionDialog
+import com.edgegesture.evilgodxu.ui.action.getActionDisplayName
 import kotlinx.coroutines.launch
 
 // 背面双击设置页 — 页面入口 Composable

@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.ExpandPanelShortcutsState
-import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ShortcutsGrid
+import com.edgegesture.evilgodxu.service.expandpanel.ShortcutsGrid
 
 // 快捷方式 Area — 标题在卡片外左上角，快捷方式网格在卡片内
 @Composable

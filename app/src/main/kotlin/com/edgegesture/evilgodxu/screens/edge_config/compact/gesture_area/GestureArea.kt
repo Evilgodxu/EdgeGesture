@@ -20,7 +20,7 @@ import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.screens.edge_config.compact.gesture_area.gesture_action_row.GestureActionRow
 import com.edgegesture.evilgodxu.screens.edge_config.compact.gesture_area.segment_selector.SegmentSelector
-import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
+import com.edgegesture.evilgodxu.ui.action.getActionDisplayName
 
 // 手势操作 Area — 仅做组件排列，不含 UI 实现
 @Composable

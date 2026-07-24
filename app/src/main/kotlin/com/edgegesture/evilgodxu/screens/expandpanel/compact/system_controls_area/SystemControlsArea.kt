@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.edgegesture.evilgodxu.R
-import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.VerticalSlidersSection
+import com.edgegesture.evilgodxu.service.expandpanel.VerticalSlidersSection
 
 // 系统控制 Area — 标题在卡片外左上角，音量/亮度滑杆在卡片内
 @Composable

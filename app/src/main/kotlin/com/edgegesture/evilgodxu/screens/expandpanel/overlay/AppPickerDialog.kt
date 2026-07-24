@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.edgegesture.evilgodxu.R
-import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.AppPickerScreen
+import com.edgegesture.evilgodxu.service.expandpanel.AppPickerScreen
 
 // 应用选择器对话框 — 模态覆盖层
 @Composable
