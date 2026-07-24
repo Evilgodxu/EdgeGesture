@@ -1,7 +1,11 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.expandpanel
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
@@ -31,11 +36,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -54,6 +63,7 @@ import org.koin.compose.koinInject
 @Composable
 fun AppPickerScreen(
     onAppSelected: (String) -> Unit,
+    onLaunchApp: (String) -> Unit,
     onCancel: () -> Unit,
     appRepository: AppRepository = koinInject()
 ) {
@@ -159,7 +169,8 @@ fun AppPickerScreen(
                     ) { app ->
                         AppPickerItem(
                             app = app,
-                            onClick = { onAppSelected(app.packageName) }
+                            onClick = { onAppSelected(app.packageName) },
+                            onLongClick = { onLaunchApp(app.packageName) }
                         )
                     }
                 }
@@ -171,14 +182,49 @@ fun AppPickerScreen(
 @Composable
 private fun AppPickerItem(
     app: AppInfo,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
 ) {
     val context = LocalContext.current
+
+    // 持有最新的回调引用，避免 pointerInput 捕获过期 lambda
+    val currentOnClick by rememberUpdatedState(onClick)
+    val currentOnLongClick by rememberUpdatedState(onLongClick)
+
+    // 长按按压状态管理
+    var isPressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.92f else 1f,
+        animationSpec = tween(durationMillis = 150),
+        label = "press_scale"
+    )
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .scale(scale)
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                if (isPressed) {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                } else {
+                    androidx.compose.ui.graphics.Color.Transparent
+                }
+            )
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        isPressed = true
+                        tryAwaitRelease()
+                        isPressed = false
+                    },
+                    onTap = { currentOnClick() },
+                    onLongPress = {
+                        isPressed = false
+                        currentOnLongClick()
+                    }
+                )
+            }
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

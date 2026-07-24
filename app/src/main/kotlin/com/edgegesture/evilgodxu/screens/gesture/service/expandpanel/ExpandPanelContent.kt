@@ -83,6 +83,12 @@ fun ExpandPanelContent(
                         isAppPickerMode = false
                         selectedIndex = -1
                     },
+                    onLaunchApp = { packageName ->
+                        val launched = launchApp(context, packageName, false)
+                        if (launched) {
+                            onDismiss()
+                        }
+                    },
                     onCancel = {
                         isAppPickerMode = false
                         selectedIndex = -1
