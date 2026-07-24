@@ -43,6 +43,7 @@ import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcutFreeform
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.AppPickerScreen
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ShortcutsGrid
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.VerticalSlidersSection
+import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.launchApp
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -195,6 +196,11 @@ fun ExpandPanelScreen(
                         scope.launch {
                             context.saveExpandPanelShortcut(targetIndex, packageName)
                         }
+                        showAppPicker = false
+                        selectedIndex = -1
+                    },
+                    onLaunchApp = { packageName ->
+                        launchApp(context, packageName, false)
                         showAppPicker = false
                         selectedIndex = -1
                     },
