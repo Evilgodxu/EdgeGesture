@@ -68,7 +68,6 @@ import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
 import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeGesture
 import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeHeight
 import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeWidthPercent
-import com.edgegesture.evilgodxu.data.gesture.saveBottomSegmentCount
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeGesture
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeHeightPercent
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgePositionPercent

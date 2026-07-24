@@ -511,17 +511,19 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     // 该方式能即时响应 TYPE_WINDOWS_CHANGED 事件，WindowInsets 更新有延迟。
     // 兜底使用已附着的边缘视图的 WindowInsets，适配 getWindows() 为空的情况。
     private fun checkKeyboardVisibility() {
-        // 方法1：通过 AccessibilityService.getWindows() 检测 IME 窗口（主方案，能即时响应事件）
+        // 方法1：通过 AccessibilityService.getWindows() 快速确认键盘可见
+        // 注意：此方法在部分设备上可能不返回 IME 窗口，因此仅用于正向确认，不作为否定判断依据
         val windowList = windows
         if (windowList.isNotEmpty()) {
-            val hasKeyboardWindow = windowList.any { windowInfo ->
-                windowInfo.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD
+            if (windowList.any { windowInfo ->
+                    windowInfo.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD
+                }) {
+                updateKeyboardState(true)
+                return
             }
-            updateKeyboardState(hasKeyboardWindow)
-            return
         }
 
-        // 方法2：通过已附着的 View 的 WindowInsets 兜底（适配 getWindows() 为空的情况）
+        // 方法2：通过已附着的 View 的 WindowInsets 检测（主要方案，兼容所有版本）
         val edgeView = edgeViewManager.getFirstAttachedView()
         if (edgeView != null) {
             val insets = edgeView.rootWindowInsets
