@@ -31,8 +31,10 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -53,11 +55,15 @@ class MusicPanelViewManager(
     private val playbackState = MusicPanelStateHolder.state
     private var pendingExternalUri: android.net.Uri? = null
     private val externalTrackMutex = Mutex()
+    private val scanMutex = Mutex()
     private var initialization: Deferred<Unit>? = null
     private var mediaObserverRegistered = false
+    private var refreshJob: Job? = null
     private val mediaObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
         override fun onChange(selfChange: Boolean, uri: Uri?) {
-            managerScope.launch {
+            refreshJob?.cancel()
+            refreshJob = managerScope.launch {
+                delay(300)
                 refreshPlaylist()
             }
         }
@@ -129,10 +135,10 @@ class MusicPanelViewManager(
             scaleY = 0.8f
             setContent {
                 MusicPanelOverlay(
-                    playbackState = playbackState,
-                    onScan = { },
-                    onDismiss = { dismiss() }
-                )
+                playbackState = playbackState,
+                onScan = { requestScan() },
+                onDismiss = { dismiss() }
+            )
             }
         }
 
@@ -228,15 +234,36 @@ class MusicPanelViewManager(
         mediaObserverRegistered = true
     }
 
-    private suspend fun refreshPlaylist() {
-        val tracks = MusicScanner.scan(context)
-        val externalTracks = withContext(Dispatchers.Main) {
-            playbackState.playlist.filter { it.path.isBlank() }
+    private fun requestScan() {
+        if (playbackState.isScanning) return
+        refreshJob?.cancel()
+        refreshJob = managerScope.launch {
+            scanAndPlay()
         }
-        val mergedTracks = deduplicateTracks(tracks + externalTracks)
-        withContext(Dispatchers.Main) {
-            playbackState.setSortedPlaylist(mergedTracks)
-            playbackState.persistPlaylist()
+    }
+
+    private suspend fun refreshPlaylist() = scanMutex.withLock {
+        val started = withContext(Dispatchers.Main) {
+            if (playbackState.isScanning) false else {
+                playbackState.isScanning = true
+                true
+            }
+        }
+        if (!started) return@withLock
+        try {
+            val tracks = MusicScanner.scan(context)
+            val externalTracks = withContext(Dispatchers.Main) {
+                playbackState.playlist.filter { it.path.isBlank() }
+            }
+            val mergedTracks = deduplicateTracks(tracks + externalTracks)
+            withContext(Dispatchers.Main) {
+                playbackState.setSortedPlaylist(mergedTracks)
+                playbackState.persistPlaylist()
+            }
+        } finally {
+            withContext(Dispatchers.Main) {
+                playbackState.isScanning = false
+            }
         }
     }
 
@@ -280,10 +307,14 @@ class MusicPanelViewManager(
         }
     }
 
-    private suspend fun scanAndPlay() {
-        withContext(Dispatchers.Main) {
-            playbackState.isScanning = true
+    private suspend fun scanAndPlay() = scanMutex.withLock {
+        val started = withContext(Dispatchers.Main) {
+            if (playbackState.isScanning) false else {
+                playbackState.isScanning = true
+                true
+            }
         }
+        if (!started) return@withLock
         val tracks = MusicScanner.scan(context)
         withContext(Dispatchers.Main) {
             val externalTracks = playbackState.playlist.filter { it.path.isBlank() }

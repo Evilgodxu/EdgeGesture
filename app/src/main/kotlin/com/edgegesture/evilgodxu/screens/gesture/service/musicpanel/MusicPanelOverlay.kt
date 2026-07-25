@@ -58,7 +58,9 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.automirrored.outlined.PlaylistPlay
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.PullToRefreshBox
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -249,6 +251,7 @@ fun MusicPanelOverlay(
                     PlaylistOverlay(
                         visible = showPlaylist,
                         playbackState = playbackState,
+                        onScan = onScan,
                         onTrackSelected = { index ->
                             scope.launch {
                                 playTrackAt(context, playbackState, index)
@@ -519,9 +522,14 @@ private fun CarouselCover(
                     )
             )
             if (!isPlaying && track != null) {
-                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
-                }
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    tint = Color.White.copy(alpha = 0.9f),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(28.dp)
+                )
             }
         } else {
             Box(Modifier.fillMaxSize().border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f), CircleShape))
@@ -818,10 +826,12 @@ private fun VisualizerSection(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PlaylistOverlay(
     visible: Boolean,
     playbackState: MusicPlaybackState,
+    onScan: () -> Unit,
     onTrackSelected: (Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -877,20 +887,26 @@ private fun PlaylistOverlay(
                     }
                 } else {
                     val listState = rememberLazyListState()
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    PullToRefreshBox(
+                        isRefreshing = playbackState.isScanning,
+                        onRefresh = { if (!playbackState.isScanning) onScan() },
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        itemsIndexed(playbackState.playlist) { index, track ->
-                            val isActive = index == playbackState.currentIndex
-                            PlaylistRow(
-                                track = track,
-                                isActive = isActive,
-                                isPlaying = isActive && playbackState.isPlaying,
-                                onClick = { onTrackSelected(index) },
-                                onFavoriteClick = { playbackState.toggleFavorite(track.id) }
-                            )
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            itemsIndexed(playbackState.playlist) { index, track ->
+                                val isActive = index == playbackState.currentIndex
+                                PlaylistRow(
+                                    track = track,
+                                    isActive = isActive,
+                                    isPlaying = isActive && playbackState.isPlaying,
+                                    onClick = { onTrackSelected(index) },
+                                    onFavoriteClick = { playbackState.toggleFavorite(track.id) }
+                                )
+                            }
                         }
                     }
                     LaunchedEffect(playbackState.currentIndex) {
