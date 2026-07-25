@@ -22,6 +22,7 @@ fun getActionDisplayName(action: GestureAction): String {
         GestureAction.LOCK_SCREEN -> stringResource(R.string.gesture_action_lock_screen)
         GestureAction.SCREENSHOT -> stringResource(R.string.gesture_action_screenshot)
         GestureAction.EXPAND_PANEL -> stringResource(R.string.gesture_action_expand_panel)
+        GestureAction.MUSIC_PANEL -> stringResource(R.string.gesture_action_music_panel)
         GestureAction.ALIPAY_SCAN -> stringResource(R.string.gesture_action_alipay_scan)
         GestureAction.WECHAT_SCAN -> stringResource(R.string.gesture_action_wechat_scan)
         GestureAction.REMIND_1M -> stringResource(R.string.gesture_action_remind_1m)

@@ -83,6 +83,17 @@
     <string name="gesture_action_lock_screen">锁屏</string>
     <string name="gesture_action_screenshot">截屏</string>
     <string name="gesture_action_expand_panel">扩展面板</string>
+    <string name="gesture_action_music_panel">音乐面板</string>
+
+    <!-- 音乐面板 -->
+    <string name="music_panel_empty">暂无本地音乐</string>
+    <string name="music_panel_scanning">正在扫描音乐…</string>
+    <string name="music_panel_permission_denied">需要音频读取权限才能扫描本地音乐</string>
+    <string name="music_panel_playlist_title">播放列表</string>
+    <string name="music_panel_timer_title">定时关闭</string>
+    <string name="music_panel_timer_minutes">分钟</string>
+    <string name="music_panel_timer_confirm">确定</string>
+    <string name="music_panel_timer_cancel">取消</string>
 
     <!-- 扫一扫 -->
     <string name="gesture_action_alipay_scan">支付宝扫一扫</string>

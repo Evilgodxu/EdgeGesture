@@ -139,6 +139,8 @@ enum class GestureAction(val value: String) {
     LOCK_SCREEN("lock_screen"),
     SCREENSHOT("screenshot"),
     EXPAND_PANEL("expand_panel"),
+    // 音乐面板
+    MUSIC_PANEL("music_panel"),
     // 扫一扫
     ALIPAY_SCAN("alipay_scan"),
     WECHAT_SCAN("wechat_scan"),

@@ -1,5 +1,6 @@
 package com.edgegesture.evilgodxu.screens.gesture.service
 
+import android.Manifest
 import android.accessibilityservice.AccessibilityService
 import android.app.AlarmManager
 import android.app.NotificationChannel
@@ -8,10 +9,12 @@ import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.net.Uri
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
@@ -19,6 +22,7 @@ import android.os.VibratorManager
 import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
@@ -33,6 +37,9 @@ import com.edgegesture.evilgodxu.data.permission.PermissionType
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelPermissionCallback
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelViewManager
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.sendMediaKeyEvent
+import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelPermissionActivity
+import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelPermissionBridge
+import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelViewManager
 import com.edgegesture.evilgodxu.screens.settings.themeModeFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +61,7 @@ class AccessibilityActionExecutor(
 
     private var expandPanelViewManager: ExpandPanelViewManager? = null
     private var pendingExpandPanelShow = false
+    private var musicPanelViewManager: MusicPanelViewManager? = null
     private val permissionMonitor = PermissionMonitor(service)
     private val executorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -83,6 +91,7 @@ class AccessibilityActionExecutor(
             GestureAction.LOCK_SCREEN -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN)
             GestureAction.SCREENSHOT -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT)
             GestureAction.EXPAND_PANEL -> showExpandPanel()
+            GestureAction.MUSIC_PANEL -> showMusicPanel()
             GestureAction.ALIPAY_SCAN -> launchScanAlipay()
             GestureAction.WECHAT_SCAN -> launchScanWechat()
             GestureAction.REMIND_1M -> scheduleReminder(1)
@@ -199,6 +208,36 @@ class AccessibilityActionExecutor(
         }
     }
 
+    private fun showMusicPanel() {
+        if (musicPanelViewManager != null) {
+            musicPanelViewManager?.dismiss()
+            return
+        }
+
+        val showPanel = {
+            musicPanelViewManager = MusicPanelViewManager(
+                context = service,
+                onDismiss = { musicPanelViewManager = null }
+            ).apply { show() }
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when {
+                ContextCompat.checkSelfPermission(service, Manifest.permission.READ_MEDIA_AUDIO) ==
+                        PackageManager.PERMISSION_GRANTED -> showPanel()
+                else -> {
+                    MusicPanelPermissionBridge.pendingShowAction = showPanel
+                    val intent = Intent(service, MusicPanelPermissionActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    service.startActivity(intent)
+                }
+            }
+        } else {
+            showPanel()
+        }
+    }
+
     fun dismissExpandPanel() {
         expandPanelViewManager?.dismiss()
         expandPanelViewManager = null
@@ -206,9 +245,15 @@ class AccessibilityActionExecutor(
         writeSettingsMonitorJob?.cancel()
     }
 
+    fun dismissMusicPanel() {
+        musicPanelViewManager?.dismiss()
+        musicPanelViewManager = null
+    }
+
     // 清理资源
     fun cleanup() {
         dismissExpandPanel()
+        dismissMusicPanel()
         executorScope.cancel()
     }
 

@@ -25,6 +25,7 @@ material3Adaptive = "1.2.0"
 koin = "4.2.2"
 hiddenApiBypass = "6.1"
 composablesIcons = "2.2.1"
+media3 = "1.6.1"
 
 [libraries]
 
@@ -70,3 +71,6 @@ hidden-api-bypass = { group = "org.lsposed.hiddenapibypass", name = "hiddenapiby
 
 # Compose Icons (Material Symbols)
 composables-icons-material-symbols-outlined = { group = "com.composables", name = "icons-material-symbols-outlined-android", version.ref = "composablesIcons" }
+
+# Media3 ExoPlayer
+androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3" }

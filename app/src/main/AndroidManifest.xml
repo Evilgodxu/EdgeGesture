@@ -14,6 +14,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
 
     <!-- 包可见性兜底：即使 QUERY_ALL_PACKAGES 被撤销，仍能通过 queryIntentActivities 读取可启动应用 -->
     <queries>
@@ -89,6 +90,14 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <activity
+            android:name=".screens.gesture.service.musicpanel.MusicPanelPermissionActivity"
+            android:theme="@style/Theme.Transparent"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:noHistory="true" />
 
         <!-- Shizuku Provider -->
         <provider
