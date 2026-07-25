@@ -366,9 +366,10 @@ class MusicPlaybackState {
     // 构造下一首索引
     fun nextIndex(): Int {
         if (playlist.isEmpty()) return -1
+        val validCurrentIndex = currentIndex.takeIf { it in playlist.indices } ?: 0
         return when (playMode) {
-            PlayMode.RepeatOne -> currentIndex
-            PlayMode.RepeatAll -> (currentIndex + 1) % playlist.size
+            PlayMode.RepeatOne -> validCurrentIndex
+            PlayMode.RepeatAll -> (validCurrentIndex + 1) % playlist.size
             PlayMode.Shuffle -> {
                 if (playlist.size == 1) 0
                 else playlist.indices.filter { it != currentIndex }.random()
@@ -379,9 +380,10 @@ class MusicPlaybackState {
     // 构造上一首索引
     fun previousIndex(): Int {
         if (playlist.isEmpty()) return -1
+        val validCurrentIndex = currentIndex.takeIf { it in playlist.indices } ?: 0
         return when (playMode) {
-            PlayMode.RepeatOne -> currentIndex
-            PlayMode.RepeatAll -> (currentIndex - 1 + playlist.size) % playlist.size
+            PlayMode.RepeatOne -> validCurrentIndex
+            PlayMode.RepeatAll -> (validCurrentIndex - 1 + playlist.size) % playlist.size
             PlayMode.Shuffle -> {
                 if (playlist.size == 1) 0
                 else playlist.indices.filter { it != currentIndex }.random()

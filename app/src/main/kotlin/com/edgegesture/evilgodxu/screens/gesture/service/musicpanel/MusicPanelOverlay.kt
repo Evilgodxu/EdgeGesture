@@ -20,6 +20,7 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -58,9 +59,7 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.automirrored.outlined.PlaylistPlay
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.PullToRefreshBox
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -826,7 +825,6 @@ private fun VisualizerSection(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PlaylistOverlay(
     visible: Boolean,
@@ -887,10 +885,27 @@ private fun PlaylistOverlay(
                     }
                 } else {
                     val listState = rememberLazyListState()
-                    PullToRefreshBox(
-                        isRefreshing = playbackState.isScanning,
-                        onRefresh = { if (!playbackState.isScanning) onScan() },
-                        modifier = Modifier.fillMaxSize()
+                    var pullDistance by remember { mutableFloatStateOf(0f) }
+                    val refreshThreshold = 120f
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(playbackState.isScanning) {
+                                detectVerticalDragGestures(
+                                    onVerticalDrag = { _, dragAmount ->
+                                        if (!playbackState.isScanning && listState.firstVisibleItemIndex == 0) {
+                                            pullDistance = (pullDistance + dragAmount).coerceAtLeast(0f)
+                                        }
+                                    },
+                                    onDragEnd = {
+                                        if (!playbackState.isScanning && pullDistance >= refreshThreshold) {
+                                            onScan()
+                                        }
+                                        pullDistance = 0f
+                                    },
+                                    onDragCancel = { pullDistance = 0f }
+                                )
+                            }
                     ) {
                         LazyColumn(
                             state = listState,
