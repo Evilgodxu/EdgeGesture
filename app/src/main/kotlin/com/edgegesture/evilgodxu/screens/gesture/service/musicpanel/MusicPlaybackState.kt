@@ -1,26 +1,82 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
+import com.edgegesture.evilgodxu.data.gesture.gestureDataStore
 import androidx.compose.runtime.getValue
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import android.content.Context
 import androidx.compose.runtime.setValue
 import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.withLock
 
 // 音乐播放器状态持有者（悬浮窗级共享状态）
 class MusicPlaybackState {
 
-    var exoPlayer: ExoPlayer? by mutableStateOf(null)
-    var playerListener: Player.Listener? by mutableStateOf(null)
+    private val savedUriKey = stringPreferencesKey("music_saved_uri")
+    private val savedPositionKey = longPreferencesKey("music_saved_position")
+    private val savedModeKey = intPreferencesKey("music_saved_mode")
+    private var persistenceJob: Job? = null
+    var appContext: Context? = null
+    var mediaController: MediaController? by mutableStateOf(null)
+    var player: Player? by mutableStateOf(null)
+    val controllerListener = object : Player.Listener {
+        override fun onIsPlayingChanged(isPlaying: Boolean) {
+            this@MusicPlaybackState.isPlaying = isPlaying
+        }
+
+        override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+            val id = mediaItem?.mediaId?.toLongOrNull() ?: return
+            val index = playlist.indexOfFirst { it.id == id }
+            if (index >= 0) {
+                currentIndex = index
+                currentTrack = playlist[index]
+                isPrepared = false
+                currentPosition = 0L
+                duration = 0L
+            }
+        }
+
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            val controller = mediaController ?: return
+            when (playbackState) {
+                Player.STATE_READY -> {
+                    isPrepared = true
+                    duration = controller.duration.coerceAtLeast(0L)
+                }
+                Player.STATE_ENDED -> {
+                    isPlaying = false
+                    currentPosition = duration
+                    val next = nextIndex()
+                    if (next >= 0) {
+                        playbackScope.launch {
+                            playTrackAt(appContext ?: return@launch, this@MusicPlaybackState, next)
+                        }
+                    }
+                }
+            }
+        }
+
+        override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+            errorMsg = "播放失败"
+            isPlaying = false
+            isPrepared = false
+        }
+    }
     var isPlaying by mutableStateOf(false)
     var isPrepared by mutableStateOf(false)
     var duration by mutableLongStateOf(0L)
@@ -51,20 +107,59 @@ class MusicPlaybackState {
 
     val hasTrack: Boolean get() = currentTrack != null
 
-    fun release() {
-        playerListener?.let { exoPlayer?.removeListener(it) }
-        playerListener = null
-        exoPlayer?.apply {
-            if (isPlaying) stop()
-            release()
+    suspend fun restoreSavedState(context: Context) {
+        appContext = context.applicationContext
+        val preferences = withContext(Dispatchers.IO) {
+            context.gestureDataStore.data.first()
         }
-        exoPlayer = null
+        val savedUri = preferences[savedUriKey]
+        val savedPosition = preferences[savedPositionKey] ?: 0L
+        val savedMode = preferences[savedModeKey] ?: PlayMode.RepeatAll.ordinal
+        withContext(Dispatchers.Main) {
+            pendingSavedUri = savedUri
+            pendingResumePosition = savedPosition
+            currentPosition = savedPosition
+            playMode = PlayMode.entries.getOrElse(savedMode) { PlayMode.RepeatAll }
+        }
+    }
+
+    var pendingSavedUri: String? = null
+    var pendingResumePosition: Long = 0L
+
+    fun persistState() {
+        val context = appContext ?: return
+        val track = currentTrack ?: return
+        val position = currentPosition
+        val mode = playMode.ordinal
+        persistenceJob?.cancel()
+        persistenceJob = CoroutineScope(Dispatchers.IO).launch {
+            context.gestureDataStore.edit { preferences ->
+                preferences[savedUriKey] = track.audioUri
+                preferences[savedPositionKey] = position
+                preferences[savedModeKey] = mode
+            }
+        }
+    }
+
+    fun release() {
+        persistState()
+        currentTrack?.let { track ->
+            pendingSavedUri = track.audioUri
+            pendingResumePosition = currentPosition
+        }
+        mediaController?.let { controller ->
+            playbackScope.launch {
+                controller.stop()
+                controller.removeListener(controllerListener)
+                controller.release()
+            }
+        }
+
+        mediaController = null
+        player = null
         isPlaying = false
         isPrepared = false
         duration = 0L
-        currentPosition = 0L
-        currentTrack = null
-        currentIndex = -1
         errorMsg = null
         stopTimer()
     }
@@ -80,7 +175,7 @@ class MusicPlaybackState {
                 timerRemaining--
             }
             // 计时结束：停止播放并释放全部资源
-            exoPlayer?.stop()
+            mediaController?.stop()
             release()
         }
     }
@@ -110,9 +205,9 @@ class MusicPlaybackState {
 
     // 更新当前播放位置（用于 UI 进度条）
     fun updatePosition() {
-        exoPlayer?.let { player ->
+        mediaController?.let { controller ->
             if (isPrepared) {
-                currentPosition = player.currentPosition.coerceIn(0, duration)
+                currentPosition = controller.currentPosition.coerceIn(0, duration)
             }
         }
     }

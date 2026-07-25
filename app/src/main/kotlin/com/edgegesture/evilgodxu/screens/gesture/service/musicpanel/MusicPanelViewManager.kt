@@ -26,6 +26,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // 音乐面板悬浮窗管理器
 class MusicPanelViewManager(
@@ -40,6 +41,18 @@ class MusicPanelViewManager(
     private val managerScope = CoroutineScope(managerJob + Dispatchers.IO)
 
     private val playbackState = MusicPanelStateHolder.state
+    private var pendingExternalUri: android.net.Uri? = null
+    private var stateRestored = false
+
+    fun playExternalUri(uri: android.net.Uri) {
+        pendingExternalUri = uri
+        if (composeView == null) {
+            show()
+            loadExternalTrack()
+        } else {
+            loadExternalTrack()
+        }
+    }
 
     private val lifecycleOwner = object : LifecycleOwner {
         private val lifecycleRegistry = LifecycleRegistry(this)
@@ -81,7 +94,6 @@ class MusicPanelViewManager(
         ).apply {
             gravity = Gravity.CENTER
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                // 窗口后方毛玻璃模糊半径；接近设计稿 backdrop-filter: blur(14px) 的视觉效果
                 blurBehindRadius = 80
             }
         }
@@ -135,21 +147,51 @@ class MusicPanelViewManager(
             .setInterpolator(DecelerateInterpolator())
             .start()
 
-        // 触发自动扫描并播放第一首
-        scanAndPlay()
+        managerScope.launch {
+            playbackState.restoreSavedState(context)
+            scanAndPlay()
+        }
     }
 
-    private fun scanAndPlay() {
-        // 已有缓存曲目时直接复用，避免关闭后重新扫描
-        if (playbackState.playlist.isNotEmpty()) return
-
+    private fun loadExternalTrack() {
+        val uri = pendingExternalUri ?: return
         managerScope.launch {
-            playbackState.isScanning = true
-            val tracks = MusicScanner.scan(context)
-            playbackState.setSortedPlaylist(tracks)
-            playbackState.isScanning = false
-            // 启动面板时不自动播放，仅恢复上一次的播放状态由 UI 层处理
+            val track = MusicScanner.fromUri(context, uri) ?: return@launch
+            playbackState.playlist = (playbackState.playlist + track).distinctBy { it.id }
+            playbackState.currentIndex = playbackState.playlist.lastIndex
+            playbackState.currentTrack = playbackState.playlist.last()
+            withContext(Dispatchers.Main) {
+                playTrackAt(context, playbackState, playbackState.currentIndex)
+            }
+            pendingExternalUri = null
         }
+    }
+
+    private suspend fun scanAndPlay() {
+        if (playbackState.playlist.isNotEmpty()) {
+            restoreCurrentTrack()
+            return
+        }
+
+        withContext(Dispatchers.Main) {
+            playbackState.isScanning = true
+        }
+        val tracks = MusicScanner.scan(context)
+        withContext(Dispatchers.Main) {
+            playbackState.setSortedPlaylist(tracks)
+            restoreCurrentTrack()
+            playbackState.isScanning = false
+        }
+    }
+
+    private fun restoreCurrentTrack() {
+        if (playbackState.playlist.isEmpty() || playbackState.currentTrack != null) return
+        val savedUri = playbackState.pendingSavedUri
+        val index = savedUri?.let { uri -> playbackState.playlist.indexOfFirst { it.audioUri == uri } }
+            ?.takeIf { it >= 0 }
+            ?: 0
+        playbackState.currentIndex = index
+        playbackState.currentTrack = playbackState.playlist[index]
     }
 
     // 关闭音乐面板（保留播放状态与 ExoPlayer，下次显示直接恢复）
@@ -177,8 +219,10 @@ class MusicPanelViewManager(
                 }
                 composeView = null
                 isDismissing = false
-                // 保留播放列表、当前曲目与 ExoPlayer，不释放资源
                 playbackState.updatePosition()
+                if (!playbackState.isPlaying) {
+                    playbackState.release()
+                }
                 onDismiss()
                 managerJob.cancel()
             }

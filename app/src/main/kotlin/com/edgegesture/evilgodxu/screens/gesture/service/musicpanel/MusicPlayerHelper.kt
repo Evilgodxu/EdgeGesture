@@ -1,91 +1,106 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
+import android.content.ComponentName
 import android.content.Context
 import android.net.Uri
 import androidx.media3.common.MediaItem
-import androidx.media3.common.Player
-import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import java.io.File
 
-// 在指定索引处播放曲目
-suspend fun playTrackAt(context: Context, state: MusicPlaybackState, index: Int) = withContext(Dispatchers.Main) {
-    state.playTrackMutex.withLock<Unit> {
-        val track = state.playlist.getOrNull(index) ?: return@withLock
+private suspend fun getController(context: Context, state: MusicPlaybackState): MediaController {
+    state.mediaController?.let { return it }
+    state.appContext = context.applicationContext
+    val token = SessionToken(context, ComponentName(context, MusicPlaybackService::class.java))
+    val controller = withContext(Dispatchers.IO) {
+        MediaController.Builder(context, token).buildAsync().get()
+    }
+    withContext(Dispatchers.Main) {
+        state.mediaController = controller
+        state.player = controller
+        controller.addListener(state.controllerListener)
+    }
+    return controller
+}
 
-        // 复用已有 ExoPlayer 实例，避免反复创建
-        val player = state.exoPlayer ?: ExoPlayer.Builder(context).build().also { state.exoPlayer = it }
+suspend fun playTrackAt(
+    context: Context,
+    state: MusicPlaybackState,
+    index: Int,
+    autoPlay: Boolean = true,
+) {
+    state.playTrackMutex.withLock {
+        val track = state.playlist.getOrNull(index) ?: return
+        val controller = getController(context, state)
+        val items = state.playlist.map(::toMediaItem)
 
-    // 移除旧监听器并清理状态
-    state.playerListener?.let { player.removeListener(it) }
-    player.clearMediaItems()
-    state.isPrepared = false
-    state.isPlaying = false
-    state.currentPosition = 0L
-    state.duration = 0L
-
-    val uri = if (track.path.startsWith("content://")) Uri.parse(track.path) else Uri.fromFile(File(track.path))
-    player.setMediaItem(MediaItem.fromUri(uri))
-    player.prepare()
-    player.play()
-
-    state.currentIndex = index
-    state.currentTrack = track
-
-    val listener = object : Player.Listener {
-        override fun onIsPlayingChanged(isPlaying: Boolean) {
-            state.isPlaying = isPlaying
-        }
-
-        override fun onPlaybackStateChanged(playbackState: Int) {
-            when (playbackState) {
-                Player.STATE_READY -> {
-                    state.isPrepared = true
-                    state.duration = player.duration.coerceAtLeast(0L)
-                }
-                Player.STATE_ENDED -> {
-                    // 播放结束自动按当前播放模式切到下一首/重播，实现循环播放
-                    state.isPlaying = false
-                    state.currentPosition = state.duration
-                    val next = state.nextIndex()
-                    if (next >= 0) {
-                        playNextInScope(context, state, next)
-                    }
-                }
-                else -> {}
+        withContext(Dispatchers.Main) {
+            val resumePosition = if (state.pendingSavedUri == track.audioUri) {
+                state.pendingResumePosition.coerceAtLeast(0L)
+            } else {
+                0L
             }
-        }
+            val sameQueue = controller.mediaItemCount == items.size &&
+                    (0 until controller.mediaItemCount).all {
+                        controller.getMediaItemAt(it).mediaId == items[it].mediaId
+                    }
+            val sameTrack = controller.currentMediaItem?.mediaId == track.id.toString()
 
-        override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-            state.errorMsg = "播放失败"
-            state.isPlaying = false
-            state.isPrepared = false
+            state.currentIndex = index
+            state.currentTrack = track
+            state.errorMsg = null
+            if (!sameQueue) {
+                controller.setMediaItems(items, index, resumePosition)
+                controller.prepare()
+            } else if (!sameTrack) {
+                controller.seekToDefaultPosition(index)
+            } else if (resumePosition > 0L && controller.currentPosition == 0L) {
+                controller.seekTo(resumePosition)
+            }
+            if (autoPlay) {
+                controller.play()
+            } else {
+                controller.pause()
+            }
+            state.pendingSavedUri = null
+            state.pendingResumePosition = 0L
         }
-    }
-        player.addListener(listener)
-        state.playerListener = listener
     }
 }
 
-// 在后台作用域中播放下一首（避免 ExoPlayer 监听器内直接递归调用 playTrackAt）
-private fun playNextInScope(context: Context, state: MusicPlaybackState, index: Int) {
-    state.playbackScope.launch(Dispatchers.Main) {
-        playTrackAt(context, state, index)
-    }
+private fun toMediaItem(track: MusicTrack): MediaItem {
+    return MediaItem.Builder()
+        .setMediaId(track.id.toString())
+        .setUri(Uri.parse(track.audioUri))
+        .setMediaMetadata(
+            androidx.media3.common.MediaMetadata.Builder()
+                .setTitle(track.title)
+                .setArtist(track.artist)
+                .build()
+        )
+        .build()
 }
 
-// 暂停或继续播放
 fun togglePlayPause(state: MusicPlaybackState) {
-    state.exoPlayer?.let { player ->
-        if (player.isPlaying) {
-            player.pause()
-            state.isPlaying = false
-        } else if (state.isPrepared) {
-            player.play()
-            state.isPlaying = true
+    state.playbackScope.launch {
+        val controller = state.mediaController
+        if (controller == null) {
+            val context = state.appContext ?: return@launch
+            val index = state.currentIndex
+            if (index >= 0) {
+                playTrackAt(context, state, index)
+            }
+            return@launch
         }
+        if (controller.isPlaying) controller.pause() else controller.play()
+    }
+}
+
+fun seekTo(state: MusicPlaybackState, positionMs: Long) {
+    state.mediaController?.let { controller ->
+        state.playbackScope.launch { controller.seekTo(positionMs) }
     }
 }

@@ -6,6 +6,7 @@ import android.graphics.Bitmap
  data class MusicTrack(
     val id: Long,
     val path: String,
+    val audioUri: String,
     val title: String,
     val artist: String,
     val duration: Long,

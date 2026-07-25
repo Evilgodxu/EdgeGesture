@@ -8,13 +8,16 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -65,6 +68,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -219,15 +223,14 @@ fun MusicPanelOverlay(
                                 scaleY = scale,
                                 transformOrigin = TransformOrigin(0.5f, 0f)
                             )
-                            .padding(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 12.dp)
+                            .padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 4.dp)
                     ) {
                         HeaderRow(
                             playbackState = playbackState,
                             timerRemaining = playbackState.timerRemaining,
                             onTimerClick = { showTimer = true },
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            modifier = Modifier.padding(bottom = 2.dp)
                         )
-
                         AlbumCarousel(
                             playbackState = playbackState,
                             modifier = Modifier.padding(bottom = 6.dp)
@@ -241,10 +244,6 @@ fun MusicPanelOverlay(
                             playbackState = playbackState,
                             onPlaylistClick = { showPlaylist = true }
                         )
-
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        VisualizerSection(isPlaying = playbackState.isPlaying)
                     }
 
                     PlaylistOverlay(
@@ -326,9 +325,9 @@ private fun HeaderIconButton(
 ) {
     IconButton(
         onClick = onClick,
-        modifier = modifier.size(28.dp)
+        modifier = modifier.size(32.dp)
     ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = tint)
+        Icon(icon, contentDescription = null, modifier = Modifier.size(21.dp), tint = tint)
     }
 }
 
@@ -343,63 +342,140 @@ private fun AlbumCarousel(
     val current = if (playlist.isEmpty()) -1 else playbackState.currentIndex.coerceIn(playlist.indices)
     val prevIndex = if (current < 0) -1 else (current - 1 + playlist.size) % playlist.size
     val nextIndex = if (current < 0) -1 else (current + 1) % playlist.size
+    var dragOffset by remember(current) { mutableFloatStateOf(0f) }
+    var settledOffset by remember(current) { mutableFloatStateOf(0f) }
+    var isAnimating by remember(current) { mutableStateOf(false) }
+    val coverStep = 56.dp
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val coverStepPx = with(density) { coverStep.toPx() }
+    val switchThreshold = coverStepPx * 0.35f
 
-    val swipeModifier = Modifier.pointerInput(current) {
-        var totalDrag = 0f
+    val swipeModifier = Modifier.pointerInput(current, isAnimating) {
         detectHorizontalDragGestures(
             onHorizontalDrag = { change, dragAmount ->
-                change.consume()
-                totalDrag += dragAmount
+                if (!isAnimating) {
+                    change.consume()
+                    dragOffset = (dragOffset + dragAmount).coerceIn(-coverStepPx, coverStepPx)
+                }
             },
             onDragEnd = {
-                when {
-                    totalDrag < -30f -> {
-                        if (nextIndex >= 0) scope.launch { playTrackAt(context, playbackState, nextIndex) }
+                if (!isAnimating) {
+                    val target = when {
+                        dragOffset <= -switchThreshold && nextIndex >= 0 -> -coverStepPx
+                        dragOffset >= switchThreshold && prevIndex >= 0 -> coverStepPx
+                        else -> 0f
                     }
-                    totalDrag > 30f -> {
-                        if (prevIndex >= 0) scope.launch { playTrackAt(context, playbackState, prevIndex) }
+                    val targetIndex = when {
+                        target < 0f -> nextIndex
+                        target > 0f -> prevIndex
+                        else -> -1
+                    }
+                    isAnimating = true
+                    settledOffset = target
+                    scope.launch {
+                        delay(220)
+                        if (targetIndex >= 0) {
+                            playTrackAt(context, playbackState, targetIndex)
+                        }
+                        dragOffset = 0f
+                        settledOffset = 0f
+                        isAnimating = false
                     }
                 }
-                totalDrag = 0f
+            },
+            onDragCancel = {
+                if (!isAnimating) {
+                    isAnimating = true
+                    settledOffset = 0f
+                    scope.launch {
+                        delay(180)
+                        dragOffset = 0f
+                        isAnimating = false
+                    }
+                }
             }
         )
     }
 
-    Row(
+    val targetOffset = if (isAnimating) settledOffset else dragOffset
+    val effectiveOffset by animateFloatAsState(
+        targetValue = targetOffset,
+        animationSpec = tween(if (isAnimating) 220 else 80),
+        label = "album_drag_offset"
+    )
+    val offsetFraction = (effectiveOffset / coverStepPx).coerceIn(-1f, 1f)
+    val forwardFraction = (-offsetFraction).coerceIn(0f, 1f)
+    val backwardFraction = offsetFraction.coerceIn(0f, 1f)
+    val slotDistance = with(density) { 53.dp.toPx() }
+    var rotation by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(playbackState.isPlaying) {
+        while (isActive && playbackState.isPlaying) {
+            rotation = (rotation + 3f) % 360f
+            delay(100)
+        }
+    }
+
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .height(72.dp)
             .then(swipeModifier),
-        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically
+        contentAlignment = Alignment.Center
     ) {
         SideCover(
             track = playlist.getOrNull(prevIndex),
             onClick = {
-                if (prevIndex >= 0) scope.launch { playTrackAt(context, playbackState, prevIndex) }
+                if (prevIndex >= 0 && !isAnimating) {
+                    scope.launch { playTrackAt(context, playbackState, prevIndex) }
+                }
+            },
+            modifier = Modifier.graphicsLayer {
+                translationX = -slotDistance + effectiveOffset
+                val scale = 0.85f + backwardFraction * 0.15f
+                scaleX = scale
+                scaleY = scale
+                alpha = 0.4f * (1f - forwardFraction)
             }
         )
         CenterCover(
             track = playlist.getOrNull(current),
-            isPlaying = playbackState.isPlaying
+            isPlaying = playbackState.isPlaying,
+            rotation = rotation,
+            modifier = Modifier.graphicsLayer {
+                translationX = effectiveOffset
+            },
+            scale = 1f - 0.15f * kotlin.math.abs(offsetFraction),
+            alpha = 1f - 0.35f * kotlin.math.abs(offsetFraction)
         )
         SideCover(
             track = playlist.getOrNull(nextIndex),
             onClick = {
-                if (nextIndex >= 0) scope.launch { playTrackAt(context, playbackState, nextIndex) }
+                if (nextIndex >= 0 && !isAnimating) {
+                    scope.launch { playTrackAt(context, playbackState, nextIndex) }
+                }
+            },
+            modifier = Modifier.graphicsLayer {
+                translationX = slotDistance + effectiveOffset * 0.55f
+                val scale = 0.85f + forwardFraction * 0.15f
+                scaleX = scale
+                scaleY = scale
+                alpha = 0.4f * (1f - backwardFraction)
             }
         )
     }
 }
 
 @Composable
-private fun SideCover(track: MusicTrack?, onClick: () -> Unit) {
+private fun SideCover(
+    track: MusicTrack?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(36.dp)
-            .graphicsLayer(scaleX = 0.85f, scaleY = 0.85f)
-            .alpha(0.4f)
             .clip(CircleShape)
+            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f), CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -408,10 +484,23 @@ private fun SideCover(track: MusicTrack?, onClick: () -> Unit) {
 }
 
 @Composable
-private fun CenterCover(track: MusicTrack?, isPlaying: Boolean) {
+private fun CenterCover(
+    track: MusicTrack?,
+    isPlaying: Boolean,
+    rotation: Float,
+    modifier: Modifier = Modifier,
+    scale: Float = 1f,
+    alpha: Float = 1f,
+) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .size(64.dp)
+            .graphicsLayer {
+                rotationZ = rotation
+                scaleX = scale
+                scaleY = scale
+                this.alpha = alpha
+            }
             .shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.5f), spotColor = Color.Black.copy(alpha = 0.5f))
             .clip(CircleShape),
         contentAlignment = Alignment.Center
@@ -463,7 +552,8 @@ private fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
         )
     } else {
         Box(
-            modifier = modifier.background(MaterialTheme.colorScheme.surfaceVariant),
+            modifier = modifier
+                .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -505,13 +595,24 @@ private fun TrackInfo(playbackState: MusicPlaybackState) {
 
 @Composable
 private fun ProgressSection(playbackState: MusicPlaybackState) {
-    Row(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 4.dp, bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(top = 2.dp, bottom = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
+        VisualizerSection(
+            isPlaying = playbackState.isPlaying,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(14.dp)
+                .alpha(0.45f)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
         Text(
             text = formatTime(playbackState.currentPosition),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -530,7 +631,7 @@ private fun ProgressSection(playbackState: MusicPlaybackState) {
         Box(
             modifier = Modifier
                 .weight(1f)
-                .height(12.dp)
+                .height(20.dp)
                 .pointerInput(Unit) {
                     awaitPointerEventScope {
                         while (true) {
@@ -539,8 +640,8 @@ private fun ProgressSection(playbackState: MusicPlaybackState) {
                             seekFraction = pos.coerceIn(0f, 1f)
                             isSeeking = true
                             if (event.changes.first().pressed) {
-                                playbackState.exoPlayer?.seekTo((seekFraction * playbackState.duration).toLong())
-                                playbackState.currentPosition = (seekFraction * playbackState.duration).toLong()
+                                seekTo(playbackState, (seekFraction * playbackState.duration).toLong())
+                                playbackState.currentPosition = (seekFraction * playbackState.duration).toLong().coerceIn(0L, playbackState.duration)
                             }
                             if (event.changes.all { !it.pressed }) {
                                 isSeeking = false
@@ -563,7 +664,6 @@ private fun ProgressSection(playbackState: MusicPlaybackState) {
                     .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
             )
         }
-
         Text(
             text = formatTime(playbackState.duration),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -571,6 +671,7 @@ private fun ProgressSection(playbackState: MusicPlaybackState) {
             modifier = Modifier.width(24.dp),
             textAlign = TextAlign.End
         )
+        }
     }
 }
 
@@ -603,7 +704,7 @@ private fun ControlBar(
                 }
             },
             size = 32.dp,
-            iconSize = 18.dp
+            iconSize = 21.dp
         )
 
         ControlIconButton(
@@ -614,7 +715,7 @@ private fun ControlBar(
             },
             enabled = playbackState.playlist.isNotEmpty(),
             size = 32.dp,
-            iconSize = 18.dp
+            iconSize = 21.dp
         )
 
         // 播放/暂停
@@ -624,15 +725,7 @@ private fun ControlBar(
             modifier = Modifier.size(36.dp),
             shadowElevation = 0.dp,
             onClick = {
-                playbackState.exoPlayer?.let { player ->
-                    if (player.isPlaying) {
-                        player.pause()
-                        playbackState.isPlaying = false
-                    } else if (playbackState.isPrepared) {
-                        player.play()
-                        playbackState.isPlaying = true
-                    }
-                }
+                togglePlayPause(playbackState)
             }
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -653,14 +746,14 @@ private fun ControlBar(
             },
             enabled = playbackState.playlist.isNotEmpty(),
             size = 32.dp,
-            iconSize = 18.dp
+            iconSize = 21.dp
         )
 
         ControlIconButton(
             icon = Icons.AutoMirrored.Outlined.PlaylistPlay,
             onClick = onPlaylistClick,
             size = 32.dp,
-            iconSize = 18.dp
+            iconSize = 21.dp
         )
     }
 }
@@ -689,12 +782,15 @@ private fun ControlIconButton(
 }
 
 @Composable
-private fun VisualizerSection(isPlaying: Boolean) {
+private fun VisualizerSection(
+    isPlaying: Boolean,
+    modifier: Modifier = Modifier,
+) {
     val barCount = 28
     val primary = MaterialTheme.colorScheme.primary
     val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(20.dp)
             .padding(horizontal = 8.dp),
