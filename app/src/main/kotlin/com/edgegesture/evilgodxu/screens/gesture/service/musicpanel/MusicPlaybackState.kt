@@ -390,4 +390,28 @@ class MusicPlaybackState {
             }
         }
     }
+
+    fun manualNextIndex(): Int {
+        if (playlist.isEmpty()) return -1
+        val validCurrentIndex = currentIndex.takeIf { it in playlist.indices } ?: 0
+        return when (playMode) {
+            PlayMode.Shuffle -> {
+                if (playlist.size == 1) 0
+                else playlist.indices.filter { it != validCurrentIndex }.random()
+            }
+            PlayMode.RepeatOne, PlayMode.RepeatAll -> (validCurrentIndex + 1) % playlist.size
+        }
+    }
+
+    fun manualPreviousIndex(): Int {
+        if (playlist.isEmpty()) return -1
+        val validCurrentIndex = currentIndex.takeIf { it in playlist.indices } ?: 0
+        return when (playMode) {
+            PlayMode.Shuffle -> {
+                if (playlist.size == 1) 0
+                else playlist.indices.filter { it != validCurrentIndex }.random()
+            }
+            PlayMode.RepeatOne, PlayMode.RepeatAll -> (validCurrentIndex - 1 + playlist.size) % playlist.size
+        }
+    }
 }

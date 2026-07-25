@@ -712,7 +712,7 @@ private fun ControlBar(
         ControlIconButton(
             icon = Icons.Default.SkipPrevious,
             onClick = {
-                val prev = playbackState.previousIndex()
+                val prev = playbackState.manualPreviousIndex()
                 if (prev >= 0) scope.launch { playTrackAt(context, playbackState, prev) }
             },
             enabled = playbackState.playlist.isNotEmpty(),
@@ -743,7 +743,7 @@ private fun ControlBar(
         ControlIconButton(
             icon = Icons.Default.SkipNext,
             onClick = {
-                val next = playbackState.nextIndex()
+                val next = playbackState.manualNextIndex()
                 if (next >= 0) scope.launch { playTrackAt(context, playbackState, next) }
             },
             enabled = playbackState.playlist.isNotEmpty(),
