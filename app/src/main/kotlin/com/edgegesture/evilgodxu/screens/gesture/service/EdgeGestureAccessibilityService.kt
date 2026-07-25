@@ -38,6 +38,8 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import rikka.shizuku.Shizuku
 
 class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGestureDetector.GestureCallback {
@@ -55,25 +57,11 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         fun isAvailable(): Boolean = weakInstance?.get() != null
 
         fun startGesture(context: Context) {
-            getInstance()?.apply {
-                serviceScope.launch {
-                    loadSettings()
-                    if (settings.gestureEnabled) {
-                        withContext(Dispatchers.Main) {
-                            if (!edgeViewManager.isViewAttached()) {
-                                edgeViewManager.createEdgeViews(settings, settingsProvider)
-                                edgeViewManager.showEdgeViews(settings)
-                            }
-                            // 视图创建/恢复后同步检查键盘状态
-                            checkKeyboardVisibility()
-                        }
-                    }
-                }
-            }
+            getInstance()?.requestGestureSync()
         }
 
         fun stopGesture(context: Context) {
-            getInstance()?.edgeViewManager?.removeEdgeViews()
+            getInstance()?.requestGestureSync()
         }
 
         fun updateSettings(context: Context) {
@@ -82,6 +70,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val edgeViewMutex = Mutex()
     private var settings: GestureSettingsState = GestureSettingsState()
     private val settingsProvider: () -> GestureSettingsState = {
         val s = settings
@@ -135,6 +124,26 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     private var settingsFlowJob: kotlinx.coroutines.Job? = null
     private var launchBlockFlowJob: kotlinx.coroutines.Job? = null
     private var isKeyboardVisible = false
+
+    private fun requestGestureSync() {
+        serviceScope.launch {
+            if (!::edgeViewManager.isInitialized) return@launch
+            edgeViewMutex.withLock {
+                val latestSettings = gestureSettingsFlow().first()
+                settings = latestSettings
+                withContext(Dispatchers.Main) {
+                    if (latestSettings.gestureEnabled) {
+                        edgeViewManager.removeEdgeViews()
+                        edgeViewManager.createEdgeViews(latestSettings, settingsProvider)
+                        edgeViewManager.showEdgeViews(latestSettings)
+                        checkKeyboardVisibility()
+                    } else {
+                        edgeViewManager.removeEdgeViews()
+                    }
+                }
+            }
+        }
+    }
 
     // 边缘视图添加失败后的重启保护
     private var consecutiveAttachFailures = 0
@@ -206,18 +215,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             // 黑名单初始化由 initializeWithScan() 中的 initBlacklistFromApps() 完成，
             // 它会根据实际权限状态正确处理（有权限时扫描全部系统应用，无权限时使用已扫描的可启动应用兜底）
             loadSettings()
-            // 确保边缘视图已创建：loadSettings() 与 startSettingsFlow() 首次发射存在竞态，
-            // 若 loadSettings() 先完成，startSettingsFlow() 首次发射时 oldSettings 与 newSettings
-            // 的 gestureEnabled 均为 true，视图创建逻辑会被跳过，导致边缘触摸视图不显示。
-            if (settings.gestureEnabled) {
-                withContext(Dispatchers.Main) {
-                    if (!edgeViewManager.isViewAttached()) {
-                        edgeViewManager.createEdgeViews(settings, settingsProvider)
-                        edgeViewManager.showEdgeViews(settings)
-                        checkKeyboardVisibility()
-                    }
-                }
-            }
+            requestGestureSync()
         }
 
         // 初始化完成后延迟检查键盘状态，确保在 startSettingsFlow()
@@ -250,37 +248,20 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                 val oldSettings = settings
                 settings = newSettings
 
-                // 背面双击检测器管理
-                updateBackTapDetector(oldSettings, newSettings)
+                // 背面双击和启动拦截随边缘手势总开关启停
+                val effectiveOldSettings = oldSettings.copy(
+                    backTapEnabled = oldSettings.backTapEnabled && oldSettings.gestureEnabled
+                )
+                val effectiveNewSettings = newSettings.copy(
+                    backTapEnabled = newSettings.backTapEnabled && newSettings.gestureEnabled
+                )
+                updateBackTapDetector(effectiveOldSettings, effectiveNewSettings)
 
-                // 检测器启动后或自动暂停设置变化时，立即同步暂停状态
-                if (newSettings.backTapEnabled) {
+                if (effectiveNewSettings.backTapEnabled) {
                     updateBackTapPauseState()
                 }
 
-                withContext(Dispatchers.Main) {
-                    if (oldSettings.gestureEnabled != newSettings.gestureEnabled) {
-                        if (newSettings.gestureEnabled) {
-                            edgeViewManager.createEdgeViews(settings, settingsProvider)
-                            edgeViewManager.showEdgeViews(settings)
-                            // 启用手势后同步检查键盘状态
-                            checkKeyboardVisibility()
-                        } else {
-                            edgeViewManager.removeEdgeViews()
-                        }
-                    } else if (newSettings.gestureEnabled) {
-                        if (oldSettings.hideOverlay != newSettings.hideOverlay) {
-                            edgeViewManager.updateEdgeViewsAlpha(settings)
-                        }
-                        if (hasSizeOrPositionChanged(oldSettings, newSettings)) {
-                            edgeViewManager.removeEdgeViews()
-                            edgeViewManager.createEdgeViews(settings, settingsProvider)
-                            edgeViewManager.showEdgeViews(settings)
-                            // 视图重建后同步检查键盘状态
-                            checkKeyboardVisibility()
-                        }
-                    }
-                }
+                requestGestureSync()
             }
             .launchIn(serviceScope)
     }
@@ -353,7 +334,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
     // 检测应用启动并执行拦截
     private fun checkAppLaunch(event: AccessibilityEvent) {
-        if (!launchBlockState.enabled || launchBlockState.rules.isEmpty()) return
+        if (!settings.gestureEnabled || !launchBlockState.enabled || launchBlockState.rules.isEmpty()) return
 
         val newPackage = event.packageName?.toString() ?: return
         if (newPackage == currentPackage) return
@@ -589,7 +570,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
 
         restartHandler.removeCallbacks(restartRunnable)
-        edgeViewManager.removeEdgeViews()
+        requestGestureSync()
         restartHandler.postDelayed(restartRunnable, RESTART_DELAY_MS)
     }
 
@@ -605,7 +586,15 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         // 延迟更新布局，等待系统完成配置切换
         Handler(Looper.getMainLooper()).postDelayed({
             if (settings.gestureEnabled && edgeViewManager.isViewAttached()) {
-                edgeViewManager.updateEdgeViewsLayout(settings)
+                serviceScope.launch {
+                    edgeViewMutex.withLock {
+                        withContext(Dispatchers.Main) {
+                            if (settings.gestureEnabled && edgeViewManager.isViewAttached()) {
+                                edgeViewManager.updateEdgeViewsLayout(settings)
+                            }
+                        }
+                    }
+                }
             }
         }, 100)
     }
@@ -619,7 +608,9 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         settingsFlowJob?.cancel()
         launchBlockFlowJob?.cancel()
         stopBackTapDetector()
-        edgeViewManager.removeEdgeViews()
+        if (::edgeViewManager.isInitialized) {
+            edgeViewManager.removeEdgeViews()
+        }
         actionExecutor.cleanup()
         serviceScope.cancel()
         return super.onUnbind(intent)
@@ -640,35 +631,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     }
 
     fun refreshSettings() {
-        serviceScope.launch {
-            val oldSettings = settings
-            loadSettings()
-            updateBackTapDetector(oldSettings, settings)
-            withContext(Dispatchers.Main) {
-                if (oldSettings.gestureEnabled != settings.gestureEnabled) {
-                    edgeViewManager.removeEdgeViews()
-                    if (settings.gestureEnabled) {
-                        edgeViewManager.createEdgeViews(settings, settingsProvider)
-                        edgeViewManager.showEdgeViews(settings)
-                        checkKeyboardVisibility()
-                    }
-                } else if (settings.gestureEnabled) {
-                    if (oldSettings.hideOverlay != settings.hideOverlay) {
-                        edgeViewManager.updateEdgeViewsAlpha(settings)
-                    }
-                    if (hasSizeOrPositionChanged(oldSettings, settings)) {
-                        edgeViewManager.removeEdgeViews()
-                        edgeViewManager.createEdgeViews(settings, settingsProvider)
-                        edgeViewManager.showEdgeViews(settings)
-                        checkKeyboardVisibility()
-                    }
-                }
-                // 即使设置未变化，也可能只切换了 avoidKeyboardOverlap 开关，
-                // 每次 refresh 都重新同步键盘状态确保一致性
-                if (settings.gestureEnabled) {
-                    checkKeyboardVisibility()
-                }
-            }
-        }
+        requestGestureSync()
     }
 }

@@ -260,53 +260,59 @@ private fun GestureSettingsContent(
                     notificationPermissionLauncher = notificationPermissionLauncher
                 )
 
-                GesturePreview(
-                    leftEdgeWidth = settings.leftEdgeWidth,
-                    leftEdgeHeightPercent = settings.leftEdgeHeightPercent,
-                    leftEdgePositionPercent = settings.leftEdgePositionPercent,
-                    leftSegmentCount = settings.leftSegmentCount,
-                    rightEdgeWidth = settings.rightEdgeWidth,
-                    rightEdgeHeightPercent = settings.rightEdgeHeightPercent,
-                    rightEdgePositionPercent = settings.rightEdgePositionPercent,
-                    rightSegmentCount = settings.rightSegmentCount,
-                    bottomEdgeHeight = settings.bottomEdgeHeight,
-                    bottomEdgeWidthPercent = settings.bottomEdgeWidthPercent,
-                    bottomSegmentCount = settings.bottomSegmentCount
-                )
+                AnimatedVisibility(visible = settings.gestureEnabled) {
+                    GesturePreview(
+                        leftEdgeWidth = settings.leftEdgeWidth,
+                        leftEdgeHeightPercent = settings.leftEdgeHeightPercent,
+                        leftEdgePositionPercent = settings.leftEdgePositionPercent,
+                        leftSegmentCount = settings.leftSegmentCount,
+                        rightEdgeWidth = settings.rightEdgeWidth,
+                        rightEdgeHeightPercent = settings.rightEdgeHeightPercent,
+                        rightEdgePositionPercent = settings.rightEdgePositionPercent,
+                        rightSegmentCount = settings.rightSegmentCount,
+                        bottomEdgeHeight = settings.bottomEdgeHeight,
+                        bottomEdgeWidthPercent = settings.bottomEdgeWidthPercent,
+                        bottomSegmentCount = settings.bottomSegmentCount
+                    )
+                }
             }
 
             // 右侧列：手势设置折叠组件
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp)
+            AnimatedVisibility(
+                visible = settings.gestureEnabled,
+                modifier = Modifier.weight(1f)
             ) {
-                GestureConfigSummaryCard(
-                    settings = settings,
-                    onLeftClick = onNavigateToLeftEdge,
-                    onRightClick = onNavigateToRightEdge,
-                    onBottomClick = onNavigateToBottomEdge
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp)
+                ) {
+                    GestureConfigSummaryCard(
+                        settings = settings,
+                        onLeftClick = onNavigateToLeftEdge,
+                        onRightClick = onNavigateToRightEdge,
+                        onBottomClick = onNavigateToBottomEdge
+                    )
 
-                AdvancedGestureCard(
-                    backTapEnabled = settings.backTapEnabled,
-                    backTapDescription = buildBackTapDescription(settings),
-                    onClick = onNavigateToBackTap
-                )
+                    AdvancedGestureCard(
+                        backTapEnabled = settings.backTapEnabled,
+                        backTapDescription = buildBackTapDescription(settings),
+                        onClick = onNavigateToBackTap
+                    )
 
-                TriggerAreaSettingsCard(
-                    settings = settings,
-                    viewModel = viewModel
-                )
+                    TriggerAreaSettingsCard(
+                        settings = settings,
+                        viewModel = viewModel
+                    )
 
-                MoreGridCard(
-                    onSettings = onNavigateToSettings,
-                    onBlacklist = onNavigateToBlacklist,
-                    onLaunchBlock = onNavigateToLaunchBlock,
-                    onExpandPanel = onNavigateToExpandPanel
-                )
+                    MoreGridCard(
+                        onSettings = onNavigateToSettings,
+                        onBlacklist = onNavigateToBlacklist,
+                        onLaunchBlock = onNavigateToLaunchBlock,
+                        onExpandPanel = onNavigateToExpandPanel
+                    )
+                }
             }
         }
     } else {
