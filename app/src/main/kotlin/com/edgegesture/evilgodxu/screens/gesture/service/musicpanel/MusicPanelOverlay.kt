@@ -574,7 +574,11 @@ private fun TrackInfo(playbackState: MusicPlaybackState) {
             .padding(top = 4.dp, bottom = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val title = playbackState.currentTrack?.title ?: stringResource(R.string.music_panel_empty)
+        val title = when {
+            playbackState.currentTrack != null -> playbackState.currentTrack!!.title
+            playbackState.isScanning -> stringResource(R.string.music_panel_scanning)
+            else -> stringResource(R.string.music_panel_empty)
+        }
         Text(
             text = title,
             color = MaterialTheme.colorScheme.onSurface,

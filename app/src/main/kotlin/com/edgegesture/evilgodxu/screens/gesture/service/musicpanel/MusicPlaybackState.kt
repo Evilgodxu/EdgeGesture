@@ -10,7 +10,11 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import android.content.Context
+import android.net.Uri
+import androidx.core.content.edit
 import androidx.compose.runtime.setValue
+import org.json.JSONArray
+import org.json.JSONObject
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +34,8 @@ class MusicPlaybackState {
     private val savedUriKey = stringPreferencesKey("music_saved_uri")
     private val savedPositionKey = longPreferencesKey("music_saved_position")
     private val savedModeKey = intPreferencesKey("music_saved_mode")
+    private val playlistCacheKey = "music_playlist_cache"
+    private val playlistCachePreferences = "music_playlist_cache_preferences"
     private var persistenceJob: Job? = null
     var appContext: Context? = null
     var mediaController: MediaController? by mutableStateOf(null)
@@ -75,6 +81,12 @@ class MusicPlaybackState {
             errorMsg = "播放失败"
             isPlaying = false
             isPrepared = false
+            val failedTrackId = currentTrack?.id
+            if (failedTrackId != null && currentTrack?.path.isNullOrBlank()) {
+                playbackScope.launch {
+                    removeTrack(failedTrackId)
+                }
+            }
         }
     }
     var isPlaying by mutableStateOf(false)
@@ -87,6 +99,73 @@ class MusicPlaybackState {
     var playMode by mutableStateOf(PlayMode.RepeatAll)
     var errorMsg by mutableStateOf<String?>(null)
     var isScanning by mutableStateOf(false)
+
+    private fun hasUriAccess(context: Context, audioUri: String): Boolean {
+        val uri = Uri.parse(audioUri)
+        if (context.contentResolver.persistedUriPermissions.none {
+                it.uri == uri && it.isReadPermission
+            }) return false
+        return try {
+            context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { true } ?: false
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    suspend fun removeUnavailableExternalTracks(context: Context) {
+        withContext(Dispatchers.Main) {
+            val unavailableIds = playlist
+                .filter { track ->
+                    track.path.isBlank() &&
+                        track.audioUri.isNotBlank() &&
+                        !hasUriAccess(context, track.audioUri)
+                }
+                .map { it.id }
+                .toSet()
+            if (unavailableIds.isEmpty()) return@withContext
+
+            val currentWasRemoved = currentTrack?.id in unavailableIds
+            playlist = playlist.filterNot { it.id in unavailableIds }
+            currentIndex = playlist.indexOfFirst { it.id == currentTrack?.id }
+            if (currentWasRemoved) {
+                mediaController?.stop()
+                currentTrack = null
+                currentIndex = -1
+                isPlaying = false
+                isPrepared = false
+                currentPosition = 0L
+                duration = 0L
+                clearSavedState(context)
+            }
+            persistPlaylist()
+        }
+    }
+
+    private suspend fun clearSavedState(context: Context) {
+        withContext(Dispatchers.IO) {
+            context.gestureDataStore.edit { preferences ->
+                preferences.remove(savedUriKey)
+                preferences.remove(savedPositionKey)
+            }
+        }
+    }
+
+    fun removeTrack(trackId: Long) {
+        if (playlist.none { it.id == trackId }) return
+        playlist = playlist.filterNot { it.id == trackId }
+        if (currentTrack?.id == trackId) {
+            mediaController?.stop()
+            currentTrack = null
+            currentIndex = -1
+            isPlaying = false
+            isPrepared = false
+            currentPosition = 0L
+            duration = 0L
+        } else {
+            currentIndex = playlist.indexOfFirst { it.id == currentTrack?.id }
+        }
+        persistPlaylist()
+    }
 
     // 收藏的歌曲 ID 集合（面板级内存状态）
     var likedIds by mutableStateOf<Set<Long>>(emptySet())
@@ -112,15 +191,69 @@ class MusicPlaybackState {
         val preferences = withContext(Dispatchers.IO) {
             context.gestureDataStore.data.first()
         }
+        val cachedPlaylist = withContext(Dispatchers.IO) {
+            loadCachedPlaylist(context)
+        }
         val savedUri = preferences[savedUriKey]
         val savedPosition = preferences[savedPositionKey] ?: 0L
         val savedMode = preferences[savedModeKey] ?: PlayMode.RepeatAll.ordinal
         withContext(Dispatchers.Main) {
+            if (playlist.isEmpty() && cachedPlaylist.isNotEmpty()) {
+                playlist = cachedPlaylist
+            }
             pendingSavedUri = savedUri
             pendingResumePosition = savedPosition
             currentPosition = savedPosition
             playMode = PlayMode.entries.getOrElse(savedMode) { PlayMode.RepeatAll }
         }
+    }
+
+    fun persistPlaylist() {
+        val context = appContext ?: return
+        CoroutineScope(Dispatchers.IO).launch {
+            saveCachedPlaylist(context, playlist)
+        }
+    }
+
+    private fun loadCachedPlaylist(context: Context): List<MusicTrack> {
+        val json = context.getSharedPreferences(playlistCachePreferences, Context.MODE_PRIVATE)
+            .getString(playlistCacheKey, null) ?: return emptyList()
+        return try {
+            val array = JSONArray(json)
+            List(array.length()) { index ->
+                val item = array.getJSONObject(index)
+                MusicTrack(
+                    id = item.getLong("id"),
+                    path = item.getString("path"),
+                    audioUri = item.getString("audioUri"),
+                    title = item.getString("title"),
+                    artist = item.getString("artist"),
+                    duration = item.getLong("duration"),
+                    albumId = item.getLong("albumId")
+                )
+            }
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    private fun saveCachedPlaylist(context: Context, tracks: List<MusicTrack>) {
+        val array = JSONArray()
+        tracks.forEach { track ->
+            array.put(JSONObject().apply {
+                put("id", track.id)
+                put("path", track.path)
+                put("audioUri", track.audioUri)
+                put("title", track.title)
+                put("artist", track.artist)
+                put("duration", track.duration)
+                put("albumId", track.albumId)
+            })
+        }
+        context.getSharedPreferences(playlistCachePreferences, Context.MODE_PRIVATE)
+            .edit()
+            .putString(playlistCacheKey, array.toString())
+            .apply()
     }
 
     var pendingSavedUri: String? = null

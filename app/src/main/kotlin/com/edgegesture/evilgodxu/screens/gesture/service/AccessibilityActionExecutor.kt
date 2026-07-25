@@ -208,6 +208,17 @@ class AccessibilityActionExecutor(
         }
     }
 
+    fun handleExternalAudioIntent(uri: android.net.Uri): Boolean {
+        val manager = musicPanelViewManager ?: MusicPanelViewManager(
+            context = service,
+            onDismiss = { musicPanelViewManager = null }
+        ).also {
+            musicPanelViewManager = it
+        }
+        manager.playExternalUri(uri)
+        return true
+    }
+
     private fun showMusicPanel() {
         if (musicPanelViewManager != null) {
             musicPanelViewManager?.dismiss()

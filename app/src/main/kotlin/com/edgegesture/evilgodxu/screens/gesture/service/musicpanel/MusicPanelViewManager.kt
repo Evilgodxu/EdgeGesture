@@ -2,6 +2,11 @@ package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
+import android.database.ContentObserver
+import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.graphics.PixelFormat
 import android.os.Build
 import android.view.Gravity
@@ -23,8 +28,10 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -42,16 +49,30 @@ class MusicPanelViewManager(
 
     private val playbackState = MusicPanelStateHolder.state
     private var pendingExternalUri: android.net.Uri? = null
-    private var stateRestored = false
+    private var initialization: Deferred<Unit>? = null
+    private var mediaObserverRegistered = false
+    private val mediaObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean, uri: Uri?) {
+            managerScope.launch {
+                refreshPlaylist()
+            }
+        }
+    }
 
     fun playExternalUri(uri: android.net.Uri) {
+        try {
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            )
+        } catch (_: SecurityException) {
+            // 外部应用可能只授予临时读取权限，仍需继续播放当前 URI
+        }
         pendingExternalUri = uri
         if (composeView == null) {
             show()
-            loadExternalTrack()
-        } else {
-            loadExternalTrack()
         }
+        loadExternalTrack()
     }
 
     private val lifecycleOwner = object : LifecycleOwner {
@@ -147,38 +168,76 @@ class MusicPanelViewManager(
             .setInterpolator(DecelerateInterpolator())
             .start()
 
-        managerScope.launch {
+        initialization = managerScope.async {
             playbackState.restoreSavedState(context)
-            scanAndPlay()
+            playbackState.removeUnavailableExternalTracks(context)
+            if (playbackState.playlist.isEmpty()) {
+                scanAndPlay()
+            } else {
+                withContext(Dispatchers.Main) {
+                    restoreCurrentTrack()
+                }
+            }
+            registerMediaObserver()
+        }
+    }
+
+    private fun registerMediaObserver() {
+        if (mediaObserverRegistered) return
+        context.contentResolver.registerContentObserver(
+            android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+            true,
+            mediaObserver
+        )
+        mediaObserverRegistered = true
+    }
+
+    private suspend fun refreshPlaylist() {
+        val tracks = MusicScanner.scan(context)
+        val externalTracks = playbackState.playlist.filter { it.path.isBlank() }
+        val mergedTracks = (tracks + externalTracks).distinctBy { it.audioUri }
+        withContext(Dispatchers.Main) {
+            playbackState.setSortedPlaylist(mergedTracks)
+            playbackState.persistPlaylist()
         }
     }
 
     private fun loadExternalTrack() {
         val uri = pendingExternalUri ?: return
         managerScope.launch {
+            initialization?.await()
+            if (pendingExternalUri != uri) return@launch
             val track = MusicScanner.fromUri(context, uri) ?: return@launch
-            playbackState.playlist = (playbackState.playlist + track).distinctBy { it.id }
-            playbackState.currentIndex = playbackState.playlist.lastIndex
-            playbackState.currentTrack = playbackState.playlist.last()
+            val existingIndex = playbackState.playlist.indexOfFirst { it.audioUri == track.audioUri }
+            val targetIndex = if (existingIndex >= 0) {
+                existingIndex
+            } else {
+                playbackState.playlist = (playbackState.playlist + track)
+                    .distinctBy { it.audioUri }
+                playbackState.playlist.indexOfFirst { it.audioUri == track.audioUri }
+            }
+            if (targetIndex < 0) return@launch
+            playbackState.persistPlaylist()
+            playbackState.currentIndex = targetIndex
+            playbackState.currentTrack = playbackState.playlist[targetIndex]
             withContext(Dispatchers.Main) {
-                playTrackAt(context, playbackState, playbackState.currentIndex)
+                playTrackAt(context, playbackState, targetIndex)
             }
             pendingExternalUri = null
         }
     }
 
     private suspend fun scanAndPlay() {
-        if (playbackState.playlist.isNotEmpty()) {
-            restoreCurrentTrack()
-            return
-        }
-
         withContext(Dispatchers.Main) {
             playbackState.isScanning = true
         }
         val tracks = MusicScanner.scan(context)
         withContext(Dispatchers.Main) {
-            playbackState.setSortedPlaylist(tracks)
+            val externalTracks = playbackState.playlist.filter { it.path.isBlank() }
+            val mergedTracks = (tracks + externalTracks)
+                .distinctBy { it.audioUri }
+            playbackState.setSortedPlaylist(mergedTracks)
+            playbackState.persistPlaylist()
             restoreCurrentTrack()
             playbackState.isScanning = false
         }
@@ -219,6 +278,10 @@ class MusicPanelViewManager(
                 }
                 composeView = null
                 isDismissing = false
+                if (mediaObserverRegistered) {
+                    context.contentResolver.unregisterContentObserver(mediaObserver)
+                    mediaObserverRegistered = false
+                }
                 playbackState.updatePosition()
                 if (!playbackState.isPlaying) {
                     playbackState.release()

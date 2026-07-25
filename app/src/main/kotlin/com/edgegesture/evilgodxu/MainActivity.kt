@@ -55,7 +55,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        handleExternalAudioIntent(intent)
+        if (handleExternalAudioIntent(intent)) {
+            finish()
+            return
+        }
         enableEdgeToEdge()
 
         // 设置系统栏控制
@@ -181,7 +184,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun handleExternalAudioIntent(intent: android.content.Intent?) {
+    private fun handleExternalAudioIntent(intent: android.content.Intent?): Boolean {
         val uri = when (intent?.action) {
             android.content.Intent.ACTION_VIEW -> intent.data
             android.content.Intent.ACTION_SEND -> intent.getParcelableExtra(
@@ -189,18 +192,19 @@ class MainActivity : ComponentActivity() {
                 android.net.Uri::class.java
             )
             else -> null
-        } ?: return
-        val manager = com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelViewManager(
-            context = this,
-            onDismiss = {}
-        )
-        manager.playExternalUri(uri)
+        } ?: return false
+
+        return com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService
+            .handleExternalAudioIntent(uri)
     }
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
+        if (handleExternalAudioIntent(intent)) {
+            finish()
+            return
+        }
         setIntent(intent)
-        handleExternalAudioIntent(intent)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

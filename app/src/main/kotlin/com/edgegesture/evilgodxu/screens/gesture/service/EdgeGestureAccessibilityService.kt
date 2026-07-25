@@ -1,12 +1,14 @@
 package com.edgegesture.evilgodxu.screens.gesture.service
 
+import android.Manifest
 import android.accessibilityservice.AccessibilityService
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import com.edgegesture.evilgodxu.R
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.BatteryManager
 import android.os.Build
@@ -66,6 +68,17 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
         fun updateSettings(context: Context) {
             getInstance()?.refreshSettings()
+        }
+
+        fun handleExternalAudioIntent(uri: android.net.Uri): Boolean {
+            val service = getInstance() ?: return false
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(service, Manifest.permission.READ_MEDIA_AUDIO) !=
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                return false
+            }
+            return service.actionExecutor.handleExternalAudioIntent(uri)
         }
     }
 
