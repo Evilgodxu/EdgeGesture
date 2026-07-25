@@ -357,7 +357,7 @@ private fun AlbumCarousel(
     val slotDistance = with(density) { 53.dp.toPx() }
     val enteringDistance = slotDistance + coverStepPx
 
-    fun indexFor(direction: Int): Int = if (direction < 0) nextIndex else prevIndex
+    fun indexFor(direction: Int): Int = if (direction < 0) prevIndex else nextIndex
 
     val swipeModifier = Modifier.pointerInput(current, isAnimating, canSwitch) {
         detectHorizontalDragGestures(
@@ -427,7 +427,7 @@ private fun AlbumCarousel(
     val leftTrack = playlist.getOrNull(prevIndex)
     val centerTrack = playlist.getOrNull(current)
     val rightTrack = playlist.getOrNull(nextIndex)
-    val enteringTrack = playlist.getOrNull(if (direction < 0) nextNextIndex else prevPrevIndex)
+    val enteringTrack = playlist.getOrNull(if (direction < 0) prevPrevIndex else nextNextIndex)
 
     Box(
         modifier = modifier

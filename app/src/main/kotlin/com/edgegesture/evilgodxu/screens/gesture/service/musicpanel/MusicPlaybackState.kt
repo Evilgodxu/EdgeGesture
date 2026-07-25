@@ -67,6 +67,11 @@ class MusicPlaybackState {
                 Player.STATE_ENDED -> {
                     isPlaying = false
                     currentPosition = duration
+                    if (stopAfterCurrentTrack) {
+                        stopAfterCurrentTrack = false
+                        release()
+                        return
+                    }
                     val next = nextIndex()
                     if (next >= 0) {
                         playbackScope.launch {
@@ -176,6 +181,7 @@ class MusicPlaybackState {
     private val timerJob = SupervisorJob()
     private val timerScope = CoroutineScope(timerJob + Dispatchers.Default)
     private var countdownJob: Job? = null
+    private var stopAfterCurrentTrack = false
 
     // 播放控制协程作用域（用于曲目结束自动下一首）
     private val playbackJob = SupervisorJob()
@@ -309,14 +315,24 @@ class MusicPlaybackState {
                 delay(60_000L)
                 timerRemaining--
             }
-            // 计时结束：停止播放并释放全部资源
-            mediaController?.stop()
-            release()
+            // 计时结束：当前歌曲播放完成后停止并释放资源
+            if (isPlaying) {
+                stopAfterCurrentTrack = true
+                withContext(Dispatchers.Main) {
+                    mediaController?.let { controller ->
+                        controller.repeatMode = Player.REPEAT_MODE_OFF
+                        controller.shuffleModeEnabled = false
+                    }
+                }
+            } else {
+                release()
+            }
         }
     }
 
     // 取消定时关闭
     fun stopTimer() {
+        stopAfterCurrentTrack = false
         countdownJob?.cancel()
         countdownJob = null
         timerRemaining = 0
