@@ -339,46 +339,51 @@ private fun AlbumCarousel(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val playlist = playbackState.playlist
-    val current = if (playlist.isEmpty()) -1 else playbackState.currentIndex.coerceIn(playlist.indices)
-    val prevIndex = if (current < 0) -1 else (current - 1 + playlist.size) % playlist.size
-    val nextIndex = if (current < 0) -1 else (current + 1) % playlist.size
+    val current = playlist.indexOfFirst { it.id == playbackState.currentTrack?.id }
+        .takeIf { it >= 0 } ?: playbackState.currentIndex.takeIf { it in playlist.indices } ?: -1
+    val canSwitch = playlist.size >= 2 && current >= 0
+    val prevIndex = if (canSwitch) (current - 1 + playlist.size) % playlist.size else -1
+    val nextIndex = if (canSwitch) (current + 1) % playlist.size else -1
+    val prevPrevIndex = if (canSwitch) (prevIndex - 1 + playlist.size) % playlist.size else -1
+    val nextNextIndex = if (canSwitch) (nextIndex + 1) % playlist.size else -1
     var dragOffset by remember(current) { mutableFloatStateOf(0f) }
     var settledOffset by remember(current) { mutableFloatStateOf(0f) }
+    var swipeDirection by remember(current) { mutableIntStateOf(0) }
     var isAnimating by remember(current) { mutableStateOf(false) }
     val coverStep = 56.dp
     val density = androidx.compose.ui.platform.LocalDensity.current
     val coverStepPx = with(density) { coverStep.toPx() }
     val switchThreshold = coverStepPx * 0.35f
+    val slotDistance = with(density) { 53.dp.toPx() }
+    val enteringDistance = slotDistance + coverStepPx
 
-    val swipeModifier = Modifier.pointerInput(current, isAnimating) {
+    fun indexFor(direction: Int): Int = if (direction < 0) nextIndex else prevIndex
+
+    val swipeModifier = Modifier.pointerInput(current, isAnimating, canSwitch) {
         detectHorizontalDragGestures(
             onHorizontalDrag = { change, dragAmount ->
                 if (!isAnimating) {
                     change.consume()
                     dragOffset = (dragOffset + dragAmount).coerceIn(-coverStepPx, coverStepPx)
+                    if (dragOffset != 0f) swipeDirection = if (dragOffset < 0f) -1 else 1
                 }
             },
             onDragEnd = {
                 if (!isAnimating) {
                     val target = when {
-                        dragOffset <= -switchThreshold && nextIndex >= 0 -> -coverStepPx
-                        dragOffset >= switchThreshold && prevIndex >= 0 -> coverStepPx
+                        canSwitch && dragOffset <= -switchThreshold -> -coverStepPx
+                        canSwitch && dragOffset >= switchThreshold -> coverStepPx
                         else -> 0f
                     }
-                    val targetIndex = when {
-                        target < 0f -> nextIndex
-                        target > 0f -> prevIndex
-                        else -> -1
-                    }
+                    val targetIndex = if (target != 0f) indexFor(if (target < 0f) -1 else 1) else -1
                     isAnimating = true
                     settledOffset = target
                     scope.launch {
-                        delay(220)
-                        if (targetIndex >= 0) {
-                            playTrackAt(context, playbackState, targetIndex)
-                        }
+                        delay(if (target == 0f) 180 else 220)
+                        if (targetIndex >= 0) playTrackAt(context, playbackState, targetIndex)
                         dragOffset = 0f
                         settledOffset = 0f
+                        swipeDirection = 0
                         isAnimating = false
                     }
                 }
@@ -390,6 +395,7 @@ private fun AlbumCarousel(
                     scope.launch {
                         delay(180)
                         dragOffset = 0f
+                        swipeDirection = 0
                         isAnimating = false
                     }
                 }
@@ -400,13 +406,16 @@ private fun AlbumCarousel(
     val targetOffset = if (isAnimating) settledOffset else dragOffset
     val effectiveOffset by animateFloatAsState(
         targetValue = targetOffset,
-        animationSpec = tween(if (isAnimating) 220 else 80),
+        animationSpec = tween(if (isAnimating && settledOffset != 0f) 220 else 80),
         label = "album_drag_offset"
     )
-    val offsetFraction = (effectiveOffset / coverStepPx).coerceIn(-1f, 1f)
-    val forwardFraction = (-offsetFraction).coerceIn(0f, 1f)
-    val backwardFraction = offsetFraction.coerceIn(0f, 1f)
-    val slotDistance = with(density) { 53.dp.toPx() }
+    val fraction = (effectiveOffset / coverStepPx).coerceIn(-1f, 1f)
+    val direction = when {
+        fraction < 0f -> -1
+        fraction > 0f -> 1
+        else -> swipeDirection
+    }
+    val progress = kotlin.math.abs(fraction)
     var rotation by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(playbackState.isPlaying) {
         while (isActive && playbackState.isPlaying) {
@@ -415,6 +424,11 @@ private fun AlbumCarousel(
         }
     }
 
+    val leftTrack = playlist.getOrNull(prevIndex)
+    val centerTrack = playlist.getOrNull(current)
+    val rightTrack = playlist.getOrNull(nextIndex)
+    val enteringTrack = playlist.getOrNull(if (direction < 0) nextNextIndex else prevPrevIndex)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -422,122 +436,95 @@ private fun AlbumCarousel(
             .then(swipeModifier),
         contentAlignment = Alignment.Center
     ) {
-        SideCover(
-            track = playlist.getOrNull(prevIndex),
+        CarouselCover(
+            track = if (direction < 0) leftTrack else rightTrack,
+            size = 36.dp,
+            alpha = 0.4f * (1f - progress),
+            translationX = if (direction < 0) -slotDistance - enteringDistance * progress
+            else slotDistance + enteringDistance * progress,
             onClick = {
-                if (prevIndex >= 0 && !isAnimating) {
-                    scope.launch { playTrackAt(context, playbackState, prevIndex) }
-                }
-            },
-            modifier = Modifier.graphicsLayer {
-                translationX = -slotDistance + effectiveOffset
-                val scale = 0.85f + backwardFraction * 0.15f
-                scaleX = scale
-                scaleY = scale
-                alpha = 0.4f * (1f - forwardFraction)
+                val index = if (direction < 0) prevIndex else nextIndex
+                if (index >= 0 && !isAnimating) scope.launch { playTrackAt(context, playbackState, index) }
             }
         )
-        CenterCover(
-            track = playlist.getOrNull(current),
+        CarouselCover(
+            track = enteringTrack,
+            size = 36.dp,
+            alpha = 0.4f * progress,
+            translationX = if (direction < 0) enteringDistance - coverStepPx * progress
+            else -enteringDistance + coverStepPx * progress
+        )
+        CarouselCover(
+            track = if (direction < 0) rightTrack else leftTrack,
+            size = 36.dp + 28.dp * progress,
+            alpha = 0.4f + 0.6f * progress,
+            translationX = if (direction < 0) slotDistance * (1f - progress)
+            else -slotDistance * (1f - progress),
+            onClick = {
+                val index = if (direction < 0) nextIndex else prevIndex
+                if (index >= 0 && !isAnimating) scope.launch { playTrackAt(context, playbackState, index) }
+            }
+        )
+        CarouselCover(
+            track = centerTrack,
+            size = 64.dp - 28.dp * progress,
+            alpha = 1f,
+            translationX = if (direction < 0) -slotDistance * progress else slotDistance * progress,
+            isCenter = true,
             isPlaying = playbackState.isPlaying,
-            rotation = rotation,
-            modifier = Modifier.graphicsLayer {
-                translationX = effectiveOffset
-            },
-            scale = 1f - 0.15f * kotlin.math.abs(offsetFraction),
-            alpha = 1f - 0.35f * kotlin.math.abs(offsetFraction)
-        )
-        SideCover(
-            track = playlist.getOrNull(nextIndex),
-            onClick = {
-                if (nextIndex >= 0 && !isAnimating) {
-                    scope.launch { playTrackAt(context, playbackState, nextIndex) }
-                }
-            },
-            modifier = Modifier.graphicsLayer {
-                translationX = slotDistance + effectiveOffset * 0.55f
-                val scale = 0.85f + forwardFraction * 0.15f
-                scaleX = scale
-                scaleY = scale
-                alpha = 0.4f * (1f - backwardFraction)
-            }
+            rotation = rotation
         )
     }
 }
 
 @Composable
-private fun SideCover(
+private fun CarouselCover(
     track: MusicTrack?,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp,
+    alpha: Float,
+    translationX: Float,
+    onClick: (() -> Unit)? = null,
+    isCenter: Boolean = false,
+    isPlaying: Boolean = false,
+    rotation: Float = 0f,
 ) {
+    val baseSize = 64.dp
     Box(
-        modifier = modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f), CircleShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
-    ) {
-        AlbumArt(track = track, modifier = Modifier.fillMaxSize())
-    }
-}
-
-@Composable
-private fun CenterCover(
-    track: MusicTrack?,
-    isPlaying: Boolean,
-    rotation: Float,
-    modifier: Modifier = Modifier,
-    scale: Float = 1f,
-    alpha: Float = 1f,
-) {
-    Box(
-        modifier = modifier
-            .size(64.dp)
+        modifier = Modifier
+            .size(baseSize)
             .graphicsLayer {
-                rotationZ = rotation
+                this.translationX = translationX
+                val scale = size / baseSize
                 scaleX = scale
                 scaleY = scale
                 this.alpha = alpha
+                if (isCenter) rotationZ = rotation
             }
-            .shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.5f), spotColor = Color.Black.copy(alpha = 0.5f))
-            .clip(CircleShape),
+            .then(if (isCenter) Modifier.shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.5f), spotColor = Color.Black.copy(alpha = 0.5f)) else Modifier)
+            .clip(CircleShape)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center
     ) {
         AlbumArt(track = track, modifier = Modifier.fillMaxSize())
-
-        // 唱片高光：模拟封面反光
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            Color.White.copy(alpha = 0.10f),
-                            Color.White.copy(alpha = 0.04f),
-                            Color.Transparent
-                        ),
-                        center = Offset(0.30f, 0.20f),
-                        radius = 0.65f
-                    )
-                )
-        )
-
-        if (!isPlaying && track != null) {
+        if (isCenter) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.4f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(26.dp)
-                )
+                    .background(
+                        Brush.radialGradient(
+                            listOf(Color.White.copy(alpha = 0.10f), Color.White.copy(alpha = 0.04f), Color.Transparent),
+                            center = Offset(0.30f, 0.20f),
+                            radius = 0.65f
+                        )
+                    )
+            )
+            if (!isPlaying && track != null) {
+                Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.4f)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(26.dp))
+                }
             }
+        } else {
+            Box(Modifier.fillMaxSize().border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f), CircleShape))
         }
     }
 }
