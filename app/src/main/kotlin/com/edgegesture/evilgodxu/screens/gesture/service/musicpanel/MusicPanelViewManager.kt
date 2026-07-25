@@ -7,6 +7,8 @@ import android.os.Build
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.WindowManager
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.DecelerateInterpolator
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -33,6 +35,7 @@ class MusicPanelViewManager(
 ) {
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private var composeView: ComposeView? = null
+    private var isDismissing = false
     private val managerJob = SupervisorJob()
     private val managerScope = CoroutineScope(managerJob + Dispatchers.IO)
 
@@ -77,9 +80,16 @@ class MusicPanelViewManager(
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.CENTER
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // 窗口后方毛玻璃模糊半径；接近设计稿 backdrop-filter: blur(14px) 的视觉效果
+                blurBehindRadius = 80
+            }
         }
 
         val view = ComposeView(context).apply {
+            alpha = 0f
+            scaleX = 0.8f
+            scaleY = 0.8f
             setContent {
                 MusicPanelOverlay(
                     playbackState = playbackState,
@@ -117,11 +127,22 @@ class MusicPanelViewManager(
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
 
+        view.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(250)
+            .setInterpolator(DecelerateInterpolator())
+            .start()
+
         // 触发自动扫描并播放第一首
         scanAndPlay()
     }
 
     private fun scanAndPlay() {
+        // 已有缓存曲目时直接复用，避免关闭后重新扫描
+        if (playbackState.playlist.isNotEmpty()) return
+
         managerScope.launch {
             playbackState.isScanning = true
             val tracks = MusicScanner.scan(context)
@@ -131,27 +152,37 @@ class MusicPanelViewManager(
         }
     }
 
-    // 关闭音乐面板并释放资源
+    // 关闭音乐面板（保留播放状态与 ExoPlayer，下次显示直接恢复）
     fun dismiss() {
         val view = composeView ?: return
+        if (isDismissing) return
+        isDismissing = true
+
         lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
-        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
-        try {
-            if (view.windowToken != null) {
-                windowManager.removeView(view)
+
+        view.animate()
+            .alpha(0f)
+            .scaleX(0.9f)
+            .scaleY(0.9f)
+            .setDuration(200)
+            .setInterpolator(AccelerateInterpolator())
+            .withEndAction {
+                lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+                lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+                try {
+                    if (view.windowToken != null) {
+                        windowManager.removeView(view)
+                    }
+                } catch (_: Exception) {
+                }
+                composeView = null
+                isDismissing = false
+                // 保留播放列表、当前曲目与 ExoPlayer，不释放资源
+                playbackState.updatePosition()
+                onDismiss()
+                managerJob.cancel()
             }
-        } catch (_: Exception) {
-        }
-        composeView = null
-        // 若正在播放则保留后台播放与状态，否则释放资源
-        if (playbackState.isPlaying) {
-            playbackState.updatePosition()
-        } else {
-            playbackState.release()
-        }
-        onDismiss()
-        managerJob.cancel()
+            .start()
     }
 
     companion object {

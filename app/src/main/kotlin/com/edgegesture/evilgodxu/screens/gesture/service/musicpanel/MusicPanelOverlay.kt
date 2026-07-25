@@ -16,19 +16,21 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -60,6 +62,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -71,8 +74,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -84,7 +89,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.screens.settings.ThemeMode
+import com.edgegesture.evilgodxu.screens.settings.settingsFlow
 import com.edgegesture.evilgodxu.ui.theme.DarkColorScheme
+import com.edgegesture.evilgodxu.ui.theme.LightColorScheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -97,8 +105,15 @@ fun MusicPanelOverlay(
 ) {
     val context = LocalContext.current
 
-    // 音乐面板严格遵循设计稿深色毛玻璃风格，不跟随系统/应用主题
-    val colorScheme = DarkColorScheme
+    // 根据系统/应用设置适配浅色/深色主题
+    val settings by context.settingsFlow().collectAsState(initial = null)
+    val isSystemDark = isSystemInDarkTheme()
+    val isDarkTheme = when (settings?.themeMode) {
+        ThemeMode.DARK -> true
+        ThemeMode.LIGHT -> false
+        else -> isSystemDark
+    }
+    val colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme
     val scope = rememberCoroutineScope()
 
     // 进度条自动更新
@@ -126,29 +141,84 @@ fun MusicPanelOverlay(
                 ),
             contentAlignment = Alignment.Center
         ) {
+            val cardBackground = if (isDarkTheme) {
+                Color(0xFF161B22).copy(alpha = 0.72f)
+            } else {
+                Color(0xFFF5F5F7).copy(alpha = 0.82f)
+            }
+            val borderColor = if (isDarkTheme) {
+                Color.White.copy(alpha = 0.06f)
+            } else {
+                Color.Black.copy(alpha = 0.06f)
+            }
+            val ambientColor = MaterialTheme.colorScheme.primary
+            val glowAlpha = if (isDarkTheme) 0.18f else 0.10f
+
             Surface(
                 modifier = Modifier
                     .widthIn(max = 380.dp)
                     .fillMaxWidth(0.92f)
-                    .wrapContentHeight()
-                    .heightIn(max = 320.dp)
+                    .aspectRatio(4f / 3f)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClick = { /* 阻止点击穿透 */ }
                     ),
                 shape = RoundedCornerShape(20.dp),
-                color = Color(0xFF161B22).copy(alpha = 0.72f),
-                border = BorderStroke(
-                    width = 1.dp,
-                    color = Color.White.copy(alpha = 0.06f)
-                ),
+                color = cardBackground,
+                border = BorderStroke(width = 1.dp, color = borderColor),
                 shadowElevation = 0.dp
             ) {
-                Box(modifier = Modifier.fillMaxSize()) {
+                BoxWithConstraints(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(20.dp))
+                ) {
+                    // 设计稿基准高度 380dp * 3/4 = 285dp；当实际高度不足时整体等比缩放内容
+                    val designHeight = 285.dp
+                    val scale = (maxHeight / designHeight).coerceAtMost(1f)
+
+                    // 弥散环境光：从封面区域向外扩散
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(160.dp)
+                            .background(
+                                Brush.radialGradient(
+                                    colors = listOf(
+                                        ambientColor.copy(alpha = glowAlpha),
+                                        ambientColor.copy(alpha = glowAlpha * 0.5f),
+                                        Color.Transparent
+                                    ),
+                                    center = Offset(0.5f, 0.15f),
+                                    radius = 0.75f
+                                )
+                            )
+                    )
+                    // 顶部高光
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(
+                                        if (isDarkTheme) Color.White.copy(alpha = 0.07f) else Color.White.copy(alpha = 0.35f),
+                                        Color.Transparent
+                                    ),
+                                    start = Offset(0f, 0f),
+                                    end = Offset(0f, 180f)
+                                )
+                            )
+                    )
+
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
+                            .graphicsLayer(
+                                scaleX = scale,
+                                scaleY = scale,
+                                transformOrigin = TransformOrigin(0.5f, 0f)
+                            )
                             .padding(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 12.dp)
                     ) {
                         HeaderRow(
@@ -212,10 +282,8 @@ private fun HeaderRow(
     onTimerClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var liked by remember { mutableStateOf(false) }
-    // 当前歌曲变更时重置本地收藏状态（设计稿中收藏为面板级状态）
     val currentTrackId = playbackState.currentTrack?.id
-    LaunchedEffect(currentTrackId) { liked = false }
+    val isLiked = currentTrackId?.let { id -> playbackState.likedIds.contains(id) } ?: false
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -240,9 +308,11 @@ private fun HeaderRow(
             }
         }
         HeaderIconButton(
-            icon = if (liked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-            onClick = { liked = !liked },
-            tint = if (liked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+            icon = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+            onClick = {
+                currentTrackId?.let { playbackState.toggleFavorite(it) }
+            },
+            tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -274,10 +344,32 @@ private fun AlbumCarousel(
     val prevIndex = if (current < 0) -1 else (current - 1 + playlist.size) % playlist.size
     val nextIndex = if (current < 0) -1 else (current + 1) % playlist.size
 
+    val swipeModifier = Modifier.pointerInput(current) {
+        var totalDrag = 0f
+        detectHorizontalDragGestures(
+            onHorizontalDrag = { change, dragAmount ->
+                change.consume()
+                totalDrag += dragAmount
+            },
+            onDragEnd = {
+                when {
+                    totalDrag < -30f -> {
+                        if (nextIndex >= 0) scope.launch { playTrackAt(context, playbackState, nextIndex) }
+                    }
+                    totalDrag > 30f -> {
+                        if (prevIndex >= 0) scope.launch { playTrackAt(context, playbackState, prevIndex) }
+                    }
+                }
+                totalDrag = 0f
+            }
+        )
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(72.dp),
+            .height(72.dp)
+            .then(swipeModifier),
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -287,7 +379,10 @@ private fun AlbumCarousel(
                 if (prevIndex >= 0) scope.launch { playTrackAt(context, playbackState, prevIndex) }
             }
         )
-        CenterCover(track = playlist.getOrNull(current), isPlaying = playbackState.isPlaying)
+        CenterCover(
+            track = playlist.getOrNull(current),
+            isPlaying = playbackState.isPlaying
+        )
         SideCover(
             track = playlist.getOrNull(nextIndex),
             onClick = {
@@ -334,7 +429,7 @@ private fun CenterCover(track: MusicTrack?, isPlaying: Boolean) {
                             Color.White.copy(alpha = 0.04f),
                             Color.Transparent
                         ),
-                        center = androidx.compose.ui.geometry.Offset(0.30f, 0.20f),
+                        center = Offset(0.30f, 0.20f),
                         radius = 0.65f
                     )
                 )
@@ -459,20 +554,14 @@ private fun ProgressSection(playbackState: MusicPlaybackState) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(3.dp)
-                    .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(2.dp))
+                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f), RoundedCornerShape(2.dp))
             )
             Box(
                 modifier = Modifier
                     .fillMaxWidth(displayProgress)
-                    .height(3.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .background(MaterialTheme.colorScheme.primary, CircleShape)
-                )
-            }
+                    .height(3.dp)
+                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp))
+            )
         }
 
         Text(
@@ -602,6 +691,8 @@ private fun ControlIconButton(
 @Composable
 private fun VisualizerSection(isPlaying: Boolean) {
     val barCount = 28
+    val primary = MaterialTheme.colorScheme.primary
+    val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -628,8 +719,7 @@ private fun VisualizerSection(isPlaying: Boolean) {
                     .width(3.dp)
                     .fillMaxHeight(animatedHeight)
                     .background(
-                        if (isPlaying) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                        else Color.White.copy(alpha = 0.06f),
+                        if (isPlaying) primary.copy(alpha = 0.7f) else inactiveColor,
                         RoundedCornerShape(0.dp)
                     )
             )
@@ -655,7 +745,7 @@ private fun PlaylistOverlay(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFF161B22).copy(alpha = 0.90f))
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -835,7 +925,7 @@ private fun TimerOverlay(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFF161B22).copy(alpha = 0.92f))
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f))
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
