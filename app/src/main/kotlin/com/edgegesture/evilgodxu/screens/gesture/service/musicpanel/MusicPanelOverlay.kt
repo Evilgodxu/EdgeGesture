@@ -893,7 +893,7 @@ private fun PlaylistOverlay(
                             .pointerInput(playbackState.isScanning) {
                                 detectVerticalDragGestures(
                                     onVerticalDrag = { _, dragAmount ->
-                                        if (!playbackState.isScanning && listState.firstVisibleItemIndex == 0) {
+                                        if (!playbackState.isScanning && listState.firstVisibleItemIndex == 0 && pullDistance == 0f) {
                                             pullDistance = (pullDistance + dragAmount).coerceAtLeast(0f)
                                         }
                                     },

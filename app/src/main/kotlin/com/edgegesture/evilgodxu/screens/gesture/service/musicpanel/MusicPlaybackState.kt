@@ -386,7 +386,7 @@ class MusicPlaybackState {
             PlayMode.RepeatAll -> (validCurrentIndex - 1 + playlist.size) % playlist.size
             PlayMode.Shuffle -> {
                 if (playlist.size == 1) 0
-                else playlist.indices.filter { it != currentIndex }.random()
+                else playlist.indices.filter { it != validCurrentIndex }.random()
             }
         }
     }
