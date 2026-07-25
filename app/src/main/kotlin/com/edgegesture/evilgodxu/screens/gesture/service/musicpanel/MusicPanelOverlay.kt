@@ -706,6 +706,10 @@ private fun ControlBar(
                     PlayMode.RepeatOne -> PlayMode.Shuffle
                     PlayMode.Shuffle -> PlayMode.RepeatAll
                 }
+                playbackState.mediaController?.let { controller ->
+                    applyPlaybackMode(controller, playbackState.playMode)
+                }
+                playbackState.persistState()
             },
             size = 32.dp,
             iconSize = 21.dp

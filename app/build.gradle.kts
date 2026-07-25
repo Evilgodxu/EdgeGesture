@@ -128,6 +128,7 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
     implementation(libs.koin.core)
+    implementation(libs.kotlinx.coroutines.guava)
 
     // Kotlin Serialization
     implementation(libs.kotlinx.serialization.json)

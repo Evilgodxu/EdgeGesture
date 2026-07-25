@@ -210,8 +210,10 @@ class MusicPlaybackState {
 
     fun persistPlaylist() {
         val context = appContext ?: return
-        CoroutineScope(Dispatchers.IO).launch {
-            saveCachedPlaylist(context, playlist)
+        playbackScope.launch {
+            withContext(Dispatchers.IO) {
+                saveCachedPlaylist(context, playlist)
+            }
         }
     }
 

@@ -23,6 +23,7 @@ workmanager = "2.11.2"
 window = "1.5.1"
 material3Adaptive = "1.2.0"
 koin = "4.2.2"
+coroutines = "1.9.0"
 hiddenApiBypass = "6.1"
 composablesIcons = "2.2.1"
 media3 = "1.6.1"
@@ -58,6 +59,7 @@ androidx-compose-material3-adaptive-layout = { group = "androidx.compose.materia
 koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin" }
 koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compose", version.ref = "koin" }
 koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin" }
+kotlinx-coroutines-guava = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-guava", version.ref = "coroutines" }
 
 # Kotlin Serialization
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.11.0" }

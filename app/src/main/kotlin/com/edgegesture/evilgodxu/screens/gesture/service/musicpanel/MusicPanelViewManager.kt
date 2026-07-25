@@ -1,6 +1,7 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
 import android.annotation.SuppressLint
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.database.ContentObserver
@@ -33,6 +34,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 // 音乐面板悬浮窗管理器
@@ -49,6 +52,7 @@ class MusicPanelViewManager(
 
     private val playbackState = MusicPanelStateHolder.state
     private var pendingExternalUri: android.net.Uri? = null
+    private val externalTrackMutex = Mutex()
     private var initialization: Deferred<Unit>? = null
     private var mediaObserverRegistered = false
     private val mediaObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
@@ -182,6 +186,38 @@ class MusicPanelViewManager(
         }
     }
 
+    private fun normalizedAudioUri(audioUri: String): String {
+        return Uri.parse(audioUri)
+            .normalizeScheme()
+            .buildUpon()
+            .clearQuery()
+            .fragment(null)
+            .build()
+            .toString()
+    }
+
+    private fun resolveAudioPath(uri: Uri): String? {
+        if (uri.scheme == ContentResolver.SCHEME_CONTENT) {
+            context.contentResolver.query(
+                uri,
+                arrayOf(android.provider.MediaStore.Audio.Media.DATA),
+                null,
+                null,
+                null
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    return cursor.getString(0)
+                }
+            }
+        }
+        return uri.path
+    }
+
+    private fun isSameAudioTrack(track: MusicTrack, targetUri: Uri, targetPath: String?): Boolean {
+        return normalizedAudioUri(track.audioUri) == normalizedAudioUri(targetUri.toString()) ||
+                (targetPath != null && track.path.isNotBlank() && track.path == targetPath)
+    }
+
     private fun registerMediaObserver() {
         if (mediaObserverRegistered) return
         context.contentResolver.registerContentObserver(
@@ -194,36 +230,53 @@ class MusicPanelViewManager(
 
     private suspend fun refreshPlaylist() {
         val tracks = MusicScanner.scan(context)
-        val externalTracks = playbackState.playlist.filter { it.path.isBlank() }
-        val mergedTracks = (tracks + externalTracks).distinctBy { it.audioUri }
+        val externalTracks = withContext(Dispatchers.Main) {
+            playbackState.playlist.filter { it.path.isBlank() }
+        }
+        val mergedTracks = deduplicateTracks(tracks + externalTracks)
         withContext(Dispatchers.Main) {
             playbackState.setSortedPlaylist(mergedTracks)
             playbackState.persistPlaylist()
         }
     }
 
+    private fun deduplicateTracks(tracks: List<MusicTrack>): List<MusicTrack> {
+        return tracks.distinctBy { normalizedAudioUri(it.audioUri) }
+    }
+
     private fun loadExternalTrack() {
         val uri = pendingExternalUri ?: return
         managerScope.launch {
-            initialization?.await()
-            if (pendingExternalUri != uri) return@launch
-            val track = MusicScanner.fromUri(context, uri) ?: return@launch
-            val existingIndex = playbackState.playlist.indexOfFirst { it.audioUri == track.audioUri }
-            val targetIndex = if (existingIndex >= 0) {
-                existingIndex
-            } else {
-                playbackState.playlist = (playbackState.playlist + track)
-                    .distinctBy { it.audioUri }
-                playbackState.playlist.indexOfFirst { it.audioUri == track.audioUri }
+            externalTrackMutex.withLock {
+                initialization?.await()
+                if (pendingExternalUri != uri) return@withLock
+                val track = MusicScanner.fromUri(context, uri) ?: return@withLock
+                val targetUri = Uri.parse(track.audioUri).normalizeScheme()
+                val targetPath = resolveAudioPath(targetUri)
+                val targetIndex = withContext(Dispatchers.Main) {
+                    val existingIndex = playbackState.playlist.indexOfFirst {
+                        isSameAudioTrack(it, targetUri, targetPath)
+                    }
+                    if (existingIndex >= 0) {
+                        existingIndex
+                    } else {
+                        playbackState.playlist = deduplicateTracks(playbackState.playlist + track)
+                        playbackState.playlist.indexOfFirst {
+                            isSameAudioTrack(it, targetUri, targetPath)
+                        }
+                    }
+                }
+                if (targetIndex < 0) return@withLock
+                playbackState.persistPlaylist()
+                withContext(Dispatchers.Main) {
+                    playbackState.currentIndex = targetIndex
+                    playbackState.currentTrack = playbackState.playlist[targetIndex]
+                }
+                withContext(Dispatchers.Main) {
+                    playTrackAt(context, playbackState, targetIndex)
+                }
+                pendingExternalUri = null
             }
-            if (targetIndex < 0) return@launch
-            playbackState.persistPlaylist()
-            playbackState.currentIndex = targetIndex
-            playbackState.currentTrack = playbackState.playlist[targetIndex]
-            withContext(Dispatchers.Main) {
-                playTrackAt(context, playbackState, targetIndex)
-            }
-            pendingExternalUri = null
         }
     }
 
@@ -234,8 +287,7 @@ class MusicPanelViewManager(
         val tracks = MusicScanner.scan(context)
         withContext(Dispatchers.Main) {
             val externalTracks = playbackState.playlist.filter { it.path.isBlank() }
-            val mergedTracks = (tracks + externalTracks)
-                .distinctBy { it.audioUri }
+            val mergedTracks = deduplicateTracks(tracks + externalTracks)
             playbackState.setSortedPlaylist(mergedTracks)
             playbackState.persistPlaylist()
             restoreCurrentTrack()

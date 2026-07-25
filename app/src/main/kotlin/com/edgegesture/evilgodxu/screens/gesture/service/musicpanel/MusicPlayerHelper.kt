@@ -7,6 +7,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -15,15 +16,24 @@ private suspend fun getController(context: Context, state: MusicPlaybackState): 
     state.mediaController?.let { return it }
     state.appContext = context.applicationContext
     val token = SessionToken(context, ComponentName(context, MusicPlaybackService::class.java))
-    val controller = withContext(Dispatchers.IO) {
-        MediaController.Builder(context, token).buildAsync().get()
+    val controller = withContext(Dispatchers.Main) {
+        MediaController.Builder(context, token).buildAsync().await()
     }
     withContext(Dispatchers.Main) {
         state.mediaController = controller
         state.player = controller
         controller.addListener(state.controllerListener)
+        applyPlaybackMode(controller, state.playMode)
     }
     return controller
+}
+
+fun applyPlaybackMode(controller: MediaController, mode: PlayMode) {
+    controller.repeatMode = when (mode) {
+        PlayMode.RepeatOne -> androidx.media3.common.Player.REPEAT_MODE_ONE
+        PlayMode.RepeatAll, PlayMode.Shuffle -> androidx.media3.common.Player.REPEAT_MODE_ALL
+    }
+    controller.shuffleModeEnabled = mode == PlayMode.Shuffle
 }
 
 suspend fun playTrackAt(
@@ -38,6 +48,7 @@ suspend fun playTrackAt(
         val items = state.playlist.map(::toMediaItem)
 
         withContext(Dispatchers.Main) {
+            applyPlaybackMode(controller, state.playMode)
             val resumePosition = if (state.pendingSavedUri == track.audioUri) {
                 state.pendingResumePosition.coerceAtLeast(0L)
             } else {
