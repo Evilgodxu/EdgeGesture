@@ -404,7 +404,7 @@ private fun LyricsPanel(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(vertical = 4.dp),
+            .padding(top = 4.dp, bottom = 0.dp),
         contentAlignment = Alignment.Center
     ) {
         if (lines.isEmpty()) {
@@ -434,7 +434,7 @@ private fun LyricsPanel(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
-                    repeat(4) { row ->
+                    repeat(5) { row ->
                         val index = renderedActiveIndex - 2 + row
                         val line = lines.getOrNull(index)
                         if (line == null) {
@@ -476,7 +476,7 @@ private fun LyricsPanel(
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
-                    // 固定四行：第一、二行是当前行之前的歌词，第四行是下一句歌词。
+                    // 固定五行：当前行居中，上下各显示两行歌词。
                 }
             }
         }

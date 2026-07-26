@@ -344,7 +344,7 @@ class MusicPanelViewManager(
     }
 
     private suspend fun enrichPlaylistMetadata() {
-        val tracks = withContext(Dispatchers.Main) { playbackState.playlist }
+        val tracks = withContext(Dispatchers.Main) { playbackState.playlist.toList() }
         tracks.forEach { track ->
             val hasCover = MusicMetadataCache.isValid(track.coverCachePath)
             val hasLyrics = MusicMetadataCache.isValid(track.lyricCachePath) && track.lyricLines.isNotEmpty()
