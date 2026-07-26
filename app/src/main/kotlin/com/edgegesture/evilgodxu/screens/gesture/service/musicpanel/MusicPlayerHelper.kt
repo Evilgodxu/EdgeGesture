@@ -45,7 +45,7 @@ suspend fun playTrackAt(
     state.playTrackMutex.withLock {
         val track = state.playlist.getOrNull(index) ?: return
         val controller = getController(context, state)
-        val items = state.playlist.map(::toMediaItem)
+        val items = state.playlist.map { trackItem -> toMediaItem(context, trackItem) }
 
         withContext(Dispatchers.Main) {
             applyPlaybackMode(controller, state.playMode)
@@ -82,16 +82,21 @@ suspend fun playTrackAt(
     }
 }
 
-private fun toMediaItem(track: MusicTrack): MediaItem {
+private fun toMediaItem(context: Context, track: MusicTrack): MediaItem {
+    val artworkData = MusicMetadataCache.loadCoverBytes(track.coverCachePath)
+        ?: track.albumArt?.let(MusicMetadataCache::bitmapToBytes)
+    val metadata = androidx.media3.common.MediaMetadata.Builder()
+        .setTitle(track.title)
+        .setArtist(track.artist)
+    if (artworkData != null) {
+        metadata.setArtworkData(artworkData, null)
+    } else if (track.neteaseCoverUrl.isNotBlank()) {
+        metadata.setArtworkUri(Uri.parse(track.neteaseCoverUrl))
+    }
     return MediaItem.Builder()
         .setMediaId(track.id.toString())
         .setUri(Uri.parse(track.audioUri))
-        .setMediaMetadata(
-            androidx.media3.common.MediaMetadata.Builder()
-                .setTitle(track.title)
-                .setArtist(track.artist)
-                .build()
-        )
+        .setMediaMetadata(metadata.build())
         .build()
 }
 

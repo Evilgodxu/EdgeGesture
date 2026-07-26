@@ -46,6 +46,7 @@ class MusicPlaybackState {
         }
 
         override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+            syncPlaybackState()
             val id = mediaItem?.mediaId?.toLongOrNull() ?: return
             val index = playlist.indexOfFirst { it.id == id }
             if (index >= 0) {
@@ -61,8 +62,8 @@ class MusicPlaybackState {
             val controller = mediaController ?: return
             when (playbackState) {
                 Player.STATE_READY -> {
+                    syncPlaybackState()
                     isPrepared = true
-                    duration = controller.duration.coerceAtLeast(0L)
                 }
                 Player.STATE_ENDED -> {
                     isPlaying = false
@@ -374,11 +375,30 @@ class MusicPlaybackState {
         persistPlaylist()
     }
 
+    fun syncPlaybackState() {
+        val controller = mediaController ?: return
+        val mediaId = controller.currentMediaItem?.mediaId?.toLongOrNull()
+        val index = mediaId?.let { id -> playlist.indexOfFirst { it.id == id } } ?: -1
+        if (index >= 0) {
+            currentIndex = index
+            currentTrack = playlist[index]
+        }
+        val controllerDuration = controller.duration
+        if (controllerDuration > 0L) duration = controllerDuration
+        val controllerPosition = controller.currentPosition
+        if (controllerPosition >= 0L && duration > 0L) {
+            currentPosition = controllerPosition.coerceIn(0L, duration)
+        }
+        isPlaying = controller.isPlaying
+    }
+
     fun updatePosition() {
-        mediaController?.let { controller ->
-            if (isPrepared) {
-                currentPosition = controller.currentPosition.coerceIn(0, duration)
-            }
+        val controller = mediaController ?: return
+        if (!isPrepared) return
+        val controllerDuration = controller.duration
+        if (controllerDuration > 0L) duration = controllerDuration
+        if (duration > 0L) {
+            currentPosition = controller.currentPosition.coerceIn(0L, duration)
         }
     }
 

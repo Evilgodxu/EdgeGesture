@@ -189,6 +189,9 @@ class MusicPanelViewManager(
                 }
                 enrichPlaylistMetadata()
             }
+            withContext(Dispatchers.Main) {
+                playbackState.syncPlaybackState()
+            }
             registerMediaObserver()
         }
     }

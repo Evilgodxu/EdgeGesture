@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.util.LruCache
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.io.File
 
 internal object MusicMetadataCache {
@@ -84,4 +85,15 @@ internal object MusicMetadataCache {
     } catch (_: Exception) { emptyList() }
 
     fun isValid(path: String): Boolean = path.isNotBlank() && File(path).let { it.isFile && it.length() > 0 }
+
+    fun loadCoverBytes(path: String): ByteArray? = try {
+        if (!isValid(path)) null else File(path).readBytes()
+    } catch (_: Exception) { null }
+
+    fun bitmapToBytes(bitmap: Bitmap): ByteArray? = try {
+        ByteArrayOutputStream().use { output ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+            output.toByteArray()
+        }
+    } catch (_: Exception) { null }
 }
