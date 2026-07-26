@@ -1,7 +1,6 @@
 *.iml
 .gradle
 .kotlin
-.trae
 /local.properties
 /.idea
 .DS_Store
@@ -14,4 +13,5 @@ local.properties
 Demo
 jh.keystore
 示例
+.trae
 docs
