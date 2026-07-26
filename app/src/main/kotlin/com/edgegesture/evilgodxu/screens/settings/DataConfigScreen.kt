@@ -68,17 +68,17 @@ fun DataConfigScreen(onNavigateBack: () -> Unit) {
             modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            Text(
+                "缓存数据",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 10.dp)
+            )
             Card(
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
-                    val allChecked = items.isNotEmpty() && items.all { checked[it.type] == true }
-                    SelectableDataRow(
-                        title = "全选",
-                        selected = allChecked,
-                        onClick = { value -> items.forEach { checked[it.type] = value } }
-                    )
                     items.forEach { item ->
                         SelectableDataRow(
                             title = dataName(item.type),

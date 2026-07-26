@@ -325,16 +325,9 @@ fun SettingsScreen(
                     SettingsSection(title = stringResource(R.string.settings_about)) {
                         SettingsClickableItem(
                             icon = Icons.Default.Folder,
-                            title = "缓存管理",
-                            subtitle = "管理应用缓存和临时数据",
+                            title = "音乐缓存",
+                            subtitle = "管理音乐封面和歌词缓存",
                             onClick = onNavigateToDataConfig
-                        )
-                        HorizontalDivider()
-                        SettingsClickableItem(
-                            icon = Icons.Default.Folder,
-                            title = "手势配置",
-                            subtitle = "导入或导出手势方案",
-                            onClick = { showGestureConfigDialog = true }
                         )
                         HorizontalDivider()
                         SettingsClickableItem(
@@ -448,8 +441,8 @@ fun SettingsScreen(
                 SettingsSection(title = stringResource(R.string.settings_about)) {
                     SettingsClickableItem(
                         icon = Icons.Default.Folder,
-                        title = "缓存管理",
-                        subtitle = "管理应用缓存和临时数据",
+                        title = "音乐缓存",
+                        subtitle = "管理音乐封面和歌词缓存",
                         onClick = onNavigateToDataConfig
                     )
                     HorizontalDivider()
