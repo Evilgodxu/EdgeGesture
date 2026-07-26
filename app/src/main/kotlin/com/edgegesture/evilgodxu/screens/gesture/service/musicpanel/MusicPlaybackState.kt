@@ -46,7 +46,6 @@ class MusicPlaybackState {
         }
 
         override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
-            syncPlaybackState()
             val id = mediaItem?.mediaId?.toLongOrNull() ?: return
             val index = playlist.indexOfFirst { it.id == id }
             if (index >= 0) {
@@ -62,8 +61,8 @@ class MusicPlaybackState {
             val controller = mediaController ?: return
             when (playbackState) {
                 Player.STATE_READY -> {
-                    syncPlaybackState()
                     isPrepared = true
+                    syncPlaybackState()
                 }
                 Player.STATE_ENDED -> {
                     isPlaying = false
@@ -394,12 +393,13 @@ class MusicPlaybackState {
 
     fun updatePosition() {
         val controller = mediaController ?: return
-        if (!isPrepared) return
         val controllerDuration = controller.duration
         if (controllerDuration > 0L) duration = controllerDuration
-        if (duration > 0L) {
-            currentPosition = controller.currentPosition.coerceIn(0L, duration)
+        val controllerPosition = controller.currentPosition
+        if (controllerPosition >= 0L && duration > 0L) {
+            currentPosition = controllerPosition.coerceIn(0L, duration)
         }
+        isPlaying = controller.isPlaying
     }
 
     private fun calculateIndex(direction: Int, repeatOne: Boolean): Int {

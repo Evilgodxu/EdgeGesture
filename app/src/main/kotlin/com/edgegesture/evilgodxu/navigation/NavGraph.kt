@@ -11,6 +11,7 @@ import com.edgegesture.evilgodxu.screens.gesture.EdgeGestureConfigScreen
 import com.edgegesture.evilgodxu.screens.gesture.EdgeType
 import com.edgegesture.evilgodxu.screens.gesture.GestureSettingsScreen
 import com.edgegesture.evilgodxu.screens.launchblock.LaunchBlockScreen
+import com.edgegesture.evilgodxu.screens.settings.DataConfigScreen
 import com.edgegesture.evilgodxu.screens.settings.SettingsScreen
 import com.edgegesture.evilgodxu.screens.settings.ThemeMode
 import kotlinx.serialization.Serializable
@@ -20,6 +21,9 @@ data object GestureRoute
 
 @Serializable
 data object SettingsRoute
+
+@Serializable
+data object DataConfigRoute
 
 @Serializable
 data object BlacklistRoute
@@ -42,6 +46,7 @@ data object BottomEdgeConfigRoute
 @Serializable
 data object ExpandPanelRoute
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun NavGraph(
     navController: NavHostController,
@@ -90,7 +95,16 @@ fun NavGraph(
                 },
                 onThemeChange = { themeMode ->
                     onThemeChange(themeMode)
+                },
+                onNavigateToDataConfig = {
+                    navController.navigate(DataConfigRoute)
                 }
+            )
+        }
+
+        composable<DataConfigRoute> {
+            DataConfigScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

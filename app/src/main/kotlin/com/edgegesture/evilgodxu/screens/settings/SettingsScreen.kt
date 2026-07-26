@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material3.AlertDialog
@@ -177,6 +178,7 @@ suspend fun Context.saveThemeMode(mode: ThemeMode) = withContext(Dispatchers.IO)
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onThemeChange: (ThemeMode) -> Unit = {},
+    onNavigateToDataConfig: () -> Unit = {},
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
@@ -320,6 +322,13 @@ fun SettingsScreen(
                     // 更多设置项
                     SettingsSection(title = stringResource(R.string.settings_about)) {
                         SettingsClickableItem(
+                            icon = Icons.Default.Folder,
+                            title = "数据与配置",
+                            subtitle = "管理缓存并导入或导出手势配置",
+                            onClick = onNavigateToDataConfig
+                        )
+                        HorizontalDivider()
+                        SettingsClickableItem(
                             icon = Icons.Default.Favorite,
                             title = stringResource(R.string.settings_donate),
                             subtitle = stringResource(R.string.settings_donate_desc),
@@ -428,6 +437,13 @@ fun SettingsScreen(
 
                 // 更多设置项
                 SettingsSection(title = stringResource(R.string.settings_about)) {
+                    SettingsClickableItem(
+                        icon = Icons.Default.Folder,
+                        title = "数据与配置",
+                        subtitle = "管理缓存并导入或导出手势配置",
+                        onClick = onNavigateToDataConfig
+                    )
+                    HorizontalDivider()
                     SettingsClickableItem(
                         icon = Icons.Default.Favorite,
                         title = stringResource(R.string.settings_donate),

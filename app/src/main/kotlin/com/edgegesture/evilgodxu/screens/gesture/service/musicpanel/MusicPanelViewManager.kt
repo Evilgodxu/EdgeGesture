@@ -191,6 +191,7 @@ class MusicPanelViewManager(
             }
             withContext(Dispatchers.Main) {
                 playbackState.syncPlaybackState()
+                playbackState.updatePosition()
             }
             registerMediaObserver()
         }
@@ -349,7 +350,7 @@ class MusicPanelViewManager(
     private suspend fun enrichPlaylistMetadata() {
         val tracks = withContext(Dispatchers.Main) { playbackState.playlist.toList() }
         tracks.forEach { track ->
-            val hasCover = MusicMetadataCache.isValid(track.coverCachePath)
+            val hasCover = MusicMetadataCache.isCurrentCoverPath(track.coverCachePath)
             val hasLyrics = MusicMetadataCache.isValid(track.lyricCachePath) && track.lyricLines.isNotEmpty()
             if (track.neteaseId != 0L && hasCover && hasLyrics) return@forEach
             try {

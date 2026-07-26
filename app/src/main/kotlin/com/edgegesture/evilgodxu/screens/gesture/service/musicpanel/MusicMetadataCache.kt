@@ -11,7 +11,7 @@ import java.io.File
 
 internal object MusicMetadataCache {
     private fun root(context: Context) = File(context.filesDir, "music_metadata")
-    private fun coverFile(context: Context, id: Long) = File(File(root(context), "covers"), "$id.webp")
+    private fun coverFile(context: Context, id: Long) = File(File(root(context), "covers_v2"), "$id.webp")
     private fun lyricFile(context: Context, id: Long) = File(File(root(context), "lyrics"), "$id.json")
     private val coverMemoryCache = object : LruCache<String, Bitmap>(8 * 1024) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount / 1024
@@ -39,7 +39,7 @@ internal object MusicMetadataCache {
     fun saveCover(context: Context, id: Long, bitmap: Bitmap): String? = try {
         val file = coverFile(context, id)
         file.parentFile?.mkdirs()
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 85, it) }
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 100, it) }
         val path = file.absolutePath
         putCover(path, bitmap)
         path
@@ -85,6 +85,8 @@ internal object MusicMetadataCache {
     } catch (_: Exception) { emptyList() }
 
     fun isValid(path: String): Boolean = path.isNotBlank() && File(path).let { it.isFile && it.length() > 0 }
+
+    fun isCurrentCoverPath(path: String): Boolean = isValid(path) && File(path).parentFile?.name == "covers_v2"
 
     fun loadCoverBytes(path: String): ByteArray? = try {
         if (!isValid(path)) null else File(path).readBytes()

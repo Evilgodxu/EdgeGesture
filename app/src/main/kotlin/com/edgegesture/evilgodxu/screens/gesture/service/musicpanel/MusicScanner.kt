@@ -122,11 +122,6 @@ object MusicScanner {
         albumId: Long,
         fallbackPath: String
     ): Bitmap? {
-        try {
-            val thumbnail = contentResolver.loadThumbnail(audioUri, Size(256, 256), null)
-            return thumbnail
-        } catch (_: Exception) {
-        }
         extractEmbeddedArt(context, audioUri)?.let { return it }
         if (albumId > 0) {
             try {
@@ -137,7 +132,14 @@ object MusicScanner {
             } catch (_: Exception) {
             }
         }
-        return fallbackPath.takeIf { it.isNotBlank() }?.let(::extractEmbeddedArt)
+        fallbackPath.takeIf { it.isNotBlank() }?.let { path ->
+            extractEmbeddedArt(path)?.let { return it }
+        }
+        return try {
+            contentResolver.loadThumbnail(audioUri, Size(256, 256), null)
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun extractEmbeddedArt(context: Context, audioUri: Uri): Bitmap? {
