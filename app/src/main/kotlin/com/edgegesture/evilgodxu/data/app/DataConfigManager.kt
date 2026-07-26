@@ -22,7 +22,7 @@ import java.io.File
 
 enum class ManagedDataType {
     APP_ICONS, MUSIC_COVERS, MUSIC_LYRICS, MUSIC_PLAYLIST, MUSIC_POSITION,
-    UPDATE_CACHE, STATS, TEMP
+    UPDATE_CACHE, STATS
 }
 
 data class ManagedDataItem(val type: ManagedDataType, val size: Long)
@@ -45,8 +45,7 @@ object DataConfigManager {
             ManagedDataItem(ManagedDataType.MUSIC_PLAYLIST, sharedPreferencesSize(context, "music_playlist_cache_preferences")),
             ManagedDataItem(ManagedDataType.MUSIC_POSITION, 0L),
             ManagedDataItem(ManagedDataType.UPDATE_CACHE, sharedPreferencesSize(context, UPDATE_PREFS) + directorySize(context.externalCacheDir)),
-            ManagedDataItem(ManagedDataType.STATS, statsSize(context)),
-            ManagedDataItem(ManagedDataType.TEMP, 0L)
+            ManagedDataItem(ManagedDataType.STATS, statsSize(context))
         )
     }
 

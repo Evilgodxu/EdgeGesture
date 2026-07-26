@@ -174,7 +174,6 @@ private fun dataName(type: ManagedDataType): String = when (type) {
     ManagedDataType.MUSIC_POSITION -> "音乐播放进度与当前歌曲"
     ManagedDataType.UPDATE_CACHE -> "更新下载缓存"
     ManagedDataType.STATS -> "统计信息"
-    ManagedDataType.TEMP -> "其他临时缓存"
 }
 
 private fun formatSize(size: Long): String = when {
