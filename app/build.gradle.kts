@@ -141,7 +141,7 @@ dependencies {
     // Hidden API Bypass（用于调用 setLaunchWindowingMode 等小窗隐藏 API）
     implementation(libs.hidden.api.bypass)
 
-    // Media3 ExoPlayer — 与示例项目一致的多格式音频播放引擎
+    // Media3 ExoPlayer — 多格式音频播放引擎
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.session)
 

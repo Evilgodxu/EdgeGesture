@@ -60,7 +60,7 @@ fun DataConfigScreen(onNavigateBack: () -> Unit) {
 
     Scaffold(topBar = {
         TopAppBar(
-            title = { Text("缓存管理") },
+            title = { Text("音乐缓存") },
             navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } }
         )
     }) { padding ->
@@ -68,12 +68,6 @@ fun DataConfigScreen(onNavigateBack: () -> Unit) {
             modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                "数据管理",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 10.dp)
-            )
             Card(
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -167,13 +161,8 @@ private fun SelectableDataRow(
 }
 
 private fun dataName(type: ManagedDataType): String = when (type) {
-    ManagedDataType.APP_ICONS -> "应用图标缓存"
     ManagedDataType.MUSIC_COVERS -> "音乐封面缓存"
     ManagedDataType.MUSIC_LYRICS -> "音乐歌词缓存"
-    ManagedDataType.MUSIC_PLAYLIST -> "音乐播放列表缓存"
-    ManagedDataType.MUSIC_POSITION -> "音乐播放进度与当前歌曲"
-    ManagedDataType.UPDATE_CACHE -> "更新下载缓存"
-    ManagedDataType.STATS -> "统计信息"
 }
 
 private fun formatSize(size: Long): String = when {

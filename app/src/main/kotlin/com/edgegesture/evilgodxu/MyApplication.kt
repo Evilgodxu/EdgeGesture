@@ -27,10 +27,8 @@ class MyApplication : Application() {
             modules(appModule)
         }
 
-        // 延迟初始化：仅从缓存加载应用列表，不触发扫描
-        // 实际扫描在获取 QUERY_ALL_PACKAGES 权限后通过 initializeWithScan() 触发
+        // 应用列表在需要时通过 EdgeGestureAccessibilityService 中的 initializeWithScan() 触发扫描
         val repository = AppRepository.getInstance(this)
-        repository.initializeFromCache()
 
         // 尽早注册应用变更监听，确保安装/卸载事件被捕获
         // 广播接收器内部会处理权限检查，无权限时只会延迟刷新

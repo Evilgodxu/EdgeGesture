@@ -38,27 +38,28 @@ internal object MusicMetadataCache {
     }
 
     fun saveCover(context: Context, id: Long, originalBytes: ByteArray): String? = try {
-        val originalFile = originalCoverFile(context, id)
-        originalFile.parentFile?.mkdirs()
-        originalFile.writeBytes(originalBytes)
-        val bitmap = BitmapFactory.decodeFile(originalFile.absolutePath)
+        val bitmap = BitmapFactory.decodeByteArray(originalBytes, 0, originalBytes.size)
         val convertedFile = coverFile(context, id)
-        val path = if (bitmap != null) {
+        if (bitmap != null) {
             convertedFile.parentFile?.mkdirs()
-            val converted = convertedFile.outputStream().use {
-                bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 100, it)
+            var success = false
+            convertedFile.outputStream().use { output ->
+                success = bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 85, output)
             }
-            if (converted && isValid(convertedFile.absolutePath) && BitmapFactory.decodeFile(convertedFile.absolutePath) != null) {
-                originalFile.delete()
-                convertedFile.absolutePath
-            } else {
-                originalFile.absolutePath
+            bitmap.recycle()
+            if (success && isValid(convertedFile.absolutePath) &&
+                BitmapFactory.decodeFile(convertedFile.absolutePath) != null
+            ) {
+                val path = convertedFile.absolutePath
+                loadCover(path)?.let { putCover(path, it) }
+                return path
             }
-        } else {
-            originalFile.absolutePath
         }
-        loadCover(path)?.let { putCover(path, it) }
-        path
+        // WEBP 转换失败，回退到原始格式
+        originalCoverFile(context, id).apply {
+            parentFile?.mkdirs()
+            writeBytes(originalBytes)
+        }.absolutePath
     } catch (_: Exception) { null }
 
     fun saveLyrics(context: Context, id: Long, lines: List<LyricLine>): String? = try {

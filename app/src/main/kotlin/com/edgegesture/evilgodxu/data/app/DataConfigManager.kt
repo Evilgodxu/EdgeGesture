@@ -10,8 +10,6 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.edgegesture.evilgodxu.data.gesture.gestureDataStore
-import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
-import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockKeys
 import com.edgegesture.evilgodxu.data.launchblock.launchBlockDataStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -21,67 +19,46 @@ import org.json.JSONObject
 import java.io.File
 
 enum class ManagedDataType {
-    APP_ICONS, MUSIC_COVERS, MUSIC_LYRICS, MUSIC_PLAYLIST, MUSIC_POSITION,
-    UPDATE_CACHE, STATS
+    MUSIC_COVERS, MUSIC_LYRICS
 }
 
 data class ManagedDataItem(val type: ManagedDataType, val size: Long)
 
 object DataConfigManager {
+
+    suspend fun listData(context: Context): List<ManagedDataItem> = withContext(Dispatchers.IO) {
+        listOf(
+            ManagedDataItem(ManagedDataType.MUSIC_COVERS, directorySize(File(context.filesDir, "music_metadata/covers_v2")) + directorySize(File(context.filesDir, "music_metadata/covers_original"))),
+            ManagedDataItem(ManagedDataType.MUSIC_LYRICS, directorySize(File(context.filesDir, "music_metadata/lyrics")))
+        )
+    }
+
+    suspend fun clear(context: Context, selected: Set<ManagedDataType>, stopMusic: suspend () -> Unit) = withContext(Dispatchers.IO) {
+        if (selected.any { it in setOf(ManagedDataType.MUSIC_COVERS, ManagedDataType.MUSIC_LYRICS) }) {
+            stopMusic()
+        }
+        if (ManagedDataType.MUSIC_COVERS in selected) {
+            File(context.filesDir, "music_metadata/covers_v2").deleteRecursively()
+            File(context.filesDir, "music_metadata/covers_original").deleteRecursively()
+        }
+        if (ManagedDataType.MUSIC_LYRICS in selected) {
+            File(context.filesDir, "music_metadata/lyrics").deleteRecursively()
+        }
+        if (selected.any { it in setOf(ManagedDataType.MUSIC_COVERS, ManagedDataType.MUSIC_LYRICS) }) {
+            File(context.filesDir, "music_metadata").mkdirs()
+        }
+    }
+
+    private fun directorySize(file: File?): Long = file?.takeIf { it.exists() }?.walkTopDown()?.filter { it.isFile }?.sumOf { it.length() } ?: 0L
+
+    // 配置导出（手势配置 + 启动拦截配置）
     private const val FORMAT_VERSION = 1
-    private const val UPDATE_PREFS = "update_prefs"
     private val excludedKeys = setOf(
         "music_saved_uri",
         "music_saved_position",
         "app_switch_blacklist",
         "blacklist_initialized"
     )
-
-    suspend fun listData(context: Context): List<ManagedDataItem> = withContext(Dispatchers.IO) {
-        listOf(
-            ManagedDataItem(ManagedDataType.APP_ICONS, directorySize(File(context.cacheDir, "app-icons"))),
-            ManagedDataItem(ManagedDataType.MUSIC_COVERS, directorySize(File(context.filesDir, "music_metadata/covers_v2")) + directorySize(File(context.filesDir, "music_metadata/covers"))),
-            ManagedDataItem(ManagedDataType.MUSIC_LYRICS, directorySize(File(context.filesDir, "music_metadata/lyrics"))),
-            ManagedDataItem(ManagedDataType.MUSIC_PLAYLIST, sharedPreferencesSize(context, "music_playlist_cache_preferences")),
-            ManagedDataItem(ManagedDataType.MUSIC_POSITION, 0L),
-            ManagedDataItem(ManagedDataType.UPDATE_CACHE, sharedPreferencesSize(context, UPDATE_PREFS) + directorySize(context.externalCacheDir)),
-            ManagedDataItem(ManagedDataType.STATS, statsSize(context))
-        )
-    }
-
-    suspend fun clear(context: Context, selected: Set<ManagedDataType>, stopMusic: suspend () -> Unit) = withContext(Dispatchers.IO) {
-        if (selected.any { it in setOf(ManagedDataType.MUSIC_COVERS, ManagedDataType.MUSIC_LYRICS, ManagedDataType.MUSIC_PLAYLIST, ManagedDataType.MUSIC_POSITION) }) {
-            stopMusic()
-        }
-        if (ManagedDataType.APP_ICONS in selected) {
-            File(context.cacheDir, "app-icons").deleteRecursively()
-            context.appCacheDataStore.edit { prefs ->
-                prefs.remove(AppCacheKeys.CACHED_APPS_JSON)
-                prefs.remove(AppCacheKeys.LAST_CACHE_TIME)
-                prefs.remove(AppCacheKeys.CACHE_VERSION)
-            }
-        }
-        if (ManagedDataType.MUSIC_COVERS in selected) {
-            File(context.filesDir, "music_metadata/covers_v2").deleteRecursively()
-            File(context.filesDir, "music_metadata/covers").deleteRecursively()
-            File(context.filesDir, "music_metadata/covers_original").deleteRecursively()
-        }
-        if (ManagedDataType.MUSIC_LYRICS in selected) File(context.filesDir, "music_metadata/lyrics").deleteRecursively()
-        if (ManagedDataType.MUSIC_PLAYLIST in selected) context.getSharedPreferences("music_playlist_cache_preferences", Context.MODE_PRIVATE).edit().clear().apply()
-        if (ManagedDataType.MUSIC_POSITION in selected) context.gestureDataStore.edit { prefs ->
-            prefs.remove(stringPreferencesKey("music_saved_uri"))
-            prefs.remove(longPreferencesKey("music_saved_position"))
-        }
-        if (ManagedDataType.UPDATE_CACHE in selected) {
-            context.getSharedPreferences(UPDATE_PREFS, Context.MODE_PRIVATE).edit().clear().apply()
-            context.externalCacheDir?.deleteRecursively()
-        }
-        if (ManagedDataType.STATS in selected) GestureStatsManager.resetStats(context)
-        if (selected.any { it in setOf(ManagedDataType.APP_ICONS, ManagedDataType.MUSIC_COVERS, ManagedDataType.MUSIC_LYRICS, ManagedDataType.MUSIC_PLAYLIST) }) {
-            File(context.cacheDir, "app-icons").mkdirs()
-            File(context.filesDir, "music_metadata").mkdirs()
-        }
-    }
 
     suspend fun export(context: Context): ByteArray = withContext(Dispatchers.IO) {
         val root = JSONObject().put("formatVersion", FORMAT_VERSION)
@@ -156,8 +133,4 @@ object DataConfigManager {
     private fun buildSet(array: JSONArray): Set<String> = buildSet {
         for (i in 0 until array.length()) add(array.getString(i))
     }
-
-    private fun directorySize(file: File?): Long = file?.takeIf { it.exists() }?.walkTopDown()?.filter { it.isFile }?.sumOf { it.length() } ?: 0L
-    private fun sharedPreferencesSize(context: Context, name: String): Long = directorySize(File(context.dataDir, "shared_prefs/$name.xml"))
-    private suspend fun statsSize(context: Context): Long = context.gestureDataStore.data.first().asMap().filter { it.key.name.startsWith("daily_") }.size.toLong()
 }
