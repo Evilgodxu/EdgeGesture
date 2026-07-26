@@ -75,6 +75,7 @@ import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuState
 import com.edgegesture.evilgodxu.ui.adaptive.rememberWindowSizeClass
 import com.edgegesture.evilgodxu.screens.settings.components.DonateDialog
+import com.edgegesture.evilgodxu.screens.settings.components.GestureConfigDialog
 import com.edgegesture.evilgodxu.screens.settings.components.LanguageSelectionDialog
 import com.edgegesture.evilgodxu.screens.settings.components.OpenSourceLicensesDialog
 import com.edgegesture.evilgodxu.screens.settings.components.SettingsClickableItem
@@ -209,6 +210,7 @@ fun SettingsScreen(
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showDonateDialog by remember { mutableStateOf(false) }
     var showOpenSourceDialog by remember { mutableStateOf(false) }
+    var showGestureConfigDialog by remember { mutableStateOf(false) }
 
     // Shizuku 状态
     var shizukuState by remember { mutableStateOf<ShizukuState>(ShizukuState.NotRunning) }
@@ -323,9 +325,16 @@ fun SettingsScreen(
                     SettingsSection(title = stringResource(R.string.settings_about)) {
                         SettingsClickableItem(
                             icon = Icons.Default.Folder,
-                            title = "数据与配置",
-                            subtitle = "管理缓存并导入或导出手势配置",
+                            title = "缓存管理",
+                            subtitle = "管理应用缓存和临时数据",
                             onClick = onNavigateToDataConfig
+                        )
+                        HorizontalDivider()
+                        SettingsClickableItem(
+                            icon = Icons.Default.Folder,
+                            title = "手势配置",
+                            subtitle = "导入或导出手势方案",
+                            onClick = { showGestureConfigDialog = true }
                         )
                         HorizontalDivider()
                         SettingsClickableItem(
@@ -439,9 +448,16 @@ fun SettingsScreen(
                 SettingsSection(title = stringResource(R.string.settings_about)) {
                     SettingsClickableItem(
                         icon = Icons.Default.Folder,
-                        title = "数据与配置",
-                        subtitle = "管理缓存并导入或导出手势配置",
+                        title = "缓存管理",
+                        subtitle = "管理应用缓存和临时数据",
                         onClick = onNavigateToDataConfig
+                    )
+                    HorizontalDivider()
+                    SettingsClickableItem(
+                        icon = Icons.Default.Folder,
+                        title = "手势配置",
+                        subtitle = "导入或导出手势方案",
+                        onClick = { showGestureConfigDialog = true }
                     )
                     HorizontalDivider()
                     SettingsClickableItem(
@@ -563,6 +579,12 @@ fun SettingsScreen(
     if (showOpenSourceDialog) {
         OpenSourceLicensesDialog(
             onDismiss = { showOpenSourceDialog = false }
+        )
+    }
+
+    if (showGestureConfigDialog) {
+        GestureConfigDialog(
+            onDismiss = { showGestureConfigDialog = false }
         )
     }
 

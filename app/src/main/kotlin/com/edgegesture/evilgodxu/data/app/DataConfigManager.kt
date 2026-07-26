@@ -46,7 +46,7 @@ object DataConfigManager {
             ManagedDataItem(ManagedDataType.MUSIC_POSITION, 0L),
             ManagedDataItem(ManagedDataType.UPDATE_CACHE, sharedPreferencesSize(context, UPDATE_PREFS) + directorySize(context.externalCacheDir)),
             ManagedDataItem(ManagedDataType.STATS, statsSize(context)),
-            ManagedDataItem(ManagedDataType.TEMP, directorySize(context.cacheDir) - directorySize(File(context.cacheDir, "app-icons")))
+            ManagedDataItem(ManagedDataType.TEMP, orphanFiles(context).filter { it.exists() }.sumOf { it.length() })
         )
     }
 
@@ -56,7 +56,11 @@ object DataConfigManager {
         }
         if (ManagedDataType.APP_ICONS in selected) {
             File(context.cacheDir, "app-icons").deleteRecursively()
-            context.appCacheDataStore.edit { it.clear() }
+            context.appCacheDataStore.edit { prefs ->
+                prefs.remove(AppCacheKeys.CACHED_APPS_JSON)
+                prefs.remove(AppCacheKeys.LAST_CACHE_TIME)
+                prefs.remove(AppCacheKeys.CACHE_VERSION)
+            }
         }
         if (ManagedDataType.MUSIC_COVERS in selected) {
             File(context.filesDir, "music_metadata/covers_v2").deleteRecursively()
@@ -73,7 +77,7 @@ object DataConfigManager {
             context.externalCacheDir?.deleteRecursively()
         }
         if (ManagedDataType.STATS in selected) GestureStatsManager.resetStats(context)
-        if (ManagedDataType.TEMP in selected) context.cacheDir.listFiles()?.filterNot { it.name == "app-icons" }?.forEach { it.deleteRecursively() }
+        if (ManagedDataType.TEMP in selected) orphanFiles(context).forEach { it.delete() }
         if (selected.any { it in setOf(ManagedDataType.APP_ICONS, ManagedDataType.MUSIC_COVERS, ManagedDataType.MUSIC_LYRICS, ManagedDataType.MUSIC_PLAYLIST) }) {
             File(context.cacheDir, "app-icons").mkdirs()
             File(context.filesDir, "music_metadata").mkdirs()
@@ -152,6 +156,15 @@ object DataConfigManager {
 
     private fun buildSet(array: JSONArray): Set<String> = buildSet {
         for (i in 0 until array.length()) add(array.getString(i))
+    }
+
+    private fun orphanFiles(context: Context): List<File> {
+        val iconCacheDir = File(context.cacheDir, "app-icons").canonicalFile
+        return context.cacheDir.walkTopDown()
+            .filter { file ->
+                file.isFile && !file.canonicalFile.toPath().startsWith(iconCacheDir.toPath())
+            }
+            .toList()
     }
 
     private fun directorySize(file: File?): Long = file?.takeIf { it.exists() }?.walkTopDown()?.filter { it.isFile }?.sumOf { it.length() } ?: 0L
