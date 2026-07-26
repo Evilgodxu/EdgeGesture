@@ -187,6 +187,7 @@ class MusicPanelViewManager(
                 withContext(Dispatchers.Main) {
                     restoreCurrentTrack()
                 }
+                enrichPlaylistMetadata()
             }
             registerMediaObserver()
         }
@@ -235,7 +236,7 @@ class MusicPanelViewManager(
     }
 
     private fun requestScan() {
-        if (playbackState.isScanning) return
+        if (playbackState.isScanning || isDismissing) return
         refreshJob?.cancel()
         refreshJob = managerScope.launch {
             scanAndPlay()
@@ -255,7 +256,7 @@ class MusicPanelViewManager(
             val externalTracks = withContext(Dispatchers.Main) {
                 playbackState.playlist.filter { it.path.isBlank() }
             }
-            val mergedTracks = deduplicateTracks(tracks + externalTracks)
+            val mergedTracks = mergeTrackMetadata(deduplicateTracks(tracks + externalTracks))
             withContext(Dispatchers.Main) {
                 playbackState.setSortedPlaylist(mergedTracks)
                 playbackState.persistPlaylist()
@@ -264,6 +265,21 @@ class MusicPanelViewManager(
             withContext(Dispatchers.Main) {
                 playbackState.isScanning = false
             }
+        }
+    }
+
+    private fun mergeTrackMetadata(tracks: List<MusicTrack>): List<MusicTrack> {
+        val previous = playbackState.playlist.associateBy { normalizedAudioUri(it.audioUri) }
+        return tracks.map { track ->
+            val cached = previous[normalizedAudioUri(track.audioUri)] ?: return@map track
+            track.copy(
+                albumArt = track.albumArt ?: cached.albumArt,
+                neteaseId = cached.neteaseId,
+                neteaseCoverUrl = cached.neteaseCoverUrl,
+                coverCachePath = cached.coverCachePath,
+                lyricCachePath = cached.lyricCachePath,
+                lyricLines = cached.lyricLines
+            )
         }
     }
 
@@ -318,11 +334,43 @@ class MusicPanelViewManager(
         val tracks = MusicScanner.scan(context)
         withContext(Dispatchers.Main) {
             val externalTracks = playbackState.playlist.filter { it.path.isBlank() }
-            val mergedTracks = deduplicateTracks(tracks + externalTracks)
+            val mergedTracks = mergeTrackMetadata(deduplicateTracks(tracks + externalTracks))
             playbackState.setSortedPlaylist(mergedTracks)
             playbackState.persistPlaylist()
             restoreCurrentTrack()
             playbackState.isScanning = false
+        }
+        enrichPlaylistMetadata()
+    }
+
+    private suspend fun enrichPlaylistMetadata() {
+        val tracks = withContext(Dispatchers.Main) { playbackState.playlist }
+        tracks.forEach { track ->
+            val hasCover = MusicMetadataCache.isValid(track.coverCachePath)
+            val hasLyrics = MusicMetadataCache.isValid(track.lyricCachePath) && track.lyricLines.isNotEmpty()
+            if (track.neteaseId != 0L && hasCover && hasLyrics) return@forEach
+            try {
+                val match = NeteaseMusicApi.match(track.title, track.artist, track.duration)
+                    ?: return@forEach
+                val cover = NeteaseMusicApi.loadCover(match.coverUrl.orEmpty())
+                val lyric = NeteaseMusicApi.lyric(match.id)
+                val coverPath = cover?.let { MusicMetadataCache.saveCover(context, match.id, it) }.orEmpty()
+                val lyricPath = MusicMetadataCache.saveLyrics(context, match.id, lyric.lines).orEmpty()
+                withContext(Dispatchers.Main) {
+                    playbackState.updateTrack(
+                        track.copy(
+                            albumArt = cover ?: track.albumArt,
+                            neteaseId = match.id,
+                            neteaseCoverUrl = match.coverUrl.orEmpty(),
+                            coverCachePath = coverPath,
+                            lyricCachePath = lyricPath,
+                            lyricLines = lyric.lines
+                        )
+                    )
+                }
+            } catch (error: Exception) {
+                android.util.Log.w("MusicPanel", "网易云元数据加载失败: ${error.message}")
+            }
         }
     }
 

@@ -3,6 +3,7 @@ package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -20,7 +21,6 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import coil3.compose.AsyncImage
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -51,6 +52,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
@@ -70,6 +72,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -82,13 +85,18 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -131,6 +139,7 @@ fun MusicPanelOverlay(
 
     var showPlaylist by remember { mutableStateOf(false) }
     var showTimer by remember { mutableStateOf(false) }
+    val currentTrackId = playbackState.currentTrack?.id
 
     // 移除本地计时器：统一由 MusicPlaybackState 在后台维护，
     // 计时结束后自动停止播放并释放资源。
@@ -183,39 +192,6 @@ fun MusicPanelOverlay(
                     val designHeight = 285.dp
                     val scale = (maxHeight / designHeight).coerceAtMost(1f)
 
-                    // 弥散环境光：从封面区域向外扩散
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(160.dp)
-                            .background(
-                                Brush.radialGradient(
-                                    colors = listOf(
-                                        ambientColor.copy(alpha = glowAlpha),
-                                        ambientColor.copy(alpha = glowAlpha * 0.5f),
-                                        Color.Transparent
-                                    ),
-                                    center = Offset(0.5f, 0.15f),
-                                    radius = 0.75f
-                                )
-                            )
-                    )
-                    // 顶部高光
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(
-                                        if (isDarkTheme) Color.White.copy(alpha = 0.07f) else Color.White.copy(alpha = 0.35f),
-                                        Color.Transparent
-                                    ),
-                                    start = Offset(0f, 0f),
-                                    end = Offset(0f, 180f)
-                                )
-                            )
-                    )
-
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -230,15 +206,35 @@ fun MusicPanelOverlay(
                             playbackState = playbackState,
                             timerRemaining = playbackState.timerRemaining,
                             onTimerClick = { showTimer = true },
-                            modifier = Modifier.padding(bottom = 2.dp)
-                        )
-                        AlbumCarousel(
-                            playbackState = playbackState,
                             modifier = Modifier.padding(bottom = 6.dp)
                         )
 
-                        TrackInfo(playbackState = playbackState)
-
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (playbackState.isLyricsVisible) {
+                                LyricsPanel(
+                                    playbackState = playbackState,
+                                    modifier = Modifier.fillMaxSize(),
+                                    onClick = { playbackState.isLyricsVisible = false }
+                                )
+                            } else {
+                                CurrentCover(
+                                    track = playbackState.currentTrack,
+                                    isPlaying = playbackState.isPlaying,
+                                    onClick = { playbackState.isLyricsVisible = true }
+                                )
+                            }
+                        }
+                        if (!playbackState.isLyricsVisible) {
+                            TrackInfo(
+                                playbackState = playbackState,
+                                onClick = { playbackState.isLyricsVisible = true }
+                            )
+                        }
                         ProgressSection(playbackState = playbackState)
 
                         ControlBar(
@@ -292,7 +288,11 @@ private fun HeaderRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            HeaderIconButton(icon = Icons.Default.Timer, onClick = onTimerClick)
+            HeaderIconButton(
+                icon = Icons.Default.Timer,
+                onClick = onTimerClick,
+                modifier = Modifier.offset(y = 4.dp)
+            )
             if (timerRemaining > 0) {
                 Text(
                     text = "${timerRemaining}m",
@@ -313,7 +313,8 @@ private fun HeaderRow(
             onClick = {
                 currentTrackId?.let { playbackState.toggleFavorite(it) }
             },
-            tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+            tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.offset(y = 4.dp)
         )
     }
 }
@@ -324,224 +325,349 @@ private fun HeaderIconButton(
     onClick: () -> Unit,
     tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     IconButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.size(32.dp)
     ) {
-        Icon(icon, contentDescription = null, modifier = Modifier.size(21.dp), tint = tint)
+        Icon(
+            icon,
+            contentDescription = null,
+            modifier = Modifier.size(21.dp),
+            tint = if (enabled) tint else tint.copy(alpha = 0.3f)
+        )
     }
 }
 
 @Composable
-private fun AlbumCarousel(
-    playbackState: MusicPlaybackState,
+private fun CurrentCover(
+    track: MusicTrack?,
+    isPlaying: Boolean,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val playlist = playbackState.playlist
-    val current = playlist.indexOfFirst { it.id == playbackState.currentTrack?.id }
-        .takeIf { it >= 0 } ?: playbackState.currentIndex.takeIf { it in playlist.indices } ?: -1
-    val canSwitch = playlist.size >= 2 && current >= 0
-    val prevIndex = if (canSwitch) (current - 1 + playlist.size) % playlist.size else -1
-    val nextIndex = if (canSwitch) (current + 1) % playlist.size else -1
-    val prevPrevIndex = if (canSwitch) (prevIndex - 1 + playlist.size) % playlist.size else -1
-    val nextNextIndex = if (canSwitch) (nextIndex + 1) % playlist.size else -1
-    var dragOffset by remember(current) { mutableFloatStateOf(0f) }
-    var settledOffset by remember(current) { mutableFloatStateOf(0f) }
-    var swipeDirection by remember(current) { mutableIntStateOf(0) }
-    var isAnimating by remember(current) { mutableStateOf(false) }
-    val coverStep = 56.dp
-    val density = androidx.compose.ui.platform.LocalDensity.current
-    val coverStepPx = with(density) { coverStep.toPx() }
-    val switchThreshold = coverStepPx * 0.35f
-    val slotDistance = with(density) { 53.dp.toPx() }
-    val enteringDistance = slotDistance + coverStepPx
-
-    fun indexFor(direction: Int): Int = if (direction < 0) nextIndex else prevIndex
-
-    val swipeModifier = Modifier.pointerInput(current, isAnimating, canSwitch) {
-        detectHorizontalDragGestures(
-            onHorizontalDrag = { change, dragAmount ->
-                if (!isAnimating) {
-                    change.consume()
-                    dragOffset = (dragOffset + dragAmount).coerceIn(-coverStepPx, coverStepPx)
-                    if (dragOffset != 0f) swipeDirection = if (dragOffset < 0f) -1 else 1
-                }
-            },
-            onDragEnd = {
-                if (!isAnimating) {
-                    val target = when {
-                        canSwitch && dragOffset <= -switchThreshold -> -coverStepPx
-                        canSwitch && dragOffset >= switchThreshold -> coverStepPx
-                        else -> 0f
-                    }
-                    val targetIndex = if (target != 0f) indexFor(if (target < 0f) -1 else 1) else -1
-                    isAnimating = true
-                    settledOffset = target
-                    scope.launch {
-                        delay(if (target == 0f) 180 else 220)
-                        if (targetIndex >= 0) playTrackAt(context, playbackState, targetIndex)
-                        dragOffset = 0f
-                        settledOffset = 0f
-                        swipeDirection = 0
-                        isAnimating = false
-                    }
-                }
-            },
-            onDragCancel = {
-                if (!isAnimating) {
-                    isAnimating = true
-                    settledOffset = 0f
-                    scope.launch {
-                        delay(180)
-                        dragOffset = 0f
-                        swipeDirection = 0
-                        isAnimating = false
-                    }
-                }
+    val rotation = remember { androidx.compose.animation.core.Animatable(0f) }
+    LaunchedEffect(isPlaying) {
+        if (isPlaying) {
+            while (isActive) {
+                rotation.animateTo(
+                    targetValue = rotation.value + 360f,
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = 12_000,
+                        easing = androidx.compose.animation.core.LinearEasing
+                    )
+                )
             }
-        )
-    }
-
-    val targetOffset = if (isAnimating) settledOffset else dragOffset
-    val effectiveOffset by animateFloatAsState(
-        targetValue = targetOffset,
-        animationSpec = tween(if (isAnimating && settledOffset != 0f) 220 else 80),
-        label = "album_drag_offset"
-    )
-    val fraction = (effectiveOffset / coverStepPx).coerceIn(-1f, 1f)
-    val direction = when {
-        fraction < 0f -> -1
-        fraction > 0f -> 1
-        else -> swipeDirection
-    }
-    val progress = kotlin.math.abs(fraction)
-    var rotation by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(playbackState.isPlaying) {
-        while (isActive && playbackState.isPlaying) {
-            rotation = (rotation + 3f) % 360f
-            delay(100)
         }
     }
-
-    val leftTrack = playlist.getOrNull(prevIndex)
-    val centerTrack = playlist.getOrNull(current)
-    val rightTrack = playlist.getOrNull(nextIndex)
-    val enteringTrack = playlist.getOrNull(if (direction < 0) nextNextIndex else prevPrevIndex)
-
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(72.dp)
-            .then(swipeModifier),
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        CarouselCover(
-            track = if (direction < 0) leftTrack else rightTrack,
-            size = 36.dp,
-            alpha = 0.4f * (1f - progress),
-            translationX = if (direction < 0) -slotDistance - enteringDistance * progress
-            else slotDistance + enteringDistance * progress,
-            onClick = {
-                val index = if (direction < 0) prevIndex else nextIndex
-                if (index >= 0 && !isAnimating) scope.launch { playTrackAt(context, playbackState, index) }
-            }
-        )
-        CarouselCover(
-            track = enteringTrack,
-            size = 36.dp,
-            alpha = 0.4f * progress,
-            translationX = if (direction < 0) enteringDistance - coverStepPx * progress
-            else -enteringDistance + coverStepPx * progress
-        )
-        CarouselCover(
-            track = if (direction < 0) rightTrack else leftTrack,
-            size = 36.dp + 28.dp * progress,
-            alpha = 0.4f + 0.6f * progress,
-            translationX = if (direction < 0) slotDistance * (1f - progress)
-            else -slotDistance * (1f - progress),
-            onClick = {
-                val index = if (direction < 0) nextIndex else prevIndex
-                if (index >= 0 && !isAnimating) scope.launch { playTrackAt(context, playbackState, index) }
-            }
-        )
-        CarouselCover(
-            track = centerTrack,
-            size = 64.dp - 28.dp * progress,
-            alpha = 1f,
-            translationX = if (direction < 0) -slotDistance * progress else slotDistance * progress,
-            isCenter = true,
-            isPlaying = playbackState.isPlaying,
-            rotation = rotation
-        )
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .graphicsLayer { rotationZ = rotation.value }
+                .clip(CircleShape)
+        ) {
+            AlbumArt(track = track, modifier = Modifier.fillMaxSize())
+        }
     }
 }
 
 @Composable
-private fun CarouselCover(
-    track: MusicTrack?,
-    size: androidx.compose.ui.unit.Dp,
-    alpha: Float,
-    translationX: Float,
-    onClick: (() -> Unit)? = null,
-    isCenter: Boolean = false,
-    isPlaying: Boolean = false,
-    rotation: Float = 0f,
+private fun LyricsPanel(
+    playbackState: MusicPlaybackState,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
 ) {
-    val baseSize = 64.dp
+    var lyricPosition by remember { mutableLongStateOf(playbackState.currentPosition) }
+    LaunchedEffect(playbackState.isPlaying, playbackState.currentTrack?.id) {
+        while (isActive) {
+            lyricPosition = playbackState.mediaController?.currentPosition
+                ?.takeIf { it >= 0L }
+                ?: playbackState.currentPosition
+            delay(if (playbackState.isPlaying) 50L else 200L)
+        }
+    }
+
+    val lines = playbackState.currentTrack?.lyricLines.orEmpty()
+    // 播放器尚未到达第一句时也以第一句作为当前行，保证第一句从第三行开始。
+    val activeIndex = lines.indexOfLast { it.timeMs <= lyricPosition }.coerceAtLeast(0)
+
     Box(
-        modifier = Modifier
-            .size(baseSize)
-            .graphicsLayer {
-                this.translationX = translationX
-                val scale = size / baseSize
-                scaleX = scale
-                scaleY = scale
-                this.alpha = alpha
-                if (isCenter) rotationZ = rotation
-            }
-            .then(if (isCenter) Modifier.shadow(4.dp, CircleShape, ambientColor = Color.Black.copy(alpha = 0.5f), spotColor = Color.Black.copy(alpha = 0.5f)) else Modifier)
-            .clip(CircleShape)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp),
         contentAlignment = Alignment.Center
     ) {
-        AlbumArt(track = track, modifier = Modifier.fillMaxSize())
-        if (isCenter) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.radialGradient(
-                            listOf(Color.White.copy(alpha = 0.10f), Color.White.copy(alpha = 0.04f), Color.Transparent),
-                            center = Offset(0.30f, 0.20f),
-                            radius = 0.65f
-                        )
-                    )
-            )
-            if (!isPlaying && track != null) {
-                Icon(
-                    imageVector = Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.9f),
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(28.dp)
-                )
-            }
+        if (lines.isEmpty()) {
+            Text("暂无歌词", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         } else {
-            Box(Modifier.fillMaxSize().border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f), CircleShape))
+            AnimatedContent(
+                targetState = activeIndex,
+                transitionSpec = {
+                    val movingForward = targetState > initialState
+                    val distance = { height: Int -> (height / 4).coerceAtLeast(1) }
+                    if (movingForward) {
+                        (slideInVertically(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { it }
+                            + fadeIn(animationSpec = tween(180))) togetherWith
+                            (slideOutVertically(animationSpec = tween(260)) { -distance(it) }
+                                + fadeOut(animationSpec = tween(180)))
+                    } else {
+                        (slideInVertically(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) { -distance(it) }
+                            + fadeIn(animationSpec = tween(180))) togetherWith
+                            (slideOutVertically(animationSpec = tween(260)) { it }
+                                + fadeOut(animationSpec = tween(180)))
+                    }
+                },
+                label = "lyric_column_scroll"
+            ) { renderedActiveIndex ->
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    repeat(4) { row ->
+                        val index = renderedActiveIndex - 2 + row
+                        val line = lines.getOrNull(index)
+                        if (line == null) {
+                            LyricSpacer()
+                            return@repeat
+                        }
+                        val isCurrent = index == activeIndex
+                        val emphasis by animateFloatAsState(
+                            targetValue = if (isCurrent) 1f else 0f,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioNoBouncy,
+                                stiffness = Spring.StiffnessMediumLow
+                            ),
+                            label = "lyric_emphasis"
+                        )
+                        val scale = 0.98f + 0.16f * emphasis
+                        val nextTimeMs = lines.getOrNull(index + 1)?.timeMs ?: line.timeMs + 3000L
+                        val liftProgress = if (isCurrent) {
+                            ((lyricPosition - line.timeMs).toFloat() /
+                                (nextTimeMs - line.timeMs).coerceAtLeast(1L)).coerceIn(0f, 1f)
+                        } else 0f
+                        val lift = -2.dp * (1f - (1f - liftProgress) * (1f - liftProgress) * (1f - liftProgress))
+                        LyricText(
+                            line = line,
+                            nextTimeMs = nextTimeMs,
+                            positionMs = lyricPosition,
+                            isCurrent = isCurrent,
+                            text = buildLyricText(line, nextTimeMs, lyricPosition, isCurrent),
+                            fontSize = 12.sp,
+                            fontWeight = if (isCurrent) androidx.compose.ui.text.font.FontWeight.Medium
+                            else androidx.compose.ui.text.font.FontWeight.Normal,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .graphicsLayer {
+                                    scaleX = scale
+                                    scaleY = scale
+                                    translationY = lift.toPx()
+                                }
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                    // 固定四行：第一、二行是当前行之前的歌词，第四行是下一句歌词。
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun LyricSpacer() {
+    Spacer(modifier = Modifier.height(18.dp))
+}
+
+@Composable
+private fun LyricText(
+    line: LyricLine,
+    nextTimeMs: Long,
+    positionMs: Long,
+    isCurrent: Boolean,
+    text: androidx.compose.ui.text.AnnotatedString,
+    fontSize: androidx.compose.ui.unit.TextUnit,
+    fontWeight: androidx.compose.ui.text.font.FontWeight,
+    modifier: Modifier = Modifier,
+) {
+    val pendingColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
+    val activeColor = MaterialTheme.colorScheme.primary
+    val duration = (nextTimeMs - line.timeMs).coerceAtLeast(1L)
+    val progress = when {
+        !isCurrent || positionMs <= line.timeMs -> 0f
+        positionMs >= nextTimeMs -> 1f
+        else -> ((positionMs - line.timeMs).toFloat() / duration).coerceIn(0f, 1f)
+    }
+    val lyricBrush = when {
+        progress <= 0f -> Brush.horizontalGradient(listOf(pendingColor, pendingColor))
+        progress >= 1f -> Brush.horizontalGradient(listOf(activeColor, activeColor))
+        else -> Brush.horizontalGradient(
+            colorStops = arrayOf(
+                0f to activeColor,
+                progress to activeColor,
+                progress to pendingColor,
+                1f to pendingColor
+            )
+        )
+    }
+
+    Text(
+        text = line.text,
+        style = androidx.compose.ui.text.TextStyle(
+            brush = lyricBrush,
+            shadow = if (progress > 0f) androidx.compose.ui.graphics.Shadow(
+                activeColor.copy(alpha = 0.65f),
+                blurRadius = 7f
+            ) else null
+        ),
+        fontSize = fontSize,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = TextAlign.Center,
+        fontWeight = fontWeight,
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun buildLyricText(
+    line: LyricLine,
+    nextTimeMs: Long,
+    positionMs: Long,
+    isCurrent: Boolean,
+): androidx.compose.ui.text.AnnotatedString {
+    val primary = MaterialTheme.colorScheme.primary
+    val idle = MaterialTheme.colorScheme.onSurfaceVariant
+    // 未唱部分始终使用普通灰色，避免当前行在演唱前整行显示主题色。
+    val pendingColor = idle.copy(alpha = 0.72f)
+    val activeColor = primary.copy(alpha = 1f)
+    val highlightShadow = androidx.compose.ui.graphics.Shadow(
+        primary.copy(alpha = 0.65f),
+        blurRadius = 7f
+    )
+
+    val tokens = if (line.words.isNotEmpty()) {
+        line.words
+    } else {
+        val parts = splitLyricText(line.text)
+        val duration = (nextTimeMs - line.timeMs).coerceAtLeast(1L)
+        val partDuration = (duration / parts.size.coerceAtLeast(1)).coerceAtLeast(1L)
+        parts.mapIndexed { index, part ->
+            LyricWord(
+                startMs = line.timeMs + index * partDuration,
+                durationMs = if (index == parts.lastIndex) {
+                    (nextTimeMs - (line.timeMs + index * partDuration)).coerceAtLeast(1L)
+                } else partDuration,
+                text = part
+            )
+        }
+    }
+
+    return buildAnnotatedString {
+        tokens.forEachIndexed { tokenIndex, token ->
+            // 示例：非最后一段平滑过渡到下一段的开始时间；最后一段使用自身
+            // 的 duration，避免最后一个字在下一句开始前提前完成。
+            val tokenEndMs = if (tokenIndex + 1 < tokens.size) {
+                tokens[tokenIndex + 1].startMs.coerceAtLeast(token.startMs + 1L)
+            } else {
+                token.startMs + token.durationMs.coerceAtLeast(1L)
+            }
+            // 只有当前演唱行显示逐字进度；已唱行恢复为未演唱色。
+            val progress = if (isCurrent) {
+                ((positionMs - token.startMs).toFloat() / (tokenEndMs - token.startMs)).coerceIn(0f, 1f)
+            } else 0f
+            val split = (token.text.length * progress).toInt()
+            withStyle(
+                SpanStyle(
+                    color = activeColor,
+                    shadow = if (split > 0) highlightShadow else null
+                )
+            ) { append(token.text.take(split)) }
+            withStyle(SpanStyle(color = pendingColor)) { append(token.text.drop(split)) }
+        }
+    }
+}
+
+private fun splitLyricText(text: String): List<String> {
+    if (text.isBlank()) return listOf(text)
+    val result = mutableListOf<String>()
+    var index = 0
+    while (index < text.length) {
+        val start = index
+        val isSpace = text[index].isWhitespace()
+        if (isSpace) {
+            while (index < text.length && text[index].isWhitespace()) index++
+        } else if (text[index].isLetterOrDigit() && text[index].code < 128) {
+            while (index < text.length && text[index].isLetterOrDigit() && text[index].code < 128) index++
+        } else {
+            index++
+        }
+        result += text.substring(start, index)
+    }
+    return result
+}
+
+@Composable
+private fun TrackInfo(
+    playbackState: MusicPlaybackState,
+    onClick: () -> Unit = {},
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(top = 4.dp, bottom = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        val title = when {
+            playbackState.currentTrack != null -> playbackState.currentTrack!!.title
+            playbackState.isScanning -> stringResource(R.string.music_panel_scanning)
+            else -> stringResource(R.string.music_panel_empty)
+        }
+        Text(
+            text = title,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 14.sp,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+            maxLines = 1,
+            modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE)
+        )
+        Text(
+            text = playbackState.currentTrack?.artist ?: "",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 11.sp,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
 @Composable
 private fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
-    if (track?.albumArt != null) {
+    val context = LocalContext.current
+    val model = track?.coverCachePath?.takeIf { MusicMetadataCache.isValid(it) }
+        ?: track?.neteaseCoverUrl?.takeIf { it.isNotBlank() }
+    if (model != null) {
+        AsyncImage(
+            model = model,
+            contentDescription = track?.title,
+            contentScale = ContentScale.Crop,
+            modifier = modifier.background(Color.Black),
+        )
+    } else if (track?.albumArt != null) {
         Image(
             bitmap = track.albumArt.asImageBitmap(),
             contentDescription = track.title,
+            contentScale = ContentScale.Crop,
             modifier = modifier.background(Color.Black),
         )
     } else {
@@ -712,7 +838,7 @@ private fun ControlBar(
         ControlIconButton(
             icon = Icons.Default.SkipPrevious,
             onClick = {
-                val prev = playbackState.manualPreviousIndex()
+                val prev = playbackState.previousIndex()
                 if (prev >= 0) scope.launch { playTrackAt(context, playbackState, prev) }
             },
             enabled = playbackState.playlist.isNotEmpty(),
@@ -743,7 +869,7 @@ private fun ControlBar(
         ControlIconButton(
             icon = Icons.Default.SkipNext,
             onClick = {
-                val next = playbackState.manualNextIndex()
+                val next = playbackState.nextIndex()
                 if (next >= 0) scope.launch { playTrackAt(context, playbackState, next) }
             },
             enabled = playbackState.playlist.isNotEmpty(),
@@ -870,6 +996,12 @@ private fun PlaylistOverlay(
                             fontSize = 10.sp
                         )
                         HeaderIconButton(
+                            icon = Icons.Default.Refresh,
+                            onClick = { if (!playbackState.isScanning) onScan() },
+                            modifier = Modifier.size(24.dp),
+                            enabled = !playbackState.isScanning
+                        )
+                        HeaderIconButton(
                             icon = Icons.Default.Close,
                             onClick = onDismiss,
                             modifier = Modifier.size(24.dp)
@@ -885,43 +1017,23 @@ private fun PlaylistOverlay(
                     }
                 } else {
                     val listState = rememberLazyListState()
-                    var pullDistance by remember { mutableFloatStateOf(0f) }
-                    val refreshThreshold = 120f
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .pointerInput(playbackState.isScanning) {
-                                detectVerticalDragGestures(
-                                    onVerticalDrag = { _, dragAmount ->
-                                        if (!playbackState.isScanning && listState.firstVisibleItemIndex == 0 && pullDistance == 0f) {
-                                            pullDistance = (pullDistance + dragAmount).coerceAtLeast(0f)
-                                        }
-                                    },
-                                    onDragEnd = {
-                                        if (!playbackState.isScanning && pullDistance >= refreshThreshold) {
-                                            onScan()
-                                        }
-                                        pullDistance = 0f
-                                    },
-                                    onDragCancel = { pullDistance = 0f }
-                                )
-                            }
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
-                        LazyColumn(
-                            state = listState,
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
-                            itemsIndexed(playbackState.playlist) { index, track ->
-                                val isActive = index == playbackState.currentIndex
-                                PlaylistRow(
-                                    track = track,
-                                    isActive = isActive,
-                                    isPlaying = isActive && playbackState.isPlaying,
-                                    onClick = { onTrackSelected(index) },
-                                    onFavoriteClick = { playbackState.toggleFavorite(track.id) }
-                                )
-                            }
+                        itemsIndexed(
+                            items = playbackState.playlist,
+                            key = { _, track -> track.audioUri }
+                        ) { index, track ->
+                            val isActive = index == playbackState.currentIndex
+                            PlaylistRow(
+                                track = track,
+                                isActive = isActive,
+                                isPlaying = isActive && playbackState.isPlaying,
+                                onClick = { onTrackSelected(index) },
+                                onFavoriteClick = { playbackState.toggleFavorite(track.id) }
+                            )
                         }
                     }
                     LaunchedEffect(playbackState.currentIndex) {

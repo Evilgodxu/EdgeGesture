@@ -1,0 +1,87 @@
+package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.LruCache
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+
+internal object MusicMetadataCache {
+    private fun root(context: Context) = File(context.filesDir, "music_metadata")
+    private fun coverFile(context: Context, id: Long) = File(File(root(context), "covers"), "$id.webp")
+    private fun lyricFile(context: Context, id: Long) = File(File(root(context), "lyrics"), "$id.json")
+    private val coverMemoryCache = object : LruCache<String, Bitmap>(8 * 1024) {
+        override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount / 1024
+    }
+
+    @Synchronized
+    fun loadCover(path: String): Bitmap? {
+        if (path.isBlank()) return null
+        coverMemoryCache.get(path)?.let { return it }
+        val bitmap = BitmapFactory.decodeFile(path) ?: return null
+        coverMemoryCache.put(path, bitmap)
+        return bitmap
+    }
+
+    @Synchronized
+    fun putCover(path: String, bitmap: Bitmap) {
+        if (path.isNotBlank()) coverMemoryCache.put(path, bitmap)
+    }
+
+    @Synchronized
+    fun removeCover(path: String) {
+        if (path.isNotBlank()) coverMemoryCache.remove(path)
+    }
+
+    fun saveCover(context: Context, id: Long, bitmap: Bitmap): String? = try {
+        val file = coverFile(context, id)
+        file.parentFile?.mkdirs()
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 85, it) }
+        val path = file.absolutePath
+        putCover(path, bitmap)
+        path
+    } catch (_: Exception) { null }
+
+    fun saveLyrics(context: Context, id: Long, lines: List<LyricLine>): String? = try {
+        val file = lyricFile(context, id)
+        file.parentFile?.mkdirs()
+        val array = JSONArray()
+        lines.forEach { line ->
+            array.put(JSONObject().apply {
+                put("timeMs", line.timeMs)
+                put("text", line.text)
+                put("words", JSONArray().also { words ->
+                    line.words.forEach { word ->
+                        words.put(JSONObject().apply {
+                            put("startMs", word.startMs)
+                            put("durationMs", word.durationMs)
+                            put("text", word.text)
+                        })
+                    }
+                })
+            })
+        }
+        file.writeText(array.toString())
+        file.absolutePath
+    } catch (_: Exception) { null }
+
+    fun loadLyrics(path: String): List<LyricLine> = try {
+        val array = JSONArray(File(path).readText())
+        List(array.length()) { index ->
+            val item = array.getJSONObject(index)
+            val words = item.optJSONArray("words") ?: JSONArray()
+            LyricLine(
+                timeMs = item.getLong("timeMs"),
+                text = item.getString("text"),
+                words = List(words.length()) { wordIndex ->
+                    val word = words.getJSONObject(wordIndex)
+                    LyricWord(word.getLong("startMs"), word.getLong("durationMs"), word.getString("text"))
+                }
+            )
+        }
+    } catch (_: Exception) { emptyList() }
+
+    fun isValid(path: String): Boolean = path.isNotBlank() && File(path).let { it.isFile && it.length() > 0 }
+}

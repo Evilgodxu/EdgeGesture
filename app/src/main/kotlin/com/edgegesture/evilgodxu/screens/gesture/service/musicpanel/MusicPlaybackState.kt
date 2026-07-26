@@ -72,7 +72,7 @@ class MusicPlaybackState {
                         release()
                         return
                     }
-                    val next = nextIndex()
+                    val next = autoNextIndex()
                     if (next >= 0) {
                         playbackScope.launch {
                             playTrackAt(appContext ?: return@launch, this@MusicPlaybackState, next)
@@ -104,6 +104,7 @@ class MusicPlaybackState {
     var playMode by mutableStateOf(PlayMode.RepeatAll)
     var errorMsg by mutableStateOf<String?>(null)
     var isScanning by mutableStateOf(false)
+    var isLyricsVisible by mutableStateOf(false)
 
     private fun hasUriAccess(context: Context, audioUri: String): Boolean {
         val uri = Uri.parse(audioUri)
@@ -237,7 +238,15 @@ class MusicPlaybackState {
                     title = item.getString("title"),
                     artist = item.getString("artist"),
                     duration = item.getLong("duration"),
-                    albumId = item.getLong("albumId")
+                    albumId = item.getLong("albumId"),
+                    neteaseId = item.optLong("neteaseId", 0L),
+                    neteaseCoverUrl = item.optString("neteaseCoverUrl", ""),
+                    coverCachePath = item.optString("coverCachePath", ""),
+                    lyricCachePath = item.optString("lyricCachePath", ""),
+                    lyricLines = item.optString("lyricCachePath", "")
+                        .takeIf { it.isNotBlank() && MusicMetadataCache.isValid(it) }
+                        ?.let(MusicMetadataCache::loadLyrics)
+                        .orEmpty()
                 )
             }
         } catch (_: Exception) {
@@ -256,6 +265,10 @@ class MusicPlaybackState {
                 put("artist", track.artist)
                 put("duration", track.duration)
                 put("albumId", track.albumId)
+                put("neteaseId", track.neteaseId)
+                put("neteaseCoverUrl", track.neteaseCoverUrl)
+                put("coverCachePath", track.coverCachePath)
+                put("lyricCachePath", track.lyricCachePath)
             })
         }
         context.getSharedPreferences(playlistCachePreferences, Context.MODE_PRIVATE)
@@ -355,6 +368,12 @@ class MusicPlaybackState {
     }
 
     // 更新当前播放位置（用于 UI 进度条）
+    fun updateTrack(updated: MusicTrack) {
+        playlist = playlist.map { if (it.id == updated.id) updated.copy(isFavorite = likedIds.contains(it.id)) else it }
+        currentTrack = currentTrack?.let { if (it.id == updated.id) updated else it }
+        persistPlaylist()
+    }
+
     fun updatePosition() {
         mediaController?.let { controller ->
             if (isPrepared) {
@@ -363,55 +382,25 @@ class MusicPlaybackState {
         }
     }
 
-    // 构造下一首索引
-    fun nextIndex(): Int {
+    private fun calculateIndex(direction: Int, repeatOne: Boolean): Int {
         if (playlist.isEmpty()) return -1
         val validCurrentIndex = currentIndex.takeIf { it in playlist.indices } ?: 0
-        return when (playMode) {
-            PlayMode.RepeatOne -> validCurrentIndex
-            PlayMode.RepeatAll -> (validCurrentIndex + 1) % playlist.size
-            PlayMode.Shuffle -> {
+        return when {
+            playMode == PlayMode.RepeatOne && repeatOne -> validCurrentIndex
+            playMode == PlayMode.Shuffle -> {
                 if (playlist.size == 1) 0
-                else playlist.indices.filter { it != currentIndex }.random()
+                else playlist.indices.filter { it != validCurrentIndex }.random()
             }
+            direction < 0 -> (validCurrentIndex - 1 + playlist.size) % playlist.size
+            else -> (validCurrentIndex + 1) % playlist.size
         }
     }
+
+    private fun autoNextIndex(): Int = calculateIndex(direction = 1, repeatOne = true)
+
+    // 构造下一首索引
+    fun nextIndex(): Int = calculateIndex(direction = 1, repeatOne = false)
 
     // 构造上一首索引
-    fun previousIndex(): Int {
-        if (playlist.isEmpty()) return -1
-        val validCurrentIndex = currentIndex.takeIf { it in playlist.indices } ?: 0
-        return when (playMode) {
-            PlayMode.RepeatOne -> validCurrentIndex
-            PlayMode.RepeatAll -> (validCurrentIndex - 1 + playlist.size) % playlist.size
-            PlayMode.Shuffle -> {
-                if (playlist.size == 1) 0
-                else playlist.indices.filter { it != validCurrentIndex }.random()
-            }
-        }
-    }
-
-    fun manualNextIndex(): Int {
-        if (playlist.isEmpty()) return -1
-        val validCurrentIndex = currentIndex.takeIf { it in playlist.indices } ?: 0
-        return when (playMode) {
-            PlayMode.Shuffle -> {
-                if (playlist.size == 1) 0
-                else playlist.indices.filter { it != validCurrentIndex }.random()
-            }
-            PlayMode.RepeatOne, PlayMode.RepeatAll -> (validCurrentIndex + 1) % playlist.size
-        }
-    }
-
-    fun manualPreviousIndex(): Int {
-        if (playlist.isEmpty()) return -1
-        val validCurrentIndex = currentIndex.takeIf { it in playlist.indices } ?: 0
-        return when (playMode) {
-            PlayMode.Shuffle -> {
-                if (playlist.size == 1) 0
-                else playlist.indices.filter { it != validCurrentIndex }.random()
-            }
-            PlayMode.RepeatOne, PlayMode.RepeatAll -> (validCurrentIndex - 1 + playlist.size) % playlist.size
-        }
-    }
+    fun previousIndex(): Int = calculateIndex(direction = -1, repeatOne = false)
 }

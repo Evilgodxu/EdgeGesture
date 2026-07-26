@@ -12,6 +12,11 @@ import android.graphics.Bitmap
     val duration: Long,
     val albumId: Long,
     val albumArt: Bitmap? = null,
+    val neteaseId: Long = 0L,
+    val neteaseCoverUrl: String = "",
+    val coverCachePath: String = "",
+    val lyricCachePath: String = "",
+    internal val lyricLines: List<LyricLine> = emptyList(),
     val isFavorite: Boolean = false,
 )
 
