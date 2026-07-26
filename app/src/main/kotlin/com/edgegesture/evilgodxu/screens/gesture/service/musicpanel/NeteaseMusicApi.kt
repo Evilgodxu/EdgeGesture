@@ -1,7 +1,5 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -28,10 +26,10 @@ data class LyricLine(
 )
 
 internal object NeteaseMusicApi {
-    suspend fun loadCover(url: String): Bitmap? = withContext(Dispatchers.IO) {
+    suspend fun loadCoverBytes(url: String): ByteArray? = withContext(Dispatchers.IO) {
         if (url.isBlank()) return@withContext null
         try {
-            URL(url).openStream().use(BitmapFactory::decodeStream)
+            URL(url).openStream().use { it.readBytes() }
         } catch (_: Exception) {
             null
         }

@@ -356,9 +356,10 @@ class MusicPanelViewManager(
             try {
                 val match = NeteaseMusicApi.match(track.title, track.artist, track.duration)
                     ?: return@forEach
-                val cover = NeteaseMusicApi.loadCover(match.coverUrl.orEmpty())
+                val coverBytes = NeteaseMusicApi.loadCoverBytes(match.coverUrl.orEmpty())
                 val lyric = NeteaseMusicApi.lyric(match.id)
-                val coverPath = cover?.let { MusicMetadataCache.saveCover(context, match.id, it) }.orEmpty()
+                val coverPath = coverBytes?.let { MusicMetadataCache.saveCover(context, match.id, it) }.orEmpty()
+                val cover = MusicMetadataCache.loadCover(coverPath)
                 val lyricPath = MusicMetadataCache.saveLyrics(context, match.id, lyric.lines).orEmpty()
                 withContext(Dispatchers.Main) {
                     playbackState.updateTrack(

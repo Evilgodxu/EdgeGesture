@@ -12,6 +12,7 @@ import java.io.File
 internal object MusicMetadataCache {
     private fun root(context: Context) = File(context.filesDir, "music_metadata")
     private fun coverFile(context: Context, id: Long) = File(File(root(context), "covers_v2"), "$id.webp")
+    private fun originalCoverFile(context: Context, id: Long) = File(File(root(context), "covers_original"), "$id.image")
     private fun lyricFile(context: Context, id: Long) = File(File(root(context), "lyrics"), "$id.json")
     private val coverMemoryCache = object : LruCache<String, Bitmap>(8 * 1024) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount / 1024
@@ -36,12 +37,27 @@ internal object MusicMetadataCache {
         if (path.isNotBlank()) coverMemoryCache.remove(path)
     }
 
-    fun saveCover(context: Context, id: Long, bitmap: Bitmap): String? = try {
-        val file = coverFile(context, id)
-        file.parentFile?.mkdirs()
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 100, it) }
-        val path = file.absolutePath
-        putCover(path, bitmap)
+    fun saveCover(context: Context, id: Long, originalBytes: ByteArray): String? = try {
+        val originalFile = originalCoverFile(context, id)
+        originalFile.parentFile?.mkdirs()
+        originalFile.writeBytes(originalBytes)
+        val bitmap = BitmapFactory.decodeFile(originalFile.absolutePath)
+        val convertedFile = coverFile(context, id)
+        val path = if (bitmap != null) {
+            convertedFile.parentFile?.mkdirs()
+            val converted = convertedFile.outputStream().use {
+                bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 100, it)
+            }
+            if (converted && isValid(convertedFile.absolutePath) && BitmapFactory.decodeFile(convertedFile.absolutePath) != null) {
+                originalFile.delete()
+                convertedFile.absolutePath
+            } else {
+                originalFile.absolutePath
+            }
+        } else {
+            originalFile.absolutePath
+        }
+        loadCover(path)?.let { putCover(path, it) }
         path
     } catch (_: Exception) { null }
 

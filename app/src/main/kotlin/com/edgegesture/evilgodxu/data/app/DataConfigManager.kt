@@ -46,7 +46,7 @@ object DataConfigManager {
             ManagedDataItem(ManagedDataType.MUSIC_POSITION, 0L),
             ManagedDataItem(ManagedDataType.UPDATE_CACHE, sharedPreferencesSize(context, UPDATE_PREFS) + directorySize(context.externalCacheDir)),
             ManagedDataItem(ManagedDataType.STATS, statsSize(context)),
-            ManagedDataItem(ManagedDataType.TEMP, orphanFiles(context).filter { it.exists() }.sumOf { it.length() })
+            ManagedDataItem(ManagedDataType.TEMP, 0L)
         )
     }
 
@@ -65,6 +65,7 @@ object DataConfigManager {
         if (ManagedDataType.MUSIC_COVERS in selected) {
             File(context.filesDir, "music_metadata/covers_v2").deleteRecursively()
             File(context.filesDir, "music_metadata/covers").deleteRecursively()
+            File(context.filesDir, "music_metadata/covers_original").deleteRecursively()
         }
         if (ManagedDataType.MUSIC_LYRICS in selected) File(context.filesDir, "music_metadata/lyrics").deleteRecursively()
         if (ManagedDataType.MUSIC_PLAYLIST in selected) context.getSharedPreferences("music_playlist_cache_preferences", Context.MODE_PRIVATE).edit().clear().apply()
@@ -77,7 +78,6 @@ object DataConfigManager {
             context.externalCacheDir?.deleteRecursively()
         }
         if (ManagedDataType.STATS in selected) GestureStatsManager.resetStats(context)
-        if (ManagedDataType.TEMP in selected) orphanFiles(context).forEach { it.delete() }
         if (selected.any { it in setOf(ManagedDataType.APP_ICONS, ManagedDataType.MUSIC_COVERS, ManagedDataType.MUSIC_LYRICS, ManagedDataType.MUSIC_PLAYLIST) }) {
             File(context.cacheDir, "app-icons").mkdirs()
             File(context.filesDir, "music_metadata").mkdirs()
@@ -156,15 +156,6 @@ object DataConfigManager {
 
     private fun buildSet(array: JSONArray): Set<String> = buildSet {
         for (i in 0 until array.length()) add(array.getString(i))
-    }
-
-    private fun orphanFiles(context: Context): List<File> {
-        val iconCacheDir = File(context.cacheDir, "app-icons").canonicalFile
-        return context.cacheDir.walkTopDown()
-            .filter { file ->
-                file.isFile && !file.canonicalFile.toPath().startsWith(iconCacheDir.toPath())
-            }
-            .toList()
     }
 
     private fun directorySize(file: File?): Long = file?.takeIf { it.exists() }?.walkTopDown()?.filter { it.isFile }?.sumOf { it.length() } ?: 0L
