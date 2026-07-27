@@ -143,7 +143,9 @@ class MusicPlaybackState {
                     }
                     if (url == null) {
                         // 这一首也无法播放，递归尝试再下一首
-                        playNextPendingSearchResult(ctx, failedTrack)
+                        if (pendingSearchResults.isNotEmpty()) {
+                            playNextPendingSearchResult(ctx, failedTrack)
+                        }
                         return@launch
                     }
                     val trackId = next.id + 1000000L
