@@ -62,6 +62,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.automirrored.outlined.PlaylistPlay
 import androidx.compose.material3.CircularProgressIndicator
@@ -152,6 +153,14 @@ fun MusicPanelOverlay(
         while (isActive && playbackState.isPlaying) {
             playbackState.updatePosition()
             delay(200)
+        }
+    }
+
+    // 定时关闭自动停止后关闭面板
+    LaunchedEffect(playbackState.timerAutoStopped) {
+        if (playbackState.timerAutoStopped) {
+            playbackState.timerAutoStopped = false
+            onDismiss()
         }
     }
 
@@ -373,12 +382,23 @@ private fun HeaderRow(
     val currentTrackId = playbackState.currentTrack?.id
     val isLiked = currentTrackId?.let { id -> playbackState.likedIds.contains(id) } ?: false
 
-    Row(
+    var memoryUsageMb by remember { mutableFloatStateOf(0f) }
+    LaunchedEffect(Unit) {
+        while (isActive) {
+            val runtime = Runtime.getRuntime()
+            val usedBytes = runtime.totalMemory() - runtime.freeMemory()
+            memoryUsageMb = usedBytes / (1024f * 1024f)
+            delay(2000)
+        }
+    }
+
+    Box(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.align(Alignment.CenterStart)
+        ) {
             HeaderIconButton(
                 icon = Icons.Default.Timer,
                 onClick = onTimerClick,
@@ -391,21 +411,42 @@ private fun HeaderRow(
                     fontSize = 10.sp,
                     modifier = Modifier
                         .padding(start = 4.dp)
-                        .background(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                            RoundedCornerShape(8.dp)
-                        )
+                        .offset(y = 4.dp)
+                        .clickable { playbackState.stopTimer() }
                         .padding(horizontal = 8.dp, vertical = 2.dp)
                 )
             }
         }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .align(Alignment.Center)
+                .alpha(0.6f)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Memory,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(3.dp))
+            Text(
+                text = "${memoryUsageMb.toInt()} MB",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 10.sp,
+            )
+        }
+
         HeaderIconButton(
             icon = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
             onClick = {
                 currentTrackId?.let { playbackState.toggleFavorite(it) }
             },
             tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.offset(y = 4.dp)
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .offset(y = 4.dp)
         )
     }
 }
