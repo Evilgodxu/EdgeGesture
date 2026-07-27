@@ -342,10 +342,11 @@ fun MusicPanelOverlay(
                             }
                         },
                         onTrackSelected = { result ->
-                            scope.launch {
+                            // 提取为本地函数以支持失败时自动播下一首的递归调用
+                            suspend fun playSearchResult(target: NeteaseSongSearchResult) {
                                 // 1. 优先匹配本地同名歌曲
-                                val normalizedTitle = normalizeTitle(result.title)
-                                val normalizedArtist = normalizeTitle(result.artist)
+                                val normalizedTitle = normalizeTitle(target.title)
+                                val normalizedArtist = normalizeTitle(target.artist)
                                 val localMatch = playbackState.playlist.firstOrNull { t ->
                                     t.path.isNotBlank() &&
                                     normalizeTitle(t.title) == normalizedTitle &&
@@ -355,8 +356,8 @@ fun MusicPanelOverlay(
                                     val idx = playbackState.playlist.indexOfFirst { it.id == localMatch.id }
                                     if (idx >= 0) {
                                         // 后台更新该本地歌曲的网易云元数据（封面/歌词）
-                                        launch {
-                                            enrichOnlineMetadata(context, playbackState, localMatch, result)
+                                        scope.launch {
+                                            enrichOnlineMetadata(context, playbackState, localMatch, target)
                                         }
                                         playbackState.errorMsg = null
                                         playbackState.currentIndex = idx
@@ -366,17 +367,22 @@ fun MusicPanelOverlay(
                                         playbackState.searchQuery = ""
                                         playbackState.searchResults = emptyList()
                                         playTrackAt(context, playbackState, idx)
-                                        return@launch
+                                        return
                                     }
                                 }
 
-                                // 2. 先用 songDetail 补全元数据（搜索 API 可能缺失封面等信息），
-                                //    再获取播放 URL（支持多音质回退 + 试听降级），然后开始播放。
-                                val fullResult = if (result.coverUrl.isNullOrBlank() || result.duration <= 0L) {
+                                // 2. 保存待播队列（当前结果之后的曲目），播放失败时自动播下一首
+                                val clickedIndex = playbackState.searchResults.indexOfFirst { it.id == target.id }
+                                playbackState.pendingSearchResults = if (clickedIndex >= 0) {
+                                    playbackState.searchResults.drop(clickedIndex + 1)
+                                } else emptyList()
+
+                                // 3. 先用 songDetail 补全元数据，再获取播放 URL，然后播放
+                                val fullResult = if (target.coverUrl.isNullOrBlank() || target.duration <= 0L) {
                                     withContext(Dispatchers.IO) {
-                                        NeteaseMusicApi.songDetail(result.id) ?: result
+                                        NeteaseMusicApi.songDetail(target.id) ?: target
                                     }
-                                } else result
+                                } else target
 
                                 val url = withContext(Dispatchers.IO) {
                                     NeteaseMusicApi.getSongUrlWithFallback(fullResult.id)
@@ -390,7 +396,19 @@ fun MusicPanelOverlay(
                                     playbackState.searchResults = emptyList()
                                 } else {
                                     playbackState.errorMsg = "该歌曲暂时无法播放（可能为VIP歌曲）"
+                                    // URL 获取失败也尝试播下一首
+                                    val pending = playbackState.pendingSearchResults
+                                    if (pending.isNotEmpty()) {
+                                        playbackState.pendingSearchResults = pending.drop(1)
+                                        playSearchResult(pending.first())
+                                    } else {
+                                        playbackState.pendingSearchResults = emptyList()
+                                    }
                                 }
+                            }
+
+                            scope.launch {
+                                playSearchResult(result)
                             }
                         }
                     )

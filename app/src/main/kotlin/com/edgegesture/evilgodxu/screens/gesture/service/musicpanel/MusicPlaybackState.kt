@@ -116,11 +116,80 @@ class MusicPlaybackState {
                     }
                 } else {
                     retryCounts.remove(failedTrackId)
+                    // 重试用尽 → 尝试自动播放搜索结果列表中下一首
+                    val ctx = appContext
+                    if (ctx != null && playNextPendingSearchResult(ctx, failedTrack)) return
                     playbackScope.launch {
                         removeTrack(failedTrackId)
                     }
                 }
             }
+        }
+
+        /** 尝试自动播放搜索结果待播队列中的下一首，返回 true 表示已接手播放 */
+        private fun playNextPendingSearchResult(ctx: Context, failedTrack: MusicTrack): Boolean {
+            val remaining = pendingSearchResults
+            if (remaining.isEmpty()) return false
+            // 查找失败曲目在队列中的位置，播其后一首
+            val failedPos = remaining.indexOfFirst { it.id == failedTrack.neteaseId }
+            val nextIdx = if (failedPos >= 0 && failedPos + 1 < remaining.size) failedPos + 1 else 0
+            val next = remaining[nextIdx]
+            pendingSearchResults = remaining.drop(nextIdx + 1)
+
+            playbackScope.launch {
+                try {
+                    val url = withContext(Dispatchers.IO) {
+                        NeteaseMusicApi.getSongUrlWithFallback(next.id)
+                    }
+                    if (url == null) {
+                        // 这一首也无法播放，递归尝试再下一首
+                        playNextPendingSearchResult(ctx, failedTrack)
+                        return@launch
+                    }
+                    val trackId = next.id + 1000000L
+                    val track = MusicTrack(
+                        id = trackId, path = "", audioUri = url,
+                        title = next.title, artist = next.artist,
+                        duration = next.duration, albumId = 0L,
+                        neteaseId = next.id, neteaseCoverUrl = next.coverUrl.orEmpty()
+                    )
+                    withContext(Dispatchers.Main) {
+                        val failedIdx = playlist.indexOfFirst { it.id == failedTrack.id }
+                        val targetIdx = if (failedIdx >= 0) {
+                            playlist = playlist.toMutableList().apply { set(failedIdx, track) }
+                            failedIdx
+                        } else {
+                            playlist = playlist + track
+                            playlist.size - 1
+                        }
+                        currentIndex = targetIdx
+                        currentTrack = playlist[targetIdx]
+                        errorMsg = null
+                        persistPlaylist()
+                        playTrackAt(ctx, this@MusicPlaybackState, targetIdx)
+                    }
+                    // 后台加载歌词
+                    playbackScope.launch(Dispatchers.IO) {
+                        try {
+                            val lyric = NeteaseMusicApi.lyric(next.id)
+                            if (lyric.lines.isNotEmpty()) {
+                                val lyricPath = MusicMetadataCache.saveLyrics(ctx, next.id, lyric.lines).orEmpty()
+                                withContext(Dispatchers.Main) {
+                                    val idx = playlist.indexOfFirst { it.id == trackId }
+                                    if (idx >= 0) {
+                                        val updated = playlist[idx].copy(lyricCachePath = lyricPath, lyricLines = lyric.lines)
+                                        playlist = playlist.toMutableList().apply { set(idx, updated) }
+                                        if (currentTrack?.id == trackId) currentTrack = updated
+                                    }
+                                }
+                            }
+                        } catch (_: Exception) { }
+                    }
+                } catch (_: Exception) {
+                    playNextPendingSearchResult(ctx, failedTrack)
+                }
+            }
+            return true
         }
 
         private suspend fun retryFailedTrack(track: MusicTrack) {
@@ -169,6 +238,8 @@ class MusicPlaybackState {
     var searchHistory by mutableStateOf<List<String>>(emptyList())
     var isSearching by mutableStateOf(false)
     var showSearchResults by mutableStateOf(false)
+    /** 在线搜索结果列表剩余待播曲目（播放失败时自动播下一首） */
+    var pendingSearchResults by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
 
     private fun hasUriAccess(context: Context, audioUri: String): Boolean {
         val uri = Uri.parse(audioUri)
