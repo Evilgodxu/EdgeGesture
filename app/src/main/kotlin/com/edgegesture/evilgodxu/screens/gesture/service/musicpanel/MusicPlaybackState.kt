@@ -36,13 +36,18 @@ class MusicPlaybackState {
     private val savedModeKey = intPreferencesKey("music_saved_mode")
     private val playlistCacheKey = "music_playlist_cache"
     private val playlistCachePreferences = "music_playlist_cache_preferences"
+    private val searchHistoryKey = "music_search_history"
+    private val searchHistoryPreferences = "music_search_history_preferences"
     private var persistenceJob: Job? = null
     var appContext: Context? = null
     var mediaController: MediaController? by mutableStateOf(null)
     var player: Player? by mutableStateOf(null)
+    // 在线歌曲播放失败重试计数器，key=trackId
+    private val retryCounts = mutableMapOf<Long, Int>()
+    private val maxRetries = 2
     val controllerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
-            this@MusicPlaybackState.isPlaying = isPlaying
+            syncPlaybackState()
         }
 
         override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
@@ -86,10 +91,47 @@ class MusicPlaybackState {
             errorMsg = "播放失败"
             isPlaying = false
             isPrepared = false
-            val failedTrackId = currentTrack?.id
-            if (failedTrackId != null && currentTrack?.path.isNullOrBlank()) {
-                playbackScope.launch {
-                    removeTrack(failedTrackId)
+            val failedTrack = currentTrack
+            val failedTrackId = failedTrack?.id
+            if (failedTrackId != null && failedTrack.path.isNullOrBlank() && failedTrack.neteaseId != 0L) {
+                val attempt = retryCounts.getOrDefault(failedTrackId, 0)
+                if (attempt < maxRetries) {
+                    retryCounts[failedTrackId] = attempt + 1
+                    playbackScope.launch {
+                        retryFailedTrack(failedTrack)
+                    }
+                } else {
+                    retryCounts.remove(failedTrackId)
+                    playbackScope.launch {
+                        removeTrack(failedTrackId)
+                    }
+                }
+            }
+        }
+
+        private suspend fun retryFailedTrack(track: MusicTrack) {
+            val ctx = appContext ?: return
+            try {
+                val newUrl = NeteaseMusicApi.getSongUrlWithFallback(track.neteaseId)
+                if (newUrl != null && newUrl != track.audioUri) {
+                    val updatedTrack = track.copy(audioUri = newUrl)
+                    withContext(Dispatchers.Main) {
+                        val idx = playlist.indexOfFirst { it.id == track.id }
+                        if (idx < 0) return@withContext
+                        playlist = playlist.toMutableList().apply { set(idx, updatedTrack) }
+                        currentTrack = updatedTrack
+                        persistPlaylist()
+                        errorMsg = null
+                        playTrackAt(ctx, this@MusicPlaybackState, idx)
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        removeTrack(track.id)
+                    }
+                }
+            } catch (_: Exception) {
+                withContext(Dispatchers.Main) {
+                    removeTrack(track.id)
                 }
             }
         }
@@ -105,6 +147,14 @@ class MusicPlaybackState {
     var errorMsg by mutableStateOf<String?>(null)
     var isScanning by mutableStateOf(false)
     var isLyricsVisible by mutableStateOf(false)
+
+    // 在线搜索相关状态
+    var isSearchMode by mutableStateOf(false)
+    var searchQuery by mutableStateOf("")
+    var searchResults by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
+    var searchHistory by mutableStateOf<List<String>>(emptyList())
+    var isSearching by mutableStateOf(false)
+    var showSearchResults by mutableStateOf(false)
 
     private fun hasUriAccess(context: Context, audioUri: String): Boolean {
         val uri = Uri.parse(audioUri)
@@ -195,6 +245,13 @@ class MusicPlaybackState {
 
     suspend fun restoreSavedState(context: Context) {
         appContext = context.applicationContext
+        searchHistory = withContext(Dispatchers.IO) {
+            context.getSharedPreferences(searchHistoryPreferences, Context.MODE_PRIVATE)
+                .getString(searchHistoryKey, "")
+                ?.split("\n")
+                ?.filter(String::isNotBlank)
+                .orEmpty()
+        }
         val preferences = withContext(Dispatchers.IO) {
             context.gestureDataStore.data.first()
         }
@@ -221,6 +278,34 @@ class MusicPlaybackState {
             withContext(Dispatchers.IO) {
                 saveCachedPlaylist(context, playlist)
             }
+        }
+    }
+
+    fun addSearchHistory(query: String) {
+        val normalized = query.trim()
+        if (normalized.isBlank()) return
+        searchHistory = listOf(normalized) + searchHistory.filterNot { it == normalized }
+        searchHistory = searchHistory.take(10)
+        persistSearchHistory()
+    }
+
+    fun removeSearchHistory(query: String) {
+        searchHistory = searchHistory.filterNot { it == query }
+        persistSearchHistory()
+    }
+
+    fun clearSearchHistory() {
+        searchHistory = emptyList()
+        persistSearchHistory()
+    }
+
+    private fun persistSearchHistory() {
+        val context = appContext ?: return
+        playbackScope.launch(Dispatchers.IO) {
+            context.getSharedPreferences(searchHistoryPreferences, Context.MODE_PRIVATE)
+                .edit()
+                .putString(searchHistoryKey, searchHistory.joinToString("\n"))
+                .apply()
         }
     }
 

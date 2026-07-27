@@ -15,6 +15,16 @@ internal data class NeteaseSongMatch(
     val coverUrl: String?
 )
 
+data class NeteaseSongSearchResult(
+    val id: Long,
+    val title: String,
+    val artist: String,
+    val coverUrl: String?,
+    /** CDN 缩略图 URL（封面 + ?param=128y128），列表行使用以加快加载 */
+    val coverThumbUrl: String? = null,
+    val duration: Long = 0L
+)
+
 internal data class NeteaseLyricData(val lines: List<LyricLine>)
 
 data class LyricWord(val startMs: Long, val durationMs: Long, val text: String)
@@ -65,6 +75,65 @@ internal object NeteaseMusicApi {
         return song.copy(coverUrl = album?.optString("picUrl")?.takeIf { it.isNotBlank() })
     }
 
+    // 公开搜索方法，返回完整的搜索结果显示
+    suspend fun searchSongs(keyword: String): List<NeteaseSongSearchResult> = withContext(Dispatchers.IO) {
+        val body = JSONObject().apply {
+            put("s", keyword)
+            put("type", 1)
+            put("limit", 20)
+            put("offset", 0)
+        }
+        val root = request("search/get", body)
+        val songs = root.optJSONObject("result")?.optJSONArray("songs") ?: JSONArray()
+        List(songs.length()) { index ->
+            val song = songs.getJSONObject(index)
+            val artists = song.optJSONArray("artists") ?: song.optJSONArray("ar") ?: JSONArray()
+            val artist = List(artists.length()) { artists.getJSONObject(it).optString("name") }
+                .filter { it.isNotBlank() }
+                .joinToString(" / ")
+            val album = song.optJSONObject("album") ?: song.optJSONObject("al")
+            val cover = album?.optString("picUrl")?.takeIf { it.isNotBlank() }
+            NeteaseSongSearchResult(
+                id = song.optLong("id"),
+                title = song.optString("name"),
+                artist = artist,
+                coverUrl = cover,
+                coverThumbUrl = cover?.let { thumbUrl(it) },
+                duration = song.optLong("duration", 0L)
+            )
+        }
+    }
+
+    // 获取歌曲播放 URL，返回 null 表示 VIP/不可播
+    suspend fun getSongUrl(songId: Long, level: String = "standard"): String? = withContext(Dispatchers.IO) {
+        try {
+            val body = JSONObject().apply {
+                put("ids", "[$songId]")
+                put("level", level)
+                put("encodeType", "mp3")
+            }
+            val root = request("song/enhance/player/url/v1", body)
+            val data = root.optJSONArray("data")?.optJSONObject(0) ?: return@withContext null
+            val url = data.optString("url", "")
+            val hasFreeTrial = data.has("freeTrialInfo") && !data.isNull("freeTrialInfo")
+            // 跳过 VIP/试听片段（无完整播放URL）
+            if (url.isBlank() || hasFreeTrial) return@withContext null
+            url
+        } catch (e: Exception) {
+            Log.w("NeteaseMusicApi", "获取歌曲URL($level)失败: ${e.message}")
+            null
+        }
+    }
+
+    // 多音质回退获取播放 URL：standard → higher → exhigh
+    suspend fun getSongUrlWithFallback(songId: Long): String? {
+        for (level in arrayOf("standard", "higher", "exhigh")) {
+            val url = getSongUrl(songId, level)
+            if (url != null) return url
+        }
+        return null
+    }
+
     private fun search(keyword: String): List<NeteaseSongMatch> {
         val body = JSONObject().apply {
             put("s", keyword)
@@ -113,7 +182,10 @@ internal object NeteaseMusicApi {
             connection.connectTimeout = 10_000
             connection.readTimeout = 15_000
             connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
-            connection.setRequestProperty("User-Agent", "Mozilla/5.0")
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+            connection.setRequestProperty("Referer", "https://music.163.com")
+            connection.setRequestProperty("X-Real-IP", randomChinaIp())
+            connection.setRequestProperty("X-Forwarded-For", randomChinaIp())
             val form = "params=${java.net.URLEncoder.encode(encrypted.getValue("params"), "UTF-8")}&encSecKey=${java.net.URLEncoder.encode(encrypted.getValue("encSecKey"), "UTF-8")}"
             connection.outputStream.use { it.write(form.toByteArray()) }
             val responseCode = connection.responseCode
@@ -157,5 +229,17 @@ internal object NeteaseMusicApi {
             LyricLine(start, words.joinToString("") { it.text }.trim(), words)
                 .takeIf { it.text.isNotBlank() }
         }.toList()
+    }
+
+    // 随机中国大陆 IP（降低风控概率）
+    private val chinaIpPrefixes = intArrayOf(36, 39, 42, 58, 59, 60, 101, 106, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 175, 180, 182, 183, 202, 203, 210, 211, 218, 219, 220, 221, 222, 223)
+    private fun randomChinaIp(): String {
+        val a = chinaIpPrefixes[kotlin.random.Random.nextInt(chinaIpPrefixes.size)]
+        return "$a.${kotlin.random.Random.nextInt(256)}.${kotlin.random.Random.nextInt(256)}.${1 + kotlin.random.Random.nextInt(254)}"
+    }
+
+    // CDN 缩略图 URL，与 QPlayer 的 thumbUrl() 一致：追加 ?param=128y128
+    private fun thumbUrl(coverUrl: String): String {
+        return coverUrl + if (coverUrl.contains("?")) "&param=128y128" else "?param=128y128"
     }
 }

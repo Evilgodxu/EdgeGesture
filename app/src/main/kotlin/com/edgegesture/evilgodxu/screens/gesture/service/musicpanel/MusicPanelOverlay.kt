@@ -20,6 +20,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -40,6 +41,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import coil3.compose.AsyncImage
@@ -56,11 +58,14 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.automirrored.outlined.PlaylistPlay
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -101,6 +106,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.screens.settings.ThemeMode
 import com.edgegesture.evilgodxu.screens.settings.settingsFlow
@@ -109,6 +118,15 @@ import com.edgegesture.evilgodxu.ui.theme.LightColorScheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.net.URL
+import android.os.Environment
+import android.content.ContentValues
+import android.provider.MediaStore
+import android.os.Build
+import android.net.Uri
 
 @Composable
 fun MusicPanelOverlay(
@@ -140,9 +158,8 @@ fun MusicPanelOverlay(
     var showPlaylist by remember { mutableStateOf(false) }
     var showTimer by remember { mutableStateOf(false) }
     val currentTrackId = playbackState.currentTrack?.id
-
-    // 移除本地计时器：统一由 MusicPlaybackState 在后台维护，
-    // 计时结束后自动停止播放并释放资源。
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deleteTargetTrack by remember { mutableStateOf<MusicTrack?>(null) }
 
     MaterialTheme(colorScheme = colorScheme) {
         Box(
@@ -151,7 +168,16 @@ fun MusicPanelOverlay(
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
-                    onClick = { if (!showPlaylist && !showTimer) onDismiss() }
+                    onClick = {
+                        if (!showPlaylist && !showTimer) {
+                            if (playbackState.isSearchMode) {
+                                playbackState.isSearchMode = false
+                                playbackState.showSearchResults = false
+                            } else {
+                                onDismiss()
+                            }
+                        }
+                    }
                 ),
             contentAlignment = Alignment.Center
         ) {
@@ -165,8 +191,6 @@ fun MusicPanelOverlay(
             } else {
                 Color.Black.copy(alpha = 0.06f)
             }
-            val ambientColor = MaterialTheme.colorScheme.primary
-            val glowAlpha = if (isDarkTheme) 0.18f else 0.10f
 
             Surface(
                 modifier = Modifier
@@ -188,59 +212,83 @@ fun MusicPanelOverlay(
                         .fillMaxSize()
                         .clip(RoundedCornerShape(20.dp))
                 ) {
-                    // 设计稿基准高度 380dp * 3/4 = 285dp；当实际高度不足时整体等比缩放内容
                     val designHeight = 285.dp
                     val scale = (maxHeight / designHeight).coerceAtMost(1f)
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer(
-                                scaleX = scale,
-                                scaleY = scale,
-                                transformOrigin = TransformOrigin(0.5f, 0f)
-                            )
-                            .padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 4.dp)
-                    ) {
-                        HeaderRow(
+                    if (playbackState.isSearchMode && !playbackState.showSearchResults) {
+                        // 搜索模式：显示搜索输入框
+                        SearchOverlay(
                             playbackState = playbackState,
-                            timerRemaining = playbackState.timerRemaining,
-                            onTimerClick = { showTimer = true },
-                            modifier = Modifier.padding(bottom = 6.dp)
-                        )
-
-                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            if (playbackState.isLyricsVisible) {
-                                LyricsPanel(
-                                    playbackState = playbackState,
-                                    modifier = Modifier.fillMaxSize(),
-                                    onClick = { playbackState.isLyricsVisible = false }
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
+                                    transformOrigin = TransformOrigin(0.5f, 0f)
                                 )
-                            } else {
-                                CurrentCover(
-                                    track = playbackState.currentTrack,
-                                    isPlaying = playbackState.isPlaying,
+                                .padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 4.dp)
+                        )
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale,
+                                    transformOrigin = TransformOrigin(0.5f, 0f)
+                                )
+                                .padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 4.dp)
+                                .pointerInput(Unit) {
+                                    detectHorizontalDragGestures(
+                                        onDragEnd = { },
+                                        onHorizontalDrag = { _, dragAmount ->
+                                            if (dragAmount > 50 && !showPlaylist && !showTimer) {
+                                                playbackState.isSearchMode = true
+                                            }
+                                        }
+                                    )
+                                }
+                        ) {
+                            HeaderRow(
+                                playbackState = playbackState,
+                                timerRemaining = playbackState.timerRemaining,
+                                onTimerClick = { showTimer = true },
+                                modifier = Modifier.padding(bottom = 6.dp)
+                            )
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (playbackState.isLyricsVisible) {
+                                    LyricsPanel(
+                                        playbackState = playbackState,
+                                        modifier = Modifier.fillMaxSize(),
+                                        onClick = { playbackState.isLyricsVisible = false }
+                                    )
+                                } else {
+                                    CurrentCover(
+                                        track = playbackState.currentTrack,
+                                        isPlaying = playbackState.isPlaying,
+                                        onClick = { playbackState.isLyricsVisible = true }
+                                    )
+                                }
+                            }
+                            if (!playbackState.isLyricsVisible) {
+                                TrackInfo(
+                                    playbackState = playbackState,
                                     onClick = { playbackState.isLyricsVisible = true }
                                 )
                             }
-                        }
-                        if (!playbackState.isLyricsVisible) {
-                            TrackInfo(
+                            ProgressSection(playbackState = playbackState)
+
+                            ControlBar(
                                 playbackState = playbackState,
-                                onClick = { playbackState.isLyricsVisible = true }
+                                onPlaylistClick = { showPlaylist = true }
                             )
                         }
-                        ProgressSection(playbackState = playbackState)
-
-                        ControlBar(
-                            playbackState = playbackState,
-                            onPlaylistClick = { showPlaylist = true }
-                        )
                     }
 
                     PlaylistOverlay(
@@ -252,6 +300,10 @@ fun MusicPanelOverlay(
                                 playTrackAt(context, playbackState, index)
                             }
                             showPlaylist = false
+                        },
+                        onTrackLongPress = { track ->
+                            deleteTargetTrack = track
+                            showDeleteConfirm = true
                         },
                         onDismiss = { showPlaylist = false }
                     )
@@ -265,6 +317,45 @@ fun MusicPanelOverlay(
                             showTimer = false
                         },
                         onCancel = { showTimer = false }
+                    )
+
+                    SearchResultsOverlay(
+                        visible = playbackState.showSearchResults,
+                        playbackState = playbackState,
+                        context = context,
+                        onClose = {
+                            playbackState.showSearchResults = false
+                        },
+                        onRefresh = {
+                            scope.launch {
+                                performSearch(playbackState, context)
+                            }
+                        },
+                        onTrackSelected = { result ->
+                            scope.launch {
+                                downloadAndPlay(context, playbackState, result)
+                                playbackState.isSearchMode = false
+                                playbackState.showSearchResults = false
+                                playbackState.searchQuery = ""
+                                playbackState.searchResults = emptyList()
+                            }
+                        }
+                    )
+
+                    DeleteConfirmOverlay(
+                        visible = showDeleteConfirm,
+                        track = deleteTargetTrack,
+                        onConfirm = {
+                            deleteTargetTrack?.let { track ->
+                                playbackState.removeTrack(track.id)
+                            }
+                            showDeleteConfirm = false
+                            deleteTargetTrack = null
+                        },
+                        onCancel = {
+                            showDeleteConfirm = false
+                            deleteTargetTrack = null
+                        }
                     )
                 }
             }
@@ -957,6 +1048,7 @@ private fun PlaylistOverlay(
     playbackState: MusicPlaybackState,
     onScan: () -> Unit,
     onTrackSelected: (Int) -> Unit,
+    onTrackLongPress: (MusicTrack) -> Unit,
     onDismiss: () -> Unit,
 ) {
     AnimatedContent(
@@ -1032,6 +1124,7 @@ private fun PlaylistOverlay(
                                 isActive = isActive,
                                 isPlaying = isActive && playbackState.isPlaying,
                                 onClick = { onTrackSelected(index) },
+                                onLongClick = { onTrackLongPress(track) },
                                 onFavoriteClick = { playbackState.toggleFavorite(track.id) }
                             )
                         }
@@ -1057,6 +1150,7 @@ private fun PlaylistRow(
     isActive: Boolean,
     isPlaying: Boolean,
     onClick: () -> Unit,
+    onLongClick: () -> Unit,
     onFavoriteClick: () -> Unit,
 ) {
     val bg by animateColorAsState(
@@ -1069,7 +1163,10 @@ private fun PlaylistRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .background(bg)
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1258,4 +1355,562 @@ private fun formatTime(ms: Long): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return "$minutes:${seconds.toString().padStart(2, '0')}"
+}
+
+// ===================== 在线搜索 =====================
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SearchOverlay(
+    playbackState: MusicPlaybackState,
+    modifier: Modifier = Modifier,
+) {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    Column(
+        modifier = modifier.pointerInput(Unit) {
+            detectHorizontalDragGestures { _, dragAmount ->
+                if (dragAmount < -50f) {
+                    playbackState.isSearchMode = false
+                    playbackState.showSearchResults = false
+                }
+            }
+        }
+    ) {
+        Text(
+            text = stringResource(R.string.music_panel_search_title),
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 13.sp,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Material3 DockedSearchBar 风格迷你搜索框
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.45f),
+                    shape = RoundedCornerShape(24.dp)
+                ),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(start = 16.dp)
+                    .size(20.dp)
+            )
+            BasicTextField(
+                value = playbackState.searchQuery,
+                onValueChange = { playbackState.searchQuery = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 48.dp, end = 44.dp),
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 14.sp
+                ),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(
+                    onSearch = {
+                        val query = playbackState.searchQuery.trim()
+                        if (query.isNotBlank()) {
+                            scope.launch {
+                                performSearch(playbackState, context)
+                            }
+                        }
+                    }
+                ),
+                decorationBox = { innerTextField ->
+                    Box {
+                        if (playbackState.searchQuery.isEmpty()) {
+                            Text(
+                                text = stringResource(R.string.music_panel_search_placeholder),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                fontSize = 14.sp
+                            )
+                        }
+                        innerTextField()
+                    }
+                }
+            )
+            if (playbackState.searchQuery.isNotEmpty()) {
+                IconButton(
+                    onClick = { playbackState.searchQuery = "" },
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+
+        if (playbackState.searchHistory.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp, bottom = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "搜索历史",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+                )
+                IconButton(
+                    onClick = { playbackState.clearSearchHistory() },
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "清理全部历史",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                items(playbackState.searchHistory, key = { it }) { query ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                playbackState.searchQuery = query
+                                scope.launch { performSearch(playbackState, context) }
+                            }
+                            .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = query,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = { playbackState.removeSearchHistory(query) },
+                            modifier = Modifier.size(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "删除历史",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(15.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchResultsOverlay(
+    visible: Boolean,
+    playbackState: MusicPlaybackState,
+    context: android.content.Context,
+    onClose: () -> Unit,
+    onRefresh: () -> Unit,
+    onTrackSelected: (NeteaseSongSearchResult) -> Unit,
+) {
+    AnimatedContent(
+        targetState = visible,
+        transitionSpec = {
+            (slideInVertically { it } + fadeIn()).togetherWith(slideOutVertically { it } + fadeOut())
+        },
+        label = "search_results"
+    ) { show ->
+        if (show) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { /* 阻止穿透 */ }
+                    )
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.music_panel_search_title),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 13.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "${playbackState.searchResults.size} 首",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 10.sp
+                        )
+                        HeaderIconButton(
+                            icon = Icons.Default.Refresh,
+                            onClick = { if (!playbackState.isSearching) onRefresh() },
+                            modifier = Modifier.size(24.dp),
+                            enabled = !playbackState.isSearching
+                        )
+                        HeaderIconButton(
+                            icon = Icons.Default.Close,
+                            onClick = onClose,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                if (playbackState.isSearching) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                    }
+                } else if (playbackState.searchResults.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "未找到相关歌曲",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
+                    }
+                } else {
+                    val listState = rememberLazyListState()
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        itemsIndexed(
+                            items = playbackState.searchResults,
+                            key = { _, result -> result.id }
+                        ) { index, result ->
+                            SearchResultRow(
+                                result = result,
+                                onClick = { onTrackSelected(result) }
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            Box(modifier = Modifier.fillMaxSize())
+        }
+    }
+}
+
+@Composable
+private fun SearchResultRow(
+    result: NeteaseSongSearchResult,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            if (result.coverThumbUrl != null) {
+                coil3.compose.AsyncImage(
+                    model = result.coverThumbUrl,
+                    contentDescription = result.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.MusicNote,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = result.title,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = result.artist,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 10.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Icon(
+            imageVector = Icons.Default.Download,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+            modifier = Modifier.size(14.dp)
+        )
+    }
+}
+
+// ===================== 长按删除确认 =====================
+
+@Composable
+private fun DeleteConfirmOverlay(
+    visible: Boolean,
+    track: MusicTrack?,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    AnimatedContent(
+        targetState = visible,
+        transitionSpec = {
+            (slideInVertically { it } + fadeIn()).togetherWith(slideOutVertically { it } + fadeOut())
+        },
+        label = "delete_confirm"
+    ) { show ->
+        if (show) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onCancel
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(R.string.music_panel_delete_title),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 16.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = track?.title ?: "",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Row(
+                        modifier = Modifier.widthIn(max = 200.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                            onClick = onCancel
+                        ) {
+                            Text(
+                                text = stringResource(R.string.music_panel_delete_cancel),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 13.sp,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(vertical = 10.dp)
+                            )
+                        }
+                        Surface(
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.error,
+                            onClick = onConfirm
+                        ) {
+                            Text(
+                                text = stringResource(R.string.music_panel_delete_confirm),
+                                color = MaterialTheme.colorScheme.onError,
+                                fontSize = 13.sp,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(vertical = 10.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        } else {
+            Box(modifier = Modifier.fillMaxSize())
+        }
+    }
+}
+
+// ===================== 搜索与下载辅助函数 =====================
+
+private suspend fun performSearch(
+    playbackState: MusicPlaybackState,
+    context: android.content.Context,
+) {
+    val query = playbackState.searchQuery.trim()
+    if (query.isBlank()) return
+    playbackState.isSearching = true
+    playbackState.searchResults = emptyList()
+    try {
+        val results = NeteaseMusicApi.searchSongs(query)
+        playbackState.searchResults = results
+        if (results.isNotEmpty()) playbackState.addSearchHistory(query)
+        playbackState.showSearchResults = true
+    } catch (_: Exception) {
+        playbackState.searchResults = emptyList()
+    } finally {
+        playbackState.isSearching = false
+    }
+}
+
+private suspend fun downloadAndPlay(
+    context: android.content.Context,
+    playbackState: MusicPlaybackState,
+    result: NeteaseSongSearchResult,
+) {
+    // 1. 获取播放 URL（多音质回退）
+    val url = NeteaseMusicApi.getSongUrlWithFallback(result.id) ?: return
+
+    val trackId = result.id + 1000000L
+    val track = MusicTrack(
+        id = trackId,
+        path = "",
+        audioUri = url,  // 先用在线流地址
+        title = result.title,
+        artist = result.artist,
+        duration = result.duration,
+        albumId = 0L,
+        neteaseId = result.id,
+        neteaseCoverUrl = result.coverUrl.orEmpty()
+    )
+
+    // 2. 立即加入播放列表并开始播放
+    withContext(Dispatchers.Main) {
+        val existingIndex = playbackState.playlist.indexOfFirst { it.id == trackId }
+        val targetIndex = if (existingIndex >= 0) {
+            existingIndex
+        } else {
+            playbackState.playlist = playbackState.playlist + track
+            playbackState.playlist.size - 1
+        }
+        playbackState.currentIndex = targetIndex
+        playbackState.currentTrack = playbackState.playlist[targetIndex]
+        playbackState.persistPlaylist()
+        playTrackAt(context, playbackState, targetIndex)
+    }
+
+    // 3. 后台缓存到系统下载目录（不阻塞播放）
+    playbackState.playbackScope.launch(Dispatchers.IO) {
+        cacheToDownloads(context, result, url, trackId, playbackState)
+    }
+}
+
+private suspend fun cacheToDownloads(
+    context: android.content.Context,
+    result: NeteaseSongSearchResult,
+    url: String,
+    trackId: Long,
+    playbackState: MusicPlaybackState,
+) {
+    try {
+        val connection = URL(url).openConnection()
+        connection.connectTimeout = 15000
+        connection.readTimeout = 60000
+        val bytes = (connection as java.net.HttpURLConnection).inputStream.use { it.readBytes() }
+
+        val fileName = "${sanitizeFileName(result.title)} - ${sanitizeFileName(result.artist)}.mp3"
+        val audioUri: String
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                put(MediaStore.Downloads.MIME_TYPE, "audio/mpeg")
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/EdgeGesture")
+            }
+            val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+            if (uri != null) {
+                context.contentResolver.openOutputStream(uri)?.use { os -> os.write(bytes) }
+                audioUri = uri.toString()
+            } else {
+                return
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val file = File(dir, fileName)
+            file.writeBytes(bytes)
+            audioUri = Uri.fromFile(file).toString()
+        }
+
+        // 更新播放列表中该曲目的 audioUri 为本地缓存路径
+        withContext(Dispatchers.Main) {
+            val idx = playbackState.playlist.indexOfFirst { it.id == trackId }
+            if (idx < 0) return@withContext
+            val updated = playbackState.playlist[idx].copy(audioUri = audioUri)
+            val list = playbackState.playlist.toMutableList()
+            list[idx] = updated
+            playbackState.playlist = list
+            if (playbackState.currentTrack?.id == trackId) {
+                playbackState.currentTrack = updated
+            }
+            playbackState.persistPlaylist()
+        }
+    } catch (_: Exception) {
+        // 缓存失败不影响已开始的播放
+    }
+}
+
+private fun sanitizeFileName(name: String): String {
+    return name.replace(Regex("[/\\\\:*?\"<>|]"), "_")
+        .take(80)
+        .trim()
 }
