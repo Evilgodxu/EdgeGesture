@@ -260,7 +260,7 @@ class MusicPlaybackState {
                 .filter { track ->
                     track.path.isBlank() &&
                         track.audioUri.isNotBlank() &&
-                        Uri.parse(track.audioUri).scheme == ContentResolver.SCHEME_CONTENT &&
+                        runCatching { Uri.parse(track.audioUri).scheme == ContentResolver.SCHEME_CONTENT }.getOrElse { false } &&
                         !hasUriAccess(context, track.audioUri)
                 }
                 .map { it.id }
