@@ -56,6 +56,9 @@ class MusicPlaybackState {
                 stopAfterCurrentTrack = false
                 timerAutoStopped = true
                 release()
+                playbackScope.launch {
+                    appContext?.let { clearSavedPosition(it) }
+                }
                 return
             }
             val id = mediaItem?.mediaId?.toLongOrNull() ?: return
@@ -83,6 +86,9 @@ class MusicPlaybackState {
                         stopAfterCurrentTrack = false
                         timerAutoStopped = true
                         release()
+                        playbackScope.launch {
+                            appContext?.let { clearSavedPosition(it) }
+                        }
                         return
                     }
                     val next = autoNextIndex()
@@ -209,6 +215,15 @@ class MusicPlaybackState {
         withContext(Dispatchers.IO) {
             context.gestureDataStore.edit { preferences ->
                 preferences.remove(savedUriKey)
+                preferences.remove(savedPositionKey)
+            }
+        }
+    }
+
+    // 仅清除持久化的播放位置（定时关闭时使用，保留歌曲 URI）
+    private suspend fun clearSavedPosition(context: Context) {
+        withContext(Dispatchers.IO) {
+            context.gestureDataStore.edit { preferences ->
                 preferences.remove(savedPositionKey)
             }
         }
@@ -412,6 +427,7 @@ class MusicPlaybackState {
 
         mediaController = null
         player = null
+        currentPosition = 0L
         isPlaying = false
         isPrepared = false
         duration = 0L
@@ -440,6 +456,9 @@ class MusicPlaybackState {
                 }
             } else {
                 release()
+                playbackScope.launch {
+                    appContext?.let { clearSavedPosition(it) }
+                }
             }
         }
     }
