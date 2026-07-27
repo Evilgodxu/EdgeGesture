@@ -80,12 +80,12 @@ internal object NeteaseMusicApi {
         val body = JSONObject().apply {
             put("s", keyword)
             put("type", 1)
-            put("limit", 20)
+            put("limit", 30)
             put("offset", 0)
         }
         val root = request("search/get", body)
         val songs = root.optJSONObject("result")?.optJSONArray("songs") ?: JSONArray()
-        List(songs.length()) { index ->
+        val results = List(songs.length()) { index ->
             val song = songs.getJSONObject(index)
             val artists = song.optJSONArray("artists") ?: song.optJSONArray("ar") ?: JSONArray()
             val artist = List(artists.length()) { artists.getJSONObject(it).optString("name") }
@@ -93,19 +93,52 @@ internal object NeteaseMusicApi {
                 .joinToString(" / ")
             val album = song.optJSONObject("album") ?: song.optJSONObject("al")
             val cover = album?.optString("picUrl")?.takeIf { it.isNotBlank() }
+            val safeCover = cover?.let { ensureHttps(it) }
             NeteaseSongSearchResult(
                 id = song.optLong("id"),
                 title = song.optString("name"),
                 artist = artist,
-                coverUrl = cover,
-                coverThumbUrl = cover?.let { thumbUrl(it) },
+                coverUrl = safeCover,
+                coverThumbUrl = safeCover?.let { thumbUrl(it) },
                 duration = song.optLong("duration", 0L)
             )
         }
+        // 补全搜索结果中缺失封面 URL 的条目（旧版 search/get 接口有时不返回 picUrl）
+        fillMissingCovers(results)
     }
 
-    // 获取歌曲播放 URL，返回 null 表示 VIP/不可播
-    suspend fun getSongUrl(songId: Long, level: String = "standard"): String? = withContext(Dispatchers.IO) {
+    /** 批量补全搜索结果中缺失封面 URL 的条目，与 QPlayer 的 fillMissingCovers() 对应 */
+    private fun fillMissingCovers(results: List<NeteaseSongSearchResult>): List<NeteaseSongSearchResult> {
+        val missingIds = results.filter { it.coverUrl.isNullOrBlank() }.map { it.id }
+        if (missingIds.isEmpty()) return results
+        try {
+            val c = missingIds.joinToString(",") { "{\"id\":$it}" }
+            val root = request("v3/song/detail", JSONObject().put("c", "[$c]"))
+            val songs = root.optJSONArray("songs") ?: return results
+            val coverMap = mutableMapOf<Long, String>()
+            for (i in 0 until songs.length()) {
+                val item = songs.getJSONObject(i)
+                val id = item.optLong("id")
+                val album = item.optJSONObject("al") ?: item.optJSONObject("album") ?: continue
+                val picUrl = album.optString("picUrl").takeIf { it.isNotBlank() } ?: continue
+                coverMap[id] = ensureHttps(picUrl)
+            }
+            return results.map { result ->
+                if (result.coverUrl.isNullOrBlank()) {
+                    val cover = coverMap[result.id]
+                    if (cover != null) {
+                        result.copy(coverUrl = cover, coverThumbUrl = thumbUrl(cover))
+                    } else result
+                } else result
+            }
+        } catch (_: Exception) {
+            return results
+        }
+    }
+
+    // 获取歌曲播放 URL，返回 null 表示完全不可播。
+    // 与 QPlayer 的 songUrlInfo() 对应：即使返回试听片段也如实告知调用方。
+    suspend fun getSongUrlInfo(songId: Long, level: String = "standard"): SongUrlInfo? = withContext(Dispatchers.IO) {
         try {
             val body = JSONObject().apply {
                 put("ids", "[$songId]")
@@ -115,23 +148,56 @@ internal object NeteaseMusicApi {
             val root = request("song/enhance/player/url/v1", body)
             val data = root.optJSONArray("data")?.optJSONObject(0) ?: return@withContext null
             val url = data.optString("url", "")
+            if (url.isBlank()) return@withContext null
             val hasFreeTrial = data.has("freeTrialInfo") && !data.isNull("freeTrialInfo")
-            // 跳过 VIP/试听片段（无完整播放URL）
-            if (url.isBlank() || hasFreeTrial) return@withContext null
-            url
+            SongUrlInfo(url = ensureHttps(url), trial = hasFreeTrial)
         } catch (e: Exception) {
             Log.w("NeteaseMusicApi", "获取歌曲URL($level)失败: ${e.message}")
             null
         }
     }
 
+    /** 歌曲播放 URL 信息，与 QPlayer 的 UrlInfo 对应 */
+    data class SongUrlInfo(val url: String, val trial: Boolean)
+
     // 多音质回退获取播放 URL：standard → higher → exhigh
+    // 返回值策略与 QPlayer 的 resolveAndPlayNetease() 一致：
+    //   优先返回非试听完整 URL → 无完整 URL 时返回试听片段（至少可以预览）
     suspend fun getSongUrlWithFallback(songId: Long): String? {
         for (level in arrayOf("standard", "higher", "exhigh")) {
-            val url = getSongUrl(songId, level)
-            if (url != null) return url
+            val info = getSongUrlInfo(songId, level) ?: continue
+            if (!info.trial && info.url.isNotBlank()) return info.url
+        }
+        // 所有音质都是试听片段时，降级返回第一个试听 URL（与 QPlayer 一致）
+        for (level in arrayOf("standard", "higher", "exhigh")) {
+            val info = getSongUrlInfo(songId, level) ?: continue
+            if (info.url.isNotBlank()) return info.url
         }
         return null
+    }
+
+    /** 补全歌曲元数据（标题/艺术家/封面等），与 QPlayer 的 songDetail() 对应 */
+    suspend fun songDetail(songId: Long): NeteaseSongSearchResult? = withContext(Dispatchers.IO) {
+        try {
+            val root = request("v3/song/detail", JSONObject().put("c", "[{\"id\":$songId}]"))
+            val item = root.optJSONArray("songs")?.optJSONObject(0) ?: return@withContext null
+            val artists = item.optJSONArray("ar") ?: item.optJSONArray("artists") ?: JSONArray()
+            val artist = List(artists.length()) { artists.getJSONObject(it).optString("name") }
+                .filter { it.isNotBlank() }
+                .joinToString(" / ")
+            val album = item.optJSONObject("al") ?: item.optJSONObject("album")
+            val cover = album?.optString("picUrl")?.takeIf { it.isNotBlank() }
+            NeteaseSongSearchResult(
+                id = item.optLong("id"),
+                title = item.optString("name"),
+                artist = artist,
+                coverUrl = cover,
+                coverThumbUrl = cover?.let { thumbUrl(it) },
+                duration = item.optLong("dt", 0L)
+            )
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun search(keyword: String): List<NeteaseSongMatch> {
@@ -241,5 +307,10 @@ internal object NeteaseMusicApi {
     // CDN 缩略图 URL，与 QPlayer 的 thumbUrl() 一致：追加 ?param=128y128
     private fun thumbUrl(coverUrl: String): String {
         return coverUrl + if (coverUrl.contains("?")) "&param=128y128" else "?param=128y128"
+    }
+
+    // 确保 URL 使用 HTTPS（网易云 CDN 可能返回 HTTP 链接）
+    private fun ensureHttps(url: String): String {
+        return if (url.startsWith("http://")) url.replace("http://", "https://") else url
     }
 }

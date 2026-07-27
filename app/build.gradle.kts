@@ -117,6 +117,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons)
     implementation(libs.composables.icons.material.symbols.outlined)
     implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.datastore.core)
     implementation(libs.androidx.navigation.compose)

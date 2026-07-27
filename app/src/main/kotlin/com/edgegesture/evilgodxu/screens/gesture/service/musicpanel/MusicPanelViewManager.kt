@@ -266,7 +266,7 @@ class MusicPanelViewManager(
                 playbackState.persistPlaylist()
             }
         } finally {
-            withContext(Dispatchers.Main) {
+            withContext(Dispatchers.Main + kotlinx.coroutines.NonCancellable) {
                 playbackState.isScanning = false
             }
         }
@@ -335,16 +335,22 @@ class MusicPanelViewManager(
             }
         }
         if (!started) return@withLock
-        val tracks = MusicScanner.scan(context)
-        withContext(Dispatchers.Main) {
-            val externalTracks = playbackState.playlist.filter { it.path.isBlank() }
-            val mergedTracks = mergeTrackMetadata(deduplicateTracks(tracks + externalTracks))
-            playbackState.setSortedPlaylist(mergedTracks)
-            playbackState.persistPlaylist()
-            restoreCurrentTrack()
-            playbackState.isScanning = false
+        try {
+            val tracks = MusicScanner.scan(context)
+            withContext(Dispatchers.Main) {
+                val externalTracks = playbackState.playlist.filter { it.path.isBlank() }
+                val mergedTracks = mergeTrackMetadata(deduplicateTracks(tracks + externalTracks))
+                playbackState.setSortedPlaylist(mergedTracks)
+                playbackState.persistPlaylist()
+                restoreCurrentTrack()
+            }
+            enrichPlaylistMetadata()
+        } finally {
+            // 使用非取消式上下文确保 isScanning 一定被重置（防止竟态导致卡死）
+            withContext(Dispatchers.Main + kotlinx.coroutines.NonCancellable) {
+                playbackState.isScanning = false
+            }
         }
-        enrichPlaylistMetadata()
     }
 
     private suspend fun enrichPlaylistMetadata() {

@@ -334,6 +334,7 @@ fun MusicPanelOverlay(
                         context = context,
                         onClose = {
                             playbackState.showSearchResults = false
+                            playbackState.errorMsg = null
                         },
                         onRefresh = {
                             scope.launch {
@@ -342,11 +343,54 @@ fun MusicPanelOverlay(
                         },
                         onTrackSelected = { result ->
                             scope.launch {
-                                downloadAndPlay(context, playbackState, result)
-                                playbackState.isSearchMode = false
-                                playbackState.showSearchResults = false
-                                playbackState.searchQuery = ""
-                                playbackState.searchResults = emptyList()
+                                // 1. 优先匹配本地同名歌曲
+                                val normalizedTitle = normalizeTitle(result.title)
+                                val normalizedArtist = normalizeTitle(result.artist)
+                                val localMatch = playbackState.playlist.firstOrNull { t ->
+                                    t.path.isNotBlank() &&
+                                    normalizeTitle(t.title) == normalizedTitle &&
+                                    (normalizedArtist.isBlank() || normalizeTitle(t.artist) == normalizedArtist)
+                                }
+                                if (localMatch != null) {
+                                    val idx = playbackState.playlist.indexOfFirst { it.id == localMatch.id }
+                                    if (idx >= 0) {
+                                        // 后台更新该本地歌曲的网易云元数据（封面/歌词）
+                                        launch {
+                                            enrichOnlineMetadata(context, playbackState, localMatch, result)
+                                        }
+                                        playbackState.errorMsg = null
+                                        playbackState.currentIndex = idx
+                                        playbackState.currentTrack = playbackState.playlist[idx]
+                                        playbackState.isSearchMode = false
+                                        playbackState.showSearchResults = false
+                                        playbackState.searchQuery = ""
+                                        playbackState.searchResults = emptyList()
+                                        playTrackAt(context, playbackState, idx)
+                                        return@launch
+                                    }
+                                }
+
+                                // 2. 先用 songDetail 补全元数据（搜索 API 可能缺失封面等信息），
+                                //    再获取播放 URL（支持多音质回退 + 试听降级），然后开始播放。
+                                val fullResult = if (result.coverUrl.isNullOrBlank() || result.duration <= 0L) {
+                                    withContext(Dispatchers.IO) {
+                                        NeteaseMusicApi.songDetail(result.id) ?: result
+                                    }
+                                } else result
+
+                                val url = withContext(Dispatchers.IO) {
+                                    NeteaseMusicApi.getSongUrlWithFallback(fullResult.id)
+                                }
+                                if (url != null) {
+                                    playbackState.errorMsg = null
+                                    downloadAndPlay(context, playbackState, fullResult, url)
+                                    playbackState.isSearchMode = false
+                                    playbackState.showSearchResults = false
+                                    playbackState.searchQuery = ""
+                                    playbackState.searchResults = emptyList()
+                                } else {
+                                    playbackState.errorMsg = "该歌曲暂时无法播放（可能为VIP歌曲）"
+                                }
                             }
                         }
                     )
@@ -1634,6 +1678,24 @@ private fun SearchResultsOverlay(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
+                // 错误消息提示
+                val errorMsg = playbackState.errorMsg
+                if (errorMsg != null) {
+                    Text(
+                        text = errorMsg,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 11.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
+                                RoundedCornerShape(6.dp)
+                            )
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+
                 if (playbackState.isSearching) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
@@ -1692,9 +1754,11 @@ private fun SearchResultRow(
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            if (result.coverThumbUrl != null) {
-                coil3.compose.AsyncImage(
-                    model = result.coverThumbUrl,
+            // 使用 CDN 缩略图（coverThumbUrl）以加快加载速度，与 QPlayer 的 SongRow 一致
+            val coverModel = (result.coverThumbUrl ?: result.coverUrl)?.takeIf { it.isNotBlank() }
+            if (coverModel != null) {
+                AsyncImage(
+                    model = coverModel,
                     contentDescription = result.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
@@ -1729,11 +1793,18 @@ private fun SearchResultRow(
             )
         }
 
-        Icon(
-            imageVector = Icons.Default.Download,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier.size(14.dp)
+        // 来源标签，参考 QPlayer SearchRow.kindLabel
+        Text(
+            text = "网易云",
+            color = MaterialTheme.colorScheme.primary,
+            fontSize = 9.sp,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+            modifier = Modifier
+                .background(
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                    RoundedCornerShape(4.dp)
+                )
+                .padding(horizontal = 5.dp, vertical = 2.dp)
         )
     }
 }
@@ -1841,6 +1912,7 @@ private suspend fun performSearch(
     if (query.isBlank()) return
     playbackState.isSearching = true
     playbackState.searchResults = emptyList()
+    playbackState.errorMsg = null
     try {
         val results = NeteaseMusicApi.searchSongs(query)
         playbackState.searchResults = results
@@ -1857,10 +1929,8 @@ private suspend fun downloadAndPlay(
     context: android.content.Context,
     playbackState: MusicPlaybackState,
     result: NeteaseSongSearchResult,
+    url: String,
 ) {
-    // 1. 获取播放 URL（多音质回退）
-    val url = NeteaseMusicApi.getSongUrlWithFallback(result.id) ?: return
-
     val trackId = result.id + 1000000L
     val track = MusicTrack(
         id = trackId,
@@ -1889,7 +1959,32 @@ private suspend fun downloadAndPlay(
         playTrackAt(context, playbackState, targetIndex)
     }
 
-    // 3. 后台缓存到系统下载目录（不阻塞播放）
+    // 3. 后台加载歌词
+    playbackState.playbackScope.launch(Dispatchers.IO) {
+        try {
+            val lyric = NeteaseMusicApi.lyric(result.id)
+            if (lyric.lines.isNotEmpty()) {
+                val lyricPath = MusicMetadataCache.saveLyrics(context, result.id, lyric.lines).orEmpty()
+                withContext(Dispatchers.Main) {
+                    val idx = playbackState.playlist.indexOfFirst { it.id == trackId }
+                    if (idx >= 0) {
+                        val updated = playbackState.playlist[idx].copy(
+                            lyricCachePath = lyricPath,
+                            lyricLines = lyric.lines
+                        )
+                        val list = playbackState.playlist.toMutableList()
+                        list[idx] = updated
+                        playbackState.playlist = list
+                        if (playbackState.currentTrack?.id == trackId) {
+                            playbackState.currentTrack = updated
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) { }
+    }
+
+    // 4. 后台缓存到系统下载目录（不阻塞播放）
     playbackState.playbackScope.launch(Dispatchers.IO) {
         cacheToDownloads(context, result, url, trackId, playbackState)
     }
@@ -1903,12 +1998,22 @@ private suspend fun cacheToDownloads(
     playbackState: MusicPlaybackState,
 ) {
     try {
+        val fileName = "${sanitizeFileName(result.title)} - ${sanitizeFileName(result.artist)}.mp3"
+
+        // 先检查是否已存在同名缓存文件
+        val existingUri = findExistingDownload(context, fileName)
+        if (existingUri != null) {
+            withContext(Dispatchers.Main) {
+                updateTrackAudioUri(playbackState, trackId, existingUri)
+            }
+            return
+        }
+
         val connection = URL(url).openConnection()
         connection.connectTimeout = 15000
         connection.readTimeout = 60000
         val bytes = (connection as java.net.HttpURLConnection).inputStream.use { it.readBytes() }
 
-        val fileName = "${sanitizeFileName(result.title)} - ${sanitizeFileName(result.artist)}.mp3"
         val audioUri: String
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -1934,16 +2039,7 @@ private suspend fun cacheToDownloads(
 
         // 更新播放列表中该曲目的 audioUri 为本地缓存路径
         withContext(Dispatchers.Main) {
-            val idx = playbackState.playlist.indexOfFirst { it.id == trackId }
-            if (idx < 0) return@withContext
-            val updated = playbackState.playlist[idx].copy(audioUri = audioUri)
-            val list = playbackState.playlist.toMutableList()
-            list[idx] = updated
-            playbackState.playlist = list
-            if (playbackState.currentTrack?.id == trackId) {
-                playbackState.currentTrack = updated
-            }
-            playbackState.persistPlaylist()
+            updateTrackAudioUri(playbackState, trackId, audioUri)
         }
     } catch (_: Exception) {
         // 缓存失败不影响已开始的播放
@@ -1954,4 +2050,92 @@ private fun sanitizeFileName(name: String): String {
     return name.replace(Regex("[/\\\\:*?\"<>|]"), "_")
         .take(80)
         .trim()
+}
+
+// ===================== 辅助函数（本地匹配/元数据补全/缓存去重） =====================
+
+/** 归一化标题/艺术家用于模糊匹配 */
+private fun normalizeTitle(value: String): String {
+    return value.lowercase()
+        .replace(Regex("[\\s　（）()\\[\\]【】「」『』《》〈〉、，。！？\"'“”‘’]+"), "")
+        .trim()
+}
+
+/** 后台补全本地匹配歌曲的网易云元数据（封面 + 歌词） */
+private suspend fun enrichOnlineMetadata(
+    context: android.content.Context,
+    playbackState: MusicPlaybackState,
+    track: MusicTrack,
+    result: NeteaseSongSearchResult,
+) {
+    if (track.neteaseId != 0L && track.lyricLines.isNotEmpty()) return
+    try {
+        val lyric = NeteaseMusicApi.lyric(result.id)
+        val lyricPath = if (lyric.lines.isNotEmpty()) {
+            MusicMetadataCache.saveLyrics(context, result.id, lyric.lines).orEmpty()
+        } else ""
+        withContext(Dispatchers.Main) {
+            val idx = playbackState.playlist.indexOfFirst { it.id == track.id }
+            if (idx < 0) return@withContext
+            val updated = playbackState.playlist[idx].copy(
+                neteaseId = result.id,
+                neteaseCoverUrl = result.coverUrl.orEmpty(),
+                lyricCachePath = lyricPath,
+                lyricLines = lyric.lines
+            )
+            val list = playbackState.playlist.toMutableList()
+            list[idx] = updated
+            playbackState.playlist = list
+            if (playbackState.currentTrack?.id == track.id) {
+                playbackState.currentTrack = updated
+            }
+        }
+    } catch (_: Exception) { }
+}
+
+/** 在 MediaStore Downloads 中查找是否已存在同名缓存文件 */
+private suspend fun findExistingDownload(
+    context: android.content.Context,
+    fileName: String,
+): String? = withContext(Dispatchers.IO) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+        @Suppress("DEPRECATION")
+        val file = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            fileName
+        )
+        return@withContext if (file.exists()) Uri.fromFile(file).toString() else null
+    }
+    try {
+        val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+        val projection = arrayOf(MediaStore.Downloads._ID)
+        val selection = "${MediaStore.Downloads.DISPLAY_NAME} = ? AND " +
+                "${MediaStore.Downloads.RELATIVE_PATH} = ?"
+        val args = arrayOf(fileName, Environment.DIRECTORY_DOWNLOADS + "/EdgeGesture/")
+        context.contentResolver.query(collection, projection, selection, args, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val id = cursor.getLong(0)
+                return@withContext Uri.withAppendedPath(collection, id.toString()).toString()
+            }
+        }
+    } catch (_: Exception) { }
+    null
+}
+
+/** 更新播放列表中指定曲目的 audioUri（播放中和持久化同步更新） */
+private fun updateTrackAudioUri(
+    playbackState: MusicPlaybackState,
+    trackId: Long,
+    audioUri: String,
+) {
+    val idx = playbackState.playlist.indexOfFirst { it.id == trackId }
+    if (idx < 0) return
+    val updated = playbackState.playlist[idx].copy(audioUri = audioUri)
+    val list = playbackState.playlist.toMutableList()
+    list[idx] = updated
+    playbackState.playlist = list
+    if (playbackState.currentTrack?.id == trackId) {
+        playbackState.currentTrack = updated
+    }
+    playbackState.persistPlaylist()
 }
