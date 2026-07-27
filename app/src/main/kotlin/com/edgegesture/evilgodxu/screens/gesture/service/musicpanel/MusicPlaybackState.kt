@@ -230,7 +230,7 @@ class MusicPlaybackState {
     var timerMinutes by mutableIntStateOf(10)
     var timerRemaining by mutableIntStateOf(0)
     private val timerJob = SupervisorJob()
-    private val timerScope = CoroutineScope(timerJob + Dispatchers.Default)
+    private val timerScope = CoroutineScope(timerJob + Dispatchers.Main)
     private var countdownJob: Job? = null
     private var stopAfterCurrentTrack = false
 
