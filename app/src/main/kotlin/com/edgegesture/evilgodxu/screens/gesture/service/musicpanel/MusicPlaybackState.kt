@@ -262,8 +262,14 @@ class MusicPlaybackState {
         val savedPosition = preferences[savedPositionKey] ?: 0L
         val savedMode = preferences[savedModeKey] ?: PlayMode.RepeatAll.ordinal
         withContext(Dispatchers.Main) {
+            if (cachedPlaylist.isNotEmpty()) {
+                likedIds = cachedPlaylist
+                    .filter { it.isFavorite }
+                    .map { it.id }
+                    .toSet()
+            }
             if (playlist.isEmpty() && cachedPlaylist.isNotEmpty()) {
-                playlist = cachedPlaylist
+                playlist = cachedPlaylist.map { it.copy(isFavorite = likedIds.contains(it.id)) }
             }
             pendingSavedUri = savedUri
             pendingResumePosition = savedPosition
@@ -327,6 +333,7 @@ class MusicPlaybackState {
                     neteaseId = item.optLong("neteaseId", 0L),
                     neteaseCoverUrl = item.optString("neteaseCoverUrl", ""),
                     coverCachePath = item.optString("coverCachePath", ""),
+                    isFavorite = item.optBoolean("isFavorite", false),
                     lyricCachePath = item.optString("lyricCachePath", ""),
                     lyricLines = item.optString("lyricCachePath", "")
                         .takeIf { it.isNotBlank() && MusicMetadataCache.isValid(it) }
