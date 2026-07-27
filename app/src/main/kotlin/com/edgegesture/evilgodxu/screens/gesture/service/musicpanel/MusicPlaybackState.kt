@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import androidx.core.content.edit
@@ -142,10 +143,8 @@ class MusicPlaybackState {
                         NeteaseMusicApi.getSongUrlWithFallback(next.id)
                     }
                     if (url == null) {
-                        // 这一首也无法播放，递归尝试再下一首
-                        if (pendingSearchResults.isNotEmpty()) {
-                            playNextPendingSearchResult(ctx, failedTrack)
-                        }
+                        // 这一首也无法播放，递归尝试再下一首（函数开头有空检查，无需重复判断）
+                        playNextPendingSearchResult(ctx, failedTrack)
                         return@launch
                     }
                     val trackId = next.id + 1000000L
@@ -261,6 +260,7 @@ class MusicPlaybackState {
                 .filter { track ->
                     track.path.isBlank() &&
                         track.audioUri.isNotBlank() &&
+                        Uri.parse(track.audioUri).scheme == ContentResolver.SCHEME_CONTENT &&
                         !hasUriAccess(context, track.audioUri)
                 }
                 .map { it.id }
