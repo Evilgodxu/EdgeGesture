@@ -27,12 +27,28 @@ class MusicPlaybackService : MediaSessionService() {
             )
             .setHandleAudioBecomingNoisy(true)
             .build()
-        // 将 ExoPlayer 的音频会话 ID 同步给音效管理器
-        MusicPanelStateHolder.state.audioSessionId = player.audioSessionId
+        // 音效管理器需要音频会话 ID 来绑定音效（Equalizer / BassBoost 等），
+        // 但 ExoPlayer 在创建时 audioSessionId 为 0，直到开始播放后才分配真实 ID。
+        // 通过 onAudioSessionIdChanged 监听会话就绪，同步给音效管理器。
         player.addListener(object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
                 if (mediaItem != null) {
                     player.playWhenReady = true
+                }
+            }
+
+            override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                if (audioSessionId > 0) {
+                    MusicPanelStateHolder.state.audioSessionId = audioSessionId
+                }
+            }
+
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                if (playbackState == Player.STATE_READY) {
+                    val sessionId = player.audioSessionId
+                    if (sessionId > 0) {
+                        MusicPanelStateHolder.state.audioSessionId = sessionId
+                    }
                 }
             }
         })

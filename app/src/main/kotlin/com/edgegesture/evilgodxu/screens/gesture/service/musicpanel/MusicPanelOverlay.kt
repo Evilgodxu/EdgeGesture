@@ -435,7 +435,7 @@ fun MusicPanelOverlay(
                                     playbackState.searchQuery = ""
                                     playbackState.searchResults = emptyList()
                                 } else {
-                                    playbackState.errorMsg = "该歌曲暂时无法播放（可能为VIP歌曲）"
+                                    playbackState.errorMsg = context.getString(R.string.music_panel_play_error)
                                     // URL 获取失败也尝试播下一首
                                     val pending = playbackState.pendingSearchResults
                                     if (pending.isNotEmpty()) {
@@ -682,7 +682,7 @@ private fun LyricsPanel(
         contentAlignment = Alignment.Center
     ) {
         if (lines.isEmpty()) {
-            Text("暂无歌词", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+            Text(stringResource(R.string.music_panel_no_lyrics), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
         } else {
             AnimatedContent(
                 targetState = activeIndex,
@@ -1266,7 +1266,7 @@ private fun PlaylistOverlay(
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "${playbackState.playlist.size} 首",
+                            text = stringResource(R.string.music_panel_track_count, playbackState.playlist.size),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 10.sp
                         )
@@ -1659,7 +1659,7 @@ private fun SearchOverlay(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "搜索历史",
+                    text = stringResource(R.string.music_panel_search_history),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
@@ -1670,7 +1670,7 @@ private fun SearchOverlay(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "清理全部历史",
+                        contentDescription = stringResource(R.string.music_panel_search_history_clear),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(16.dp)
                     )
@@ -1708,7 +1708,7 @@ private fun SearchOverlay(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "删除历史",
+                                contentDescription = stringResource(R.string.music_panel_search_history_delete),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(15.dp)
                             )
@@ -1761,7 +1761,7 @@ private fun SearchResultsOverlay(
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "${playbackState.searchResults.size} 首",
+                            text = stringResource(R.string.music_panel_track_count, playbackState.searchResults.size),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 10.sp
                         )
@@ -1806,7 +1806,7 @@ private fun SearchResultsOverlay(
                 } else if (playbackState.searchResults.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            text = "未找到相关歌曲",
+                            text = stringResource(R.string.music_panel_search_no_results),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 12.sp
                         )
@@ -1898,7 +1898,7 @@ private fun SearchResultRow(
 
         // 来源标签，参考 QPlayer SearchRow.kindLabel
         Text(
-            text = "网易云",
+            text = stringResource(R.string.music_panel_search_source),
             color = MaterialTheme.colorScheme.primary,
             fontSize = 9.sp,
             fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
@@ -2053,7 +2053,7 @@ private fun SettingsOverlay(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "播放设置",
+                            text = stringResource(R.string.music_panel_playback_settings),
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 16.sp,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
@@ -2071,12 +2071,13 @@ private fun SettingsOverlay(
                     val context = LocalContext.current
                     val settingsScope = rememberCoroutineScope()
                     SettingsSwitchRow(
-                        title = "USB 音频独占",
+                        title = stringResource(R.string.music_panel_usb_exclusive),
                         subtitle = if (playbackState.isUsbDeviceConnected) {
-                            if (playbackState.isUsbExclusiveMode) "已启用：${playbackState.usbDeviceName}"
-                            else "已连接但未启用独占"
+                            if (playbackState.isUsbExclusiveMode) {
+                                stringResource(R.string.music_panel_usb_enabled, playbackState.usbDeviceName)
+                            } else stringResource(R.string.music_panel_usb_connected_not_enabled)
                         } else {
-                            "未检测到 USB 音频设备"
+                            stringResource(R.string.music_panel_usb_not_detected)
                         },
                         checked = if (playbackState.isUsbDeviceConnected)
                             playbackState.isUsbExclusiveMode
@@ -2105,9 +2106,9 @@ private fun SettingsOverlay(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // 音效设置入口
-                    val enabledCount = if (playbackState.selectedSoundEffect != null) 1 else 0
+                    val selectedEffect = playbackState.selectedSoundEffect
                     SoundEffectEntryRow(
-                        enabledCount = enabledCount,
+                        selectedEffectName = selectedEffect?.let { stringResource(it.displayNameResId) },
                         onClick = { onShowSoundEffectsChange(true) }
                     )
                 }
@@ -2135,7 +2136,7 @@ private fun SoundEffectPanel(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "音效设置",
+                text = stringResource(R.string.music_panel_sound_effects_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 16.sp,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
@@ -2160,8 +2161,8 @@ private fun SoundEffectPanel(
             SoundEffect.entries.forEach { effect ->
                 val isSelected = playbackState.selectedSoundEffect == effect
                 SoundEffectRow(
-                    title = effect.displayName,
-                    subtitle = effect.description,
+                    title = stringResource(effect.displayNameResId),
+                    subtitle = stringResource(effect.descriptionResId),
                     selected = isSelected,
                     onClick = { playbackState.setSoundEffectEnabled(effect, !isSelected) }
                 )
@@ -2219,7 +2220,7 @@ private fun SettingsSwitchRow(
 
 @Composable
 private fun SoundEffectEntryRow(
-    enabledCount: Int,
+    selectedEffectName: String?,
     onClick: () -> Unit,
 ) {
     Row(
@@ -2238,14 +2239,14 @@ private fun SoundEffectEntryRow(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "音效设置",
+                text = stringResource(R.string.music_panel_sound_effects_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 14.sp,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = if (enabledCount > 0) "已启用 $enabledCount 项音效" else "点击设置音效效果",
+                text = selectedEffectName ?: stringResource(R.string.music_panel_sound_effects_hint),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp,
                 maxLines = 1,
@@ -2255,7 +2256,7 @@ private fun SoundEffectEntryRow(
         Spacer(modifier = Modifier.width(8.dp))
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = "进入",
+            contentDescription = stringResource(R.string.music_panel_sound_effects_enter),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp)
         )
@@ -2309,7 +2310,7 @@ private fun SoundEffectRow(
             Spacer(modifier = Modifier.width(8.dp))
             Icon(
                 imageVector = Icons.Default.Check,
-                contentDescription = "已启用",
+                contentDescription = stringResource(R.string.music_panel_sound_effects_enabled),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp)
             )

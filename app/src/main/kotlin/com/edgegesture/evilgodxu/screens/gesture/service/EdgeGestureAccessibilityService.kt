@@ -15,7 +15,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
-import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityWindowInfo
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
@@ -47,8 +46,6 @@ import rikka.shizuku.Shizuku
 class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGestureDetector.GestureCallback {
 
     companion object {
-        const val TAG = "EdgeGestureService"
-
         private const val MAX_ATTACH_FAILURES = 3
         private const val RESTART_DELAY_MS = 1500L
 
@@ -574,10 +571,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     // 边缘视图 addView 抛出 BadTokenException 时的重启保护
     private fun onEdgeViewAttachFailed() {
         consecutiveAttachFailures++
-        Log.w(TAG, "Edge view attach failed, failureCount=$consecutiveAttachFailures")
 
         if (consecutiveAttachFailures >= MAX_ATTACH_FAILURES) {
-            Log.e(TAG, "Edge view attach failed too many times, disabling service to avoid crash loop")
             disableSelf()
             return
         }

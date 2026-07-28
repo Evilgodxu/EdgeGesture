@@ -14,6 +14,7 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.content.edit
 import androidx.compose.runtime.setValue
+import com.edgegesture.evilgodxu.R
 import org.json.JSONArray
 import org.json.JSONObject
 import androidx.media3.common.Player
@@ -103,7 +104,7 @@ class MusicPlaybackState {
         }
 
         override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-            errorMsg = "播放失败"
+            errorMsg = appContext?.getString(R.string.music_panel_play_failed) ?: "播放失败"
             isPlaying = false
             isPrepared = false
             val failedTrack = currentTrack

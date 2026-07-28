@@ -431,7 +431,6 @@ class MusicPanelViewManager(
                     )
                 }
             } catch (error: Exception) {
-                android.util.Log.w("MusicPanel", "网易云元数据加载失败: ${error.message}")
             }
         }
     }

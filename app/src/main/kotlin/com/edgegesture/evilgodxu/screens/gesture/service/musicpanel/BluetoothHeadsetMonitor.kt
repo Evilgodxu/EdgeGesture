@@ -7,6 +7,7 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import com.edgegesture.evilgodxu.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -59,6 +60,8 @@ class BluetoothHeadsetMonitor(
             .filter { isBluetoothA2dp(it) }
         btDevices.firstOrNull()?.let { device ->
             handleConnected(device)
+        } ?: run {
+            handleDisconnected()
         }
     }
 
@@ -75,6 +78,8 @@ class BluetoothHeadsetMonitor(
                 .filter { isBluetoothA2dp(it) }
             btDevices.firstOrNull()?.let { device ->
                 handleConnected(device)
+            } ?: run {
+                handleDisconnected()
             }
         }
     }
@@ -82,7 +87,7 @@ class BluetoothHeadsetMonitor(
     private fun handleConnected(device: AudioDeviceInfo) {
         val deviceName = device.productName?.toString()
             ?.takeIf { it.isNotBlank() }
-            ?: "蓝牙耳机"
+            ?: context.getString(R.string.bluetooth_headset_default_name)
         onHeadsetConnected(deviceName)
     }
 

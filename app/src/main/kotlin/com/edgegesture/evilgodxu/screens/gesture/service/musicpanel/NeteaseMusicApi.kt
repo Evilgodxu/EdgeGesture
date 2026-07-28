@@ -1,6 +1,5 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
-import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -152,7 +151,6 @@ internal object NeteaseMusicApi {
             val hasFreeTrial = data.has("freeTrialInfo") && !data.isNull("freeTrialInfo")
             SongUrlInfo(url = ensureHttps(url), trial = hasFreeTrial)
         } catch (e: Exception) {
-            Log.w("NeteaseMusicApi", "获取歌曲URL($level)失败: ${e.message}")
             null
         }
     }

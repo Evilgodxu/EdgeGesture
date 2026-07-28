@@ -99,6 +99,45 @@
     <string name="music_panel_delete_title">是否删除这首歌曲？</string>
     <string name="music_panel_delete_cancel">取消</string>
     <string name="music_panel_delete_confirm">删除</string>
+    <string name="music_panel_no_lyrics">暂无歌词</string>
+    <string name="music_panel_track_count">%d 首</string>
+    <string name="music_panel_search_history">搜索历史</string>
+    <string name="music_panel_search_history_clear">清理全部历史</string>
+    <string name="music_panel_search_history_delete">删除历史</string>
+    <string name="music_panel_search_no_results">未找到相关歌曲</string>
+    <string name="music_panel_search_source">网易云</string>
+    <string name="music_panel_playback_settings">播放设置</string>
+    <string name="music_panel_usb_exclusive">USB 音频独占</string>
+    <string name="music_panel_usb_enabled">已启用：%s</string>
+    <string name="music_panel_usb_connected_not_enabled">已连接但未启用独占</string>
+    <string name="music_panel_usb_not_detected">未检测到 USB 音频设备</string>
+    <string name="music_panel_sound_effects_title">音效设置</string>
+    <string name="music_panel_sound_effects_hint">点击设置音效效果</string>
+    <string name="music_panel_sound_effects_enter">进入</string>
+    <string name="music_panel_sound_effects_enabled">已启用</string>
+    <string name="music_panel_play_error">该歌曲暂时无法播放（可能为VIP歌曲）</string>
+    <string name="music_panel_play_failed">播放失败</string>
+
+    <!-- 音效名称 -->
+    <string name="sound_effect_bass_boost">超重低音</string>
+    <string name="sound_effect_bass_boost_desc">增强低频表现，感受澎湃低音</string>
+    <string name="sound_effect_3d_audio">3D丽音</string>
+    <string name="sound_effect_3d_audio_desc">提升声音清晰度与空间立体感</string>
+    <string name="sound_effect_spatial_audio">空间音效</string>
+    <string name="sound_effect_spatial_audio_desc">营造宽阔的声场空间感</string>
+    <string name="sound_effect_3d_surround">3D环绕</string>
+    <string name="sound_effect_3d_surround_desc">环绕声场，身临其境</string>
+    <string name="sound_effect_pure_voice">纯净人声</string>
+    <string name="sound_effect_pure_voice_desc">突出人声细节，适合听歌与播客</string>
+
+    <!-- 音乐扫描 -->
+    <string name="music_scanner_external_music">外部音乐</string>
+    <string name="music_scanner_unknown_artist">未知艺术家</string>
+    <string name="music_scanner_unknown_song">未知歌曲</string>
+
+    <!-- 设备名称兜底 -->
+    <string name="bluetooth_headset_default_name">蓝牙耳机</string>
+    <string name="usb_audio_default_name">USB 音频设备</string>
 
     <!-- 扫一扫 -->
     <string name="gesture_action_alipay_scan">支付宝扫一扫</string>

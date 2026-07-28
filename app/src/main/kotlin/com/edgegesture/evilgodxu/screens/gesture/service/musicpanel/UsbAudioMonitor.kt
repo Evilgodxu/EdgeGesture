@@ -10,6 +10,7 @@ import android.hardware.usb.UsbManager
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
+import com.edgegesture.evilgodxu.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -135,7 +136,7 @@ class UsbAudioMonitor(
             device.manufacturerName?.takeIf { it.isNotBlank() }?.let { return it }
         }
 
-        return "USB 音频设备"
+        return context.getString(R.string.usb_audio_default_name)
     }
 
     companion object {

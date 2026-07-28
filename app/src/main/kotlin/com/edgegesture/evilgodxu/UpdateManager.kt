@@ -39,7 +39,6 @@ sealed class DownloadState {
  */
 object UpdateManager {
 
-    private const val TAG = "UpdateManager"
     private const val PREFS_NAME = "update_prefs"
     private const val KEY_LAST_CHECK = "last_check_time"
     private const val KEY_PENDING_VERSION = "pending_version"

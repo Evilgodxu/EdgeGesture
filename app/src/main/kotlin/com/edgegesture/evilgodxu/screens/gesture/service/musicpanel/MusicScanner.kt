@@ -9,6 +9,7 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Size
+import com.edgegesture.evilgodxu.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -20,9 +21,9 @@ object MusicScanner {
         try {
             retriever.setDataSource(context, uri)
             val title = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE)
-                ?.takeIf { it.isNotBlank() } ?: uri.lastPathSegment ?: "外部音乐"
+                ?.takeIf { it.isNotBlank() } ?: uri.lastPathSegment ?: context.getString(R.string.music_scanner_external_music)
             val artist = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST)
-                ?.takeIf { it.isNotBlank() } ?: "未知艺术家"
+                ?.takeIf { it.isNotBlank() } ?: context.getString(R.string.music_scanner_unknown_artist)
             val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
                 ?.toLongOrNull() ?: 0L
             val art = retriever.embeddedPicture?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
@@ -86,10 +87,10 @@ object MusicScanner {
                         id
                     )
                     val title = cursor.getString(titleIdx)?.takeIf { it.isNotBlank() }
-                        ?: path.substringAfterLast('/').substringBeforeLast('.').ifBlank { "未知歌曲" }
+                        ?: path.substringAfterLast('/').substringBeforeLast('.').ifBlank { context.getString(R.string.music_scanner_unknown_song) }
                     val artist = if (artistIdx >= 0) {
-                        cursor.getString(artistIdx)?.takeIf { it.isNotBlank() } ?: "未知艺术家"
-                    } else "未知艺术家"
+                        cursor.getString(artistIdx)?.takeIf { it.isNotBlank() } ?: context.getString(R.string.music_scanner_unknown_artist)
+                    } else context.getString(R.string.music_scanner_unknown_artist)
                     val duration = if (durationIdx >= 0) cursor.getLong(durationIdx) else 0L
                     val albumId = if (albumIdIdx >= 0) cursor.getLong(albumIdIdx) else 0L
                     val artCacheKey = if (albumId > 0) albumId else -id

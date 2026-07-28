@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.IBinder
-import android.util.Log
 import com.edgegesture.evilgodxu.service.ICommandService
 import com.edgegesture.evilgodxu.service.CommandUserService
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,8 +24,6 @@ sealed class ShizukuState {
 
 object ShizukuManager {
 
-    private const val TAG = "ShizukuManager"
-
     private val _state = MutableStateFlow<ShizukuState>(ShizukuState.NotRunning)
     val state: StateFlow<ShizukuState> = _state.asStateFlow()
 
@@ -40,13 +37,11 @@ object ShizukuManager {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             commandService = ICommandService.Stub.asInterface(service)
             isServiceBinding = false
-            Log.i(TAG, "CommandService connected")
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             commandService = null
             isServiceBinding = false
-            Log.i(TAG, "CommandService disconnected")
         }
     }
 
@@ -136,7 +131,6 @@ object ShizukuManager {
             val args = CommandUserService.createServiceArgs()
             Shizuku.bindUserService(args, serviceConnection)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to bind UserService", e)
             isServiceBinding = false
         }
     }
@@ -151,7 +145,6 @@ object ShizukuManager {
                     true
                 )
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to unbind UserService", e)
             }
             commandService = null
         }
@@ -165,7 +158,6 @@ object ShizukuManager {
                 val result = service.executeCommand(command)
                 Result.success(result)
             } catch (e: Exception) {
-                Log.e(TAG, "Command execution failed", e)
                 Result.failure(e)
             }
         } else {
@@ -187,7 +179,6 @@ object ShizukuManager {
                     Result.failure(Exception("Failed to force stop package"))
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Force stop failed", e)
                 Result.failure(e)
             }
         } else {

@@ -6,17 +6,17 @@ import android.media.audiofx.EnvironmentalReverb
 import android.media.audiofx.Equalizer
 import android.media.audiofx.PresetReverb
 import android.media.audiofx.Virtualizer
-import android.util.Log
+import com.edgegesture.evilgodxu.R
 
 /**
- * 音效类型枚举
+ * 音效类型枚举（使用字符串资源 ID）
  */
-enum class SoundEffect(val displayName: String, val description: String) {
-    BASS_BOOST("超重低音", "增强低频表现，感受澎湃低音"),
-    THREE_D_AUDIO("3D丽音", "提升声音清晰度与空间立体感"),
-    SPATIAL_AUDIO("空间音效", "营造宽阔的声场空间感"),
-    THREE_D_SURROUND("3D环绕", "环绕声场，身临其境"),
-    PURE_VOICE("纯净人声", "突出人声细节，适合听歌与播客"),
+enum class SoundEffect(val displayNameResId: Int, val descriptionResId: Int) {
+    BASS_BOOST(R.string.sound_effect_bass_boost, R.string.sound_effect_bass_boost_desc),
+    THREE_D_AUDIO(R.string.sound_effect_3d_audio, R.string.sound_effect_3d_audio_desc),
+    SPATIAL_AUDIO(R.string.sound_effect_spatial_audio, R.string.sound_effect_spatial_audio_desc),
+    THREE_D_SURROUND(R.string.sound_effect_3d_surround, R.string.sound_effect_3d_surround_desc),
+    PURE_VOICE(R.string.sound_effect_pure_voice, R.string.sound_effect_pure_voice_desc),
 }
 
 /**
@@ -55,20 +55,20 @@ class AudioEffectManager(private val appContext: Context) {
 
     /** 开关某音效，并立即生效（单选模式：同时只能启用一个） */
     fun setEffectEnabled(effect: SoundEffect, enabled: Boolean) {
-        if (enabled) {
-            // 单选：先关闭其他所有音效
-            SoundEffect.entries.forEach { other ->
-                if (other != effect) {
-                    prefs.edit().putBoolean(other.name, false).apply()
+        prefs.edit().apply {
+            if (enabled) {
+                // 单选：先关闭其他所有音效
+                SoundEffect.entries.forEach { other ->
+                    if (other != effect) putBoolean(other.name, false)
                 }
+                putBoolean(effect.name, true)
+            } else {
+                putBoolean(effect.name, false)
             }
-            prefs.edit().putBoolean(effect.name, true).apply()
-        } else {
-            prefs.edit().putBoolean(effect.name, false).apply()
+            apply()
         }
 
         if (audioSessionId <= 0) {
-            Log.w(TAG, "音频会话未就绪，音效将在会话建立后自动恢复")
             return
         }
 
@@ -102,7 +102,6 @@ class AudioEffectManager(private val appContext: Context) {
                 SoundEffect.PURE_VOICE -> applyPureVoice(enabled)
             }
         } catch (e: Exception) {
-            Log.e(TAG, "应用音效 [${effect.displayName}] 失败", e)
         }
     }
 
@@ -229,7 +228,6 @@ class AudioEffectManager(private val appContext: Context) {
     }
 
     companion object {
-        private const val TAG = "AudioEffectManager"
         private const val PREFS_NAME = "audio_effect_prefs"
     }
 }
