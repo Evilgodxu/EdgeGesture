@@ -226,82 +226,91 @@ fun MusicPanelOverlay(
                     val designHeight = 285.dp
                     val scale = (maxHeight / designHeight).coerceAtMost(1f)
 
-                    if (playbackState.isSearchMode && !playbackState.showSearchResults) {
-                        // 搜索模式：显示搜索输入框
-                        SearchOverlay(
-                            playbackState = playbackState,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer(
-                                    scaleX = scale,
-                                    scaleY = scale,
-                                    transformOrigin = TransformOrigin(0.5f, 0f)
-                                )
-                                .padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 4.dp)
-                        )
-                    } else {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .graphicsLayer(
-                                    scaleX = scale,
-                                    scaleY = scale,
-                                    transformOrigin = TransformOrigin(0.5f, 0f)
-                                )
-                                .padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 4.dp)
-                                .pointerInput(Unit) {
-                                    detectHorizontalDragGestures(
-                                        onDragEnd = { },
-                                        onHorizontalDrag = { _, dragAmount ->
-                                            if (dragAmount > 50 && !showPlaylist && !showTimer && !showSettings) {
-                                                playbackState.isSearchMode = true
-                                            }
-                                            if (dragAmount < -50 && !showPlaylist && !showTimer && !showSettings) {
-                                                showSettings = true
-                                            }
-                                        }
-                                    )
-                                }
-                        ) {
-                            HeaderRow(
-                                playbackState = playbackState,
-                                timerRemaining = playbackState.timerRemaining,
-                                onTimerClick = { showTimer = true },
-                                modifier = Modifier.padding(bottom = 6.dp)
+                    AnimatedContent(
+                        targetState = playbackState.isSearchMode && !playbackState.showSearchResults,
+                        transitionSpec = {
+                            (slideInVertically { it } + fadeIn()).togetherWith(
+                                slideOutVertically { it } + fadeOut()
                             )
-
-                            Box(
+                        },
+                        label = "search_mode"
+                    ) { showSearch ->
+                        if (showSearch) {
+                            SearchOverlay(
+                                playbackState = playbackState,
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                if (playbackState.isLyricsVisible) {
-                                    LyricsPanel(
-                                        playbackState = playbackState,
-                                        modifier = Modifier.fillMaxSize(),
-                                        onClick = { playbackState.isLyricsVisible = false }
+                                    .fillMaxSize()
+                                    .graphicsLayer(
+                                        scaleX = scale,
+                                        scaleY = scale,
+                                        transformOrigin = TransformOrigin(0.5f, 0f)
                                     )
-                                } else {
-                                    CurrentCover(
-                                        track = playbackState.currentTrack,
-                                        isPlaying = playbackState.isPlaying,
+                                    .padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 4.dp)
+                            )
+                        } else {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .graphicsLayer(
+                                        scaleX = scale,
+                                        scaleY = scale,
+                                        transformOrigin = TransformOrigin(0.5f, 0f)
+                                    )
+                                    .padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 4.dp)
+                                    .pointerInput(Unit) {
+                                        detectHorizontalDragGestures(
+                                            onDragEnd = { },
+                                            onHorizontalDrag = { _, dragAmount ->
+                                                if (dragAmount > 50 && !showPlaylist && !showTimer && !showSettings) {
+                                                    playbackState.isSearchMode = true
+                                                }
+                                                if (dragAmount < -50 && !showPlaylist && !showTimer && !showSettings) {
+                                                    showSettings = true
+                                                }
+                                            }
+                                        )
+                                    }
+                            ) {
+                                HeaderRow(
+                                    playbackState = playbackState,
+                                    timerRemaining = playbackState.timerRemaining,
+                                    onTimerClick = { showTimer = true },
+                                    modifier = Modifier.padding(bottom = 6.dp)
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (playbackState.isLyricsVisible) {
+                                        LyricsPanel(
+                                            playbackState = playbackState,
+                                            modifier = Modifier.fillMaxSize(),
+                                            onClick = { playbackState.isLyricsVisible = false }
+                                        )
+                                    } else {
+                                        CurrentCover(
+                                            track = playbackState.currentTrack,
+                                            isPlaying = playbackState.isPlaying,
+                                            onClick = { playbackState.isLyricsVisible = true }
+                                        )
+                                    }
+                                }
+                                if (!playbackState.isLyricsVisible) {
+                                    TrackInfo(
+                                        playbackState = playbackState,
                                         onClick = { playbackState.isLyricsVisible = true }
                                     )
                                 }
-                            }
-                            if (!playbackState.isLyricsVisible) {
-                                TrackInfo(
+                                ProgressSection(playbackState = playbackState)
+
+                                ControlBar(
                                     playbackState = playbackState,
-                                    onClick = { playbackState.isLyricsVisible = true }
+                                    onPlaylistClick = { showPlaylist = true }
                                 )
                             }
-                            ProgressSection(playbackState = playbackState)
-
-                            ControlBar(
-                                playbackState = playbackState,
-                                onPlaylistClick = { showPlaylist = true }
-                            )
                         }
                     }
 
@@ -497,42 +506,33 @@ private fun HeaderRow(
                 .align(Alignment.Center)
                 .alpha(0.6f)
         ) {
-            Icon(
-                imageVector = Icons.Default.Memory,
-                contentDescription = null,
-                modifier = Modifier.size(14.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.width(3.dp))
-            Text(
-                text = "${memoryUsageMb.toInt()} MB",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 10.sp,
-            )
-            // USB 独占指示灯
             if (playbackState.isUsbExclusiveMode) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .size(14.dp)
-                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "U",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 9.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                    )
-                }
-                Spacer(modifier = Modifier.width(2.dp))
+                Icon(
+                    imageVector = Icons.Default.Memory,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(3.dp))
                 Text(
                     text = playbackState.usbDeviceName.take(12),
-                    color = MaterialTheme.colorScheme.primary,
-                    fontSize = 9.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Memory,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(3.dp))
+                Text(
+                    text = "${memoryUsageMb.toInt()} MB",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp,
                 )
             }
         }
@@ -1977,6 +1977,11 @@ private fun SettingsOverlay(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { /* 阻止点击穿透 */ }
+                    )
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
@@ -2004,6 +2009,7 @@ private fun SettingsOverlay(
 
                 // USB 独占开关（始终可操作，设下次接入时自动启用）
                 val context = LocalContext.current
+                val settingsScope = rememberCoroutineScope()
                 SettingsSwitchRow(
                     title = "USB 音频独占",
                     subtitle = if (playbackState.isUsbDeviceConnected) {
@@ -2019,7 +2025,7 @@ private fun SettingsOverlay(
                     onCheckedChange = { enabled ->
                         playbackState.usbExclusiveEnabled = enabled
                         if (playbackState.isUsbDeviceConnected) {
-                            kotlinx.coroutines.MainScope().launch {
+                            settingsScope.launch {
                                 if (enabled) {
                                     val success = UsbAudioMonitor.setPreferredUsbDevice(
                                         context, true

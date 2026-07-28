@@ -66,7 +66,9 @@ class MusicPanelViewManager(
                 managerScope.launch {
                     val success = UsbAudioMonitor.setPreferredUsbDevice(context, true)
                     if (success) {
-                        playbackState.isUsbExclusiveMode = true
+                        withContext(Dispatchers.Main) {
+                            playbackState.isUsbExclusiveMode = true
+                        }
                     }
                 }
             }
