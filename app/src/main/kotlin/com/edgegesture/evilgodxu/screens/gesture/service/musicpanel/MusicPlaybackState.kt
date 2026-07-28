@@ -458,6 +458,7 @@ class MusicPlaybackState {
                 put("neteaseCoverUrl", track.neteaseCoverUrl)
                 put("coverCachePath", track.coverCachePath)
                 put("lyricCachePath", track.lyricCachePath)
+                put("isFavorite", track.isFavorite)
             })
         }
         context.getSharedPreferences(playlistCachePreferences, Context.MODE_PRIVATE)
@@ -558,6 +559,7 @@ class MusicPlaybackState {
     fun toggleFavorite(trackId: Long) {
         likedIds = if (likedIds.contains(trackId)) likedIds - trackId else likedIds + trackId
         setSortedPlaylist(playlist)
+        persistPlaylist()
     }
 
     // 更新当前播放位置（用于 UI 进度条）
