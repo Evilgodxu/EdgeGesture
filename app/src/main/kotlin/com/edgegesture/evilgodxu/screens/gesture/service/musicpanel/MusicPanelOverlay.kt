@@ -114,6 +114,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.screens.settings.ThemeMode
 import com.edgegesture.evilgodxu.screens.settings.settingsFlow
+import com.edgegesture.evilgodxu.ui.theme.AppSwitch
 import com.edgegesture.evilgodxu.ui.theme.DarkColorScheme
 import com.edgegesture.evilgodxu.ui.theme.LightColorScheme
 import kotlinx.coroutines.delay
@@ -166,6 +167,7 @@ fun MusicPanelOverlay(
 
     var showPlaylist by remember { mutableStateOf(false) }
     var showTimer by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
     val currentTrackId = playbackState.currentTrack?.id
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleteTargetTrack by remember { mutableStateOf<MusicTrack?>(null) }
@@ -178,7 +180,7 @@ fun MusicPanelOverlay(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = {
-                        if (!showPlaylist && !showTimer) {
+                        if (!showPlaylist && !showTimer && !showSettings) {
                             if (playbackState.isSearchMode) {
                                 playbackState.isSearchMode = false
                                 playbackState.showSearchResults = false
@@ -251,8 +253,11 @@ fun MusicPanelOverlay(
                                     detectHorizontalDragGestures(
                                         onDragEnd = { },
                                         onHorizontalDrag = { _, dragAmount ->
-                                            if (dragAmount > 50 && !showPlaylist && !showTimer) {
+                                            if (dragAmount > 50 && !showPlaylist && !showTimer && !showSettings) {
                                                 playbackState.isSearchMode = true
+                                            }
+                                            if (dragAmount < -50 && !showPlaylist && !showTimer && !showSettings) {
+                                                showSettings = true
                                             }
                                         }
                                     )
@@ -428,6 +433,12 @@ fun MusicPanelOverlay(
                             deleteTargetTrack = null
                         }
                     )
+
+                    SettingsOverlay(
+                        visible = showSettings,
+                        playbackState = playbackState,
+                        onDismiss = { showSettings = false }
+                    )
                 }
             }
         }
@@ -498,6 +509,32 @@ private fun HeaderRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp,
             )
+            // USB 独占指示灯
+            if (playbackState.isUsbExclusiveMode) {
+                Spacer(modifier = Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .size(14.dp)
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "U",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 9.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.width(2.dp))
+                Text(
+                    text = playbackState.usbDeviceName.take(12),
+                    color = MaterialTheme.colorScheme.primary,
+                    fontSize = 9.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
 
         HeaderIconButton(
@@ -1917,6 +1954,131 @@ private fun DeleteConfirmOverlay(
         } else {
             Box(modifier = Modifier.fillMaxSize())
         }
+    }
+}
+
+// ===================== 播放设置 =====================
+
+@Composable
+private fun SettingsOverlay(
+    visible: Boolean,
+    playbackState: MusicPlaybackState,
+    onDismiss: () -> Unit,
+) {
+    AnimatedContent(
+        targetState = visible,
+        transitionSpec = {
+            (slideInVertically { it } + fadeIn()).togetherWith(slideOutVertically { it } + fadeOut())
+        },
+        label = "settings"
+    ) { show ->
+        if (show) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f))
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
+            ) {
+                // 标题栏
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "播放设置",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 16.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                    )
+                    HeaderIconButton(
+                        icon = Icons.Default.Close,
+                        onClick = onDismiss,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // USB 独占开关（始终可操作，设下次接入时自动启用）
+                val context = LocalContext.current
+                SettingsSwitchRow(
+                    title = "USB 音频独占",
+                    subtitle = if (playbackState.isUsbDeviceConnected) {
+                        if (playbackState.isUsbExclusiveMode) "已启用：${playbackState.usbDeviceName}"
+                        else "已连接但未启用独占"
+                    } else {
+                        "未检测到 USB 音频设备"
+                    },
+                    checked = if (playbackState.isUsbDeviceConnected)
+                        playbackState.isUsbExclusiveMode
+                    else
+                        playbackState.usbExclusiveEnabled,
+                    onCheckedChange = { enabled ->
+                        playbackState.usbExclusiveEnabled = enabled
+                        if (playbackState.isUsbDeviceConnected) {
+                            kotlinx.coroutines.MainScope().launch {
+                                if (enabled) {
+                                    val success = UsbAudioMonitor.setPreferredUsbDevice(
+                                        context, true
+                                    )
+                                    if (success) playbackState.isUsbExclusiveMode = true
+                                } else {
+                                    UsbAudioMonitor.setPreferredUsbDevice(
+                                        context, false
+                                    )
+                                    playbackState.isUsbExclusiveMode = false
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+        } else {
+            Box(modifier = Modifier.fillMaxSize())
+        }
+    }
+}
+
+@Composable
+private fun SettingsSwitchRow(
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f))
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 14.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        AppSwitch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
     }
 }
 

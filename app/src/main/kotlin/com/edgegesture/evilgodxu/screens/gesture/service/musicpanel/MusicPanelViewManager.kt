@@ -54,6 +54,33 @@ class MusicPanelViewManager(
 
     private val playbackState = MusicPanelStateHolder.state
     private var pendingExternalUri: android.net.Uri? = null
+
+    // USB 音频独占监听器
+    private val usbAudioMonitor = UsbAudioMonitor(
+        context = context,
+        onUsbDeviceAttached = { deviceName ->
+            playbackState.usbDeviceName = deviceName
+            playbackState.isUsbDeviceConnected = true
+            // 根据用户偏好自动启用 USB 独占
+            if (playbackState.usbExclusiveEnabled) {
+                managerScope.launch {
+                    val success = UsbAudioMonitor.setPreferredUsbDevice(context, true)
+                    if (success) {
+                        playbackState.isUsbExclusiveMode = true
+                    }
+                }
+            }
+        },
+        onUsbDeviceDetached = {
+            playbackState.isUsbDeviceConnected = false
+            playbackState.isUsbExclusiveMode = false
+            playbackState.usbDeviceName = ""
+            // 移除首选设备设置，让音频回退到系统默认路由
+            managerScope.launch {
+                UsbAudioMonitor.setPreferredUsbDevice(context, false)
+            }
+        }
+    )
     private val externalTrackMutex = Mutex()
     private val scanMutex = Mutex()
     private var initialization: Deferred<Unit>? = null
@@ -197,6 +224,7 @@ class MusicPanelViewManager(
                 playbackState.updatePosition()
             }
             registerMediaObserver()
+            usbAudioMonitor.register()
         }
     }
 
@@ -427,6 +455,7 @@ class MusicPanelViewManager(
                     context.contentResolver.unregisterContentObserver(mediaObserver)
                     mediaObserverRegistered = false
                 }
+                usbAudioMonitor.unregister()
                 playbackState.updatePosition()
                 if (!playbackState.isPlaying) {
                     playbackState.release()
