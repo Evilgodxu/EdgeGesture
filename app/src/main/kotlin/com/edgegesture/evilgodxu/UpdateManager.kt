@@ -46,6 +46,7 @@ object UpdateManager {
     private const val KEY_PENDING_CHANGELOG = "pending_changelog"
     private const val KEY_IGNORED_VERSION = "ignored_version"
     private const val CHECK_INTERVAL_MS = 60 * 60 * 1000L // 1 小时
+    private const val TAG = "UpdateManager"
 
     // GitHub 仓库配置
     private const val GITHUB_OWNER = "Evilgodxu"
