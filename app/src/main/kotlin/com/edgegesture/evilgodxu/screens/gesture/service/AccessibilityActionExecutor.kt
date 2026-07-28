@@ -36,7 +36,6 @@ import com.edgegesture.evilgodxu.data.permission.PermissionMonitor
 import com.edgegesture.evilgodxu.data.permission.PermissionType
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelPermissionCallback
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelViewManager
-import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.sendMediaKeyEvent
 import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelPermissionActivity
 import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelPermissionBridge
 import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelViewManager

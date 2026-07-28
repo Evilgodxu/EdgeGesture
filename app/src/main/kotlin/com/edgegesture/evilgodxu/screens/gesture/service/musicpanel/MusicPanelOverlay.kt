@@ -185,25 +185,8 @@ fun MusicPanelOverlay(
                 .fillMaxSize()
                 .onPreviewKeyEvent { event ->
                     if (event.type == KeyEventType.KeyUp && event.key == Key.Back) {
-                        when {
-                            showPlaylist -> { showPlaylist = false; true }
-                            showTimer -> { showTimer = false; true }
-                            showSettings -> { showSettings = false; true }
-                            playbackState.showSearchResults -> {
-                                playbackState.showSearchResults = false
-                                playbackState.errorMsg = null
-                                true
-                            }
-                            playbackState.isSearchMode -> {
-                                playbackState.isSearchMode = false
-                                playbackState.showSearchResults = false
-                                true
-                            }
-                            else -> {
-                                onDismiss()
-                                true
-                            }
-                        }
+                        onDismiss()
+                        true
                     } else false
                 }
                 .clickable(
