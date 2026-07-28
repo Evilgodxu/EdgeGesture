@@ -27,6 +27,8 @@ class MusicPlaybackService : MediaSessionService() {
             )
             .setHandleAudioBecomingNoisy(true)
             .build()
+        // 将 ExoPlayer 的音频会话 ID 同步给音效管理器
+        MusicPanelStateHolder.state.audioSessionId = player.audioSessionId
         player.addListener(object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
                 if (mediaItem != null) {

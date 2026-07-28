@@ -44,6 +44,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import coil3.compose.AsyncImage
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -66,7 +68,10 @@ import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.PlaylistPlay
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
@@ -175,6 +180,7 @@ fun MusicPanelOverlay(
     var showPlaylist by remember { mutableStateOf(false) }
     var showTimer by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var showSoundEffects by remember { mutableStateOf(false) }
     val currentTrackId = playbackState.currentTrack?.id
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var deleteTargetTrack by remember { mutableStateOf<MusicTrack?>(null) }
@@ -196,6 +202,7 @@ fun MusicPanelOverlay(
                         when {
                             showPlaylist -> showPlaylist = false
                             showTimer -> showTimer = false
+                            showSoundEffects -> showSoundEffects = false
                             showSettings -> showSettings = false
                             playbackState.showSearchResults -> {
                                 playbackState.showSearchResults = false
@@ -465,6 +472,8 @@ fun MusicPanelOverlay(
                     SettingsOverlay(
                         visible = showSettings,
                         playbackState = playbackState,
+                        showSoundEffects = showSoundEffects,
+                        onShowSoundEffectsChange = { showSoundEffects = it },
                         onDismiss = { showSettings = false }
                     )
                 }
@@ -2002,6 +2011,8 @@ private fun DeleteConfirmOverlay(
 private fun SettingsOverlay(
     visible: Boolean,
     playbackState: MusicPlaybackState,
+    showSoundEffects: Boolean,
+    onShowSoundEffectsChange: (Boolean) -> Unit,
     onDismiss: () -> Unit,
 ) {
     AnimatedContent(
@@ -2019,73 +2030,150 @@ private fun SettingsOverlay(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = onDismiss
+                        onClick = {
+                            if (showSoundEffects) onShowSoundEffectsChange(false)
+                            else onDismiss()
+                        }
                     )
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                // 标题栏
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "播放设置",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 16.sp,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                if (showSoundEffects) {
+                    // ===== 音效设置子面板 =====
+                    SoundEffectPanel(
+                        playbackState = playbackState,
+                        onBack = { onShowSoundEffectsChange(false) }
                     )
-                    HeaderIconButton(
-                        icon = Icons.Default.Close,
-                        onClick = onDismiss,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
+                } else {
+                    // ===== 主设置面板 =====
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "播放设置",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 16.sp,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                        )
+                        HeaderIconButton(
+                            icon = Icons.Default.Close,
+                            onClick = onDismiss,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                // USB 独占开关（始终可操作，设下次接入时自动启用）
-                val context = LocalContext.current
-                val settingsScope = rememberCoroutineScope()
-                SettingsSwitchRow(
-                    title = "USB 音频独占",
-                    subtitle = if (playbackState.isUsbDeviceConnected) {
-                        if (playbackState.isUsbExclusiveMode) "已启用：${playbackState.usbDeviceName}"
-                        else "已连接但未启用独占"
-                    } else {
-                        "未检测到 USB 音频设备"
-                    },
-                    checked = if (playbackState.isUsbDeviceConnected)
-                        playbackState.isUsbExclusiveMode
-                    else
-                        playbackState.usbExclusiveEnabled,
-                    onCheckedChange = { enabled ->
-                        playbackState.usbExclusiveEnabled = enabled
-                        if (playbackState.isUsbDeviceConnected) {
-                            settingsScope.launch {
-                                if (enabled) {
-                                    val success = UsbAudioMonitor.setPreferredUsbDevice(
-                                        context, true
-                                    )
-                                    if (success) playbackState.isUsbExclusiveMode = true
-                                } else {
-                                    UsbAudioMonitor.setPreferredUsbDevice(
-                                        context, false
-                                    )
-                                    playbackState.isUsbExclusiveMode = false
+                    // USB 独占开关
+                    val context = LocalContext.current
+                    val settingsScope = rememberCoroutineScope()
+                    SettingsSwitchRow(
+                        title = "USB 音频独占",
+                        subtitle = if (playbackState.isUsbDeviceConnected) {
+                            if (playbackState.isUsbExclusiveMode) "已启用：${playbackState.usbDeviceName}"
+                            else "已连接但未启用独占"
+                        } else {
+                            "未检测到 USB 音频设备"
+                        },
+                        checked = if (playbackState.isUsbDeviceConnected)
+                            playbackState.isUsbExclusiveMode
+                        else
+                            playbackState.usbExclusiveEnabled,
+                        onCheckedChange = { enabled ->
+                            playbackState.usbExclusiveEnabled = enabled
+                            if (playbackState.isUsbDeviceConnected) {
+                                settingsScope.launch {
+                                    if (enabled) {
+                                        val success = UsbAudioMonitor.setPreferredUsbDevice(
+                                            context, true
+                                        )
+                                        if (success) playbackState.isUsbExclusiveMode = true
+                                    } else {
+                                        UsbAudioMonitor.setPreferredUsbDevice(
+                                            context, false
+                                        )
+                                        playbackState.isUsbExclusiveMode = false
+                                    }
                                 }
                             }
                         }
-                    }
-                )
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // 音效设置入口
+                    val enabledCount = if (playbackState.selectedSoundEffect != null) 1 else 0
+                    SoundEffectEntryRow(
+                        enabledCount = enabledCount,
+                        onClick = { onShowSoundEffectsChange(true) }
+                    )
+                }
             }
         } else {
             Box(modifier = Modifier.fillMaxSize())
         }
     }
 }
+
+// ===================== 音效设置子面板 =====================
+
+@Composable
+private fun SoundEffectPanel(
+    playbackState: MusicPlaybackState,
+    onBack: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // 标题栏（仅有关闭按钮，无返回按钮）
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "音效设置",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 16.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+            )
+            HeaderIconButton(
+                icon = Icons.Default.Close,
+                onClick = onBack,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 音效列表（可滚动）
+        val scrollState = rememberScrollState()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SoundEffect.entries.forEach { effect ->
+                val isSelected = playbackState.selectedSoundEffect == effect
+                SoundEffectRow(
+                    title = effect.displayName,
+                    subtitle = effect.description,
+                    selected = isSelected,
+                    onClick = { playbackState.setSoundEffectEnabled(effect, !isSelected) }
+                )
+            }
+
+            // 底部留白，确保最后一项不被遮挡
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+// ===================== 设置开关行 =====================
 
 @Composable
 private fun SettingsSwitchRow(
@@ -2124,6 +2212,108 @@ private fun SettingsSwitchRow(
             checked = checked,
             onCheckedChange = onCheckedChange
         )
+    }
+}
+
+// ===================== 音效入口行 =====================
+
+@Composable
+private fun SoundEffectEntryRow(
+    enabledCount: Int,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f))
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "音效设置",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 14.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = if (enabledCount > 0) "已启用 $enabledCount 项音效" else "点击设置音效效果",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = "进入",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+// ===================== 音效选中行（高亮 + 勾选） =====================
+
+@Composable
+private fun SoundEffectRow(
+    title: String,
+    subtitle: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 14.sp,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                color = if (selected) MaterialTheme.colorScheme.primary
+                       else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        if (selected) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.Default.Check,
+                contentDescription = "已启用",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
     }
 }
 

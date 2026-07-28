@@ -329,6 +329,22 @@ class MusicPlaybackState {
     var isBluetoothHeadsetConnected by mutableStateOf(false)
     var bluetoothHeadsetName by mutableStateOf("")
 
+    // 音频会话 ID（由 MusicPlaybackService 在创建 ExoPlayer 后设置）
+    var audioSessionId: Int = 0
+        set(value) {
+            field = value
+            if (value > 0) {
+                audioEffectManager.audioSessionId = value
+            }
+        }
+
+    val audioEffectManager: AudioEffectManager by lazy {
+        AudioEffectManager(appContext ?: error("appContext 尚未初始化"))
+    }
+
+    /** 当前选中的音效（Compose 响应式，驱动 UI 实时更新高亮） */
+    var selectedSoundEffect by mutableStateOf<SoundEffect?>(null)
+
     // 收藏的歌曲 ID 集合（面板级内存状态）
     var likedIds by mutableStateOf<Set<Long>>(emptySet())
 
@@ -382,6 +398,8 @@ class MusicPlaybackState {
             pendingResumePosition = savedPosition
             currentPosition = savedPosition
             playMode = PlayMode.entries.getOrElse(savedMode) { PlayMode.RepeatAll }
+            // 从持久化存储恢复音效选中状态
+            selectedSoundEffect = SoundEffect.entries.firstOrNull { audioEffectManager.isEffectEnabled(it) }
         }
     }
 
@@ -516,7 +534,20 @@ class MusicPlaybackState {
         isPrepared = false
         duration = 0L
         errorMsg = null
+        audioEffectManager.releaseAll()
         stopTimer()
+    }
+
+    // ======================== 音效设置 ========================
+
+    /** 查询指定音效是否已启用 */
+    fun isSoundEffectEnabled(effect: SoundEffect): Boolean =
+        audioEffectManager.isEffectEnabled(effect)
+
+    /** 启用/禁用指定音效 */
+    fun setSoundEffectEnabled(effect: SoundEffect, enabled: Boolean) {
+        audioEffectManager.setEffectEnabled(effect, enabled)
+        selectedSoundEffect = if (enabled) effect else null
     }
 
     // 启动定时关闭（分钟），计时结束后停止播放并释放资源
