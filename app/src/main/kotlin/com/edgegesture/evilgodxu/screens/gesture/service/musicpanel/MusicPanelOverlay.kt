@@ -64,7 +64,10 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Usb
+import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.automirrored.outlined.PlaylistPlay
+import androidx.activity.compose.BackHandler
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -180,13 +183,19 @@ fun MusicPanelOverlay(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = {
-                        if (!showPlaylist && !showTimer && !showSettings) {
-                            if (playbackState.isSearchMode) {
+                        when {
+                            showPlaylist -> showPlaylist = false
+                            showTimer -> showTimer = false
+                            showSettings -> showSettings = false
+                            playbackState.showSearchResults -> {
+                                playbackState.showSearchResults = false
+                                playbackState.errorMsg = null
+                            }
+                            playbackState.isSearchMode -> {
                                 playbackState.isSearchMode = false
                                 playbackState.showSearchResults = false
-                            } else {
-                                onDismiss()
                             }
+                            else -> onDismiss()
                         }
                     }
                 ),
@@ -508,7 +517,7 @@ private fun HeaderRow(
         ) {
             if (playbackState.isUsbExclusiveMode) {
                 Icon(
-                    imageVector = Icons.Default.Memory,
+                    imageVector = Icons.Default.Usb,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -516,6 +525,21 @@ private fun HeaderRow(
                 Spacer(modifier = Modifier.width(3.dp))
                 Text(
                     text = playbackState.usbDeviceName.take(12),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            } else if (playbackState.isBluetoothHeadsetConnected) {
+                Icon(
+                    imageVector = Icons.Default.Bluetooth,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(3.dp))
+                Text(
+                    text = playbackState.bluetoothHeadsetName.take(12),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 10.sp,
                     maxLines = 1,
@@ -1199,6 +1223,7 @@ private fun PlaylistOverlay(
         label = "playlist"
     ) { show ->
         if (show) {
+            BackHandler { onDismiss() }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1206,7 +1231,7 @@ private fun PlaylistOverlay(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = { /* 阻止穿透 */ }
+                        onClick = onDismiss
                     )
                     .padding(horizontal = 12.dp, vertical = 10.dp)
             ) {
@@ -1393,10 +1418,16 @@ private fun TimerOverlay(
         label = "timer"
     ) { show ->
         if (show) {
+            BackHandler { onCancel() }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = onCancel
+                    )
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
@@ -1517,6 +1548,10 @@ private fun SearchOverlay(
             }
         }
     ) {
+        BackHandler {
+            playbackState.isSearchMode = false
+            playbackState.showSearchResults = false
+        }
         Text(
             text = stringResource(R.string.music_panel_search_title),
             color = MaterialTheme.colorScheme.onSurface,
@@ -1689,6 +1724,7 @@ private fun SearchResultsOverlay(
         label = "search_results"
     ) { show ->
         if (show) {
+            BackHandler { onClose() }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1696,7 +1732,7 @@ private fun SearchResultsOverlay(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = { /* 阻止穿透 */ }
+                        onClick = onClose
                     )
                     .padding(horizontal = 12.dp, vertical = 10.dp)
             ) {
@@ -1973,6 +2009,7 @@ private fun SettingsOverlay(
         label = "settings"
     ) { show ->
         if (show) {
+            BackHandler { onDismiss() }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1980,7 +2017,7 @@ private fun SettingsOverlay(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClick = { /* 阻止点击穿透 */ }
+                        onClick = onDismiss
                     )
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,

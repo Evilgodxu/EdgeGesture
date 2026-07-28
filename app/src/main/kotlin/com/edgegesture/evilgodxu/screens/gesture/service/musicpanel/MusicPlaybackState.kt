@@ -325,6 +325,10 @@ class MusicPlaybackState {
     var usbExclusiveEnabled by mutableStateOf(true)   // 用户偏好：是否启用 USB 独占（默认开启）
     var usbDeviceName by mutableStateOf("")
 
+    // 蓝牙耳机相关状态
+    var isBluetoothHeadsetConnected by mutableStateOf(false)
+    var bluetoothHeadsetName by mutableStateOf("")
+
     // 收藏的歌曲 ID 集合（面板级内存状态）
     var likedIds by mutableStateOf<Set<Long>>(emptySet())
 

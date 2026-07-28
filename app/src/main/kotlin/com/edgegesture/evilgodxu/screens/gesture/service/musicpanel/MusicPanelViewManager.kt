@@ -83,6 +83,20 @@ class MusicPanelViewManager(
             }
         }
     )
+    // 蓝牙耳机监听器
+    private val bluetoothHeadsetMonitor = BluetoothHeadsetMonitor(
+        context = context,
+        onHeadsetConnected = { deviceName ->
+            playbackState.isBluetoothHeadsetConnected = true
+            playbackState.bluetoothHeadsetName = deviceName
+            // 连接蓝牙耳机时自动降低媒体音量到 35%
+            BluetoothHeadsetMonitor.reduceMediaVolume(context, 0.35f)
+        },
+        onHeadsetDisconnected = {
+            playbackState.isBluetoothHeadsetConnected = false
+            playbackState.bluetoothHeadsetName = ""
+        }
+    )
     private val externalTrackMutex = Mutex()
     private val scanMutex = Mutex()
     private var initialization: Deferred<Unit>? = null
@@ -161,6 +175,9 @@ class MusicPanelViewManager(
             }
         }
 
+        // 在 UI 渲染前同步检查已连接的蓝牙设备，确保首次显示时状态正确
+        bluetoothHeadsetMonitor.checkExistingSync()
+
         val view = ComposeView(context).apply {
             alpha = 0f
             scaleX = 0.8f
@@ -227,6 +244,7 @@ class MusicPanelViewManager(
             }
             registerMediaObserver()
             usbAudioMonitor.register()
+            bluetoothHeadsetMonitor.register()
         }
     }
 
@@ -458,6 +476,7 @@ class MusicPanelViewManager(
                     mediaObserverRegistered = false
                 }
                 usbAudioMonitor.unregister()
+                bluetoothHeadsetMonitor.unregister()
                 playbackState.updatePosition()
                 if (!playbackState.isPlaying) {
                     playbackState.release()
