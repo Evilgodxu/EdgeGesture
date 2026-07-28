@@ -67,7 +67,11 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.automirrored.outlined.PlaylistPlay
-import androidx.activity.compose.BackHandler
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -179,6 +183,29 @@ fun MusicPanelOverlay(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .onPreviewKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyUp && event.key == Key.Back) {
+                        when {
+                            showPlaylist -> { showPlaylist = false; true }
+                            showTimer -> { showTimer = false; true }
+                            showSettings -> { showSettings = false; true }
+                            playbackState.showSearchResults -> {
+                                playbackState.showSearchResults = false
+                                playbackState.errorMsg = null
+                                true
+                            }
+                            playbackState.isSearchMode -> {
+                                playbackState.isSearchMode = false
+                                playbackState.showSearchResults = false
+                                true
+                            }
+                            else -> {
+                                onDismiss()
+                                true
+                            }
+                        }
+                    } else false
+                }
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -1223,7 +1250,6 @@ private fun PlaylistOverlay(
         label = "playlist"
     ) { show ->
         if (show) {
-            BackHandler { onDismiss() }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1418,7 +1444,6 @@ private fun TimerOverlay(
         label = "timer"
     ) { show ->
         if (show) {
-            BackHandler { onCancel() }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -1548,10 +1573,6 @@ private fun SearchOverlay(
             }
         }
     ) {
-        BackHandler {
-            playbackState.isSearchMode = false
-            playbackState.showSearchResults = false
-        }
         Text(
             text = stringResource(R.string.music_panel_search_title),
             color = MaterialTheme.colorScheme.onSurface,
@@ -1724,7 +1745,6 @@ private fun SearchResultsOverlay(
         label = "search_results"
     ) { show ->
         if (show) {
-            BackHandler { onClose() }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -2009,7 +2029,6 @@ private fun SettingsOverlay(
         label = "settings"
     ) { show ->
         if (show) {
-            BackHandler { onDismiss() }
             Column(
                 modifier = Modifier
                     .fillMaxSize()
