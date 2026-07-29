@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
+import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.database.ContentObserver
 import android.net.Uri
@@ -64,6 +65,7 @@ class MusicPanelViewManager(
             playbackState.usbDeviceName = deviceName
             playbackState.isUsbDeviceConnected = true
             playbackState.usbError = null  // 连接成功时清除错误
+            refreshSignalPathState(playbackState)
             // 根据用户偏好自动启用 USB 独占
             if (playbackState.usbExclusiveEnabled) {
                 usbRouteJob?.cancel()
@@ -88,6 +90,7 @@ class MusicPanelViewManager(
             playbackState.isUsbExclusiveMode = false
             playbackState.usbDeviceName = ""
             playbackState.usbError = null  // 断开时清除错误
+            refreshSignalPathState(playbackState)
             // 移除首选设备设置，让音频回退到系统默认路由
             usbRouteJob?.cancel()
             usbRouteJob = managerScope.launch {
@@ -103,15 +106,19 @@ class MusicPanelViewManager(
     // 蓝牙耳机监听器
     private val bluetoothHeadsetMonitor = BluetoothHeadsetMonitor(
         context = context,
-        onHeadsetConnected = { deviceName ->
+        onHeadsetConnected = { deviceName, isNewConnection ->
             playbackState.isBluetoothHeadsetConnected = true
             playbackState.bluetoothHeadsetName = deviceName
-            // 连接蓝牙耳机时自动降低媒体音量到 35%
-            BluetoothHeadsetMonitor.reduceMediaVolume(context, 0.35f)
+            refreshSignalPathState(playbackState)
+            if (isNewConnection) {
+                // 连接蓝牙耳机时自动降低媒体音量到 25%
+                BluetoothHeadsetMonitor.reduceMediaVolume(context, 0.25f)
+            }
         },
         onHeadsetDisconnected = {
             playbackState.isBluetoothHeadsetConnected = false
             playbackState.bluetoothHeadsetName = ""
+            refreshSignalPathState(playbackState)
         }
     )
     private val externalTrackMutex = Mutex()
@@ -503,6 +510,35 @@ class MusicPanelViewManager(
                 managerJob.cancel()
             }
             .start()
+    }
+
+    /** 刷新音频信号路径面板的状态行 */
+    private fun refreshSignalPathState(state: MusicPlaybackState) {
+        state.audioSignalPathStrategy = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
+        state.audioSignalPathOutputDevice = resolveOutputDeviceName(state)
+        state.audioSignalPathRoute = if (state.isUsbDeviceConnected) "USB"
+            else if (state.isBluetoothHeadsetConnected) "蓝牙" else "系统"
+        state.audioSignalPathUsb = if (state.isUsbExclusiveMode) "Connected · Direct" else "Not active"
+        state.audioSignalPathVerification = if (state.isUsbExclusiveMode) "Verified" else "Fallback"
+        state.audioSignalPathResampler = if (state.isUsbExclusiveMode) "Inactive" else "Unknown"
+        state.audioSignalPathPassthrough = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
+    }
+
+    private fun resolveOutputDeviceName(state: MusicPlaybackState): String {
+        if (state.isUsbDeviceConnected && state.usbDeviceName.isNotBlank()) return state.usbDeviceName
+        if (state.isBluetoothHeadsetConnected && state.bluetoothHeadsetName.isNotBlank()) {
+            return state.bluetoothHeadsetName
+        }
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        return audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+            .firstOrNull { device ->
+                device.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER ||
+                    device.type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
+            }
+            ?.productName
+            ?.toString()
+            ?.takeIf { it.isNotBlank() }
+            ?: "扬声器"
     }
 
     companion object {

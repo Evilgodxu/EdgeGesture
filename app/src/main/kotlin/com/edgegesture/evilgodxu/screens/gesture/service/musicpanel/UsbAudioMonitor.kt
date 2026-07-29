@@ -79,9 +79,15 @@ class UsbAudioMonitor(
                 }
                 "android.media.action.USB_AUDIO_ACCESSORY_PLUG",
                 "android.media.action.USB_AUDIO_DEVICE_PLUG" -> {
-                    // 系统音频路由广播，不涉及 USB 权限问题
                     when (intent.getIntExtra("state", 0)) {
-                        1 -> handleDeviceAttached()
+                        1 -> {
+                            // USB_AUDIO_DEVICE_PLUG 是音频路由切换广播，
+                            // 如果此时正在等待 USB 权限弹窗结果，则跳过避免重复触发，
+                            // 授权结果接收器会在权限授予后自行调用 handleDeviceAttached
+                            if (pendingPermissionDevice == null) {
+                                handleDeviceAttached()
+                            }
+                        }
                         0 -> handleDeviceDetached()
                     }
                 }

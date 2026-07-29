@@ -17,12 +17,13 @@ import kotlinx.coroutines.withContext
 // 蓝牙耳机监听器，检测蓝牙耳机连接并自动降低媒体音量
 class BluetoothHeadsetMonitor(
     private val context: Context,
-    private val onHeadsetConnected: (deviceName: String) -> Unit,
+    private val onHeadsetConnected: (deviceName: String, isNewConnection: Boolean) -> Unit,
     private val onHeadsetDisconnected: () -> Unit,
 ) {
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var registered = false
+    private var isHeadsetConnected = false
 
     private val audioDeviceCallback = object : AudioDeviceCallback() {
         override fun onAudioDevicesAdded(addedDevices: Array<AudioDeviceInfo>) {
@@ -88,10 +89,17 @@ class BluetoothHeadsetMonitor(
         val deviceName = device.productName?.toString()
             ?.takeIf { it.isNotBlank() }
             ?: context.getString(R.string.bluetooth_headset_default_name)
-        onHeadsetConnected(deviceName)
+        if (isHeadsetConnected) {
+            onHeadsetConnected(deviceName, false)
+            return
+        }
+        isHeadsetConnected = true
+        onHeadsetConnected(deviceName, true)
     }
 
     private fun handleDisconnected() {
+        if (!isHeadsetConnected) return
+        isHeadsetConnected = false
         onHeadsetDisconnected()
     }
 

@@ -338,6 +338,7 @@ class MusicPlaybackState {
     var audioSignalPathStrategy by mutableStateOf("Mixer")
     var audioSignalPathEngine by mutableStateOf("Media3 / ExoPlayer")
     var audioSignalPathVolume by mutableStateOf("System")
+    var audioSignalPathOutputDevice by mutableStateOf("-")
     var audioSignalPathRoute by mutableStateOf("-")
     var audioSignalPathResampler by mutableStateOf("-")
     var audioSignalPathPassthrough by mutableStateOf("-")

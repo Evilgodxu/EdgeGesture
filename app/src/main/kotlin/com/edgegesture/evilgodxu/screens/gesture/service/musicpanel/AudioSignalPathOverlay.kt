@@ -95,7 +95,7 @@ private fun AudioSignalPathRows(playbackState: MusicPlaybackState) {
         "声道" to (format?.channels?.let(::formatChannels) ?: "-"),
         "播放引擎" to playbackState.audioSignalPathEngine.replace("Media3 / ExoPlayer", "Media3 / ExoPlayer"),
         "输出策略" to playbackState.audioSignalPathStrategy.toChineseAudioPathValue(),
-        "输出设备" to playbackState.usbDeviceName.ifBlank { "-" },
+        "输出设备" to playbackState.audioSignalPathOutputDevice,
         "音量控制" to playbackState.audioSignalPathVolume.toChineseAudioPathValue(),
         "音频路由" to playbackState.audioSignalPathRoute.toChineseAudioPathValue(),
         "重采样" to playbackState.audioSignalPathResampler.toChineseAudioPathValue(),

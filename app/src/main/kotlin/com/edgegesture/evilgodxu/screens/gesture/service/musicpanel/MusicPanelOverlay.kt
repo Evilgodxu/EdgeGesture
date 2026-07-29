@@ -3,11 +3,9 @@ package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -111,8 +109,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import android.content.ClipboardManager
 import android.content.ClipData
 import android.widget.Toast
@@ -135,7 +133,6 @@ import com.edgegesture.evilgodxu.screens.settings.settingsFlow
 import com.edgegesture.evilgodxu.ui.theme.AppSwitch
 import com.edgegesture.evilgodxu.ui.theme.DarkColorScheme
 import com.edgegesture.evilgodxu.ui.theme.LightColorScheme
-import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -519,34 +516,8 @@ private fun HeaderRow(
     val currentTrackId = playbackState.currentTrack?.id
     val isLiked = currentTrackId?.let { id -> playbackState.likedIds.contains(id) } ?: false
 
-    val audioFormat = playbackState.audioSignalPathFormat
-    val formatSummary = buildString {
-        append(audioFormat?.format?.substringAfterLast('/')?.uppercase() ?: "音频")
-        audioFormat?.let {
-            append(" · ")
-            append(formatSignalRate(it.sampleRate))
-            append(" · ")
-            append("${it.bitDepth} 位")
-            append(" · ")
-            append(formatSignalChannels(it.channels))
-        }
-        when {
-            playbackState.isUsbExclusiveMode -> {
-                append(" · USB")
-                if (playbackState.usbDeviceName.isNotBlank()) {
-                    append(" · ")
-                    append(playbackState.usbDeviceName.take(10))
-                }
-            }
-            playbackState.isBluetoothHeadsetConnected -> {
-                append(" · 蓝牙")
-                if (playbackState.bluetoothHeadsetName.isNotBlank()) {
-                    append(" · ")
-                    append(playbackState.bluetoothHeadsetName.take(10))
-                }
-            }
-        }
-    }
+    val hasUsbDevice = playbackState.isUsbDeviceConnected && playbackState.usbDeviceName.isNotBlank()
+    val hasBluetoothDevice = playbackState.isBluetoothHeadsetConnected && playbackState.bluetoothHeadsetName.isNotBlank()
 
     Box(
         modifier = modifier.fillMaxWidth(),
@@ -574,45 +545,46 @@ private fun HeaderRow(
             }
         }
 
-        Box(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .alpha(0.72f)
-                .graphicsLayer { clip = true }
-                .widthIn(max = 220.dp),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            var textWidthPx by remember { mutableFloatStateOf(0f) }
-            var containerWidthPx by remember { mutableFloatStateOf(0f) }
-            val scrollAnim = remember { Animatable(0f) }
-
-            Text(
-                text = formatSummary,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 10.sp,
-                maxLines = 1,
-                softWrap = false,
-                onTextLayout = { textWidthPx = it.size.width.toFloat() },
+        if (hasUsbDevice || hasBluetoothDevice) {
+            Row(
                 modifier = Modifier
-                    .onSizeChanged { containerWidthPx = it.width.toFloat() }
-                    .offset { IntOffset((-scrollAnim.value).roundToInt(), 0) }
-            )
-
-            LaunchedEffect(textWidthPx, containerWidthPx) {
-                val maxScroll = (textWidthPx - containerWidthPx).coerceAtLeast(0f)
-                if (maxScroll > 0f) {
-                    val durationMs = (maxScroll / 0.4f).toInt().coerceIn(2000, 8000)
-                    scrollAnim.snapTo(0f)
-                    while (isActive) {
-                        scrollAnim.animateTo(
-                            targetValue = maxScroll,
-                            animationSpec = tween(durationMs, easing = LinearEasing)
-                        )
-                        scrollAnim.animateTo(
-                            targetValue = 0f,
-                            animationSpec = tween(durationMs, easing = LinearEasing)
-                        )
-                    }
+                    .align(Alignment.Center)
+                    .alpha(0.72f)
+                    .widthIn(max = 220.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (hasBluetoothDevice) {
+                    Icon(
+                        imageVector = Icons.Default.Bluetooth,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(15.dp),
+                    )
+                    Text(
+                        text = playbackState.bluetoothHeadsetName,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 10.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 90.dp),
+                    )
+                }
+                if (hasUsbDevice) {
+                    Icon(
+                        imageVector = Icons.Default.Usb,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(15.dp),
+                    )
+                    Text(
+                        text = playbackState.usbDeviceName,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 10.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 90.dp),
+                    )
                 }
             }
         }

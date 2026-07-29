@@ -46,28 +46,31 @@ class MusicPlaybackService : MediaSessionService() {
         player.addListener(object : Player.Listener {
             override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
                 val format = tracks.groups.firstOrNull { it.isSelected }?.getTrackFormat(0)
+                val state = MusicPanelStateHolder.state
+                // 无论 format 是否为空，每次轨道切换都更新信号路径状态
+                val fileFormat = format?.let { f ->
+                    val track = state.currentTrack
+                    track?.path
+                        ?.substringAfterLast('.', "")
+                        ?.takeIf { it.isNotBlank() }
+                        ?.uppercase()
+                        ?.let { if (it == "MPEG") "MP3" else it }
+                        ?: when (f.sampleMimeType) {
+                            "audio/mpeg" -> "MP3"
+                            "audio/flac" -> "FLAC"
+                            "audio/wav", "audio/x-wav" -> "WAV"
+                            "audio/ogg" -> "OGG"
+                            "audio/mp4", "audio/aac" -> "AAC"
+                            else -> f.sampleMimeType?.substringAfterLast('/')?.uppercase()
+                        }
+                }
                 if (format != null) {
                     val sampleRate = format.sampleRate.takeIf { it > 0 } ?: 48000
                     val channels = format.channelCount.takeIf { it > 0 } ?: 2
                     val encoding = if (format.pcmEncoding > 0) format.pcmEncoding else android.media.AudioFormat.ENCODING_PCM_16BIT
                     UsbAudioMonitor.updatePlaybackFormat(sampleRate, channels, encoding)
-                    val state = MusicPanelStateHolder.state
-                    val track = state.currentTrack
-                    val fileFormat = track?.path
-                        ?.substringAfterLast('.', "")
-                        ?.takeIf { it.isNotBlank() }
-                        ?.uppercase()
-                        ?.let { if (it == "MPEG") "MP3" else it }
-                    val mimeFormat = when (format.sampleMimeType) {
-                        "audio/mpeg" -> "MP3"
-                        "audio/flac" -> "FLAC"
-                        "audio/wav", "audio/x-wav" -> "WAV"
-                        "audio/ogg" -> "OGG"
-                        "audio/mp4", "audio/aac" -> "AAC"
-                        else -> format.sampleMimeType?.substringAfterLast('/')?.uppercase()
-                    }
                     state.audioSignalPathFormat = AudioSignalPathFormat(
-                        format = fileFormat ?: mimeFormat ?: "PCM",
+                        format = fileFormat ?: "PCM",
                         sampleRate = sampleRate,
                         outputRate = sampleRate,
                         bitDepth = when (encoding) {
@@ -78,12 +81,9 @@ class MusicPlaybackService : MediaSessionService() {
                         },
                         channels = channels,
                     )
-                    state.audioSignalPathStrategy = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
-                    state.audioSignalPathRoute = if (state.isUsbDeviceConnected) "USB" else "System"
-                    state.audioSignalPathUsb = if (state.isUsbExclusiveMode) "Connected · Direct" else "Not active"
-                    state.audioSignalPathVerification = if (state.isUsbExclusiveMode) "Verified" else "Fallback"
-                    state.audioSignalPathResampler = if (state.isUsbExclusiveMode) "Inactive" else "Unknown"
                 }
+                // 每次轨道切换都刷新状态，确保信号路径始终有值
+                updateSignalPathState(state)
             }
 
             override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
@@ -192,5 +192,33 @@ class MusicPlaybackService : MediaSessionService() {
         UsbAudioMonitor.audioSinkDeviceSetter = null
         player.release()
         super.onDestroy()
+    }
+
+    private fun resolveOutputDeviceName(state: MusicPlaybackState): String {
+        if (state.isUsbDeviceConnected && state.usbDeviceName.isNotBlank()) return state.usbDeviceName
+        if (state.isBluetoothHeadsetConnected && state.bluetoothHeadsetName.isNotBlank()) {
+            return state.bluetoothHeadsetName
+        }
+        val audioManager = getSystemService(AUDIO_SERVICE) as android.media.AudioManager
+        return audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS)
+            .firstOrNull { device ->
+                device.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_SPEAKER ||
+                    device.type == android.media.AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
+            }
+            ?.productName
+            ?.toString()
+            ?.takeIf { it.isNotBlank() }
+            ?: "扬声器"
+    }
+
+    /** 刷新音频信号路径面板的状态行（重采样、直通、路由、输出设备等） */
+    private fun updateSignalPathState(state: MusicPlaybackState) {
+        state.audioSignalPathStrategy = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
+        state.audioSignalPathOutputDevice = resolveOutputDeviceName(state)
+        state.audioSignalPathRoute = if (state.isUsbDeviceConnected) "USB" else if (state.isBluetoothHeadsetConnected) "蓝牙" else "系统"
+        state.audioSignalPathUsb = if (state.isUsbExclusiveMode) "Connected · Direct" else "Not active"
+        state.audioSignalPathVerification = if (state.isUsbExclusiveMode) "Verified" else "Fallback"
+        state.audioSignalPathResampler = if (state.isUsbExclusiveMode) "Inactive" else "Unknown"
+        state.audioSignalPathPassthrough = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
     }
 }
