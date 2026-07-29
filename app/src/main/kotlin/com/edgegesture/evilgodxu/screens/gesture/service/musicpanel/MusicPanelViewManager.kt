@@ -63,6 +63,7 @@ class MusicPanelViewManager(
         onUsbDeviceAttached = { deviceName ->
             playbackState.usbDeviceName = deviceName
             playbackState.isUsbDeviceConnected = true
+            playbackState.usbError = null  // 连接成功时清除错误
             // 根据用户偏好自动启用 USB 独占
             if (playbackState.usbExclusiveEnabled) {
                 usbRouteJob?.cancel()
@@ -86,12 +87,18 @@ class MusicPanelViewManager(
             playbackState.isUsbDeviceConnected = false
             playbackState.isUsbExclusiveMode = false
             playbackState.usbDeviceName = ""
+            playbackState.usbError = null  // 断开时清除错误
             // 移除首选设备设置，让音频回退到系统默认路由
             usbRouteJob?.cancel()
             usbRouteJob = managerScope.launch {
                 UsbAudioMonitor.setUsbExclusive(context, false)
             }
-        }
+        },
+        onError = { message ->
+            playbackState.usbError = message
+        },
+        // 请求权限前先关闭面板（面板悬浮窗优先级高于系统弹窗）
+        onBeforeRequestPermission = { dismiss() }
     )
     // 蓝牙耳机监听器
     private val bluetoothHeadsetMonitor = BluetoothHeadsetMonitor(

@@ -333,6 +333,7 @@ class MusicPlaybackState {
     var isUsbExclusiveMode by mutableStateOf(false)
     var usbExclusiveEnabled by mutableStateOf(true)   // 用户偏好：是否启用 USB 独占（默认开启）
     var usbDeviceName by mutableStateOf("")
+    var usbError by mutableStateOf<String?>(null)     // USB 错误信息（显示在面板底部）
     var audioSignalPathFormat by mutableStateOf<AudioSignalPathFormat?>(null)
     var audioSignalPathStrategy by mutableStateOf("Mixer")
     var audioSignalPathEngine by mutableStateOf("Media3 / ExoPlayer")

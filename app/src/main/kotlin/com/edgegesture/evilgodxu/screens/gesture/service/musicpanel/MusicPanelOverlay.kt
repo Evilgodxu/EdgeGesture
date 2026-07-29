@@ -113,6 +113,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import android.content.ClipboardManager
+import android.content.ClipData
+import android.widget.Toast
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -923,10 +926,19 @@ private fun TrackInfo(
     playbackState: MusicPlaybackState,
     onClick: () -> Unit = {},
 ) {
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = {
+                    val track = playbackState.currentTrack
+                    if (track != null) {
+                        copyToClipboard(context, "${track.title} - ${track.artist}")
+                    }
+                }
+            )
             .padding(top = 4.dp, bottom = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -941,14 +953,26 @@ private fun TrackInfo(
             fontSize = 14.sp,
             fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
             maxLines = 1,
-            modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE)
+            modifier = Modifier
+                .basicMarquee(iterations = Int.MAX_VALUE)
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = { copyToClipboard(context, title) }
+                )
         )
         Text(
             text = playbackState.currentTrack?.artist ?: "",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 11.sp,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.combinedClickable(
+                onClick = {},
+                onLongClick = {
+                    val artist = playbackState.currentTrack?.artist
+                    if (!artist.isNullOrBlank()) copyToClipboard(context, artist)
+                }
+            )
         )
     }
 }
@@ -990,6 +1014,7 @@ private fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
 
 @Composable
 private fun TrackInfo(playbackState: MusicPlaybackState) {
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1007,14 +1032,26 @@ private fun TrackInfo(playbackState: MusicPlaybackState) {
             fontSize = 14.sp,
             fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
             maxLines = 1,
-            modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE)
+            modifier = Modifier
+                .basicMarquee(iterations = Int.MAX_VALUE)
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = { copyToClipboard(context, title) }
+                )
         )
         Text(
             text = playbackState.currentTrack?.artist ?: "",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 11.sp,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.combinedClickable(
+                onClick = {},
+                onLongClick = {
+                    val artist = playbackState.currentTrack?.artist
+                    if (!artist.isNullOrBlank()) copyToClipboard(context, artist)
+                }
+            )
         )
     }
 }
@@ -2147,6 +2184,25 @@ private fun SettingsOverlay(
                         selectedEffectName = selectedEffect?.let { stringResource(it.displayNameResId) },
                         onClick = { onShowSoundEffectsChange(true) }
                     )
+
+                    // USB 错误信息（显示在面板底部）
+                    playbackState.usbError?.let { error ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val errorContext = LocalContext.current
+                        Text(
+                            text = error,
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 10.sp,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable(
+                                    onClick = {},
+                                    onLongClick = { copyToClipboard(errorContext, error) }
+                                )
+                        )
+                    }
                 }
             }
         } else {
@@ -2590,4 +2646,16 @@ private fun updateTrackAudioUri(
         playbackState.currentTrack = updated
     }
     playbackState.persistPlaylist()
+}
+
+/** 复制文本到系统剪贴板并显示提示 */
+private fun copyToClipboard(context: android.content.Context, text: String) {
+    try {
+        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+            as android.content.ClipboardManager
+        val clip = android.content.ClipData.newPlainText("label", text)
+        clipboard.setPrimaryClip(clip)
+        android.widget.Toast.makeText(context, "已复制: $text", android.widget.Toast.LENGTH_SHORT).show()
+    } catch (_: Exception) {
+    }
 }
