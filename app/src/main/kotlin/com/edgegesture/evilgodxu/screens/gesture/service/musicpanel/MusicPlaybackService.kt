@@ -5,7 +5,11 @@ import android.view.KeyEvent
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.Player
+import androidx.media3.common.Format
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import kotlinx.coroutines.launch
@@ -17,7 +21,16 @@ class MusicPlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        player = ExoPlayer.Builder(this)
+        val usbAudioSink = DefaultAudioSink.Builder(this).build()
+        val renderersFactory = object : DefaultRenderersFactory(this) {
+            override fun buildAudioSink(
+                context: android.content.Context,
+                enableFloatOutput: Boolean,
+                enableAudioOutputPlaybackParameters: Boolean,
+            ): AudioSink = usbAudioSink
+        }
+        UsbAudioMonitor.audioSinkDeviceSetter = usbAudioSink::setPreferredDevice
+        player = ExoPlayer.Builder(this, renderersFactory)
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(C.USAGE_MEDIA)
@@ -31,6 +44,48 @@ class MusicPlaybackService : MediaSessionService() {
         // 但 ExoPlayer 在创建时 audioSessionId 为 0，直到开始播放后才分配真实 ID。
         // 通过 onAudioSessionIdChanged 监听会话就绪，同步给音效管理器。
         player.addListener(object : Player.Listener {
+            override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
+                val format = tracks.groups.firstOrNull { it.isSelected }?.getTrackFormat(0)
+                if (format != null) {
+                    val sampleRate = format.sampleRate.takeIf { it > 0 } ?: 48000
+                    val channels = format.channelCount.takeIf { it > 0 } ?: 2
+                    val encoding = if (format.pcmEncoding > 0) format.pcmEncoding else android.media.AudioFormat.ENCODING_PCM_16BIT
+                    UsbAudioMonitor.updatePlaybackFormat(sampleRate, channels, encoding)
+                    val state = MusicPanelStateHolder.state
+                    val track = state.currentTrack
+                    val fileFormat = track?.path
+                        ?.substringAfterLast('.', "")
+                        ?.takeIf { it.isNotBlank() }
+                        ?.uppercase()
+                        ?.let { if (it == "MPEG") "MP3" else it }
+                    val mimeFormat = when (format.sampleMimeType) {
+                        "audio/mpeg" -> "MP3"
+                        "audio/flac" -> "FLAC"
+                        "audio/wav", "audio/x-wav" -> "WAV"
+                        "audio/ogg" -> "OGG"
+                        "audio/mp4", "audio/aac" -> "AAC"
+                        else -> format.sampleMimeType?.substringAfterLast('/')?.uppercase()
+                    }
+                    state.audioSignalPathFormat = AudioSignalPathFormat(
+                        format = fileFormat ?: mimeFormat ?: "PCM",
+                        sampleRate = sampleRate,
+                        outputRate = sampleRate,
+                        bitDepth = when (encoding) {
+                            android.media.AudioFormat.ENCODING_PCM_8BIT -> 8
+                            android.media.AudioFormat.ENCODING_PCM_24BIT_PACKED -> 24
+                            android.media.AudioFormat.ENCODING_PCM_FLOAT -> 32
+                            else -> 16
+                        },
+                        channels = channels,
+                    )
+                    state.audioSignalPathStrategy = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
+                    state.audioSignalPathRoute = if (state.isUsbDeviceConnected) "USB" else "System"
+                    state.audioSignalPathUsb = if (state.isUsbExclusiveMode) "Connected · Direct" else "Not active"
+                    state.audioSignalPathVerification = if (state.isUsbExclusiveMode) "Verified" else "Fallback"
+                    state.audioSignalPathResampler = if (state.isUsbExclusiveMode) "Inactive" else "Unknown"
+                }
+            }
+
             override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
                 if (mediaItem != null) {
                     player.playWhenReady = true
@@ -134,6 +189,7 @@ class MusicPlaybackService : MediaSessionService() {
     override fun onDestroy() {
         mediaSession?.release()
         mediaSession = null
+        UsbAudioMonitor.audioSinkDeviceSetter = null
         player.release()
         super.onDestroy()
     }

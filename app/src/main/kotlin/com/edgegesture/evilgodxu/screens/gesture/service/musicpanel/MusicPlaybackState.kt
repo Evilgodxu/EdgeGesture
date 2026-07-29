@@ -30,6 +30,14 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.withLock
 
+data class AudioSignalPathFormat(
+    val format: String,
+    val sampleRate: Int,
+    val outputRate: Int,
+    val bitDepth: Int,
+    val channels: Int,
+)
+
 // 音乐播放器状态持有者（悬浮窗级共享状态）
 class MusicPlaybackState {
 
@@ -325,6 +333,16 @@ class MusicPlaybackState {
     var isUsbExclusiveMode by mutableStateOf(false)
     var usbExclusiveEnabled by mutableStateOf(true)   // 用户偏好：是否启用 USB 独占（默认开启）
     var usbDeviceName by mutableStateOf("")
+    var audioSignalPathFormat by mutableStateOf<AudioSignalPathFormat?>(null)
+    var audioSignalPathStrategy by mutableStateOf("Mixer")
+    var audioSignalPathEngine by mutableStateOf("Media3 / ExoPlayer")
+    var audioSignalPathVolume by mutableStateOf("System")
+    var audioSignalPathRoute by mutableStateOf("-")
+    var audioSignalPathResampler by mutableStateOf("-")
+    var audioSignalPathPassthrough by mutableStateOf("-")
+    var audioSignalPathUsb by mutableStateOf("-")
+    var audioSignalPathVerification by mutableStateOf("-")
+    var audioSignalPathDsdMode by mutableStateOf("PCM")
 
     // 蓝牙耳机相关状态
     var isBluetoothHeadsetConnected by mutableStateOf(false)

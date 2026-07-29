@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Handler
@@ -54,6 +55,7 @@ class MusicPanelViewManager(
 
     private val playbackState = MusicPanelStateHolder.state
     private var pendingExternalUri: android.net.Uri? = null
+    private var usbRouteJob: Job? = null
 
     // USB 音频独占监听器
     private val usbAudioMonitor = UsbAudioMonitor(
@@ -63,11 +65,18 @@ class MusicPanelViewManager(
             playbackState.isUsbDeviceConnected = true
             // 根据用户偏好自动启用 USB 独占
             if (playbackState.usbExclusiveEnabled) {
-                managerScope.launch {
-                    val success = UsbAudioMonitor.setPreferredUsbDevice(context, true)
-                    if (success) {
+                usbRouteJob?.cancel()
+                usbRouteJob = managerScope.launch {
+                    val success = UsbAudioMonitor.setUsbExclusive(context, true)
+                    if (success && playbackState.isUsbDeviceConnected &&
+                        playbackState.usbDeviceName == deviceName) {
                         withContext(Dispatchers.Main) {
                             playbackState.isUsbExclusiveMode = true
+                        }
+                    } else {
+                        UsbAudioMonitor.setUsbExclusive(context, false)
+                        withContext(Dispatchers.Main) {
+                            playbackState.isUsbExclusiveMode = false
                         }
                     }
                 }
@@ -78,8 +87,9 @@ class MusicPanelViewManager(
             playbackState.isUsbExclusiveMode = false
             playbackState.usbDeviceName = ""
             // 移除首选设备设置，让音频回退到系统默认路由
-            managerScope.launch {
-                UsbAudioMonitor.setPreferredUsbDevice(context, false)
+            usbRouteJob?.cancel()
+            usbRouteJob = managerScope.launch {
+                UsbAudioMonitor.setUsbExclusive(context, false)
             }
         }
     )
@@ -475,6 +485,8 @@ class MusicPanelViewManager(
                     mediaObserverRegistered = false
                 }
                 usbAudioMonitor.unregister()
+                usbRouteJob?.cancel()
+                usbRouteJob = null
                 bluetoothHeadsetMonitor.unregister()
                 playbackState.updatePosition()
                 if (!playbackState.isPlaying) {

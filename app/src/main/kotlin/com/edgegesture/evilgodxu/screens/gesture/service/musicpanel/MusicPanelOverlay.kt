@@ -21,6 +21,7 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -64,8 +65,8 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Check
@@ -183,6 +184,7 @@ fun MusicPanelOverlay(
     var showSoundEffects by remember { mutableStateOf(false) }
     val currentTrackId = playbackState.currentTrack?.id
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showAudioSignalPath by remember { mutableStateOf(false) }
     var deleteTargetTrack by remember { mutableStateOf<MusicTrack?>(null) }
 
     MaterialTheme(colorScheme = colorScheme) {
@@ -203,6 +205,7 @@ fun MusicPanelOverlay(
                             showPlaylist -> showPlaylist = false
                             showTimer -> showTimer = false
                             showSoundEffects -> showSoundEffects = false
+                            showAudioSignalPath -> showAudioSignalPath = false
                             showSettings -> showSettings = false
                             playbackState.showSearchResults -> {
                                 playbackState.showSearchResults = false
@@ -283,15 +286,25 @@ fun MusicPanelOverlay(
                                         transformOrigin = TransformOrigin(0.5f, 0f)
                                     )
                                     .padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 4.dp)
-                                    .pointerInput(Unit) {
-                                        detectHorizontalDragGestures(
-                                            onDragEnd = { },
-                                            onHorizontalDrag = { _, dragAmount ->
-                                                if (dragAmount > 50 && !showPlaylist && !showTimer && !showSettings) {
-                                                    playbackState.isSearchMode = true
-                                                }
-                                                if (dragAmount < -50 && !showPlaylist && !showTimer && !showSettings) {
-                                                    showSettings = true
+                                    .pointerInput(showAudioSignalPath, showPlaylist, showTimer, showSettings) {
+                                        var totalDx = 0f
+                                        var totalDy = 0f
+                                        detectDragGestures(
+                                            onDragStart = { totalDx = 0f; totalDy = 0f },
+                                            onDrag = { change, dragAmount ->
+                                                change.consume()
+                                                totalDx += dragAmount.x
+                                                totalDy += dragAmount.y
+                                            },
+                                            onDragEnd = {
+                                                if (!showPlaylist && !showTimer && !showSettings) {
+                                                    when {
+                                                        totalDy < -80f && kotlin.math.abs(totalDy) > kotlin.math.abs(totalDx) -> showAudioSignalPath = true
+                                                        totalDx > 50f && kotlin.math.abs(totalDx) > kotlin.math.abs(totalDy) -> playbackState.isSearchMode = true
+                                                        totalDx < -50f && kotlin.math.abs(totalDx) > kotlin.math.abs(totalDy) -> showSettings = true
+                                                    }
+                                                } else if (showAudioSignalPath && totalDy > 80f) {
+                                                    showAudioSignalPath = false
                                                 }
                                             }
                                         )
@@ -476,6 +489,14 @@ fun MusicPanelOverlay(
                         onShowSoundEffectsChange = { showSoundEffects = it },
                         onDismiss = { showSettings = false }
                     )
+
+                    if (showAudioSignalPath) {
+                        AudioSignalPathOverlay(
+                            visible = showAudioSignalPath,
+                            playbackState = playbackState,
+                            onDismiss = { showAudioSignalPath = false },
+                        )
+                    }
                 }
             }
         }
@@ -499,6 +520,35 @@ private fun HeaderRow(
             val usedBytes = runtime.totalMemory() - runtime.freeMemory()
             memoryUsageMb = usedBytes / (1024f * 1024f)
             delay(2000)
+        }
+    }
+
+    val audioFormat = playbackState.audioSignalPathFormat
+    val formatSummary = buildString {
+        append(audioFormat?.format?.substringAfterLast('/')?.uppercase() ?: "音频")
+        audioFormat?.let {
+            append(" · ")
+            append(formatSignalRate(it.sampleRate))
+            append(" · ")
+            append("${it.bitDepth} 位")
+            append(" · ")
+            append(formatSignalChannels(it.channels))
+        }
+        when {
+            playbackState.isUsbExclusiveMode -> {
+                append(" · USB")
+                if (playbackState.usbDeviceName.isNotBlank()) {
+                    append(" · ")
+                    append(playbackState.usbDeviceName.take(10))
+                }
+            }
+            playbackState.isBluetoothHeadsetConnected -> {
+                append(" · 蓝牙")
+                if (playbackState.bluetoothHeadsetName.isNotBlank()) {
+                    append(" · ")
+                    append(playbackState.bluetoothHeadsetName.take(10))
+                }
+            }
         }
     }
 
@@ -532,52 +582,25 @@ private fun HeaderRow(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .align(Alignment.Center)
-                .alpha(0.6f)
+                .alpha(0.72f),
         ) {
-            if (playbackState.isUsbExclusiveMode) {
-                Icon(
-                    imageVector = Icons.Default.Usb,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.width(3.dp))
-                Text(
-                    text = playbackState.usbDeviceName.take(12),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 10.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            } else if (playbackState.isBluetoothHeadsetConnected) {
-                Icon(
-                    imageVector = Icons.Default.Bluetooth,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.width(3.dp))
-                Text(
-                    text = playbackState.bluetoothHeadsetName.take(12),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 10.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Default.Memory,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.width(3.dp))
-                Text(
-                    text = "${memoryUsageMb.toInt()} MB",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 10.sp,
-                )
-            }
+            Icon(
+                imageVector = Icons.Default.Memory,
+                contentDescription = "内存占用",
+                modifier = Modifier.size(14.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.width(3.dp))
+            Text(
+                text = "${memoryUsageMb.toInt()} MB · $formatSummary",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 10.sp,
+                maxLines = 1,
+                softWrap = false,
+                modifier = Modifier
+                    .widthIn(max = 220.dp)
+                    .basicMarquee(iterations = Int.MAX_VALUE),
+            )
         }
 
         HeaderIconButton(
@@ -1538,6 +1561,18 @@ private fun TimerAdjustButton(text: String, onClick: () -> Unit) {
     }
 }
 
+private fun formatSignalRate(rate: Int): String = if (rate >= 1000) {
+    "${rate / 1000.0} kHz"
+} else {
+    "$rate Hz"
+}
+
+private fun formatSignalChannels(channels: Int): String = when (channels) {
+    1 -> "单声道"
+    2 -> "立体声"
+    else -> "$channels 声道"
+}
+
 private fun formatTime(ms: Long): String {
     val totalSeconds = ms / 1000
     val minutes = totalSeconds / 60
@@ -2088,14 +2123,10 @@ private fun SettingsOverlay(
                             if (playbackState.isUsbDeviceConnected) {
                                 settingsScope.launch {
                                     if (enabled) {
-                                        val success = UsbAudioMonitor.setPreferredUsbDevice(
-                                            context, true
-                                        )
-                                        if (success) playbackState.isUsbExclusiveMode = true
+                                        playbackState.isUsbExclusiveMode =
+                                            UsbAudioMonitor.setUsbExclusive(context, true)
                                     } else {
-                                        UsbAudioMonitor.setPreferredUsbDevice(
-                                            context, false
-                                        )
+                                        UsbAudioMonitor.setUsbExclusive(context, false)
                                         playbackState.isUsbExclusiveMode = false
                                     }
                                 }
