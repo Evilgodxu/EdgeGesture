@@ -760,11 +760,6 @@ private fun LyricsPanel(
                         )
                         val scale = 0.98f + 0.16f * emphasis
                         val nextTimeMs = lines.getOrNull(index + 1)?.timeMs ?: line.timeMs + 3000L
-                        val liftProgress = if (isCurrent) {
-                            ((lyricPosition - line.timeMs).toFloat() /
-                                (nextTimeMs - line.timeMs).coerceAtLeast(1L)).coerceIn(0f, 1f)
-                        } else 0f
-                        val lift = -2.dp * (1f - (1f - liftProgress) * (1f - liftProgress) * (1f - liftProgress))
                         LyricText(
                             line = line,
                             nextTimeMs = nextTimeMs,
@@ -779,7 +774,6 @@ private fun LyricsPanel(
                                 .graphicsLayer {
                                     scaleX = scale
                                     scaleY = scale
-                                    translationY = lift.toPx()
                                 }
                                 .padding(horizontal = 6.dp, vertical = 2.dp)
                         )
