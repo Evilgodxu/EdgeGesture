@@ -121,12 +121,6 @@
     <!-- 音效名称 -->
     <string name="sound_effect_bass_boost">超重低音</string>
     <string name="sound_effect_bass_boost_desc">增强低频表现，感受澎湃低音</string>
-    <string name="sound_effect_3d_audio">3D丽音</string>
-    <string name="sound_effect_3d_audio_desc">提升声音清晰度与空间立体感</string>
-    <string name="sound_effect_spatial_audio">空间音效</string>
-    <string name="sound_effect_spatial_audio_desc">营造宽阔的声场空间感</string>
-    <string name="sound_effect_3d_surround">3D环绕</string>
-    <string name="sound_effect_3d_surround_desc">环绕声场，身临其境</string>
     <string name="sound_effect_pure_voice">纯净人声</string>
     <string name="sound_effect_pure_voice_desc">突出人声细节，适合听歌与播客</string>
 

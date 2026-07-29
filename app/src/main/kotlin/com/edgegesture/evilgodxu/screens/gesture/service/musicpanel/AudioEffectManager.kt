@@ -2,10 +2,7 @@ package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
 import android.content.Context
 import android.media.audiofx.BassBoost
-import android.media.audiofx.EnvironmentalReverb
 import android.media.audiofx.Equalizer
-import android.media.audiofx.PresetReverb
-import android.media.audiofx.Virtualizer
 import com.edgegesture.evilgodxu.R
 
 /**
@@ -13,9 +10,6 @@ import com.edgegesture.evilgodxu.R
  */
 enum class SoundEffect(val displayNameResId: Int, val descriptionResId: Int) {
     BASS_BOOST(R.string.sound_effect_bass_boost, R.string.sound_effect_bass_boost_desc),
-    THREE_D_AUDIO(R.string.sound_effect_3d_audio, R.string.sound_effect_3d_audio_desc),
-    SPATIAL_AUDIO(R.string.sound_effect_spatial_audio, R.string.sound_effect_spatial_audio_desc),
-    THREE_D_SURROUND(R.string.sound_effect_3d_surround, R.string.sound_effect_3d_surround_desc),
     PURE_VOICE(R.string.sound_effect_pure_voice, R.string.sound_effect_pure_voice_desc),
 }
 
@@ -32,9 +26,6 @@ class AudioEffectManager(private val appContext: Context) {
     private val prefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private var bassBoost: BassBoost? = null
-    private var virtualizer: Virtualizer? = null
-    private var presetReverb: PresetReverb? = null
-    private var envReverb: EnvironmentalReverb? = null
     private var equalizer: Equalizer? = null
 
     @Volatile
@@ -81,12 +72,9 @@ class AudioEffectManager(private val appContext: Context) {
 
     /** 释放所有音效实例（在音频会话变更或不再需要时调用） */
     fun releaseAll() {
-        listOf(bassBoost, virtualizer, presetReverb, envReverb, equalizer)
+        listOf(bassBoost, equalizer)
             .forEach { it?.release() }
         bassBoost = null
-        virtualizer = null
-        presetReverb = null
-        envReverb = null
         equalizer = null
     }
 
@@ -96,9 +84,6 @@ class AudioEffectManager(private val appContext: Context) {
         try {
             when (effect) {
                 SoundEffect.BASS_BOOST -> applyBassBoost(enabled)
-                SoundEffect.THREE_D_AUDIO -> applyThreeDAudio(enabled)
-                SoundEffect.SPATIAL_AUDIO -> applySpatialAudio(enabled)
-                SoundEffect.THREE_D_SURROUND -> applyThreeDSurround(enabled)
                 SoundEffect.PURE_VOICE -> applyPureVoice(enabled)
             }
         } catch (e: Exception) {
@@ -121,74 +106,6 @@ class AudioEffectManager(private val appContext: Context) {
                 it.release()
             }
             bassBoost = null
-        }
-    }
-
-    private fun applyThreeDAudio(enabled: Boolean) {
-        if (enabled) {
-            if (presetReverb == null) {
-                presetReverb = PresetReverb(0, audioSessionId).apply {
-                    setPreset(PresetReverb.PRESET_MEDIUMHALL)
-                    setEnabled(true)
-                }
-            } else {
-                presetReverb!!.setEnabled(true)
-            }
-        } else {
-            presetReverb?.let {
-                it.setEnabled(false)
-                it.release()
-            }
-            presetReverb = null
-        }
-    }
-
-    /**
-     * EnvironmentalReverb 的所有设置方法均返回 int（非 void），
-     * 因此必须以方法调用形式编写，不可使用属性赋值。
-     */
-    private fun applySpatialAudio(enabled: Boolean) {
-        if (enabled) {
-            if (envReverb == null) {
-                envReverb = EnvironmentalReverb(0, audioSessionId).apply {
-                    setRoomLevel((-1500).toShort())
-                    setRoomHFLevel((-500).toShort())
-                    setDecayTime(1800)
-                    setDecayHFRatio(600.toShort())
-                    setReflectionsLevel((-2000).toShort())
-                    setReflectionsDelay(20)
-                    setReverbLevel((-1000).toShort())
-                    setReverbDelay(30)
-                    setEnabled(true)
-                }
-            } else {
-                envReverb!!.setEnabled(true)
-            }
-        } else {
-            envReverb?.let {
-                it.setEnabled(false)
-                it.release()
-            }
-            envReverb = null
-        }
-    }
-
-    private fun applyThreeDSurround(enabled: Boolean) {
-        if (enabled) {
-            if (virtualizer == null) {
-                virtualizer = Virtualizer(0, audioSessionId).apply {
-                    setStrength(700.toShort())
-                    setEnabled(true)
-                }
-            } else {
-                virtualizer!!.setEnabled(true)
-            }
-        } else {
-            virtualizer?.let {
-                it.setEnabled(false)
-                it.release()
-            }
-            virtualizer = null
         }
     }
 

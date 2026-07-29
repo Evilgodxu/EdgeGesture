@@ -7,6 +7,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -66,7 +67,6 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Check
@@ -111,6 +111,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -118,6 +119,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.ImeAction
@@ -130,6 +132,7 @@ import com.edgegesture.evilgodxu.screens.settings.settingsFlow
 import com.edgegesture.evilgodxu.ui.theme.AppSwitch
 import com.edgegesture.evilgodxu.ui.theme.DarkColorScheme
 import com.edgegesture.evilgodxu.ui.theme.LightColorScheme
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -513,16 +516,6 @@ private fun HeaderRow(
     val currentTrackId = playbackState.currentTrack?.id
     val isLiked = currentTrackId?.let { id -> playbackState.likedIds.contains(id) } ?: false
 
-    var memoryUsageMb by remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(Unit) {
-        while (isActive) {
-            val runtime = Runtime.getRuntime()
-            val usedBytes = runtime.totalMemory() - runtime.freeMemory()
-            memoryUsageMb = usedBytes / (1024f * 1024f)
-            delay(2000)
-        }
-    }
-
     val audioFormat = playbackState.audioSignalPathFormat
     val formatSummary = buildString {
         append(audioFormat?.format?.substringAfterLast('/')?.uppercase() ?: "音频")
@@ -578,29 +571,47 @@ private fun HeaderRow(
             }
         }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        Box(
             modifier = Modifier
                 .align(Alignment.Center)
-                .alpha(0.72f),
+                .alpha(0.72f)
+                .graphicsLayer { clip = true }
+                .widthIn(max = 220.dp),
+            contentAlignment = Alignment.CenterStart
         ) {
-            Icon(
-                imageVector = Icons.Default.Memory,
-                contentDescription = "内存占用",
-                modifier = Modifier.size(14.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(modifier = Modifier.width(3.dp))
+            var textWidthPx by remember { mutableFloatStateOf(0f) }
+            var containerWidthPx by remember { mutableFloatStateOf(0f) }
+            val scrollAnim = remember { Animatable(0f) }
+
             Text(
-                text = "${memoryUsageMb.toInt()} MB · $formatSummary",
+                text = formatSummary,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp,
                 maxLines = 1,
                 softWrap = false,
+                onTextLayout = { textWidthPx = it.size.width.toFloat() },
                 modifier = Modifier
-                    .widthIn(max = 220.dp)
-                    .basicMarquee(iterations = Int.MAX_VALUE),
+                    .onSizeChanged { containerWidthPx = it.width.toFloat() }
+                    .offset { IntOffset((-scrollAnim.value).roundToInt(), 0) }
             )
+
+            LaunchedEffect(textWidthPx, containerWidthPx) {
+                val maxScroll = (textWidthPx - containerWidthPx).coerceAtLeast(0f)
+                if (maxScroll > 0f) {
+                    val durationMs = (maxScroll / 0.4f).toInt().coerceIn(2000, 8000)
+                    scrollAnim.snapTo(0f)
+                    while (isActive) {
+                        scrollAnim.animateTo(
+                            targetValue = maxScroll,
+                            animationSpec = tween(durationMs, easing = LinearEasing)
+                        )
+                        scrollAnim.animateTo(
+                            targetValue = 0f,
+                            animationSpec = tween(durationMs, easing = LinearEasing)
+                        )
+                    }
+                }
+            }
         }
 
         HeaderIconButton(
@@ -617,7 +628,7 @@ private fun HeaderRow(
 }
 
 @Composable
-private fun HeaderIconButton(
+internal fun HeaderIconButton(
     icon: ImageVector,
     onClick: () -> Unit,
     tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -2070,7 +2081,7 @@ private fun SettingsOverlay(
                             else onDismiss()
                         }
                     )
-                    .padding(16.dp),
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
@@ -2090,7 +2101,7 @@ private fun SettingsOverlay(
                         Text(
                             text = stringResource(R.string.music_panel_playback_settings),
                             color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 16.sp,
+                            fontSize = 13.sp,
                             fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
                         )
                         HeaderIconButton(
@@ -2100,7 +2111,7 @@ private fun SettingsOverlay(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     // USB 独占开关
                     val context = LocalContext.current
@@ -2169,7 +2180,7 @@ private fun SoundEffectPanel(
             Text(
                 text = stringResource(R.string.music_panel_sound_effects_title),
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp,
+                fontSize = 13.sp,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
             )
             HeaderIconButton(
@@ -2179,7 +2190,7 @@ private fun SoundEffectPanel(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // 音效列表（可滚动）
         val scrollState = rememberScrollState()
