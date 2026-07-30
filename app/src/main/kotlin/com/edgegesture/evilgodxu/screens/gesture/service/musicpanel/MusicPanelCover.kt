@@ -1,11 +1,6 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
+
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -55,6 +50,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import coil3.compose.AsyncImage
 import com.edgegesture.evilgodxu.R
 
@@ -139,65 +136,54 @@ private fun MiniContextMenu(
     onRename: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AnimatedContent(
-        targetState = visible,
-        transitionSpec = {
-            (scaleIn(initialScale = 0.8f) + fadeIn()).togetherWith(
-                scaleOut(targetScale = 0.8f) + fadeOut()
-            )
-        },
-        label = "context_menu"
-    ) { show ->
-        if (show) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = onDismiss
-                    ),
-                contentAlignment = Alignment.TopCenter
+    if (visible) {
+        Popup(
+            alignment = Alignment.BottomCenter,
+            properties = PopupProperties(
+                focusable = true,
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true
+            ),
+            onDismissRequest = onDismiss
+        ) {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                tonalElevation = 4.dp,
+                modifier = Modifier.padding(top = 2.dp)
             ) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    tonalElevation = 4.dp,
-                    modifier = Modifier.padding(top = 2.dp)
+                Row(
+                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                        horizontalArrangement = Arrangement.Center
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color.Transparent,
+                        onClick = onCopy
                     ) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = Color.Transparent,
-                            onClick = onCopy
-                        ) {
-                            Text(
-                                text = stringResource(R.string.music_panel_copy),
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(2.dp))
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = Color.Transparent,
-                            onClick = onRename
-                        ) {
-                            Text(
-                                text = stringResource(R.string.music_panel_rename),
-                                color = MaterialTheme.colorScheme.primary,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.music_panel_copy),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = Color.Transparent,
+                        onClick = onRename
+                    ) {
+                        Text(
+                            text = stringResource(R.string.music_panel_rename),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                        )
                     }
                 }
             }
@@ -248,44 +234,59 @@ internal fun TrackInfo(
             playbackState.isScanning -> stringResource(R.string.music_panel_scanning)
             else -> stringResource(R.string.music_panel_empty)
         }
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            modifier = Modifier
-                .basicMarquee(iterations = Int.MAX_VALUE)
-                .combinedClickable(
-                    onClick = { if (!showMenu) onClick() },
-                    onLongClick = onLongClickTitle
-                )
-        )
-        Text(
-            text = playbackState.currentTrack?.artist ?: "",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 11.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.combinedClickable(
-                onClick = { if (!showMenu) onClick() },
-                onLongClick = onLongClickArtist
+        Box {
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                modifier = Modifier
+                    .basicMarquee(iterations = Int.MAX_VALUE)
+                    .combinedClickable(
+                        onClick = { if (!showMenu) onClick() },
+                        onLongClick = onLongClickTitle
+                    )
             )
-        )
+            MiniContextMenu(
+                visible = showMenu && menuIsTitle,
+                onCopy = {
+                    showMenu = false
+                    copyToClipboard(context, menuText)
+                },
+                onRename = {
+                    showMenu = false
+                    onRenameRequest?.invoke(menuIsTitle, menuText)
+                },
+                onDismiss = { showMenu = false }
+            )
+        }
+        Box {
+            Text(
+                text = playbackState.currentTrack?.artist ?: "",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.combinedClickable(
+                    onClick = { if (!showMenu) onClick() },
+                    onLongClick = onLongClickArtist
+                )
+            )
+            MiniContextMenu(
+                visible = showMenu && !menuIsTitle,
+                onCopy = {
+                    showMenu = false
+                    copyToClipboard(context, menuText)
+                },
+                onRename = {
+                    showMenu = false
+                    onRenameRequest?.invoke(menuIsTitle, menuText)
+                },
+                onDismiss = { showMenu = false }
+            )
+        }
     }
-
-    MiniContextMenu(
-        visible = showMenu,
-        onCopy = {
-            showMenu = false
-            copyToClipboard(context, menuText)
-        },
-        onRename = {
-            showMenu = false
-            onRenameRequest?.invoke(menuIsTitle, menuText)
-        },
-        onDismiss = { showMenu = false }
-    )
 }
 
 @Composable
@@ -326,42 +327,57 @@ internal fun TrackInfo(
             playbackState.isScanning -> stringResource(R.string.music_panel_scanning)
             else -> stringResource(R.string.music_panel_empty)
         }
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 1,
-            modifier = Modifier
-                .basicMarquee(iterations = Int.MAX_VALUE)
-                .combinedClickable(
-                    onClick = {},
-                    onLongClick = onLongClickTitle
-                )
-        )
-        Text(
-            text = playbackState.currentTrack?.artist ?: "",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 11.sp,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.combinedClickable(
-                onClick = {},
-                onLongClick = onLongClickArtist
+        Box {
+            Text(
+                text = title,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                modifier = Modifier
+                    .basicMarquee(iterations = Int.MAX_VALUE)
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = onLongClickTitle
+                    )
             )
-        )
+            MiniContextMenu(
+                visible = showMenu && menuIsTitle,
+                onCopy = {
+                    showMenu = false
+                    copyToClipboard(context, menuText)
+                },
+                onRename = {
+                    showMenu = false
+                    onRenameRequest?.invoke(menuIsTitle, menuText)
+                },
+                onDismiss = { showMenu = false }
+            )
+        }
+        Box {
+            Text(
+                text = playbackState.currentTrack?.artist ?: "",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.combinedClickable(
+                    onClick = {},
+                    onLongClick = onLongClickArtist
+                )
+            )
+            MiniContextMenu(
+                visible = showMenu && !menuIsTitle,
+                onCopy = {
+                    showMenu = false
+                    copyToClipboard(context, menuText)
+                },
+                onRename = {
+                    showMenu = false
+                    onRenameRequest?.invoke(menuIsTitle, menuText)
+                },
+                onDismiss = { showMenu = false }
+            )
+        }
     }
-
-    MiniContextMenu(
-        visible = showMenu,
-        onCopy = {
-            showMenu = false
-            copyToClipboard(context, menuText)
-        },
-        onRename = {
-            showMenu = false
-            onRenameRequest?.invoke(menuIsTitle, menuText)
-        },
-        onDismiss = { showMenu = false }
-    )
 }
