@@ -22,7 +22,7 @@ class StereoRotationProcessor : BaseAudioProcessor() {
         return inputAudioFormat
     }
 
-    override fun isActive(): Boolean = inputAudioFormat.sampleRate > 0
+    override fun isActive(): Boolean = enabled && inputAudioFormat.sampleRate > 0
 
     override fun queueInput(inputBuffer: ByteBuffer) {
         val remaining = inputBuffer.remaining()

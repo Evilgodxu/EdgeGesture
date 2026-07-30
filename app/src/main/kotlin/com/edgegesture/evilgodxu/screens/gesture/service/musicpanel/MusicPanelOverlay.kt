@@ -357,13 +357,11 @@ fun MusicPanelOverlay(
                         onDismiss = { showSettings = false }
                     )
 
-                    if (showAudioSignalPath) {
-                        AudioSignalPathOverlay(
-                            visible = showAudioSignalPath,
-                            playbackState = playbackState,
-                            onDismiss = { showAudioSignalPath = false },
-                        )
-                    }
+                    AudioSignalPathOverlay(
+                        visible = showAudioSignalPath,
+                        playbackState = playbackState,
+                        onDismiss = { showAudioSignalPath = false },
+                    )
                 }
             }
         }

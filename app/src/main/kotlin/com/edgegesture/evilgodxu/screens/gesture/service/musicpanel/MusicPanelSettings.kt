@@ -80,87 +80,95 @@ internal fun SettingsOverlay(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-                if (showSoundEffects) {
-                    SoundEffectPanel(
-                        playbackState = playbackState,
-                        onBack = { onShowSoundEffectsChange(false) }
-                    )
-                } else {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.music_panel_playback_settings),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold
+                AnimatedContent(
+                    targetState = showSoundEffects,
+                    transitionSpec = {
+                        (slideInVertically { it } + fadeIn()).togetherWith(slideOutVertically { it } + fadeOut())
+                    },
+                    label = "sound_effects"
+                ) { effects ->
+                    if (effects) {
+                        SoundEffectPanel(
+                            playbackState = playbackState,
+                            onBack = { onShowSoundEffectsChange(false) }
                         )
-                        HeaderIconButton(
-                            icon = Icons.Default.Close,
-                            onClick = onDismiss,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.music_panel_playback_settings),
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            HeaderIconButton(
+                                icon = Icons.Default.Close,
+                                onClick = onDismiss,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(12.dp))
 
-                    val context = LocalContext.current
-                    val settingsScope = rememberCoroutineScope()
-                    SettingsSwitchRow(
-                        title = stringResource(R.string.music_panel_usb_exclusive),
-                        subtitle = if (playbackState.isUsbDeviceConnected) {
-                            if (playbackState.isUsbExclusiveMode) {
-                                stringResource(R.string.music_panel_usb_enabled, playbackState.usbDeviceName)
-                            } else stringResource(R.string.music_panel_usb_connected_not_enabled)
-                        } else {
-                            stringResource(R.string.music_panel_usb_not_detected)
-                        },
-                        checked = if (playbackState.isUsbDeviceConnected)
-                            playbackState.isUsbExclusiveMode
-                        else
-                            playbackState.usbExclusiveEnabled,
-                        onCheckedChange = { enabled ->
-                            playbackState.usbExclusiveEnabled = enabled
-                            if (playbackState.isUsbDeviceConnected) {
-                                settingsScope.launch {
-                                    if (enabled) {
-                                        playbackState.isUsbExclusiveMode =
-                                            UsbAudioMonitor.setUsbExclusive(context, true)
-                                    } else {
-                                        UsbAudioMonitor.setUsbExclusive(context, false)
-                                        playbackState.isUsbExclusiveMode = false
+                        val context = LocalContext.current
+                        val settingsScope = rememberCoroutineScope()
+                        SettingsSwitchRow(
+                            title = stringResource(R.string.music_panel_usb_exclusive),
+                            subtitle = if (playbackState.isUsbDeviceConnected) {
+                                if (playbackState.isUsbExclusiveMode) {
+                                    stringResource(R.string.music_panel_usb_enabled, playbackState.usbDeviceName)
+                                } else stringResource(R.string.music_panel_usb_connected_not_enabled)
+                            } else {
+                                stringResource(R.string.music_panel_usb_not_detected)
+                            },
+                            checked = if (playbackState.isUsbDeviceConnected)
+                                playbackState.isUsbExclusiveMode
+                            else
+                                playbackState.usbExclusiveEnabled,
+                            onCheckedChange = { enabled ->
+                                playbackState.usbExclusiveEnabled = enabled
+                                if (playbackState.isUsbDeviceConnected) {
+                                    settingsScope.launch {
+                                        if (enabled) {
+                                            playbackState.isUsbExclusiveMode =
+                                                UsbAudioMonitor.setUsbExclusive(context, true)
+                                        } else {
+                                            UsbAudioMonitor.setUsbExclusive(context, false)
+                                            playbackState.isUsbExclusiveMode = false
+                                        }
                                     }
                                 }
                             }
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    val selectedEffect = playbackState.selectedSoundEffect
-                    SoundEffectEntryRow(
-                        selectedEffectName = selectedEffect?.let { stringResource(it.displayNameResId) },
-                        onClick = { onShowSoundEffectsChange(true) }
-                    )
-
-                    playbackState.usbError?.let { error ->
-                        Spacer(modifier = Modifier.height(8.dp))
-                        val errorContext = LocalContext.current
-                        Text(
-                            text = error,
-                            color = MaterialTheme.colorScheme.error,
-                            fontSize = 10.sp,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedClickable(
-                                    onClick = {},
-                                    onLongClick = { copyToClipboard(errorContext, error) }
-                                )
                         )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        val selectedEffect = playbackState.selectedSoundEffect
+                        SoundEffectEntryRow(
+                            selectedEffectName = selectedEffect?.let { stringResource(it.displayNameResId) },
+                            onClick = { onShowSoundEffectsChange(true) }
+                        )
+
+                        playbackState.usbError?.let { error ->
+                            Spacer(modifier = Modifier.height(8.dp))
+                            val errorContext = LocalContext.current
+                            Text(
+                                text = error,
+                                color = MaterialTheme.colorScheme.error,
+                                fontSize = 10.sp,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .combinedClickable(
+                                        onClick = {},
+                                        onLongClick = { copyToClipboard(errorContext, error) }
+                                    )
+                            )
+                        }
                     }
                 }
             }
