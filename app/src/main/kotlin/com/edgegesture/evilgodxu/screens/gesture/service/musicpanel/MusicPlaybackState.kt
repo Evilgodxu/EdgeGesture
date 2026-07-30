@@ -344,14 +344,8 @@ class MusicPlaybackState {
     var usbError by mutableStateOf<String?>(null)     // USB 错误信息（显示在面板底部）
     var audioSignalPathFormat by mutableStateOf<AudioSignalPathFormat?>(null)
     var audioSignalPathStrategy by mutableStateOf("Mixer")
-    var audioSignalPathEngine by mutableStateOf("Media3 / ExoPlayer")
-    var audioSignalPathVolume by mutableStateOf("System")
     var audioSignalPathOutputDevice by mutableStateOf("-")
     var audioSignalPathRoute by mutableStateOf("-")
-    var audioSignalPathResampler by mutableStateOf("-")
-    var audioSignalPathPassthrough by mutableStateOf("-")
-    var audioSignalPathUsb by mutableStateOf("-")
-    var audioSignalPathVerification by mutableStateOf("-")
     var audioSignalPathDsdMode by mutableStateOf("PCM")
 
     // 蓝牙耳机相关状态

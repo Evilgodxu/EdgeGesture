@@ -1,6 +1,8 @@
 *.iml
 .gradle
 .kotlin
+.arts
+.codeartsdoer
 /local.properties
 /.idea
 .DS_Store

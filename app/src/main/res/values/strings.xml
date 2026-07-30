@@ -128,7 +128,15 @@
     <string name="sound_effect_bass_boost">超重低音</string>
     <string name="sound_effect_bass_boost_desc">增强低频表现，感受澎湃低音</string>
     <string name="sound_effect_pure_voice">纯净人声</string>
-    <string name="sound_effect_pure_voice_desc">突出人声细节，适合听歌与播客</string>
+    <string name="sound_effect_pure_voice_desc">突出人声频段，压低低频与极高频，适合听歌与播客</string>
+    <string name="sound_effect_virtualizer">3D 环绕声</string>
+    <string name="sound_effect_virtualizer_desc">拓宽声场，营造空间环绕感</string>
+    <string name="sound_effect_surround_rotation">环绕旋转</string>
+    <string name="sound_effect_surround_rotation_desc">声像在左右耳间循环旋转，沉浸环绕</string>
+    <string name="sound_effect_loudness_enhancer">响度增强</string>
+    <string name="sound_effect_loudness_enhancer_desc">提升整体响度，小音量下更清晰</string>
+    <string name="sound_effect_concert_hall">音乐厅</string>
+    <string name="sound_effect_concert_hall_desc">模拟大厅混响，感受现场氛围</string>
 
     <!-- 音乐扫描 -->
     <string name="music_scanner_external_music">外部音乐</string>
@@ -341,8 +349,8 @@
 
     <!-- 背面双击 (Back Tap) -->
     <string name="back_tap_title">背面双击</string>
-    <string name="back_tap_summary_no_action">灵敏度 %d · 范围 %d</string>
-    <string name="back_tap_summary_with_action">灵敏度 %d · 范围 %d · %s</string>
+    <string name="back_tap_summary_no_action" formatted="false">灵敏度 %1$d · 范围 %2$d</string>
+    <string name="back_tap_summary_with_action" formatted="false">灵敏度 %1$d · 范围 %2$d · %3$s</string>
     <string name="back_tap_enable_title">背面双击</string>
     <string name="back_tap_enable_desc">双击手机背面触发操作</string>
     <string name="back_tap_sensitivity">灵敏度</string>

@@ -22,7 +22,9 @@ class MusicPlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        val usbAudioSink = DefaultAudioSink.Builder(this).build()
+        val usbAudioSink = DefaultAudioSink.Builder(this)
+            .setAudioProcessors(arrayOf(StereoRotationProcessor.INSTANCE))
+            .build()
         val renderersFactory = object : DefaultRenderersFactory(this) {
             override fun buildAudioSink(
                 context: android.content.Context,
@@ -212,14 +214,10 @@ class MusicPlaybackService : MediaSessionService() {
             ?: getString(R.string.signal_path_speaker)
     }
 
-    /** 刷新播放链路面板的状态行（重采样、直通、路由、输出设备等） */
+    /** 刷新播放链路面板的状态行 */
     private fun updateSignalPathState(state: MusicPlaybackState) {
         state.audioSignalPathStrategy = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
         state.audioSignalPathOutputDevice = resolveOutputDeviceName(state)
         state.audioSignalPathRoute = if (state.isUsbDeviceConnected) "USB" else if (state.isBluetoothHeadsetConnected) "Bluetooth" else "System"
-        state.audioSignalPathUsb = if (state.isUsbExclusiveMode) "Connected · Direct" else "Not active"
-        state.audioSignalPathVerification = if (state.isUsbExclusiveMode) "Verified" else "Fallback"
-        state.audioSignalPathResampler = if (state.isUsbExclusiveMode) "Inactive" else "Unknown"
-        state.audioSignalPathPassthrough = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
     }
 }

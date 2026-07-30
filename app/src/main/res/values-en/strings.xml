@@ -261,8 +261,8 @@
 
     <!-- Back Tap -->
     <string name="back_tap_title">Back Tap</string>
-    <string name="back_tap_summary_no_action">Sensitivity %d · Range %d</string>
-    <string name="back_tap_summary_with_action">Sensitivity %d · Range %d · %s</string>
+    <string name="back_tap_summary_no_action" formatted="false">Sensitivity %1$d · Range %2$d</string>
+    <string name="back_tap_summary_with_action" formatted="false">Sensitivity %1$d · Range %2$d · %3$s</string>
     <string name="back_tap_enable_title">Back Tap</string>
     <string name="back_tap_enable_desc">Double tap the back of the phone to trigger action</string>
     <string name="back_tap_sensitivity">Sensitivity</string>
@@ -291,6 +291,71 @@
     <string name="update_dialog_download">Download</string>
     <string name="update_dialog_later">Later</string>
     <string name="update_dialog_open_browser">Open in Browser</string>
+
+    <!-- Music Panel -->
+    <string name="music_panel_empty">No local music</string>
+    <string name="music_panel_scanning">Scanning music…</string>
+    <string name="music_panel_permission_denied">Audio read permission required to scan local music</string>
+    <string name="music_panel_playlist_title">Playlist</string>
+    <string name="music_panel_timer_title">Sleep Timer</string>
+    <string name="music_panel_timer_minutes">min</string>
+    <string name="music_panel_timer_confirm">OK</string>
+    <string name="music_panel_timer_cancel">Cancel</string>
+    <string name="music_panel_search_placeholder">Search songs</string>
+    <string name="music_panel_search_title">Online Search</string>
+    <string name="music_panel_delete_title">Delete this song?</string>
+    <string name="music_panel_delete_cancel">Cancel</string>
+    <string name="music_panel_delete_confirm">Delete</string>
+    <string name="music_panel_no_lyrics">No lyrics</string>
+    <string name="music_panel_track_count">%d tracks</string>
+    <string name="music_panel_search_history">Search History</string>
+    <string name="music_panel_search_history_clear">Clear All</string>
+    <string name="music_panel_search_history_delete">Delete</string>
+    <string name="music_panel_search_no_results">No matching songs found</string>
+    <string name="music_panel_search_source">Netease</string>
+    <string name="music_panel_playback_settings">Playback Settings</string>
+    <string name="music_panel_usb_exclusive">USB Audio Exclusive</string>
+    <string name="music_panel_usb_enabled">Enabled: %s</string>
+    <string name="music_panel_usb_connected_not_enabled">Connected but exclusive mode off</string>
+    <string name="music_panel_usb_not_detected">No USB audio device detected</string>
+    <string name="music_panel_sound_effects_title">Sound Effects</string>
+    <string name="music_panel_sound_effects_hint">Tap to set sound effect</string>
+    <string name="music_panel_sound_effects_enter">Enter</string>
+    <string name="music_panel_sound_effects_enabled">Enabled</string>
+    <string name="music_panel_play_error">This song is temporarily unavailable (may be VIP-only)</string>
+    <string name="music_panel_play_failed">Playback failed</string>
+    <string name="music_panel_copy">Copy</string>
+    <string name="music_panel_rename">Rename</string>
+    <string name="music_panel_rename_title">Rename Song</string>
+    <string name="music_panel_rename_artist">Rename Artist</string>
+    <string name="music_panel_rename_confirm">OK</string>
+    <string name="music_panel_rename_cancel">Cancel</string>
+
+    <!-- Sound Effect Names -->
+    <string name="sound_effect_bass_boost">Bass Boost</string>
+    <string name="sound_effect_bass_boost_desc">Enhance low frequencies for powerful bass</string>
+    <string name="sound_effect_pure_voice">Pure Voice</string>
+    <string name="sound_effect_pure_voice_desc">Boost vocal range, reduce bass &amp; treble, ideal for songs &amp; podcasts</string>
+    <string name="sound_effect_virtualizer">3D Surround</string>
+    <string name="sound_effect_virtualizer_desc">Widen the sound stage for spatial surround</string>
+    <string name="sound_effect_surround_rotation">Surround Rotation</string>
+    <string name="sound_effect_surround_rotation_desc">Stereo image rotates between ears for immersive surround</string>
+    <string name="sound_effect_loudness_enhancer">Loudness Enhancer</string>
+    <string name="sound_effect_loudness_enhancer_desc">Boost overall loudness, clearer at low volume</string>
+    <string name="sound_effect_concert_hall">Concert Hall</string>
+    <string name="sound_effect_concert_hall_desc">Simulate hall reverb for a live atmosphere</string>
+
+    <!-- Music Scanner -->
+    <string name="music_scanner_external_music">External Music</string>
+    <string name="music_scanner_unknown_artist">Unknown Artist</string>
+    <string name="music_scanner_unknown_song">Unknown Song</string>
+
+    <!-- Device Names -->
+    <string name="bluetooth_headset_default_name">Bluetooth Headset</string>
+    <string name="usb_audio_default_name">USB Audio Device</string>
+
+    <!-- Gesture Action: Music Panel -->
+    <string name="gesture_action_music_panel">Music Panel</string>
 
     <!-- Audio Signal Path Panel -->
     <string name="signal_path_title">Signal Path</string>

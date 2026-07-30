@@ -521,10 +521,6 @@ class MusicPanelViewManager(
         state.audioSignalPathOutputDevice = resolveOutputDeviceName(state)
         state.audioSignalPathRoute = if (state.isUsbDeviceConnected) "USB"
             else if (state.isBluetoothHeadsetConnected) "Bluetooth" else "System"
-        state.audioSignalPathUsb = if (state.isUsbExclusiveMode) "Connected · Direct" else "Not active"
-        state.audioSignalPathVerification = if (state.isUsbExclusiveMode) "Verified" else "Fallback"
-        state.audioSignalPathResampler = if (state.isUsbExclusiveMode) "Inactive" else "Unknown"
-        state.audioSignalPathPassthrough = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
     }
 
     private fun resolveOutputDeviceName(state: MusicPlaybackState): String {
