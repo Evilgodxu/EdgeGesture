@@ -512,7 +512,7 @@ class MusicPanelViewManager(
             .start()
     }
 
-    /** 刷新音频信号路径面板的状态行 */
+    /** 刷新播放链路面板的状态行 */
     private fun refreshSignalPathState(state: MusicPlaybackState) {
         state.audioSignalPathStrategy = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
         state.audioSignalPathOutputDevice = resolveOutputDeviceName(state)

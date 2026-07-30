@@ -44,7 +44,7 @@ fun AudioSignalPathOverlay(
                 slideOutVertically { it } + fadeOut()
             )
         },
-        label = "音频信号路径",
+        label = "播放链路",
     ) { show ->
         if (show) {
             Column(
@@ -64,7 +64,7 @@ fun AudioSignalPathOverlay(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "音频信号路径",
+                        text = "播放链路",
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 13.sp,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,

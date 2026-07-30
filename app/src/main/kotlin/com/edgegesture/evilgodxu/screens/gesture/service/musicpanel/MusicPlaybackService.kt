@@ -211,7 +211,7 @@ class MusicPlaybackService : MediaSessionService() {
             ?: "扬声器"
     }
 
-    /** 刷新音频信号路径面板的状态行（重采样、直通、路由、输出设备等） */
+    /** 刷新播放链路面板的状态行（重采样、直通、路由、输出设备等） */
     private fun updateSignalPathState(state: MusicPlaybackState) {
         state.audioSignalPathStrategy = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
         state.audioSignalPathOutputDevice = resolveOutputDeviceName(state)
