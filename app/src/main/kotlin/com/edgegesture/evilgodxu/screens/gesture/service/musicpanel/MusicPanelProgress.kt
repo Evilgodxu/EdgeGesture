@@ -69,7 +69,7 @@ internal fun ProgressSection(playbackState: MusicPlaybackState) {
                     } else 0f
                 }
             }
-            var seekFraction by remember { mutableFloatStateOf(0f) }
+            var seekFraction by remember { mutableFloatStateOf(progress) }
             var isSeeking by remember { mutableStateOf(false) }
             val displayProgress = if (isSeeking) seekFraction else progress
 

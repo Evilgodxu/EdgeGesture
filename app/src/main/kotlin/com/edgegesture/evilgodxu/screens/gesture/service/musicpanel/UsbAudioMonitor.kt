@@ -254,7 +254,7 @@ class UsbAudioMonitor(
             AudioDeviceInfo.TYPE_USB_DEVICE,
             AudioDeviceInfo.TYPE_USB_ACCESSORY,
             AudioDeviceInfo.TYPE_USB_HEADSET,
-            22, // AudioDeviceInfo.TYPE_USB_DAC
+            22, // AudioDeviceInfo.TYPE_USB_DAC (API 33+)
         )
 
         fun isUsbAudioDeviceType(type: Int): Boolean = type in usbAudioDeviceTypes
@@ -265,7 +265,6 @@ class UsbAudioMonitor(
             channels: Int = 2,
             encoding: Int = AudioFormat.ENCODING_PCM_16BIT,
         ): Int {
-            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
             val format = AudioFormat.Builder()
                 .setSampleRate(sampleRate)
                 .setEncoding(encoding)
@@ -278,6 +277,9 @@ class UsbAudioMonitor(
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                return AudioManager.getDirectPlaybackSupport(format, attributes)
+            }
             return try {
                 AudioManager::class.java
                     .getMethod("getDirectPlaybackSupport", AudioFormat::class.java, AudioAttributes::class.java)
@@ -309,7 +311,7 @@ class UsbAudioMonitor(
                     .firstOrNull { isUsbAudioDeviceType(it.type) }
                 if (!enable) {
                     audioSinkDeviceSetter?.invoke(null)
-                    return setPreferredStrategy(context, null)
+                    return true
                 }
                 if (usbDevice == null || directPlaybackSupport(
                         context,
@@ -319,51 +321,7 @@ class UsbAudioMonitor(
                     ) == AudioManager.DIRECT_PLAYBACK_NOT_SUPPORTED
                 ) return false
                 audioSinkDeviceSetter?.invoke(usbDevice)
-                if (setPreferredStrategy(context, usbDevice)) return true
-                audioSinkDeviceSetter?.invoke(null)
-                return false
-            }
-        }
-
-        fun setPreferredUsbDevice(context: Context, enable: Boolean): Boolean {
-            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            val usbDevice = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-                .firstOrNull { isUsbAudioDeviceType(it.type) }
-            return if (enable) {
-                if (usbDevice == null) false else setPreferredStrategy(context, usbDevice)
-            } else {
-                setPreferredStrategy(context, null)
-            }
-        }
-
-        private fun setPreferredStrategy(context: Context, usbDevice: AudioDeviceInfo?): Boolean {
-            val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-            return try {
-                val strategyClass = Class.forName("android.media.audiopolicy.AudioProductStrategy")
-                val strategies = strategyClass.getMethod("getAudioProductStrategies")
-                    .invoke(null) as? List<*> ?: return false
-                val strategy = strategies.firstOrNull { candidate ->
-                    val attributes = candidate?.let {
-                        strategyClass.getMethod("getAudioAttributes").invoke(it)
-                    } as? AudioAttributes
-                    attributes?.usage == AudioAttributes.USAGE_MEDIA
-                } ?: return false
-                if (usbDevice != null) {
-                    val deviceAttributes = Class.forName("android.media.AudioDeviceAttributes")
-                        .getConstructor(AudioDeviceInfo::class.java)
-                        .newInstance(usbDevice)
-                    val setMethod = AudioManager::class.java.methods.firstOrNull {
-                        it.name == "setPreferredDeviceForStrategy" && it.parameterTypes.size == 2
-                    } ?: return false
-                    setMethod.invoke(audioManager, strategy, deviceAttributes) as? Boolean ?: false
-                } else {
-                    val removeMethod = AudioManager::class.java.methods.firstOrNull {
-                        it.name == "removePreferredDeviceForStrategy" && it.parameterTypes.size == 1
-                    } ?: return false
-                    removeMethod.invoke(audioManager, strategy) as? Boolean ?: false
-                }
-            } catch (_: ReflectiveOperationException) {
-                false
+                return true
             }
         }
     }
