@@ -277,16 +277,7 @@ class UsbAudioMonitor(
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                 .build()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                return AudioManager.getDirectPlaybackSupport(format, attributes)
-            }
-            return try {
-                AudioManager::class.java
-                    .getMethod("getDirectPlaybackSupport", AudioFormat::class.java, AudioAttributes::class.java)
-                    .invoke(null, format, attributes) as Int
-            } catch (_: ReflectiveOperationException) {
-                AudioManager.DIRECT_PLAYBACK_NOT_SUPPORTED
-            }
+            return AudioManager.getDirectPlaybackSupport(format, attributes)
         }
 
         private val routeLock = Any()
