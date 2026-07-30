@@ -30,6 +30,7 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 
+import com.edgegesture.evilgodxu.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -519,7 +520,7 @@ class MusicPanelViewManager(
         state.audioSignalPathStrategy = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
         state.audioSignalPathOutputDevice = resolveOutputDeviceName(state)
         state.audioSignalPathRoute = if (state.isUsbDeviceConnected) "USB"
-            else if (state.isBluetoothHeadsetConnected) "蓝牙" else "系统"
+            else if (state.isBluetoothHeadsetConnected) "Bluetooth" else "System"
         state.audioSignalPathUsb = if (state.isUsbExclusiveMode) "Connected · Direct" else "Not active"
         state.audioSignalPathVerification = if (state.isUsbExclusiveMode) "Verified" else "Fallback"
         state.audioSignalPathResampler = if (state.isUsbExclusiveMode) "Inactive" else "Unknown"
@@ -540,7 +541,7 @@ class MusicPanelViewManager(
             ?.productName
             ?.toString()
             ?.takeIf { it.isNotBlank() }
-            ?: "扬声器"
+            ?: context.getString(R.string.signal_path_speaker)
     }
 
     companion object {

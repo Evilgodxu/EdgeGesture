@@ -139,6 +139,30 @@
     <string name="bluetooth_headset_default_name">蓝牙耳机</string>
     <string name="usb_audio_default_name">USB 音频设备</string>
 
+    <!-- 播放链路面板 (Audio Signal Path) -->
+    <string name="signal_path_title">播放链路</string>
+    <string name="signal_path_format">音频格式</string>
+    <string name="signal_path_sample_rate">源采样率</string>
+    <string name="signal_path_output_rate">输出采样率</string>
+    <string name="signal_path_bit_depth">位深</string>
+    <string name="signal_path_channels">声道</string>
+    <string name="signal_path_output_strategy">输出策略</string>
+    <string name="signal_path_output_device">输出设备</string>
+    <string name="signal_path_route">音频路由</string>
+    <string name="signal_path_dsd_mode">DSD 模式</string>
+    <string name="signal_path_direct">直出</string>
+    <string name="signal_path_mixer">混音</string>
+    <string name="signal_path_system">系统</string>
+    <string name="signal_path_mono">单声道</string>
+    <string name="signal_path_stereo">立体声</string>
+    <string name="signal_path_channels_value">%d 声道</string>
+    <string name="signal_path_bit_value">%d 位</string>
+    <string name="signal_path_khz">%.1f kHz</string>
+    <string name="signal_path_hz">%d Hz</string>
+    <string name="signal_path_speaker">扬声器</string>
+    <string name="signal_path_bluetooth">蓝牙</string>
+    <string name="signal_path_dash">-</string>
+
     <!-- 扫一扫 -->
     <string name="gesture_action_alipay_scan">支付宝扫一扫</string>
     <string name="gesture_action_wechat_scan">微信扫一扫</string>

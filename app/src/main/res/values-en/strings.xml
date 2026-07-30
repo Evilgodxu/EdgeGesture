@@ -292,4 +292,28 @@
     <string name="update_dialog_later">Later</string>
     <string name="update_dialog_open_browser">Open in Browser</string>
 
+    <!-- Audio Signal Path Panel -->
+    <string name="signal_path_title">Signal Path</string>
+    <string name="signal_path_format">Format</string>
+    <string name="signal_path_sample_rate">Sample Rate</string>
+    <string name="signal_path_output_rate">Output Rate</string>
+    <string name="signal_path_bit_depth">Bit Depth</string>
+    <string name="signal_path_channels">Channels</string>
+    <string name="signal_path_output_strategy">Output Mode</string>
+    <string name="signal_path_output_device">Output Device</string>
+    <string name="signal_path_route">Route</string>
+    <string name="signal_path_dsd_mode">DSD Mode</string>
+    <string name="signal_path_direct">Direct</string>
+    <string name="signal_path_mixer">Mixer</string>
+    <string name="signal_path_system">System</string>
+    <string name="signal_path_mono">Mono</string>
+    <string name="signal_path_stereo">Stereo</string>
+    <string name="signal_path_channels_value">%d ch</string>
+    <string name="signal_path_bit_value">%d-bit</string>
+    <string name="signal_path_khz">%.1f kHz</string>
+    <string name="signal_path_hz">%d Hz</string>
+    <string name="signal_path_speaker">Speaker</string>
+    <string name="signal_path_bluetooth">Bluetooth</string>
+    <string name="signal_path_dash">-</string>
+
 </resources>

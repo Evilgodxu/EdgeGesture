@@ -12,6 +12,7 @@ import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import com.edgegesture.evilgodxu.R
 import kotlinx.coroutines.launch
 
 class MusicPlaybackService : MediaSessionService() {
@@ -208,14 +209,14 @@ class MusicPlaybackService : MediaSessionService() {
             ?.productName
             ?.toString()
             ?.takeIf { it.isNotBlank() }
-            ?: "扬声器"
+            ?: getString(R.string.signal_path_speaker)
     }
 
     /** 刷新播放链路面板的状态行（重采样、直通、路由、输出设备等） */
     private fun updateSignalPathState(state: MusicPlaybackState) {
         state.audioSignalPathStrategy = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
         state.audioSignalPathOutputDevice = resolveOutputDeviceName(state)
-        state.audioSignalPathRoute = if (state.isUsbDeviceConnected) "USB" else if (state.isBluetoothHeadsetConnected) "蓝牙" else "系统"
+        state.audioSignalPathRoute = if (state.isUsbDeviceConnected) "USB" else if (state.isBluetoothHeadsetConnected) "Bluetooth" else "System"
         state.audioSignalPathUsb = if (state.isUsbExclusiveMode) "Connected · Direct" else "Not active"
         state.audioSignalPathVerification = if (state.isUsbExclusiveMode) "Verified" else "Fallback"
         state.audioSignalPathResampler = if (state.isUsbExclusiveMode) "Inactive" else "Unknown"

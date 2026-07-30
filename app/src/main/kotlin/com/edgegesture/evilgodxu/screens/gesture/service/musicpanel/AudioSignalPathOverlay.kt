@@ -28,8 +28,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.edgegesture.evilgodxu.R
 
 @Composable
 fun AudioSignalPathOverlay(
@@ -37,6 +39,7 @@ fun AudioSignalPathOverlay(
     playbackState: MusicPlaybackState,
     onDismiss: () -> Unit,
 ) {
+    val title = stringResource(R.string.signal_path_title)
     AnimatedContent(
         targetState = visible,
         transitionSpec = {
@@ -44,7 +47,7 @@ fun AudioSignalPathOverlay(
                 slideOutVertically { it } + fadeOut()
             )
         },
-        label = "播放链路",
+        label = title,
     ) { show ->
         if (show) {
             Column(
@@ -64,7 +67,7 @@ fun AudioSignalPathOverlay(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        text = "播放链路",
+                        text = title,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 13.sp,
                         fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
@@ -79,7 +82,7 @@ fun AudioSignalPathOverlay(
                 AudioSignalPathRows(playbackState)
             }
         } else {
-            androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize())
+            Box(modifier = Modifier.fillMaxSize())
         }
     }
 }
@@ -87,23 +90,22 @@ fun AudioSignalPathOverlay(
 @Composable
 private fun AudioSignalPathRows(playbackState: MusicPlaybackState) {
     val format = playbackState.audioSignalPathFormat
-    val rows = listOf(
-        "音频格式" to (format?.format ?: "-") .replace("audio/", ""),
-        "源采样率" to (format?.sampleRate?.let(::formatAudioRate) ?: "-"),
-        "输出采样率" to (format?.outputRate?.let(::formatAudioRate) ?: "-"),
-        "位深" to (format?.bitDepth?.let { "$it 位" } ?: "-"),
-        "声道" to (format?.channels?.let(::formatChannels) ?: "-"),
-        "播放引擎" to playbackState.audioSignalPathEngine.replace("Media3 / ExoPlayer", "Media3 / ExoPlayer"),
-        "输出策略" to playbackState.audioSignalPathStrategy.toChineseAudioPathValue(),
-        "输出设备" to playbackState.audioSignalPathOutputDevice,
-        "音量控制" to playbackState.audioSignalPathVolume.toChineseAudioPathValue(),
-        "音频路由" to playbackState.audioSignalPathRoute.toChineseAudioPathValue(),
-        "重采样" to playbackState.audioSignalPathResampler.toChineseAudioPathValue(),
-        "音频直通" to playbackState.audioSignalPathPassthrough.toChineseAudioPathValue(),
-        "USB 状态" to playbackState.audioSignalPathUsb.toChineseAudioPathValue(),
-        "验证 / 回退" to playbackState.audioSignalPathVerification.toChineseAudioPathValue(),
-        "DSD 模式" to playbackState.audioSignalPathDsdMode,
-    )
+    val dash = stringResource(R.string.signal_path_dash)
+
+    val rows = buildList {
+        add(stringResource(R.string.signal_path_format) to (format?.format ?: dash).removePrefix("audio/"))
+        add(stringResource(R.string.signal_path_sample_rate) to (format?.sampleRate?.let { formatAudioRate(it) } ?: dash))
+        add(stringResource(R.string.signal_path_output_rate) to (format?.outputRate?.let { formatAudioRate(it) } ?: dash))
+        add(stringResource(R.string.signal_path_bit_depth) to (format?.bitDepth?.let { stringResource(R.string.signal_path_bit_value, it) } ?: dash))
+        add(stringResource(R.string.signal_path_channels) to (format?.channels?.let { formatChannels(it) } ?: dash))
+        add(stringResource(R.string.signal_path_output_strategy) to playbackState.audioSignalPathStrategy.toSignalPathValue())
+        add(stringResource(R.string.signal_path_output_device) to playbackState.audioSignalPathOutputDevice)
+        add(stringResource(R.string.signal_path_route) to playbackState.audioSignalPathRoute.toRouteValue())
+        val dsdMode = playbackState.audioSignalPathDsdMode
+        if (dsdMode.isNotBlank() && dsdMode != dash && dsdMode != "Inactive" && dsdMode != "Not active") {
+            add(stringResource(R.string.signal_path_dsd_mode) to dsdMode)
+        }
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -137,27 +139,30 @@ private fun AudioSignalPathRows(playbackState: MusicPlaybackState) {
     }
 }
 
-private fun String.toChineseAudioPathValue(): String = when (this) {
-    "Direct" -> "直出"
-    "Mixer" -> "混音"
-    "System" -> "系统"
-    "Connected · Direct" -> "已连接 · 直出"
-    "Not active" -> "未启用"
-    "Inactive" -> "未启用"
-    "Unknown" -> "未知"
-    "Verified" -> "已验证"
-    "Fallback" -> "已回退"
+@Composable
+private fun String.toSignalPathValue(): String = when (this) {
+    "Direct" -> stringResource(R.string.signal_path_direct)
+    "Mixer" -> stringResource(R.string.signal_path_mixer)
     else -> this
 }
 
-private fun formatAudioRate(rate: Int): String = if (rate >= 1000) {
-    "${rate / 1000.0} kHz"
-} else {
-    "$rate Hz"
+@Composable
+private fun String.toRouteValue(): String = when (this) {
+    "System" -> stringResource(R.string.signal_path_system)
+    "Bluetooth" -> stringResource(R.string.signal_path_bluetooth)
+    else -> this
 }
 
+@Composable
+private fun formatAudioRate(rate: Int): String = if (rate >= 1000) {
+    stringResource(R.string.signal_path_khz, rate / 1000.0)
+} else {
+    stringResource(R.string.signal_path_hz, rate)
+}
+
+@Composable
 private fun formatChannels(channels: Int): String = when (channels) {
-    1 -> "单声道"
-    2 -> "立体声"
-    else -> "$channels 声道"
+    1 -> stringResource(R.string.signal_path_mono)
+    2 -> stringResource(R.string.signal_path_stereo)
+    else -> stringResource(R.string.signal_path_channels_value, channels)
 }
