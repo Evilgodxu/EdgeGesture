@@ -631,6 +631,45 @@ class MusicPlaybackState {
         persistPlaylist()
     }
 
+    fun renameAndRefreshMetadata(renamed: MusicTrack) {
+        val cleared = renamed.copy(
+            neteaseId = 0L,
+            neteaseCoverUrl = "",
+            coverCachePath = "",
+            lyricCachePath = "",
+            lyricLines = emptyList()
+        )
+        updateTrack(cleared)
+        val ctx = appContext ?: return
+        playbackScope.launch {
+            try {
+                val match = NeteaseMusicApi.match(cleared.title, cleared.artist, cleared.duration)
+                    ?: return@launch
+                val coverBytes = NeteaseMusicApi.loadCoverBytes(match.coverUrl.orEmpty())
+                val lyric = NeteaseMusicApi.lyric(match.id)
+                val coverPath = coverBytes?.let { MusicMetadataCache.saveCover(ctx, match.id, it) }.orEmpty()
+                val cover = MusicMetadataCache.loadCover(coverPath)
+                val lyricPath = MusicMetadataCache.saveLyrics(ctx, match.id, lyric.lines).orEmpty()
+                withContext(Dispatchers.Main) {
+                    val idx = playlist.indexOfFirst { it.id == cleared.id }
+                    if (idx >= 0) {
+                        val enriched = playlist[idx].copy(
+                            albumArt = cover ?: playlist[idx].albumArt,
+                            neteaseId = match.id,
+                            neteaseCoverUrl = match.coverUrl.orEmpty(),
+                            coverCachePath = coverPath,
+                            lyricCachePath = lyricPath,
+                            lyricLines = lyric.lines
+                        )
+                        playlist = playlist.toMutableList().apply { set(idx, enriched) }
+                        if (currentTrack?.id == cleared.id) currentTrack = enriched
+                        persistPlaylist()
+                    }
+                }
+            } catch (_: Exception) { }
+        }
+    }
+
     fun syncPlaybackState() {
         val controller = mediaController ?: return
         val mediaId = controller.currentMediaItem?.mediaId?.toLongOrNull()

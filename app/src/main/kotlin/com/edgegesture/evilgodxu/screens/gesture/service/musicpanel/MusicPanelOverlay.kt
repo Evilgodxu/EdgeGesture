@@ -93,6 +93,9 @@ fun MusicPanelOverlay(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showAudioSignalPath by remember { mutableStateOf(false) }
     var deleteTargetTrack by remember { mutableStateOf<MusicTrack?>(null) }
+    var showRename by remember { mutableStateOf(false) }
+    var renameIsTitle by remember { mutableStateOf(true) }
+    var renameInitValue by remember { mutableStateOf("") }
 
     MaterialTheme(colorScheme = colorScheme) {
         Box(
@@ -114,6 +117,7 @@ fun MusicPanelOverlay(
                             showSoundEffects -> showSoundEffects = false
                             showAudioSignalPath -> showAudioSignalPath = false
                             showSettings -> showSettings = false
+                            showRename -> showRename = false
                             playbackState.showSearchResults -> {
                                 playbackState.showSearchResults = false
                                 playbackState.errorMsg = null
@@ -247,7 +251,12 @@ fun MusicPanelOverlay(
                                 if (!playbackState.isLyricsVisible) {
                                     TrackInfo(
                                         playbackState = playbackState,
-                                        onClick = { playbackState.isLyricsVisible = true }
+                                        onClick = { playbackState.isLyricsVisible = true },
+                                        onRenameRequest = { isTitle, text ->
+                                            renameIsTitle = isTitle
+                                            renameInitValue = text
+                                            showRename = true
+                                        }
                                     )
                                 }
                                 ProgressSection(playbackState = playbackState)
@@ -322,6 +331,22 @@ fun MusicPanelOverlay(
                             showDeleteConfirm = false
                             deleteTargetTrack = null
                         }
+                    )
+
+                    RenameOverlay(
+                        visible = showRename,
+                        isTitle = renameIsTitle,
+                        initialValue = renameInitValue,
+                        onConfirm = { newValue ->
+                            showRename = false
+                            val track = playbackState.currentTrack
+                            if (track != null) {
+                                val updated = if (renameIsTitle) track.copy(title = newValue)
+                                              else track.copy(artist = newValue)
+                                playbackState.renameAndRefreshMetadata(updated)
+                            }
+                        },
+                        onCancel = { showRename = false }
                     )
 
                     SettingsOverlay(
