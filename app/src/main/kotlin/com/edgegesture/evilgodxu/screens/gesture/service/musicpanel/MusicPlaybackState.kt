@@ -231,6 +231,10 @@ class MusicPlaybackState {
     }
     var isPlaying by mutableStateOf(false)
     var isPrepared by mutableStateOf(false)
+    val isPlayerActive: Boolean
+        get() = mediaController?.let { ctrl ->
+            ctrl.isPlaying || ctrl.playbackState == Player.STATE_BUFFERING
+        } ?: false
     var duration by mutableLongStateOf(0L)
     var currentPosition by mutableLongStateOf(0L)
     var playlist by mutableStateOf<List<MusicTrack>>(emptyList())
@@ -269,6 +273,10 @@ class MusicPlaybackState {
                 .filter { track ->
                     track.path.isBlank() &&
                         track.audioUri.isNotBlank() &&
+                        runCatching {
+                            val scheme = Uri.parse(track.audioUri).scheme
+                            scheme != null && scheme !in listOf("http", "https")
+                        }.getOrElse { false } &&
                         runCatching { Uri.parse(track.audioUri).scheme == ContentResolver.SCHEME_CONTENT }.getOrElse { false } &&
                         !hasUriAccess(context, track.audioUri)
                 }
@@ -417,7 +425,9 @@ class MusicPlaybackState {
             }
             pendingSavedUri = savedUri
             pendingResumePosition = savedPosition
-            currentPosition = savedPosition
+            if (currentTrack == null) {
+                currentPosition = savedPosition
+            }
             playMode = PlayMode.entries.getOrElse(savedMode) { PlayMode.RepeatAll }
             // 从持久化存储恢复音效选中状态
             selectedSoundEffect = SoundEffect.entries.firstOrNull { audioEffectManager.isEffectEnabled(it) }
@@ -533,6 +543,25 @@ class MusicPlaybackState {
             }
         }
     }
+
+    fun softRelease() {
+        persistState()
+        currentTrack?.let { track ->
+            pendingSavedUri = track.audioUri
+            pendingResumePosition = currentPosition
+        }
+        mediaController?.let { controller ->
+            controller.pause()
+            controller.stop()
+            controller.removeListener(controllerListener)
+            playbackScope.launch { controller.release() }
+        }
+        mediaController = null
+        player = null
+        isPlaying = false
+        audioEffectManager.releaseAll()
+    }
+
 
     fun release() {
         persistState()
@@ -672,28 +701,36 @@ class MusicPlaybackState {
 
     fun syncPlaybackState() {
         val controller = mediaController ?: return
+        val playbackState = controller.playbackState
+        val isActive = playbackState == Player.STATE_READY || playbackState == Player.STATE_BUFFERING
         val mediaId = controller.currentMediaItem?.mediaId?.toLongOrNull()
         val index = mediaId?.let { id -> playlist.indexOfFirst { it.id == id } } ?: -1
         if (index >= 0) {
             currentIndex = index
             currentTrack = playlist[index]
         }
-        val controllerDuration = controller.duration
-        if (controllerDuration > 0L) duration = controllerDuration
-        val controllerPosition = controller.currentPosition
-        if (controllerPosition >= 0L && duration > 0L) {
-            currentPosition = controllerPosition.coerceIn(0L, duration)
+        if (isActive) {
+            val controllerDuration = controller.duration
+            if (controllerDuration > 0L) duration = controllerDuration
+            val controllerPosition = controller.currentPosition
+            if (controllerPosition >= 0L && duration > 0L) {
+                currentPosition = controllerPosition.coerceIn(0L, duration)
+            }
         }
         isPlaying = controller.isPlaying
     }
 
     fun updatePosition() {
         val controller = mediaController ?: return
-        val controllerDuration = controller.duration
-        if (controllerDuration > 0L) duration = controllerDuration
-        val controllerPosition = controller.currentPosition
-        if (controllerPosition >= 0L && duration > 0L) {
-            currentPosition = controllerPosition.coerceIn(0L, duration)
+        val playbackState = controller.playbackState
+        val isActive = playbackState == Player.STATE_READY || playbackState == Player.STATE_BUFFERING
+        if (isActive) {
+            val controllerDuration = controller.duration
+            if (controllerDuration > 0L) duration = controllerDuration
+            val controllerPosition = controller.currentPosition
+            if (controllerPosition >= 0L && duration > 0L) {
+                currentPosition = controllerPosition.coerceIn(0L, duration)
+            }
         }
         isPlaying = controller.isPlaying
     }

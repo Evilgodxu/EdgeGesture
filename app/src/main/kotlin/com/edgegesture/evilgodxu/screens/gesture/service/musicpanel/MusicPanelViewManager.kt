@@ -253,7 +253,9 @@ class MusicPanelViewManager(
 
         initialization = managerScope.async {
             playbackState.restoreSavedState(context)
-            playbackState.removeUnavailableExternalTracks(context)
+            if (!playbackState.isPlayerActive) {
+                playbackState.removeUnavailableExternalTracks(context)
+            }
             if (playbackState.playlist.isEmpty()) {
                 scanAndPlay()
             } else {
@@ -503,8 +505,8 @@ class MusicPanelViewManager(
                 usbRouteJob = null
                 bluetoothHeadsetMonitor.unregister()
                 playbackState.updatePosition()
-                if (!playbackState.isPlaying) {
-                    playbackState.release()
+                if (!playbackState.isPlayerActive) {
+                    playbackState.softRelease()
                 }
                 onDismiss()
                 managerJob.cancel()

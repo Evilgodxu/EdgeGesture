@@ -6,8 +6,8 @@ object MusicPanelStateHolder {
     val state = MusicPlaybackState()
 
     fun releaseIfIdle() {
-        if (!state.isPlaying) {
-            state.release()
+        if (!state.isPlayerActive) {
+            state.softRelease()
         }
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -61,10 +62,14 @@ internal fun ProgressSection(playbackState: MusicPlaybackState) {
                 textAlign = TextAlign.Start
             )
 
-            val progress = if (playbackState.duration > 0) {
-                (playbackState.currentPosition.toFloat() / playbackState.duration).coerceIn(0f, 1f)
-            } else 0f
-            var seekFraction by remember { mutableFloatStateOf(progress) }
+            val progress by remember {
+                derivedStateOf {
+                    if (playbackState.duration > 0) {
+                        (playbackState.currentPosition.toFloat() / playbackState.duration).coerceIn(0f, 1f)
+                    } else 0f
+                }
+            }
+            var seekFraction by remember { mutableFloatStateOf(0f) }
             var isSeeking by remember { mutableStateOf(false) }
             val displayProgress = if (isSeeking) seekFraction else progress
 
