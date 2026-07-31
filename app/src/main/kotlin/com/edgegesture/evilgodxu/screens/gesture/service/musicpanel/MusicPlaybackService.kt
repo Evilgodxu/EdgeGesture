@@ -22,9 +22,7 @@ class MusicPlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        val usbAudioSink = DefaultAudioSink.Builder(this)
-            .setAudioProcessors(arrayOf(StereoRotationProcessor.INSTANCE))
-            .build()
+        val usbAudioSink = DefaultAudioSink.Builder(this).build()
         val renderersFactory = object : DefaultRenderersFactory(this) {
             override fun buildAudioSink(
                 context: android.content.Context,
@@ -43,9 +41,6 @@ class MusicPlaybackService : MediaSessionService() {
             )
             .setHandleAudioBecomingNoisy(true)
             .build()
-        // 音效管理器需要音频会话 ID 来绑定音效（Equalizer / BassBoost 等），
-        // 但 ExoPlayer 在创建时 audioSessionId 为 0，直到开始播放后才分配真实 ID。
-        // 通过 onAudioSessionIdChanged 监听会话就绪，同步给音效管理器。
         player.addListener(object : Player.Listener {
             override fun onTracksChanged(tracks: androidx.media3.common.Tracks) {
                 val format = tracks.groups.firstOrNull { it.isSelected }?.getTrackFormat(0)
@@ -94,28 +89,13 @@ class MusicPlaybackService : MediaSessionService() {
                     player.playWhenReady = true
                 }
             }
-
-            override fun onAudioSessionIdChanged(audioSessionId: Int) {
-                if (audioSessionId > 0) {
-                    MusicPanelStateHolder.state.audioSessionId = audioSessionId
-                }
-            }
-
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == Player.STATE_READY) {
-                    val sessionId = player.audioSessionId
-                    if (sessionId > 0) {
-                        MusicPanelStateHolder.state.audioSessionId = sessionId
-                    }
-                }
-            }
         })
         mediaSession = MediaSession.Builder(this, player)
             .setCallback(sessionCallback)
             .build()
     }
 
-    /** 拦截耳机/蓝牙媒体键，直接切歌，避免系统"双击才切上一首"的问题 */
+    /** 拦截系统媒体面板和耳机/蓝牙媒体键的上一首/下一首操作 */
     private val sessionCallback = object : MediaSession.Callback {
         override fun onMediaButtonEvent(
             session: MediaSession,

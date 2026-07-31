@@ -22,11 +22,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
@@ -93,7 +90,6 @@ internal fun SettingsOverlay(
                 ) { showEffects ->
                     if (showEffects) {
                         SoundEffectPanel(
-                            playbackState = playbackState,
                             onBack = { onShowSoundEffectsChange(false) }
                         )
                     } else {
@@ -153,9 +149,7 @@ internal fun SettingsOverlay(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            val selectedEffect = playbackState.selectedSoundEffect
                             SoundEffectEntryRow(
-                                selectedEffectName = selectedEffect?.let { stringResource(it.displayNameResId) },
                                 onClick = { onShowSoundEffectsChange(true) }
                             )
 
@@ -188,7 +182,6 @@ internal fun SettingsOverlay(
 
 @Composable
 internal fun SoundEffectPanel(
-    playbackState: MusicPlaybackState,
     onBack: () -> Unit,
 ) {
     Column(
@@ -212,26 +205,15 @@ internal fun SoundEffectPanel(
             )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        val scrollState = rememberScrollState()
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            SoundEffect.entries.forEach { effect ->
-                val isSelected = playbackState.selectedSoundEffect == effect
-                SoundEffectRow(
-                    title = stringResource(effect.displayNameResId),
-                    subtitle = stringResource(effect.descriptionResId),
-                    selected = isSelected,
-                    onClick = { playbackState.setSoundEffectEnabled(effect, !isSelected) }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.music_panel_sound_effects_not_implemented),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 14.sp
+            )
         }
     }
 }
@@ -278,7 +260,6 @@ internal fun SettingsSwitchRow(
 
 @Composable
 internal fun SoundEffectEntryRow(
-    selectedEffectName: String?,
     onClick: () -> Unit,
 ) {
     Row(
@@ -304,7 +285,7 @@ internal fun SoundEffectEntryRow(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = selectedEffectName ?: stringResource(R.string.music_panel_sound_effects_hint),
+                text = stringResource(R.string.music_panel_sound_effects_not_implemented),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp,
                 maxLines = 1,
@@ -318,58 +299,5 @@ internal fun SoundEffectEntryRow(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp)
         )
-    }
-}
-
-@Composable
-internal fun SoundEffectRow(
-    title: String,
-    subtitle: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(
-                if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
-            )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = onClick
-            )
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = subtitle,
-                color = if (selected) MaterialTheme.colorScheme.primary
-                       else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 11.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        if (selected) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Icon(
-                imageVector = Icons.Default.Check,
-                contentDescription = stringResource(R.string.music_panel_sound_effects_enabled),
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
-        }
     }
 }

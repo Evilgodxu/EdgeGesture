@@ -115,6 +115,7 @@
     <string name="music_panel_sound_effects_hint">点击设置音效效果</string>
     <string name="music_panel_sound_effects_enter">进入</string>
     <string name="music_panel_sound_effects_enabled">已启用</string>
+    <string name="music_panel_sound_effects_not_implemented">暂未实现</string>
     <string name="music_panel_play_error">该歌曲暂时无法播放（可能为VIP歌曲）</string>
     <string name="music_panel_play_failed">播放失败</string>
     <string name="music_panel_copy">复制</string>
@@ -123,20 +124,6 @@
     <string name="music_panel_rename_artist">重命名艺术家</string>
     <string name="music_panel_rename_confirm">确定</string>
     <string name="music_panel_rename_cancel">取消</string>
-
-    <!-- 音效名称 -->
-    <string name="sound_effect_bass_boost">超重低音</string>
-    <string name="sound_effect_bass_boost_desc">增强低频表现，感受澎湃低音</string>
-    <string name="sound_effect_pure_voice">纯净人声</string>
-    <string name="sound_effect_pure_voice_desc">突出人声频段，压低低频与极高频，适合听歌与播客</string>
-    <string name="sound_effect_virtualizer">3D 环绕声</string>
-    <string name="sound_effect_virtualizer_desc">拓宽声场，营造空间环绕感</string>
-    <string name="sound_effect_surround_rotation">环绕旋转</string>
-    <string name="sound_effect_surround_rotation_desc">声像在左右耳间循环旋转，沉浸环绕</string>
-    <string name="sound_effect_loudness_enhancer">响度增强</string>
-    <string name="sound_effect_loudness_enhancer_desc">提升整体响度，小音量下更清晰</string>
-    <string name="sound_effect_concert_hall">音乐厅</string>
-    <string name="sound_effect_concert_hall_desc">模拟大厅混响，感受现场氛围</string>
 
     <!-- 音乐扫描 -->
     <string name="music_scanner_external_music">外部音乐</string>

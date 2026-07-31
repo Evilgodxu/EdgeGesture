@@ -322,6 +322,7 @@
     <string name="music_panel_sound_effects_hint">Tap to set sound effect</string>
     <string name="music_panel_sound_effects_enter">Enter</string>
     <string name="music_panel_sound_effects_enabled">Enabled</string>
+    <string name="music_panel_sound_effects_not_implemented">Not implemented yet</string>
     <string name="music_panel_play_error">This song is temporarily unavailable (may be VIP-only)</string>
     <string name="music_panel_play_failed">Playback failed</string>
     <string name="music_panel_copy">Copy</string>
@@ -330,20 +331,6 @@
     <string name="music_panel_rename_artist">Rename Artist</string>
     <string name="music_panel_rename_confirm">OK</string>
     <string name="music_panel_rename_cancel">Cancel</string>
-
-    <!-- Sound Effect Names -->
-    <string name="sound_effect_bass_boost">Bass Boost</string>
-    <string name="sound_effect_bass_boost_desc">Enhance low frequencies for powerful bass</string>
-    <string name="sound_effect_pure_voice">Pure Voice</string>
-    <string name="sound_effect_pure_voice_desc">Boost vocal range, reduce bass &amp; treble, ideal for songs &amp; podcasts</string>
-    <string name="sound_effect_virtualizer">3D Surround</string>
-    <string name="sound_effect_virtualizer_desc">Widen the sound stage for spatial surround</string>
-    <string name="sound_effect_surround_rotation">Surround Rotation</string>
-    <string name="sound_effect_surround_rotation_desc">Stereo image rotates between ears for immersive surround</string>
-    <string name="sound_effect_loudness_enhancer">Loudness Enhancer</string>
-    <string name="sound_effect_loudness_enhancer_desc">Boost overall loudness, clearer at low volume</string>
-    <string name="sound_effect_concert_hall">Concert Hall</string>
-    <string name="sound_effect_concert_hall_desc">Simulate hall reverb for a live atmosphere</string>
 
     <!-- Music Scanner -->
     <string name="music_scanner_external_music">External Music</string>
