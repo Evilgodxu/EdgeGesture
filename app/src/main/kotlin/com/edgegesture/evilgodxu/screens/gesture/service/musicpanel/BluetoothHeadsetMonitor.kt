@@ -1,13 +1,16 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
+import android.Manifest
 import android.bluetooth.BluetoothManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import androidx.core.content.ContextCompat
 import com.edgegesture.evilgodxu.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -104,6 +107,13 @@ class BluetoothHeadsetMonitor(
      * 因此优先使用 BluetoothDevice.getName() 获取蓝牙耳机/音箱的实际名称。
      */
     private fun resolveBluetoothDeviceName(audioDevice: AudioDeviceInfo): String? {
+        // 在调用蓝牙 API 前先检查 BLUETOOTH_CONNECT 运行时权限，
+        // 避免触发系统权限弹窗（Android 12+ 为危险权限）
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_CONNECT) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return audioDevice.productName?.toString()?.takeIf { it.isNotBlank() }
+        }
         // 优先使用 BluetoothDevice.getName() 获取远程蓝牙设备名称
         try {
             val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
