@@ -1,5 +1,6 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
+import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
@@ -86,8 +87,7 @@ class BluetoothHeadsetMonitor(
     }
 
     private fun handleConnected(device: AudioDeviceInfo) {
-        val deviceName = device.productName?.toString()
-            ?.takeIf { it.isNotBlank() }
+        val deviceName = resolveBluetoothDeviceName(device)
             ?: context.getString(R.string.bluetooth_headset_default_name)
         if (isHeadsetConnected) {
             onHeadsetConnected(deviceName, false)
@@ -95,6 +95,35 @@ class BluetoothHeadsetMonitor(
         }
         isHeadsetConnected = true
         onHeadsetConnected(deviceName, true)
+    }
+
+    /**
+     * 通过 Bluetooth API 获取远程蓝牙设备的真实名称。
+     *
+     * AudioDeviceInfo.productName 在部分设备上返回的是本机蓝牙名称而非远程设备名称，
+     * 因此优先使用 BluetoothDevice.getName() 获取蓝牙耳机/音箱的实际名称。
+     */
+    private fun resolveBluetoothDeviceName(audioDevice: AudioDeviceInfo): String? {
+        // 优先使用 BluetoothDevice.getName() 获取远程蓝牙设备名称
+        try {
+            val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java).adapter
+            if (bluetoothAdapter != null) {
+                val address = audioDevice.address
+                if (address.isNotBlank()) {
+                    val btDevice = bluetoothAdapter.getRemoteDevice(address)
+                    // getName() 返回远程设备在其广播或配对过程中声明的名称
+                    btDevice.name?.takeIf { it.isNotBlank() }?.let { return it }
+                }
+            }
+        } catch (_: SecurityException) {
+            // BLUETOOTH_CONNECT 权限不足，回退到 productName
+        } catch (_: IllegalArgumentException) {
+            // address 格式无效，回退到 productName
+        } catch (_: Exception) {
+            // 其他异常，回退到 productName
+        }
+        // 回退到 AudioDeviceInfo.productName
+        return audioDevice.productName?.toString()?.takeIf { it.isNotBlank() }
     }
 
     private fun handleDisconnected() {
