@@ -10,6 +10,7 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
+import androidx.media3.common.ForwardingPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.edgegesture.evilgodxu.R
@@ -90,7 +91,7 @@ class MusicPlaybackService : MediaSessionService() {
                 }
             }
         })
-        mediaSession = MediaSession.Builder(this, player)
+        mediaSession = MediaSession.Builder(this, SkipProxyPlayer(player))
             .setCallback(sessionCallback)
             .build()
     }
@@ -118,6 +119,28 @@ class MusicPlaybackService : MediaSessionService() {
                 }
             }
             return super.onMediaButtonEvent(session, controllerInfo, intent)
+        }
+    }
+
+    /**
+     * 包装 ExoPlayer，把系统媒体面板/通知栏的上一首/下一首操作
+     * 映射到应用自己的切歌逻辑，避免默认行为中「回退到当前曲目开头」。
+     */
+    private inner class SkipProxyPlayer(player: Player) : ForwardingPlayer(player) {
+        override fun seekToPrevious() {
+            handlePreviousTrack()
+        }
+
+        override fun seekToPreviousMediaItem() {
+            handlePreviousTrack()
+        }
+
+        override fun seekToNext() {
+            handleNextTrack()
+        }
+
+        override fun seekToNextMediaItem() {
+            handleNextTrack()
         }
     }
 
