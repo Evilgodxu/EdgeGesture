@@ -23,9 +23,9 @@ class TaskPanelViewManager(
     private val context: android.content.Context,
     private val apps: List<TaskPanelApp>,
     private val selectedPackageName: String?,
-    private val hasUsageAccess: Boolean,
     private val onLaunch: (String) -> Unit,
     private val onLaunchInFreeform: (String) -> Unit,
+    private val onSwipeAway: (String) -> Unit,
     private val onDismiss: () -> Unit
 ) {
     private val windowManager = context.getSystemService(android.content.Context.WINDOW_SERVICE) as WindowManager
@@ -64,7 +64,16 @@ class TaskPanelViewManager(
             alpha = 0f
             scaleX = 0.9f
             scaleY = 0.9f
-            setContent { TaskPanelOverlay(apps, selectedPackageName, hasUsageAccess, onLaunch = { onLaunch(it); dismiss() }, onLaunchInFreeform = onLaunchInFreeform, onDismiss = { dismiss() }) }
+            setContent {
+                TaskPanelOverlay(
+                    apps = apps,
+                    selectedPackageName = selectedPackageName,
+                    onLaunch = { onLaunch(it); dismiss() },
+                    onLaunchInFreeform = { onLaunchInFreeform(it); dismiss() },
+                    onSwipeAway = onSwipeAway,
+                    onDismiss = { dismiss() }
+                )
+            }
             setOnKeyListener { _, code, event ->
                 if (code == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) { dismiss(); true } else false
             }

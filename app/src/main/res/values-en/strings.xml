@@ -3,9 +3,9 @@
     <!-- App General -->
     <string name="app_name">Edge Gesture</string>
     <string name="task_panel_empty">No recently used apps</string>
-    <string name="task_panel_usage_access_required">Allow usage access in Settings</string>
     <string name="task_panel_single_tap_hint">Tap to launch</string>
     <string name="task_panel_double_tap_hint">Double-tap for floating window</string>
+    <string name="task_panel_clean_button">Clean Others</string>
 
     <!-- Settings Screen -->
     <!-- Page General -->

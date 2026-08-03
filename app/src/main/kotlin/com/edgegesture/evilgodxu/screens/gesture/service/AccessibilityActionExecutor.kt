@@ -3,10 +3,6 @@ package com.edgegesture.evilgodxu.screens.gesture.service
 import android.Manifest
 import android.accessibilityservice.AccessibilityService
 import android.app.AlarmManager
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.AppOpsManager
-import android.app.usage.UsageStatsManager
 import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
@@ -83,7 +79,10 @@ class AccessibilityActionExecutor(
         GestureStatsManager.incrementGestureCount(service)
 
         when (action) {
-            GestureAction.HOME -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+            GestureAction.HOME -> {
+                dismissTaskPanel()
+                service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
+            }
             GestureAction.RECENT -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
             GestureAction.BACK -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
             GestureAction.LAST_APP -> switchToLastApp()
@@ -270,20 +269,19 @@ class AccessibilityActionExecutor(
 
     private fun showTaskPanel(blacklist: Set<String>) {
         if (taskPanelViewManager != null) { dismissTaskPanel(); return }
-        val ops = service.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val hasAccess = try {
-            val mode = ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), service.packageName)
-            mode == AppOpsManager.MODE_ALLOWED
-        } catch (_: Exception) { false }
         val currentPackage = currentApp ?: service.packageName
-        val packages = if (hasAccess) {
-            getRecentAppsFromUsageStats(blacklist).toMutableList()
-        } else {
-            mutableListOf()
+        // 从 appHistory 构建列表，最近使用的在前，当前应用置顶
+        val packages = mutableListOf<String>()
+        if (currentPackage != service.packageName && currentPackage !in blacklist) {
+            packages.add(currentPackage)
         }
-        if (currentPackage !in packages && currentPackage != service.packageName && currentPackage !in blacklist) {
-            packages.add(0, currentPackage)
-        }
+        packages.addAll(appHistory.reversed().filter {
+            it != currentPackage && it != service.packageName && it !in blacklist
+        })
+        // 确保列表中没有重复项
+        val distinctPackages = packages.distinct()
+        packages.clear()
+        packages.addAll(distinctPackages)
         val apps = packages.mapNotNull { pkg ->
             try {
                 service.packageManager.getLaunchIntentForPackage(pkg) ?: return@mapNotNull null
@@ -291,7 +289,17 @@ class AccessibilityActionExecutor(
                 TaskPanelApp(pkg, service.packageManager.getApplicationLabel(info).toString(), service.packageManager.getApplicationIcon(info))
             } catch (_: Exception) { null }
         }.take(10).toList()
-        taskPanelViewManager = TaskPanelViewManager(service, apps, currentPackage, hasAccess, { launchApp(it) }, { freeformAppLauncher.launch(it, useFreeform = true) }, { taskPanelViewManager = null }).also { it.show() }
+        taskPanelViewManager = TaskPanelViewManager(
+            service, apps, currentPackage,
+            { launchApp(it) },
+            { freeformAppLauncher.launch(it, useFreeform = true) },
+            { removeFromHistory(it) },
+            { taskPanelViewManager = null }
+        ).also { it.show() }
+    }
+
+    private fun removeFromHistory(packageName: String) {
+        appHistory.removeAll { it == packageName }
     }
 
     // 清理资源
@@ -325,6 +333,7 @@ class AccessibilityActionExecutor(
         currentApp?.let { current ->
             if (current != packageName && current !in blacklist) {
                 appHistory.remove(packageName)
+                appHistory.remove(current)
                 appHistory.add(current)
                 // 限制历史记录大小，避免内存无限增长
                 if (appHistory.size > 20) {
@@ -349,7 +358,6 @@ class AccessibilityActionExecutor(
         try {
             val blacklist = getBlacklistSync()
             val target = appHistory.findLast { it != currentApp && it !in blacklist }
-                ?: getLastAppFromUsageStats(blacklist)
             if (target != null && target != service.packageName && target != currentApp) {
                 val launched = launchApp(target)
                 if (launched) {
@@ -416,36 +424,6 @@ class AccessibilityActionExecutor(
         } catch (_: Exception) {
             false
         }
-    }
-
-    // 从 UsageStatsManager 获取最近使用的应用，按最后使用时间去重排序
-    private fun getRecentAppsFromUsageStats(blacklist: Set<String>): List<String> {
-        return try {
-            val usageStatsManager = service.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
-                ?: return emptyList()
-            val endTime = System.currentTimeMillis()
-            val startTime = endTime - 24 * 60 * 60 * 1000L
-
-            usageStatsManager.queryUsageStats(
-                UsageStatsManager.INTERVAL_DAILY,
-                startTime,
-                endTime
-            ).orEmpty()
-                .asSequence()
-                .filter { it.packageName != service.packageName && it.packageName !in blacklist }
-                .filter { it.lastTimeUsed > 0L }
-                .sortedByDescending { it.lastTimeUsed }
-                .map { it.packageName }
-                .distinct()
-                .take(10)
-                .toList()
-        } catch (_: Exception) {
-            emptyList()
-        }
-    }
-
-    private fun getLastAppFromUsageStats(blacklist: Set<String>): String? {
-        return getRecentAppsFromUsageStats(blacklist).firstOrNull()
     }
 
     private fun sendMediaKeyEvent(keyCode: Int) {
