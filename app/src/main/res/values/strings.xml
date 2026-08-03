@@ -4,6 +4,8 @@
     <string name="app_name">边缘手势</string>
     <string name="task_panel_empty">暂无最近使用的应用</string>
     <string name="task_panel_usage_access_required">请在设置中允许使用情况访问</string>
+    <string name="task_panel_single_tap_hint">单击启动</string>
+    <string name="task_panel_double_tap_hint">双击小窗</string>
 
     <!-- 设置页 (Settings) -->
     <!-- 页面通用 -->

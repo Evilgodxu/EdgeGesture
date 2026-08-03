@@ -8,6 +8,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +24,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -60,6 +62,7 @@ fun TaskPanelOverlay(
     var singleTapJob by remember { androidx.compose.runtime.mutableStateOf<Job?>(null) }
     val listState = rememberLazyListState()
     val thresholdPx = with(LocalDensity.current) { 48.dp.toPx() }
+    val hintTextColor = if (isSystemInDarkTheme()) Color.White else Color.LightGray
     val virtualCenter = Int.MAX_VALUE / 2
     var virtualSelected by remember(apps, selectedPackageName) {
         mutableIntStateOf(virtualCenter - (virtualCenter % apps.size.coerceAtLeast(1)) + selected)
@@ -163,7 +166,7 @@ fun TaskPanelOverlay(
                     }
                 }
                 Box(
-                    Modifier.fillMaxWidth().height(240.dp).taskGesture(),
+                    Modifier.fillMaxWidth().height(460.dp).taskGesture(),    // 控制区域大小
                     contentAlignment = Alignment.Center
                 ) {
                     if (apps.isEmpty()) {
@@ -173,6 +176,21 @@ fun TaskPanelOverlay(
                             color = Color.White
                         )
                     }
+                }
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(R.string.task_panel_single_tap_hint),
+                        color = hintTextColor,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = stringResource(R.string.task_panel_double_tap_hint),
+                        color = hintTextColor,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
