@@ -2,6 +2,8 @@
 <resources>
     <!-- 应用通用 -->
     <string name="app_name">边缘手势</string>
+    <string name="task_panel_empty">暂无最近使用的应用</string>
+    <string name="task_panel_usage_access_required">请在设置中允许使用情况访问</string>
 
     <!-- 设置页 (Settings) -->
     <!-- 页面通用 -->
@@ -85,6 +87,7 @@
     <string name="gesture_action_freeform_mode">小窗模式</string>
     <string name="gesture_action_expand_panel">扩展面板</string>
     <string name="gesture_action_music_panel">音乐面板</string>
+    <string name="gesture_action_task_panel">任务面板</string>
 
     <!-- 音乐面板 -->
     <string name="music_panel_empty">暂无本地音乐</string>

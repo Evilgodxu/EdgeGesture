@@ -5,7 +5,6 @@ import android.app.Activity
 import android.app.Application
 import android.app.AppOpsManager
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.PowerManager
 import android.os.Process
 import android.provider.Settings
@@ -165,14 +164,10 @@ class GestureSettingsViewModel(
     // 刷新所有权限状态
     fun refreshPermissions() {
         val overlay = Settings.canDrawOverlays(context)
-        val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
+        val notification = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
         val battery = isIgnoringBatteryOptimizations(context)
         val usageStats = hasUsageStatsPermission(context)
         val queryAllPackages = hasQueryAllPackagesPermission(context)

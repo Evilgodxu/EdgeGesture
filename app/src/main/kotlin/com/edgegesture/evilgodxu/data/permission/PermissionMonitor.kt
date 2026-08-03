@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.AppOpsManager
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Process
 import android.provider.Settings
 import androidx.core.content.ContextCompat
@@ -31,14 +30,10 @@ class PermissionMonitor(private val context: Context) {
 
     // 检查通知权限
     fun isNotificationGranted(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
     }
 
     // 检查电池优化权限

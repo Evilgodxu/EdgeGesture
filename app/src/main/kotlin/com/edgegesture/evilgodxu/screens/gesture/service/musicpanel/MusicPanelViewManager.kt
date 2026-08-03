@@ -11,7 +11,6 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.graphics.PixelFormat
-import android.os.Build
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.WindowManager
@@ -183,9 +182,7 @@ class MusicPanelViewManager(
         val flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                 WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    WindowManager.LayoutParams.FLAG_BLUR_BEHIND
-                } else 0
+                WindowManager.LayoutParams.FLAG_BLUR_BEHIND
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -195,9 +192,7 @@ class MusicPanelViewManager(
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.CENTER
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                blurBehindRadius = 80
-            }
+            blurBehindRadius = 80
         }
 
         // 在 UI 渲染前同步检查已连接的蓝牙设备，确保首次显示时状态正确

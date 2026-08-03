@@ -5,6 +5,8 @@ import android.accessibilityservice.AccessibilityService
 import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.AppOpsManager
+import android.app.usage.UsageStatsManager
 import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
@@ -14,7 +16,6 @@ import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.net.Uri
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
@@ -39,6 +40,8 @@ import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanel
 import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelPermissionActivity
 import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelPermissionBridge
 import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelViewManager
+import com.edgegesture.evilgodxu.screens.gesture.service.taskpanel.TaskPanelApp
+import com.edgegesture.evilgodxu.screens.gesture.service.taskpanel.TaskPanelViewManager
 import com.edgegesture.evilgodxu.screens.settings.themeModeFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +65,7 @@ class AccessibilityActionExecutor(
     private var expandPanelViewManager: ExpandPanelViewManager? = null
     private var pendingExpandPanelShow = false
     private var musicPanelViewManager: MusicPanelViewManager? = null
+    private var taskPanelViewManager: TaskPanelViewManager? = null
     private val permissionMonitor = PermissionMonitor(service)
     private val executorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -93,6 +97,7 @@ class AccessibilityActionExecutor(
             GestureAction.FREEFORM_MODE -> launchCurrentAppInFreeform()
             GestureAction.EXPAND_PANEL -> showExpandPanel()
             GestureAction.MUSIC_PANEL -> showMusicPanel()
+            GestureAction.TASK_PANEL -> showTaskPanel(getBlacklistSync())
             GestureAction.ALIPAY_SCAN -> launchScanAlipay()
             GestureAction.WECHAT_SCAN -> launchScanWechat()
             GestureAction.REMIND_1M -> scheduleReminder(1)
@@ -233,20 +238,16 @@ class AccessibilityActionExecutor(
             ).apply { show() }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            when {
-                ContextCompat.checkSelfPermission(service, Manifest.permission.READ_MEDIA_AUDIO) ==
-                        PackageManager.PERMISSION_GRANTED -> showPanel()
-                else -> {
-                    MusicPanelPermissionBridge.pendingShowAction = showPanel
-                    val intent = Intent(service, MusicPanelPermissionActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    }
-                    service.startActivity(intent)
+        when {
+            ContextCompat.checkSelfPermission(service, Manifest.permission.READ_MEDIA_AUDIO) ==
+                    PackageManager.PERMISSION_GRANTED -> showPanel()
+            else -> {
+                MusicPanelPermissionBridge.pendingShowAction = showPanel
+                val intent = Intent(service, MusicPanelPermissionActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
+                service.startActivity(intent)
             }
-        } else {
-            showPanel()
         }
     }
 
@@ -262,10 +263,42 @@ class AccessibilityActionExecutor(
         musicPanelViewManager = null
     }
 
+    fun dismissTaskPanel() {
+        taskPanelViewManager?.dismiss()
+        taskPanelViewManager = null
+    }
+
+    private fun showTaskPanel(blacklist: Set<String>) {
+        if (taskPanelViewManager != null) { dismissTaskPanel(); return }
+        val ops = service.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val hasAccess = try {
+            val mode = ops.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), service.packageName)
+            mode == AppOpsManager.MODE_ALLOWED
+        } catch (_: Exception) { false }
+        val currentPackage = currentApp ?: service.packageName
+        val packages = if (hasAccess) {
+            getRecentAppsFromUsageStats(blacklist).toMutableList()
+        } else {
+            mutableListOf()
+        }
+        if (currentPackage !in packages && currentPackage != service.packageName && currentPackage !in blacklist) {
+            packages.add(0, currentPackage)
+        }
+        val apps = packages.mapNotNull { pkg ->
+            try {
+                service.packageManager.getLaunchIntentForPackage(pkg) ?: return@mapNotNull null
+                val info = service.packageManager.getApplicationInfo(pkg, 0)
+                TaskPanelApp(pkg, service.packageManager.getApplicationLabel(info).toString(), service.packageManager.getApplicationIcon(info))
+            } catch (_: Exception) { null }
+        }.take(10).toList()
+        taskPanelViewManager = TaskPanelViewManager(service, apps, currentPackage, hasAccess, { launchApp(it) }, { freeformAppLauncher.launch(it, useFreeform = true) }, { taskPanelViewManager = null }).also { it.show() }
+    }
+
     // 清理资源
     fun cleanup() {
         dismissExpandPanel()
         dismissMusicPanel()
+        dismissTaskPanel()
         executorScope.cancel()
     }
 
@@ -385,32 +418,34 @@ class AccessibilityActionExecutor(
         }
     }
 
-    // 从 UsageStatsManager 获取最近使用的应用，作为应用历史记录的备用方案
-    private fun getLastAppFromUsageStats(blacklist: Set<String>): String? {
+    // 从 UsageStatsManager 获取最近使用的应用，按最后使用时间去重排序
+    private fun getRecentAppsFromUsageStats(blacklist: Set<String>): List<String> {
         return try {
-            val usageStatsManager = service.getSystemService(Context.USAGE_STATS_SERVICE) as? android.app.usage.UsageStatsManager
-                ?: return null
+            val usageStatsManager = service.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
+                ?: return emptyList()
             val endTime = System.currentTimeMillis()
-            // 查询最近5分钟的使用统计
-            val startTime = endTime - 300000
+            val startTime = endTime - 24 * 60 * 60 * 1000L
 
-            val stats = usageStatsManager.queryUsageStats(
-                android.app.usage.UsageStatsManager.INTERVAL_DAILY,
+            usageStatsManager.queryUsageStats(
+                UsageStatsManager.INTERVAL_DAILY,
                 startTime,
                 endTime
-            )
-
-            if (stats != null && stats.isNotEmpty()) {
-                val sortedStats = stats
-                    .filter { it.packageName != service.packageName && it.packageName !in blacklist }
-                    .sortedByDescending { it.lastTimeUsed }
-                sortedStats.getOrNull(0)?.packageName
-            } else {
-                null
-            }
+            ).orEmpty()
+                .asSequence()
+                .filter { it.packageName != service.packageName && it.packageName !in blacklist }
+                .filter { it.lastTimeUsed > 0L }
+                .sortedByDescending { it.lastTimeUsed }
+                .map { it.packageName }
+                .distinct()
+                .take(10)
+                .toList()
         } catch (_: Exception) {
-            null
+            emptyList()
         }
+    }
+
+    private fun getLastAppFromUsageStats(blacklist: Set<String>): String? {
+        return getRecentAppsFromUsageStats(blacklist).firstOrNull()
     }
 
     private fun sendMediaKeyEvent(keyCode: Int) {

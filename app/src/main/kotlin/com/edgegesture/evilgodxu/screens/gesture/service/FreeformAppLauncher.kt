@@ -86,7 +86,7 @@ class FreeformAppLauncher(private val context: Context) {
         private fun ensureHiddenApiExempt() {
             if (hiddenApiInitialized.compareAndSet(false, true)) {
                 try {
-                    HiddenApiBypass.addHiddenApiExemptions("Landroid/app/ActivityOptions;")
+                    HiddenApiBypass.addHiddenApiExemptions("Landroid.app.ActivityOptions;")
                 } catch (_: Throwable) {
                 }
             }

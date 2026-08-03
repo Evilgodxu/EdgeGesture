@@ -2,7 +2,6 @@ package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,8 +22,7 @@ class MusicPanelPermissionActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            when {
+        when {
                 ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) ==
                         PackageManager.PERMISSION_GRANTED -> {
                     MusicPanelPermissionBridge.pendingShowAction?.invoke()
@@ -34,12 +32,6 @@ class MusicPanelPermissionActivity : ComponentActivity() {
                 else -> {
                     permissionLauncher.launch(Manifest.permission.READ_MEDIA_AUDIO)
                 }
-            }
-        } else {
-            // minSdk 为 33，理论上不会进入此分支；作为兜底直接放行
-            MusicPanelPermissionBridge.pendingShowAction?.invoke()
-            MusicPanelPermissionBridge.pendingShowAction = null
-            finish()
         }
     }
 

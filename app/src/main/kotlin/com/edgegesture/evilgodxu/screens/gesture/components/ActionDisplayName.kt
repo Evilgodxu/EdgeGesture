@@ -24,6 +24,7 @@ fun getActionDisplayName(action: GestureAction): String {
         GestureAction.FREEFORM_MODE -> stringResource(R.string.gesture_action_freeform_mode)
         GestureAction.EXPAND_PANEL -> stringResource(R.string.gesture_action_expand_panel)
         GestureAction.MUSIC_PANEL -> stringResource(R.string.gesture_action_music_panel)
+        GestureAction.TASK_PANEL -> stringResource(R.string.gesture_action_task_panel)
         GestureAction.ALIPAY_SCAN -> stringResource(R.string.gesture_action_alipay_scan)
         GestureAction.WECHAT_SCAN -> stringResource(R.string.gesture_action_wechat_scan)
         GestureAction.REMIND_1M -> stringResource(R.string.gesture_action_remind_1m)

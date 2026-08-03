@@ -3,14 +3,12 @@ package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import com.edgegesture.evilgodxu.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 import java.net.URL
 
 internal suspend fun performSearch(
@@ -121,25 +119,17 @@ internal suspend fun cacheToDownloads(
 
         val audioUri: String
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val contentValues = ContentValues().apply {
-                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
-                put(MediaStore.Downloads.MIME_TYPE, "audio/mpeg")
-                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/EdgeGesture")
-            }
-            val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-            if (uri != null) {
-                context.contentResolver.openOutputStream(uri)?.use { os -> os.write(bytes) }
-                audioUri = uri.toString()
-            } else {
-                return
-            }
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+            put(MediaStore.Downloads.MIME_TYPE, "audio/mpeg")
+            put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/EdgeGesture")
+        }
+        val uri = context.contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+        if (uri != null) {
+            context.contentResolver.openOutputStream(uri)?.use { os -> os.write(bytes) }
+            audioUri = uri.toString()
         } else {
-            @Suppress("DEPRECATION")
-            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            val file = File(dir, fileName)
-            file.writeBytes(bytes)
-            audioUri = Uri.fromFile(file).toString()
+            return
         }
 
         withContext(Dispatchers.Main) {
@@ -196,14 +186,6 @@ internal suspend fun findExistingDownload(
     context: Context,
     fileName: String,
 ): String? = withContext(Dispatchers.IO) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-        @Suppress("DEPRECATION")
-        val file = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            fileName
-        )
-        return@withContext if (file.exists()) Uri.fromFile(file).toString() else null
-    }
     try {
         val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
         val projection = arrayOf(MediaStore.Downloads._ID)

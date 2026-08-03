@@ -12,7 +12,6 @@ import android.media.AudioAttributes
 import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioManager
-import android.os.Build
 import com.edgegesture.evilgodxu.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -42,12 +41,7 @@ class UsbAudioMonitor(
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action != ACTION_USB_PERMISSION) return
             val granted = intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)
-            val device = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
-            } else {
-                @Suppress("DEPRECATION")
-                intent.getParcelableExtra(UsbManager.EXTRA_DEVICE)
-            }
+            val device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice::class.java)
             if (granted && device != null && isAudioDevice(device)) {
                 handleDeviceAttached()
             } else if (!granted) {
@@ -104,19 +98,9 @@ class UsbAudioMonitor(
             addAction("android.media.action.USB_AUDIO_ACCESSORY_PLUG")
             addAction("android.media.action.USB_AUDIO_DEVICE_PLUG")
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(usbReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            @Suppress("DEPRECATION")
-            context.registerReceiver(usbReceiver, filter)
-        }
+        context.registerReceiver(usbReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         // 注册 USB 权限结果接收器
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.registerReceiver(usbPermissionReceiver, IntentFilter(ACTION_USB_PERMISSION), Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            @Suppress("DEPRECATION")
-            context.registerReceiver(usbPermissionReceiver, IntentFilter(ACTION_USB_PERMISSION))
-        }
+        context.registerReceiver(usbPermissionReceiver, IntentFilter(ACTION_USB_PERMISSION), Context.RECEIVER_NOT_EXPORTED)
         receiverRegistered = true
         // 检查当前是否已有 USB 音频设备连接
         checkExistingUsbAudioDevice()

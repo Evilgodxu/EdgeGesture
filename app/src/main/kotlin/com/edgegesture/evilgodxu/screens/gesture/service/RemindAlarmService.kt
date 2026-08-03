@@ -17,7 +17,6 @@ import android.media.AudioAttributes
 import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
-import android.os.Build
 import android.os.IBinder
 import android.os.VibrationEffect
 import android.os.VibratorManager
@@ -125,10 +124,8 @@ class RemindAlarmService : Service() {
                 PixelFormat.TRANSLUCENT
             )
 
-            // API 31+: 全屏窗口背景模糊
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                params.blurBehindRadius = 25
-            }
+            // 全屏窗口背景模糊
+            params.blurBehindRadius = 25
 
             // 根布局：模糊/半透明遮罩，点击任意位置关闭
             val bgColor = if (isDark) Color.argb(180, 0, 0, 0) else Color.argb(160, 255, 255, 255)

@@ -3,7 +3,6 @@ package com.edgegesture.evilgodxu.screens.gesture
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
-import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -514,9 +513,7 @@ private fun GestureSettingsSwitchesColumn(
             description = stringResource(R.string.permission_notification_desc),
             granted = uiState.notificationGranted,
             onRequest = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             },
             icon = {
                 Icon(

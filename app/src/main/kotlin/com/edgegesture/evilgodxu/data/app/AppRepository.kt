@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.core.content.ContextCompat
 import com.edgegesture.evilgodxu.data.gesture.clearExpandPanelShortcut
 import com.edgegesture.evilgodxu.data.gesture.initBlacklistIfNeeded
@@ -77,12 +76,7 @@ class AppRepository private constructor(private val context: Context) {
             addCategory(Intent.CATEGORY_LAUNCHER)
         }
 
-        val resolveInfos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            pm.queryIntentActivities(launcherIntent, PackageManager.ResolveInfoFlags.of(0L))
-        } else {
-            @Suppress("DEPRECATION")
-            pm.queryIntentActivities(launcherIntent, 0)
-        }
+        val resolveInfos = pm.queryIntentActivities(launcherIntent, PackageManager.ResolveInfoFlags.of(0L))
 
         resolveInfos.map { resolveInfo ->
             val activityInfo = resolveInfo.activityInfo
@@ -105,12 +99,7 @@ class AppRepository private constructor(private val context: Context) {
 
     private fun versionName(pm: PackageManager, packageName: String): String {
         return runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                pm.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0L)).versionName
-            } else {
-                @Suppress("DEPRECATION")
-                pm.getPackageInfo(packageName, 0).versionName
-            }
+            pm.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0L)).versionName
         }.getOrNull().orEmpty()
     }
 

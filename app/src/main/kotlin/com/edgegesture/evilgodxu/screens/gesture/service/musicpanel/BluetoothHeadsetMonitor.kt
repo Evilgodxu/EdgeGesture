@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
@@ -145,14 +144,10 @@ class BluetoothHeadsetMonitor(
     companion object {
         private val btA2dpTypes by lazy {
             // AudioDeviceInfo.TYPE_BLUETOOTH_A2DP = 8, TYPE_BLUETOOTH_SCO = 7
-            if (Build.VERSION.SDK_INT >= 31) {
-                setOf(
-                    AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
-                    AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
-                )
-            } else {
-                setOf(7, 8)
-            }
+            setOf(
+                AudioDeviceInfo.TYPE_BLUETOOTH_A2DP,
+                AudioDeviceInfo.TYPE_BLUETOOTH_SCO,
+            )
         }
 
         fun isBluetoothA2dp(device: AudioDeviceInfo): Boolean = device.type in btA2dpTypes

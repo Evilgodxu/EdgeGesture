@@ -11,7 +11,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
 import android.os.BatteryManager
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
@@ -69,8 +68,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
         fun handleExternalAudioIntent(uri: android.net.Uri): Boolean {
             val service = getInstance() ?: return false
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                ContextCompat.checkSelfPermission(service, Manifest.permission.READ_MEDIA_AUDIO) !=
+            if (ContextCompat.checkSelfPermission(service, Manifest.permission.READ_MEDIA_AUDIO) !=
                 PackageManager.PERMISSION_GRANTED
             ) {
                 return false
@@ -114,7 +112,10 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             when (intent?.action) {
                 Intent.ACTION_SCREEN_ON,
                 Intent.ACTION_USER_PRESENT -> backTapDetector?.setScreenOn(true)
-                Intent.ACTION_SCREEN_OFF -> backTapDetector?.setScreenOn(false)
+                Intent.ACTION_SCREEN_OFF -> {
+                    backTapDetector?.setScreenOn(false)
+                    if (::actionExecutor.isInitialized) actionExecutor.dismissTaskPanel()
+                }
             }
         }
     }
@@ -191,32 +192,17 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         // 初始化 Shizuku
         ShizukuManager.init(this)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(settingsReceiver, IntentFilter("ACTION_UPDATE_SETTINGS"), Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            @Suppress("UnspecifiedRegisterReceiverFlag")
-            registerReceiver(settingsReceiver, IntentFilter("ACTION_UPDATE_SETTINGS"))
-        }
+        registerReceiver(settingsReceiver, IntentFilter("ACTION_UPDATE_SETTINGS"), Context.RECEIVER_NOT_EXPORTED)
 
         val screenFilter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_USER_PRESENT)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(screenStateReceiver, screenFilter, Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            @Suppress("UnspecifiedRegisterReceiverFlag")
-            registerReceiver(screenStateReceiver, screenFilter)
-        }
+        registerReceiver(screenStateReceiver, screenFilter, Context.RECEIVER_NOT_EXPORTED)
 
         val batteryFilter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(batteryReceiver, batteryFilter, Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            @Suppress("UnspecifiedRegisterReceiverFlag")
-            registerReceiver(batteryReceiver, batteryFilter)
-        }
+        registerReceiver(batteryReceiver, batteryFilter, Context.RECEIVER_NOT_EXPORTED)
 
         startSettingsFlow()
         startLaunchBlockFlow()
