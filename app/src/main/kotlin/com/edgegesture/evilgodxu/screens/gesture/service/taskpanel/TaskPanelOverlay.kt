@@ -3,6 +3,7 @@ package com.edgegesture.evilgodxu.screens.gesture.service.taskpanel
 import android.graphics.drawable.Drawable
 import android.widget.ImageView
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -11,10 +12,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,9 +21,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.style.TextAlign
@@ -32,6 +28,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +44,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
  data class TaskPanelApp(val packageName: String, val label: String, val icon: Drawable)
 
@@ -62,43 +60,17 @@ fun TaskPanelOverlay(
     var selected by remember(apps, selectedPackageName) {
         mutableIntStateOf(apps.indexOfFirst { it.packageName == selectedPackageName }.coerceAtLeast(0))
     }
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
     var singleTapJob by remember { androidx.compose.runtime.mutableStateOf<Job?>(null) }
-    val listState = rememberLazyListState()
     val thresholdPx = with(LocalDensity.current) { 48.dp.toPx() }
     val touchSlopPx = with(LocalDensity.current) { 8.dp.toPx() }
     val hintTextColor = if (isSystemInDarkTheme()) Color.White else Color.LightGray
-    val virtualCenter = Int.MAX_VALUE / 2
-    var virtualSelected by remember(apps, selectedPackageName) {
-        mutableIntStateOf(virtualCenter - (virtualCenter % apps.size.coerceAtLeast(1)) + selected)
-    }
-    var settleRequest by remember { mutableIntStateOf(0) }
+    val itemStepPx = with(LocalDensity.current) { 104.dp.toPx() }
+    val carouselAnim = remember { Animatable(0f) }
 
     LaunchedEffect(apps.size, selectedPackageName) {
         if (apps.isNotEmpty()) {
             selected = apps.indexOfFirst { it.packageName == selectedPackageName }.coerceAtLeast(0)
-            virtualSelected = virtualCenter - (virtualCenter % apps.size) + selected
-            listState.scrollToItem(virtualSelected)
-        }
-    }
-    LaunchedEffect(virtualSelected, apps.size, settleRequest) {
-        if (apps.isNotEmpty()) {
-            listState.animateScrollToItem(virtualSelected)
-            val target = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == virtualSelected }
-            val viewportCenter = (listState.layoutInfo.viewportStartOffset + listState.layoutInfo.viewportEndOffset) / 2
-            if (target != null) {
-                listState.animateScrollToItem(
-                    virtualSelected,
-                    target.offset - viewportCenter + target.size / 2
-                )
-            }
-        }
-    }
-
-    fun moveByDrag(total: Float) {
-        if (apps.isNotEmpty() && abs(total) >= thresholdPx) {
-            virtualSelected += if (total < 0) 1 else -1
-            selected = Math.floorMod(virtualSelected, apps.size)
         }
     }
 
@@ -116,11 +88,26 @@ fun TaskPanelOverlay(
                         if (!change.pressed) up = true
                         change.consume()
                     }
+                    if (hasMoved) {
+                        scope.launch {
+                            carouselAnim.snapTo((total / itemStepPx).coerceIn(-1f, 1f))
+                        }
+                    }
                 }
                 if (hasMoved && abs(total) >= thresholdPx) {
-                    moveByDrag(total)
+                    val target = if (total < 0) -1f else 1f
+                    scope.launch {
+                        carouselAnim.animateTo(target, animationSpec = tween(durationMillis = 200))
+                        selected = if (total < 0)
+                            Math.floorMod(selected + 1, apps.size)
+                        else
+                            Math.floorMod(selected - 1, apps.size)
+                        carouselAnim.snapTo(0f)
+                    }
                 } else if (hasMoved) {
-                    settleRequest++
+                    scope.launch {
+                        carouselAnim.animateTo(0f, animationSpec = tween(durationMillis = 200))
+                    }
                 } else if (apps.isNotEmpty()) {
                     val packageName = apps[selected].packageName
                     if (singleTapJob?.isActive == true) {
@@ -166,38 +153,37 @@ fun TaskPanelOverlay(
                     ),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 应用图标：在面板内居中显示
+                // 应用图标轮播
                 Box(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(96.dp)
+                        .taskGesture(),
                     contentAlignment = Alignment.Center
                 ) {
-                    LazyRow(
-                        state = listState,
-                        modifier = Modifier.taskGesture(),
-                        contentPadding = PaddingValues(horizontal = 48.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        userScrollEnabled = false
-                    ) {
-                        items(count = if (apps.isEmpty()) 0 else Int.MAX_VALUE) { index ->
-                            val app = apps[index % apps.size]
-                            val targetScale = if (index == virtualSelected) 1f else 0.8f
-                            val scale by animateFloatAsState(
-                                targetValue = targetScale,
-                                animationSpec = tween(durationMillis = 180),
-                                label = "task_panel_icon_scale"
-                            )
-                            AndroidView(
-                                factory = { ImageView(it) },
-                                update = { it.setImageDrawable(app.icon) },
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .size(80.dp)
-                                    .graphicsLayer {
-                                        scaleX = scale
-                                        scaleY = scale
-                                    }
-                            )
-                        }
+                    if (apps.isNotEmpty()) {
+                        val animOffset = carouselAnim.value
+                        val prevIndex = Math.floorMod(selected - 1, apps.size)
+                        val nextIndex = Math.floorMod(selected + 1, apps.size)
+
+                        // 前一个图标
+                        CarouselIcon(
+                            app = apps[prevIndex],
+                            offset = (-itemStepPx + animOffset * itemStepPx).roundToInt(),
+                            scale = scaleForDistance(abs(-1f - animOffset))
+                        )
+                        // 当前选中图标
+                        CarouselIcon(
+                            app = apps[selected],
+                            offset = (animOffset * itemStepPx).roundToInt(),
+                            scale = scaleForDistance(abs(animOffset))
+                        )
+                        // 后一个图标
+                        CarouselIcon(
+                            app = apps[nextIndex],
+                            offset = (itemStepPx + animOffset * itemStepPx).roundToInt(),
+                            scale = scaleForDistance(abs(1f - animOffset))
+                        )
                     }
                 }
                 // 控制区域
@@ -240,4 +226,33 @@ fun TaskPanelOverlay(
             }
         }
     }
+}
+
+private fun scaleForDistance(distance: Float): Float {
+    return 1f - 0.2f * distance.coerceIn(0f, 1f)
+}
+
+@Composable
+private fun CarouselIcon(
+    app: TaskPanelApp,
+    offset: Int,
+    scale: Float
+) {
+    val animScale by animateFloatAsState(
+        targetValue = scale,
+        animationSpec = tween(durationMillis = 180),
+        label = "carousel_icon_scale"
+    )
+    AndroidView(
+        factory = { ImageView(it) },
+        update = { it.setImageDrawable(app.icon) },
+        modifier = Modifier
+            .padding(horizontal = 8.dp)
+            .size(80.dp)
+            .graphicsLayer {
+                translationX = offset.toFloat()
+                scaleX = animScale
+                scaleY = animScale
+            }
+    )
 }
