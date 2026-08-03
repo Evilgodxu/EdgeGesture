@@ -3,6 +3,8 @@ package com.edgegesture.evilgodxu.screens.gesture.service.taskpanel
 import android.graphics.drawable.Drawable
 import android.widget.ImageView
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -33,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -62,11 +66,13 @@ fun TaskPanelOverlay(
     var singleTapJob by remember { androidx.compose.runtime.mutableStateOf<Job?>(null) }
     val listState = rememberLazyListState()
     val thresholdPx = with(LocalDensity.current) { 48.dp.toPx() }
+    val touchSlopPx = with(LocalDensity.current) { 8.dp.toPx() }
     val hintTextColor = if (isSystemInDarkTheme()) Color.White else Color.LightGray
     val virtualCenter = Int.MAX_VALUE / 2
     var virtualSelected by remember(apps, selectedPackageName) {
         mutableIntStateOf(virtualCenter - (virtualCenter % apps.size.coerceAtLeast(1)) + selected)
     }
+    var settleRequest by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(apps.size, selectedPackageName) {
         if (apps.isNotEmpty()) {
@@ -75,13 +81,16 @@ fun TaskPanelOverlay(
             listState.scrollToItem(virtualSelected)
         }
     }
-    LaunchedEffect(virtualSelected, apps.size) {
+    LaunchedEffect(virtualSelected, apps.size, settleRequest) {
         if (apps.isNotEmpty()) {
             listState.animateScrollToItem(virtualSelected)
-            val item = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == virtualSelected }
+            val target = listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == virtualSelected }
             val viewportCenter = (listState.layoutInfo.viewportStartOffset + listState.layoutInfo.viewportEndOffset) / 2
-            if (item != null) {
-                listState.animateScrollToItem(virtualSelected, item.offset - viewportCenter + item.size / 2)
+            if (target != null) {
+                listState.animateScrollToItem(
+                    virtualSelected,
+                    target.offset - viewportCenter + target.size / 2
+                )
             }
         }
     }
@@ -98,16 +107,20 @@ fun TaskPanelOverlay(
             while (true) {
                 var total = 0f
                 var up = false
+                var hasMoved = false
                 while (!up) {
                     val event = awaitPointerEvent()
                     event.changes.forEach { change ->
                         total += change.position.x - change.previousPosition.x
+                        hasMoved = hasMoved || abs(total) >= touchSlopPx
                         if (!change.pressed) up = true
                         change.consume()
                     }
                 }
-                if (abs(total) >= thresholdPx) {
+                if (hasMoved && abs(total) >= thresholdPx) {
                     moveByDrag(total)
+                } else if (hasMoved) {
+                    settleRequest++
                 } else if (apps.isNotEmpty()) {
                     val packageName = apps[selected].packageName
                     if (singleTapJob?.isActive == true) {
@@ -135,11 +148,15 @@ fun TaskPanelOverlay(
                 indication = null,
                 onClick = onDismiss
             ),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.BottomCenter
     ) {
-        AnimatedVisibility(visible = true, enter = fadeIn() + scaleIn(initialScale = 0.9f)) {
+        AnimatedVisibility(
+            visible = true,
+            modifier = Modifier.padding(bottom = 48.dp),
+            enter = fadeIn() + scaleIn(initialScale = 0.9f)
+        ) {
             Column(
-                Modifier
+                modifier = Modifier
                     .width(320.dp)
                     .background(Color.Transparent)
                     .clickable(
@@ -149,24 +166,43 @@ fun TaskPanelOverlay(
                     ),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                LazyRow(
-                    state = listState,
-                    modifier = Modifier.fillMaxWidth().taskGesture(),
-                    contentPadding = PaddingValues(horizontal = 160.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    userScrollEnabled = false
+                // 应用图标：在面板内居中显示
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    items(count = if (apps.isEmpty()) 0 else Int.MAX_VALUE) { index ->
-                        val app = apps[index % apps.size]
-                        AndroidView(
-                            factory = { ImageView(it) },
-                            update = { it.setImageDrawable(app.icon) },
-                            modifier = Modifier.padding(horizontal = 8.dp).size(if (index == virtualSelected) 68.dp else 48.dp)
-                        )
+                    LazyRow(
+                        state = listState,
+                        modifier = Modifier.taskGesture(),
+                        contentPadding = PaddingValues(horizontal = 48.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        userScrollEnabled = false
+                    ) {
+                        items(count = if (apps.isEmpty()) 0 else Int.MAX_VALUE) { index ->
+                            val app = apps[index % apps.size]
+                            val targetScale = if (index == virtualSelected) 1f else 0.8f
+                            val scale by animateFloatAsState(
+                                targetValue = targetScale,
+                                animationSpec = tween(durationMillis = 180),
+                                label = "task_panel_icon_scale"
+                            )
+                            AndroidView(
+                                factory = { ImageView(it) },
+                                update = { it.setImageDrawable(app.icon) },
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .size(80.dp)
+                                    .graphicsLayer {
+                                        scaleX = scale
+                                        scaleY = scale
+                                    }
+                            )
+                        }
                     }
                 }
+                // 控制区域
                 Box(
-                    Modifier.fillMaxWidth().height(460.dp).taskGesture(),    // 控制区域大小
+                    Modifier.fillMaxWidth().height(320.dp).taskGesture(),
                     contentAlignment = Alignment.Center
                 ) {
                     if (apps.isEmpty()) {
@@ -177,8 +213,16 @@ fun TaskPanelOverlay(
                         )
                     }
                 }
+                // 提示信息
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = onDismiss
+                        ),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
@@ -192,6 +236,7 @@ fun TaskPanelOverlay(
                         textAlign = TextAlign.Center
                     )
                 }
+                Spacer(modifier = Modifier.height(28.dp))
             }
         }
     }

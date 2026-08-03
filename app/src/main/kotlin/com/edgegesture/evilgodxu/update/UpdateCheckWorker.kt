@@ -3,13 +3,16 @@ package com.edgegesture.evilgodxu.update
 import com.edgegesture.evilgodxu.MainActivity
 import com.edgegesture.evilgodxu.R
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 
@@ -89,6 +92,12 @@ class UpdateCheckWorker(
             .setAutoCancel(true)
             .build()
 
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
+        } else {
+            android.util.Log.w("UpdateCheckWorker", "POST_NOTIFICATIONS permission not granted")
+        }
     }
 }
