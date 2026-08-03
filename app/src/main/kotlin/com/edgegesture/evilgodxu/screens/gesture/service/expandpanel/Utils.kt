@@ -149,11 +149,11 @@ private fun computeFreeformBounds(context: Context, launchIntent: Intent): Rect?
     // 竖屏应用：以屏幕短边百分比为宽，按比例计算高。
     // 该 API 的默认尺寸越接近屏幕，系统越允许双向缩放。
     val minSide = min(displayWidth, displayHeight)
-    val maxWidth = (displayWidth * 0.85f).toInt()
-    val maxHeight = (displayHeight * 0.85f).toInt()
+    val maxWidth = (displayWidth * 1f).toInt()
+    val maxHeight = (displayHeight * 1f).toInt()
 
     var width = (minSide * 1f).toInt()
-    var height = (width * 1.45f).toInt()
+    var height = (width * 1.6f).toInt()
     if (width > maxWidth || height > maxHeight) {
         val scale = min(maxWidth / width.toFloat(), maxHeight / height.toFloat())
         width = (width * scale).toInt()
