@@ -1,4 +1,6 @@
-package com.edgegesture.evilgodxu
+package com.edgegesture.evilgodxu.update
+
+import com.edgegesture.evilgodxu.R
 
 import android.app.DownloadManager
 import android.content.Context

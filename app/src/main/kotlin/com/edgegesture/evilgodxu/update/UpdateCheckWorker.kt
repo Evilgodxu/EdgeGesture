@@ -1,4 +1,7 @@
-package com.edgegesture.evilgodxu
+package com.edgegesture.evilgodxu.update
+
+import com.edgegesture.evilgodxu.MainActivity
+import com.edgegesture.evilgodxu.R
 
 import android.Manifest
 import android.app.NotificationChannel

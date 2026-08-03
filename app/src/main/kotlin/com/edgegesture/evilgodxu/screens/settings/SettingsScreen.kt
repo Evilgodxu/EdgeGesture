@@ -66,10 +66,10 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowSizeClass
-import com.edgegesture.evilgodxu.DownloadState
 import com.edgegesture.evilgodxu.R
-import com.edgegesture.evilgodxu.UpdateInfo
-import com.edgegesture.evilgodxu.UpdateManager
+import com.edgegesture.evilgodxu.update.DownloadState
+import com.edgegesture.evilgodxu.update.UpdateInfo
+import com.edgegesture.evilgodxu.update.UpdateManager
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuState
