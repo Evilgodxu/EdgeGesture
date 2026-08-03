@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.edgegesture.evilgodxu.screens.gesture.service.FreeformAppLauncher
 
 @Composable
 fun ExpandPanelContent(
@@ -34,6 +35,7 @@ fun ExpandPanelContent(
     var isAppPickerMode by remember { mutableStateOf(false) }
     var selectedIndex by remember { mutableIntStateOf(-1) }
     val context = LocalContext.current
+    val freeformAppLauncher = remember(context) { FreeformAppLauncher(context) }
 
     Column(
         modifier = Modifier
@@ -84,7 +86,7 @@ fun ExpandPanelContent(
                         selectedIndex = -1
                     },
                     onLaunchApp = { packageName ->
-                        val launched = launchApp(context, packageName, false)
+                        val launched = freeformAppLauncher.launch(packageName, false)
                         if (launched) {
                             onDismiss()
                         }
@@ -114,7 +116,7 @@ fun ExpandPanelContent(
                         },
                         onLaunchApp = { packageName, index ->
                             val useFreeform = freeformFlags.getOrElse(index) { false }
-                            val launched = launchApp(context, packageName, useFreeform)
+                            val launched = freeformAppLauncher.launch(packageName, useFreeform)
                             if (launched) {
                                 onDismiss()
                             } else {

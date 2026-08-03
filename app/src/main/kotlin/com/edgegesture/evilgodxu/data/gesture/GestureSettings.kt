@@ -138,6 +138,7 @@ enum class GestureAction(val value: String) {
     POWER_MENU("power_menu"),
     LOCK_SCREEN("lock_screen"),
     SCREENSHOT("screenshot"),
+    FREEFORM_MODE("freeform_mode"),
     EXPAND_PANEL("expand_panel"),
     // 音乐面板
     MUSIC_PANEL("music_panel"),

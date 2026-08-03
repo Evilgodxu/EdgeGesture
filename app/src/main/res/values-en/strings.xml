@@ -94,6 +94,7 @@
     <string name="gesture_action_power_menu">Power Menu</string>
     <string name="gesture_action_lock_screen">Lock Screen</string>
     <string name="gesture_action_screenshot">Screenshot</string>
+    <string name="gesture_action_freeform_mode">Floating Window</string>
     <string name="gesture_action_expand_panel">Expand Panel</string>
     <string name="gesture_action_alipay_scan">Alipay Scan</string>
     <string name="gesture_action_wechat_scan">WeChat Scan</string>

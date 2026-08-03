@@ -43,7 +43,7 @@ import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcutFreeform
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.AppPickerScreen
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ShortcutsGrid
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.VerticalSlidersSection
-import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.launchApp
+import com.edgegesture.evilgodxu.screens.gesture.service.FreeformAppLauncher
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,6 +52,7 @@ fun ExpandPanelScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val freeformAppLauncher = remember(context) { FreeformAppLauncher(context) }
     val scope = rememberCoroutineScope()
     val shortcutsState by context.expandPanelShortcutsFlow().collectAsState(initial = null)
 
@@ -200,7 +201,7 @@ fun ExpandPanelScreen(
                         selectedIndex = -1
                     },
                     onLaunchApp = { packageName ->
-                        launchApp(context, packageName, false)
+                        freeformAppLauncher.launch(packageName, false)
                         showAppPicker = false
                         selectedIndex = -1
                     },

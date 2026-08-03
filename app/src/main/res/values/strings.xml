@@ -82,6 +82,7 @@
     <string name="gesture_action_power_menu">电源菜单</string>
     <string name="gesture_action_lock_screen">锁屏</string>
     <string name="gesture_action_screenshot">截屏</string>
+    <string name="gesture_action_freeform_mode">小窗模式</string>
     <string name="gesture_action_expand_panel">扩展面板</string>
     <string name="gesture_action_music_panel">音乐面板</string>
 

@@ -57,6 +57,7 @@ class AccessibilityActionExecutor(
 
     private var flashlightOn = false
     private val cameraManager = service.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+    private val freeformAppLauncher = FreeformAppLauncher(service)
 
     private var expandPanelViewManager: ExpandPanelViewManager? = null
     private var pendingExpandPanelShow = false
@@ -89,6 +90,7 @@ class AccessibilityActionExecutor(
             GestureAction.POWER_MENU -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_POWER_DIALOG)
             GestureAction.LOCK_SCREEN -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN)
             GestureAction.SCREENSHOT -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT)
+            GestureAction.FREEFORM_MODE -> launchCurrentAppInFreeform()
             GestureAction.EXPAND_PANEL -> showExpandPanel()
             GestureAction.MUSIC_PANEL -> showMusicPanel()
             GestureAction.ALIPAY_SCAN -> launchScanAlipay()
@@ -302,6 +304,12 @@ class AccessibilityActionExecutor(
 
     fun markConfigChanged() {
         justConfigChanged = true
+    }
+
+    private fun launchCurrentAppInFreeform() {
+        val packageName = currentApp ?: return
+        if (packageName == service.packageName) return
+        freeformAppLauncher.launch(packageName, useFreeform = true)
     }
 
     private fun switchToLastApp() {
