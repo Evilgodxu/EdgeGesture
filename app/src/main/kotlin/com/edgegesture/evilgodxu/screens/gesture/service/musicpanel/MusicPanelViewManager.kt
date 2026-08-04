@@ -341,6 +341,8 @@ class MusicPanelViewManager(
                 playbackState.setSortedPlaylist(mergedTracks)
                 playbackState.persistPlaylist()
             }
+            // 刷新后后台加载封面
+            managerScope.launch { enrichPlaylistMetadata() }
         } finally {
             withContext(Dispatchers.Main + kotlinx.coroutines.NonCancellable) {
                 playbackState.isScanning = false
@@ -430,7 +432,38 @@ class MusicPanelViewManager(
         }
     }
 
+    /** 后台加载本地歌曲封面（从 MediaStore 提取），不阻塞主流程 */
+    private suspend fun enrichLocalCovers() {
+        val tracks = withContext(Dispatchers.Main) { playbackState.playlist.toList() }
+        // 仅筛选本地歌曲且没有封面、没有 coverCachePath 的
+        val needCover = tracks.filter { track ->
+            track.albumArt == null &&
+                track.path.isNotBlank() &&
+                !MusicMetadataCache.isCurrentCoverPath(track.coverCachePath)
+        }
+        if (needCover.isEmpty()) return
+        val updates = coroutineScope {
+            needCover.map { track ->
+                async<MusicTrack?>(Dispatchers.IO) {
+                    try {
+                        val cover = MusicScanner.loadAlbumArt(
+                            context, context.contentResolver,
+                            Uri.parse(track.audioUri), track.albumId, track.path
+                        ) ?: return@async null
+                        track.copy(albumArt = cover)
+                    } catch (_: Exception) { null }
+                }
+            }.awaitAll().filterNotNull()
+        }
+        if (updates.isEmpty()) return
+        withContext(Dispatchers.Main) {
+            playbackState.batchUpdateTracks(updates)
+        }
+    }
+
     private suspend fun enrichPlaylistMetadata() {
+        // 先加载本地封面，再加载在线封面
+        enrichLocalCovers()
         val tracks = withContext(Dispatchers.Main) { playbackState.playlist.toList() }
         // 筛选出需要在线匹配封面的歌曲
         val needCover = tracks.filter { track ->
@@ -439,7 +472,7 @@ class MusicPanelViewManager(
                 track.neteaseCoverUrl.isBlank()
         }
         if (needCover.isEmpty()) return
-        // 一次性并行加载所有封面
+        // 一次性并行加载所有在线封面
         val updates = coroutineScope {
             needCover.map { track ->
                 async<MusicTrack?>(Dispatchers.IO) {

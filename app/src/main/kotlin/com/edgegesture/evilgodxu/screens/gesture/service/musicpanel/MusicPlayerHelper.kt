@@ -126,16 +126,10 @@ private suspend fun loadLyricsForTrack(
 }
 
 private fun toMediaItem(context: Context, track: MusicTrack): MediaItem {
-    val artworkData = MusicMetadataCache.loadCoverBytes(track.coverCachePath)
-        ?: track.albumArt?.let(MusicMetadataCache::bitmapToBytes)
     val metadata = androidx.media3.common.MediaMetadata.Builder()
         .setTitle(track.title)
         .setArtist(track.artist)
-    if (artworkData != null) {
-        metadata.setArtworkData(artworkData, null)
-    } else if (track.neteaseCoverUrl.isNotBlank()) {
-        metadata.setArtworkUri(Uri.parse(track.neteaseCoverUrl))
-    }
+    // 封面不阻塞构建，留空让 Media3 自行 fallback 或播放时再展示
     return MediaItem.Builder()
         .setMediaId(track.id.toString())
         .setUri(Uri.parse(track.audioUri))

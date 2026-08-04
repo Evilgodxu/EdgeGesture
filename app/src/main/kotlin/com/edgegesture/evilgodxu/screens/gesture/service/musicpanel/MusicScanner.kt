@@ -49,6 +49,7 @@ object MusicScanner {
     }
 
     // 扫描设备本地音乐文件，过滤时长 >= 30 秒的音频
+    // 仅从 MediaStore 游标读取基础元数据，封面延迟加载，不阻塞扫描
     suspend fun scan(context: Context): List<MusicTrack> = withContext(Dispatchers.IO) {
         val tracks = mutableListOf<MusicTrack>()
         val contentResolver = context.contentResolver
@@ -78,7 +79,6 @@ object MusicScanner {
                 val durationIdx = cursor.getColumnIndex(MediaStore.Audio.Media.DURATION)
                 val albumIdIdx = cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID)
                 if (idIdx < 0 || titleIdx < 0) return@withContext tracks
-                val albumArtCache = mutableMapOf<Long, Bitmap?>()
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idIdx)
                     val path = if (dataIdx >= 0) cursor.getString(dataIdx).orEmpty() else ""
@@ -93,10 +93,6 @@ object MusicScanner {
                     } else context.getString(R.string.music_scanner_unknown_artist)
                     val duration = if (durationIdx >= 0) cursor.getLong(durationIdx) else 0L
                     val albumId = if (albumIdIdx >= 0) cursor.getLong(albumIdIdx) else 0L
-                    val artCacheKey = if (albumId > 0) albumId else -id
-                    val art = albumArtCache.getOrPut(artCacheKey) {
-                        loadAlbumArt(context, contentResolver, audioUri, albumId, path)
-                    }
                     tracks.add(
                         MusicTrack(
                             id = id,
@@ -105,8 +101,7 @@ object MusicScanner {
                             title = title,
                             artist = artist,
                             duration = duration,
-                            albumId = albumId,
-                            albumArt = art
+                            albumId = albumId
                         )
                     )
                 }
@@ -116,7 +111,7 @@ object MusicScanner {
         tracks
     }
 
-    private fun loadAlbumArt(
+    internal fun loadAlbumArt(
         context: Context,
         contentResolver: ContentResolver,
         audioUri: Uri,
