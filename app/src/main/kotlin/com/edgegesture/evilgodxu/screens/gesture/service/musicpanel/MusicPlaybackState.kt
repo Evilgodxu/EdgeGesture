@@ -237,7 +237,15 @@ class MusicPlaybackState {
         } ?: false
     var duration by mutableLongStateOf(0L)
     var currentPosition by mutableLongStateOf(0L)
-    var playlist by mutableStateOf<List<MusicTrack>>(emptyList())
+    private val _playlist = mutableStateOf<List<MusicTrack>>(emptyList())
+    var playlist: List<MusicTrack>
+        get() = _playlist.value
+        set(value) {
+            _playlist.value = value
+            cachedMediaItems = null
+        }
+    /** 缓存 playlist 对应的 MediaItem 列表，避免切歌时重复构建 */
+    var cachedMediaItems: List<androidx.media3.common.MediaItem>? = null
     var currentIndex by mutableIntStateOf(-1)
     var currentTrack by mutableStateOf<MusicTrack?>(null)
     var playMode by mutableStateOf(PlayMode.RepeatAll)

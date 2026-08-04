@@ -45,7 +45,11 @@ suspend fun playTrackAt(
     state.playTrackMutex.withLock {
         val track = state.playlist.getOrNull(index) ?: return
         val controller = getController(context, state)
-        val items = state.playlist.map { trackItem -> toMediaItem(context, trackItem) }
+        val items = state.cachedMediaItems ?: withContext(Dispatchers.IO) {
+            state.playlist.map { trackItem -> toMediaItem(context, trackItem) }.also {
+                state.cachedMediaItems = it
+            }
+        }
 
         withContext(Dispatchers.Main) {
             applyPlaybackMode(controller, state.playMode)
