@@ -475,10 +475,7 @@ class MusicPlaybackState {
                     coverCachePath = item.optString("coverCachePath", ""),
                     isFavorite = item.optBoolean("isFavorite", false),
                     lyricCachePath = item.optString("lyricCachePath", ""),
-                    lyricLines = item.optString("lyricCachePath", "")
-                        .takeIf { it.isNotBlank() && MusicMetadataCache.isValid(it) }
-                        ?.let(MusicMetadataCache::loadLyrics)
-                        .orEmpty()
+                    lyricLines = emptyList()
                 )
             }
         } catch (_: Exception) {
@@ -663,7 +660,7 @@ class MusicPlaybackState {
                     val idx = playlist.indexOfFirst { it.id == cleared.id }
                     if (idx >= 0) {
                         val enriched = playlist[idx].copy(
-                            albumArt = cover ?: playlist[idx].albumArt,
+                            albumArt = playlist[idx].albumArt ?: cover,
                             neteaseId = match.id,
                             neteaseCoverUrl = match.coverUrl.orEmpty(),
                             coverCachePath = coverPath,

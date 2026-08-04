@@ -450,7 +450,7 @@ class MusicPanelViewManager(
                         val coverPath = MusicMetadataCache.saveCover(context, match.id, coverBytes).orEmpty()
                         val cover = MusicMetadataCache.loadCover(coverPath)
                         track.copy(
-                            albumArt = cover ?: track.albumArt,
+                            albumArt = track.albumArt ?: cover,
                             neteaseId = match.id,
                             neteaseCoverUrl = match.coverUrl.orEmpty(),
                             coverCachePath = coverPath,
