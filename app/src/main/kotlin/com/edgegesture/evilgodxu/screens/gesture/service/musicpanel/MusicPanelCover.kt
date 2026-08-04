@@ -97,16 +97,7 @@ internal fun CurrentCover(
 @Composable
 internal fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val model = track?.coverCachePath?.takeIf { MusicMetadataCache.isValid(it) }
-        ?: track?.neteaseCoverUrl?.takeIf { it.isNotBlank() }
-    if (model != null) {
-        AsyncImage(
-            model = model,
-            contentDescription = track?.title,
-            contentScale = ContentScale.Crop,
-            modifier = modifier.background(Color.Black),
-        )
-    } else if (track?.albumArt != null) {
+    if (track?.albumArt != null) {
         Image(
             bitmap = track.albumArt.asImageBitmap(),
             contentDescription = track.title,
@@ -114,17 +105,28 @@ internal fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
             modifier = modifier.background(Color.Black),
         )
     } else {
-        Box(
-            modifier = modifier
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.MusicNote,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
+        val model = track?.coverCachePath?.takeIf { MusicMetadataCache.isValid(it) }
+            ?: track?.neteaseCoverUrl?.takeIf { it.isNotBlank() }
+        if (model != null) {
+            AsyncImage(
+                model = model,
+                contentDescription = track?.title,
+                contentScale = ContentScale.Crop,
+                modifier = modifier.background(Color.Black),
             )
+        } else {
+            Box(
+                modifier = modifier
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.MusicNote,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }

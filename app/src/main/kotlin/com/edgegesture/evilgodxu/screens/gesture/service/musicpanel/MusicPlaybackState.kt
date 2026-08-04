@@ -622,6 +622,16 @@ class MusicPlaybackState {
         persistPlaylist()
     }
 
+    // 批量更新曲目元数据（封面等），一次触发重组 + 一次持久化
+    fun batchUpdateTracks(updates: List<MusicTrack>) {
+        val updateMap = updates.associateBy { it.id }
+        playlist = playlist.map { orig ->
+            updateMap[orig.id]?.let { it.copy(isFavorite = likedIds.contains(it.id)) } ?: orig
+        }
+        currentTrack = currentTrack?.let { updateMap[it.id] ?: it }
+        persistPlaylist()
+    }
+
     fun renameAndRefreshMetadata(renamed: MusicTrack) {
         val cleared = renamed.copy(
             neteaseId = 0L,

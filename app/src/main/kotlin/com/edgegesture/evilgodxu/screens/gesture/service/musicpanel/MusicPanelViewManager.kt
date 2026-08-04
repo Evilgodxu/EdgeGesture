@@ -36,6 +36,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -258,7 +260,8 @@ class MusicPanelViewManager(
                 withContext(Dispatchers.Main) {
                     restoreCurrentTrack()
                 }
-                enrichPlaylistMetadata()
+                // 封面后台加载，不阻塞初始化
+                managerScope.launch { enrichPlaylistMetadata() }
             }
             withContext(Dispatchers.Main) {
                 playbackState.syncPlaybackState()
@@ -417,7 +420,8 @@ class MusicPanelViewManager(
                 playbackState.persistPlaylist()
                 restoreCurrentTrack()
             }
-            enrichPlaylistMetadata()
+            // 封面后台加载，不阻塞 isScanning 重置
+            managerScope.launch { enrichPlaylistMetadata() }
         } finally {
             // 使用非取消式上下文确保 isScanning 一定被重置（防止竟态导致卡死）
             withContext(Dispatchers.Main + kotlinx.coroutines.NonCancellable) {
@@ -428,32 +432,37 @@ class MusicPanelViewManager(
 
     private suspend fun enrichPlaylistMetadata() {
         val tracks = withContext(Dispatchers.Main) { playbackState.playlist.toList() }
-        tracks.forEach { track ->
-            val hasCover = MusicMetadataCache.isCurrentCoverPath(track.coverCachePath)
-            val hasLyrics = MusicMetadataCache.isValid(track.lyricCachePath) && track.lyricLines.isNotEmpty()
-            if (track.neteaseId != 0L && hasCover && hasLyrics) return@forEach
-            try {
-                val match = NeteaseMusicApi.match(track.title, track.artist, track.duration)
-                    ?: return@forEach
-                val coverBytes = NeteaseMusicApi.loadCoverBytes(match.coverUrl.orEmpty())
-                val lyric = NeteaseMusicApi.lyric(match.id)
-                val coverPath = coverBytes?.let { MusicMetadataCache.saveCover(context, match.id, it) }.orEmpty()
-                val cover = MusicMetadataCache.loadCover(coverPath)
-                val lyricPath = MusicMetadataCache.saveLyrics(context, match.id, lyric.lines).orEmpty()
-                withContext(Dispatchers.Main) {
-                    playbackState.updateTrack(
+        // 筛选出需要在线匹配封面的歌曲
+        val needCover = tracks.filter { track ->
+            track.albumArt == null &&
+                !MusicMetadataCache.isCurrentCoverPath(track.coverCachePath) &&
+                track.neteaseCoverUrl.isBlank()
+        }
+        if (needCover.isEmpty()) return
+        // 一次性并行加载所有封面
+        val updates = coroutineScope {
+            needCover.map { track ->
+                async<MusicTrack?>(Dispatchers.IO) {
+                    try {
+                        val match = NeteaseMusicApi.match(track.title, track.artist, track.duration)
+                            ?: return@async null
+                        val coverBytes = NeteaseMusicApi.loadCoverBytes(match.coverUrl.orEmpty()) ?: return@async null
+                        val coverPath = MusicMetadataCache.saveCover(context, match.id, coverBytes).orEmpty()
+                        val cover = MusicMetadataCache.loadCover(coverPath)
                         track.copy(
                             albumArt = cover ?: track.albumArt,
                             neteaseId = match.id,
                             neteaseCoverUrl = match.coverUrl.orEmpty(),
                             coverCachePath = coverPath,
-                            lyricCachePath = lyricPath,
-                            lyricLines = lyric.lines
                         )
-                    )
+                    } catch (_: Exception) { null }
                 }
-            } catch (error: Exception) {
-            }
+            }.awaitAll().filterNotNull()
+        }
+        if (updates.isEmpty()) return
+        // 一次性批量更新，避免逐个触发重组
+        withContext(Dispatchers.Main) {
+            playbackState.batchUpdateTracks(updates)
         }
     }
 
