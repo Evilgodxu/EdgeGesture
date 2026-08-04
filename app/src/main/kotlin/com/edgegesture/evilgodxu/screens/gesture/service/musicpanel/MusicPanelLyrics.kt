@@ -28,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.stringResource
@@ -180,9 +181,9 @@ internal fun LyricText(
     }
 
     Text(
-        text = line.text,
+        text = if (line.words.isNotEmpty()) text else AnnotatedString(line.text),
         style = TextStyle(
-            brush = lyricBrush,
+            brush = if (line.words.isNotEmpty()) null else lyricBrush,
             shadow = if (progress > 0f) Shadow(
                 activeColor.copy(alpha = 0.65f),
                 blurRadius = 7f

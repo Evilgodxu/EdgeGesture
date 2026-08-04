@@ -245,7 +245,7 @@ class MusicPlaybackState {
             cachedMediaItems = null
         }
     /** 缓存 playlist 对应的 MediaItem 列表，避免切歌时重复构建 */
-    var cachedMediaItems: List<androidx.media3.common.MediaItem>? = null
+    var cachedMediaItems by mutableStateOf<List<androidx.media3.common.MediaItem>?>(null)
     var currentIndex by mutableIntStateOf(-1)
     var currentTrack by mutableStateOf<MusicTrack?>(null)
     var playMode by mutableStateOf(PlayMode.RepeatAll)

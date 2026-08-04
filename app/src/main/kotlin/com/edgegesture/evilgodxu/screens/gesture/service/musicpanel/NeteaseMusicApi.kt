@@ -45,7 +45,7 @@ internal object NeteaseMusicApi {
     }
 
     suspend fun match(title: String, artist: String, durationMs: Long): NeteaseSongMatch? = withContext(Dispatchers.IO) {
-        val keyword = if (artist.isBlank() || artist == "未知艺术家") title else "$title $artist"
+        val keyword = if (artist.isBlank() || artist == "未知艺术家" || artist == "<unknown>") title else "$title $artist"
         val songs = search(keyword)
         val best = songs.minByOrNull { score(it, title, artist, durationMs) } ?: return@withContext null
         if (!best.coverUrl.isNullOrBlank()) best else detail(best)
@@ -227,7 +227,7 @@ internal object NeteaseMusicApi {
         val normalizedTitle = normalize(song.title)
         val normalizedArtist = normalize(song.artist)
         var score = if (normalizedTitle == normalize(title)) 0 else 100
-        if (artist.isNotBlank() && artist != "未知艺术家" && normalizedArtist != normalize(artist)) score += 30
+        if (artist.isNotBlank() && artist != "未知艺术家" && artist != "<unknown>" && normalizedArtist != normalize(artist)) score += 30
         return score
     }
 
