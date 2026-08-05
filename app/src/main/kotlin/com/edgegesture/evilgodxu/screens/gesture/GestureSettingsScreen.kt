@@ -45,10 +45,14 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Android
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.BatteryFull
+import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.PictureInPicture
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.AdsClick
+import androidx.compose.material.icons.outlined.Dangerous
+import androidx.compose.material.icons.outlined.SwipeUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -97,7 +101,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowSizeClass
 import com.edgegesture.evilgodxu.R
 import kotlinx.coroutines.launch
-import com.composables.icons.materialsymbols.outlined.R.drawable as MsRDrawable
+
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
@@ -616,7 +620,7 @@ private fun EdgeGestureHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                painter = painterResource(MsRDrawable.materialsymbols_ic_layers_outlined),
+                imageVector = Icons.Outlined.Layers,
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
                 tint = MaterialTheme.colorScheme.primary
@@ -909,7 +913,7 @@ private fun ServiceStatusCard(
                     StatItem(
                         icon = {
                             Icon(
-                                painter = painterResource(MsRDrawable.materialsymbols_ic_mobile_hand_outlined),
+                                imageVector = Icons.Outlined.SwipeUp,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -923,7 +927,7 @@ private fun ServiceStatusCard(
                     StatItem(
                         icon = {
                             Icon(
-                                painter = painterResource(MsRDrawable.materialsymbols_ic_bar_chart_outlined),
+                                imageVector = Icons.Outlined.BarChart,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary
@@ -937,7 +941,7 @@ private fun ServiceStatusCard(
                     StatItem(
                         icon = {
                             Icon(
-                                painter = painterResource(MsRDrawable.materialsymbols_ic_dangerous_outlined),
+                                imageVector = Icons.Outlined.Dangerous,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.error
@@ -1251,7 +1255,7 @@ private fun AdvancedGestureCard(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
-                            painter = painterResource(MsRDrawable.materialsymbols_ic_touch_double_outlined),
+                            imageVector = Icons.Outlined.AdsClick,
                             contentDescription = null,
                             modifier = Modifier.size(24.dp),
                             tint = MaterialTheme.colorScheme.primary

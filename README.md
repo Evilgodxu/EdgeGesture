@@ -122,7 +122,7 @@
 | 权限框架 | Shizuku 13.1.5 + 自定义 UserService |
 | 序列化 | Kotlin Serialization 1.11.0 |
 | Hidden API 绕过 | hidden-api-bypass 6.1 |
-| 图标库 | Material Symbols（composables-icons 2.2.1） |
+| 图标库 | Material Icons Extended（AndroidX Compose） |
 | 构建工具 | AGP 9.2.1、refreshVersions 0.60.6 |
 
 ## 运行环境

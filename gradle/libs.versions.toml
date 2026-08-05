@@ -25,7 +25,7 @@ material3Adaptive = "1.2.0"
 koin = "4.2.2"
 coroutines = "1.11.0"
 hiddenApiBypass = "6.1"
-composablesIcons = "2.2.1"
+
 coil = "3.5.0"
 media3 = "1.10.1"
 
@@ -72,8 +72,7 @@ shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version = "
 # Hidden API Bypass
 hidden-api-bypass = { group = "org.lsposed.hiddenapibypass", name = "hiddenapibypass", version.ref = "hiddenApiBypass" }
 
-# Compose Icons (Material Symbols)
-composables-icons-material-symbols-outlined = { group = "com.composables", name = "icons-material-symbols-outlined-android", version.ref = "composablesIcons" }
+
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 
