@@ -474,70 +474,94 @@ class MusicPanelViewManager(
         enrichLocalCovers()
         val tracks = withContext(Dispatchers.Main) { playbackState.playlist.toList() }
 
-        // 统一匹配并加载在线封面和歌词，复用匹配结果减少网络请求
-        val allUpdates = enrichOnlineMetadata(tracks)
+        // 并行加载在线封面和歌词（两者互不依赖），合并后一次性更新
+        val (coverUpdates, lyricUpdates) = coroutineScope {
+            async { enrichOnlineCovers(tracks) } to
+            async { enrichLyrics(tracks) }
+        }.let { (c, l) -> c.await() to l.await() }
+
+        val allUpdates = mergeCoverAndLyricUpdates(coverUpdates, lyricUpdates)
         if (allUpdates.isEmpty()) return
         withContext(Dispatchers.Main) {
             playbackState.batchUpdateTracks(allUpdates)
         }
     }
 
-    /** 统一匹配歌曲并加载封面和歌词，复用匹配结果减少网络请求 */
-    private suspend fun enrichOnlineMetadata(tracks: List<MusicTrack>): List<MusicTrack> {
-        // 找出需要封面或歌词的歌曲（联合筛选，避免重复匹配）
-        val needMetadata = tracks.filter { track ->
-            val needCover = track.albumArt == null && !MusicMetadataCache.isValid(track.coverCachePath)
-            val needLyrics = track.lyricLines.isEmpty() && !MusicMetadataCache.isValid(track.lyricCachePath)
-            needCover || needLyrics
+    /** 后台加载在线封面，返回封面更新列表 */
+    private suspend fun enrichOnlineCovers(tracks: List<MusicTrack>): List<MusicTrack> {
+        val needCover = tracks.filter { track ->
+            track.albumArt == null && !MusicMetadataCache.isValid(track.coverCachePath)
         }
-        if (needMetadata.isEmpty()) return emptyList()
-
+        if (needCover.isEmpty()) return emptyList()
         return coroutineScope {
-            needMetadata.map { track ->
+            needCover.map { track ->
                 async(Dispatchers.IO) {
                     try {
-                        // 只调用一次 match，复用结果
                         val match = NeteaseMusicApi.match(track.title, track.artist, track.duration)
                             ?: return@async null
-
-                        var updatedTrack = track
-
-                        // 加载封面（如果需要）
-                        if (track.albumArt == null && !MusicMetadataCache.isValid(track.coverCachePath)) {
-                            val coverBytes = NeteaseMusicApi.loadCoverBytes(match.coverUrl.orEmpty())
-                            val oldPath = track.coverCachePath
-                            val coverPath = coverBytes?.let {
-                                MusicMetadataCache.saveCover(context, match.id, it)
-                            }.orEmpty()
-                            val cover = MusicMetadataCache.loadCover(coverPath)
-                            if (oldPath.isNotBlank() && oldPath != coverPath) {
-                                MusicMetadataCache.deleteCoverFile(oldPath)
-                            }
-                            updatedTrack = updatedTrack.copy(
-                                albumArt = updatedTrack.albumArt ?: cover,
-                                neteaseId = match.id,
-                                neteaseCoverUrl = match.coverUrl.orEmpty(),
-                                coverCachePath = coverPath
-                            )
+                        val coverBytes = NeteaseMusicApi.loadCoverBytes(match.coverUrl.orEmpty())
+                        val oldPath = track.coverCachePath
+                        val coverPath = coverBytes?.let {
+                            MusicMetadataCache.saveCover(context, match.id, it)
+                        }.orEmpty()
+                        val cover = MusicMetadataCache.loadCover(coverPath)
+                        if (oldPath.isNotBlank() && oldPath != coverPath) {
+                            MusicMetadataCache.deleteCoverFile(oldPath)
                         }
-
-                        // 加载歌词（如果需要）
-                        if (track.lyricLines.isEmpty() && !MusicMetadataCache.isValid(track.lyricCachePath)) {
-                            val lyric = NeteaseMusicApi.lyric(match.id)
-                            if (lyric.lines.isNotEmpty()) {
-                                val lyricPath = MusicMetadataCache.saveLyrics(context, match.id, lyric.lines).orEmpty()
-                                updatedTrack = updatedTrack.copy(
-                                    lyricCachePath = lyricPath,
-                                    lyricLines = lyric.lines
-                                )
-                            }
-                        }
-
-                        // 只有发生变化才返回更新
-                        if (updatedTrack != track) updatedTrack else null
+                        track.copy(
+                            albumArt = track.albumArt ?: cover,
+                            neteaseId = match.id,
+                            neteaseCoverUrl = match.coverUrl.orEmpty(),
+                            coverCachePath = coverPath
+                        )
                     } catch (_: Exception) { null }
                 }
             }.awaitAll().filterNotNull()
+        }
+    }
+
+    /** 后台加载在线歌词，返回歌词更新列表 */
+    private suspend fun enrichLyrics(tracks: List<MusicTrack>): List<MusicTrack> {
+        val needLyrics = tracks.filter { track ->
+            track.lyricLines.isEmpty() && !MusicMetadataCache.isValid(track.lyricCachePath)
+        }
+        if (needLyrics.isEmpty()) return emptyList()
+        return coroutineScope {
+            needLyrics.map { track ->
+                async(Dispatchers.IO) {
+                    try {
+                        val match = NeteaseMusicApi.match(track.title, track.artist, track.duration)
+                            ?: return@async null
+                        val lyric = NeteaseMusicApi.lyric(match.id)
+                        if (lyric.lines.isEmpty()) return@async null
+                        val lyricPath = MusicMetadataCache.saveLyrics(context, match.id, lyric.lines).orEmpty()
+                        track.copy(lyricCachePath = lyricPath, lyricLines = lyric.lines)
+                    } catch (_: Exception) { null }
+                }
+            }.awaitAll().filterNotNull()
+        }
+    }
+
+    /** 合并封面和歌词的更新，确保同一首歌的字段不互相覆盖 */
+    private fun mergeCoverAndLyricUpdates(
+        coverUpdates: List<MusicTrack>,
+        lyricUpdates: List<MusicTrack>
+    ): List<MusicTrack> {
+        val coverMap = coverUpdates.associateBy { it.id }
+        val lyricMap = lyricUpdates.associateBy { it.id }
+        val allIds = (coverMap.keys + lyricMap.keys).toSet()
+        return allIds.mapNotNull { id ->
+            val cover = coverMap[id]
+            val lyric = lyricMap[id]
+            when {
+                cover != null && lyric != null -> cover.copy(
+                    lyricCachePath = lyric.lyricCachePath.ifEmpty { cover.lyricCachePath },
+                    lyricLines = lyric.lyricLines.ifEmpty { cover.lyricLines }
+                )
+                cover != null -> cover
+                lyric != null -> lyric
+                else -> null
+            }
         }
     }
 
