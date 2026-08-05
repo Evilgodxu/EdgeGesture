@@ -243,9 +243,12 @@ class MusicPlaybackState {
         set(value) {
             _playlist.value = value
             cachedMediaItems = null
+            mediaItemsDirty = true
         }
     /** 缓存 playlist 对应的 MediaItem 列表，避免切歌时重复构建 */
     var cachedMediaItems by mutableStateOf<List<androidx.media3.common.MediaItem>?>(null)
+    /** 封面更新后需要刷新系统媒体面板的 MediaItem，标记为脏 */
+    var mediaItemsDirty by mutableStateOf(false)
     var currentIndex by mutableIntStateOf(-1)
     var currentTrack by mutableStateOf<MusicTrack?>(null)
     var playMode by mutableStateOf(PlayMode.RepeatAll)
@@ -638,6 +641,8 @@ class MusicPlaybackState {
     }
 
     fun renameAndRefreshMetadata(renamed: MusicTrack) {
+        val oldCoverPath = renamed.coverCachePath
+        val oldLyricPath = renamed.lyricCachePath
         val cleared = renamed.copy(
             neteaseId = 0L,
             neteaseCoverUrl = "",
@@ -656,6 +661,9 @@ class MusicPlaybackState {
                 val coverPath = coverBytes?.let { MusicMetadataCache.saveCover(ctx, match.id, it) }.orEmpty()
                 val cover = MusicMetadataCache.loadCover(coverPath)
                 val lyricPath = MusicMetadataCache.saveLyrics(ctx, match.id, lyric.lines).orEmpty()
+                // 新文件已保存成功，清理旧文件
+                if (oldCoverPath != coverPath) MusicMetadataCache.deleteCoverFile(oldCoverPath)
+                if (oldLyricPath != lyricPath) MusicMetadataCache.deleteLyricFile(oldLyricPath)
                 withContext(Dispatchers.Main) {
                     val idx = playlist.indexOfFirst { it.id == cleared.id }
                     if (idx >= 0) {

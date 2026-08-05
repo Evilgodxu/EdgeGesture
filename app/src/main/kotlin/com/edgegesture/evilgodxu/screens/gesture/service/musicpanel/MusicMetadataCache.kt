@@ -109,6 +109,19 @@ internal object MusicMetadataCache {
         if (!isValid(path)) null else File(path).readBytes()
     } catch (_: Exception) { null }
 
+    fun deleteCoverFile(path: String) {
+        if (path.isNotBlank()) {
+            removeCover(path)
+            File(path).delete()
+        }
+    }
+
+    fun deleteLyricFile(path: String) {
+        if (path.isNotBlank()) {
+            File(path).delete()
+        }
+    }
+
     fun bitmapToBytes(bitmap: Bitmap): ByteArray? = try {
         ByteArrayOutputStream().use { output ->
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)

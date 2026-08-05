@@ -1,0 +1,51 @@
+package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
+
+import android.content.ContentProvider
+import android.content.ContentValues
+import android.database.Cursor
+import android.net.Uri
+import android.os.ParcelFileDescriptor
+import java.io.File
+
+/**
+ * 向系统媒体控制器（通知栏、锁屏、Android Auto 等）暴露本地缓存的封面文件。
+ *
+ * Media3 的 MediaSession 会自动为 content:// URI 授予读取权限，
+ * 因此系统进程能通过此 Provider 读取应用私有目录下的封面文件。
+ *
+ * URI 格式: content://{packageName}.musiccover/{文件名不含扩展名}
+ * 例如: content://com.edgegesture.evilgodxu.musiccover/12345
+ *
+ * 按 covers_v2 → covers_original 顺序查找文件。
+ */
+class MusicCoverProvider : ContentProvider() {
+
+    override fun onCreate(): Boolean = true
+
+    override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor? {
+        val id = uri.lastPathSegment ?: return null
+        val ctx = context ?: return null
+        val file = File(ctx.filesDir, "music_metadata/covers_v2/$id.webp").takeIf { it.isFile }
+            ?: File(ctx.filesDir, "music_metadata/covers_original/$id.image").takeIf { it.isFile }
+            ?: return null
+        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+    }
+
+    override fun getType(uri: Uri): String? = "image/*"
+
+    override fun insert(uri: Uri, values: ContentValues?): Uri? = null
+    override fun delete(uri: Uri, selection: String?, selectionArgs: Array<String>?): Int = 0
+    override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<String>?): Int = 0
+    override fun query(uri: Uri, projection: Array<String>?, selection: String?, selectionArgs: Array<String>?, sortOrder: String?): Cursor? = null
+
+    companion object {
+        const val AUTHORITY_SUFFIX = ".musiccover"
+
+        /** 根据 coverCachePath 生成 content:// URI */
+        fun buildUri(packageName: String, coverCachePath: String): Uri? {
+            if (coverCachePath.isBlank()) return null
+            val name = File(coverCachePath).nameWithoutExtension
+            return Uri.parse("content://$packageName$AUTHORITY_SUFFIX/$name")
+        }
+    }
+}

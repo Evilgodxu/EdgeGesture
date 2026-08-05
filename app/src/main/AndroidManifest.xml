@@ -147,6 +147,13 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- 音乐封面提供者：向系统媒体面板暴露本地封面文件 -->
+        <provider
+            android:name=".screens.gesture.service.musicpanel.MusicCoverProvider"
+            android:authorities="${applicationId}.musiccover"
+            android:exported="false"
+            android:grantUriPermissions="true" />
     </application>
 
 </manifest>

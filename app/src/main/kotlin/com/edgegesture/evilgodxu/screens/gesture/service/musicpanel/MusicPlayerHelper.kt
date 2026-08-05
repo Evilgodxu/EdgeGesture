@@ -63,11 +63,14 @@ suspend fun playTrackAt(
                         controller.getMediaItemAt(it).mediaId == items[it].mediaId
                     }
             val sameTrack = controller.currentMediaItem?.mediaId == track.id.toString()
+            // 封面更新后需要刷新系统媒体面板的 MediaItem
+            val needRefreshItems = state.mediaItemsDirty
 
             state.currentIndex = index
             state.currentTrack = track
             state.errorMsg = null
-            if (!sameQueue) {
+            state.mediaItemsDirty = false
+            if (!sameQueue || needRefreshItems) {
                 controller.setMediaItems(items, index, resumePosition)
                 controller.prepare()
             } else if (!sameTrack) {
@@ -129,7 +132,11 @@ private fun toMediaItem(context: Context, track: MusicTrack): MediaItem {
     val metadata = androidx.media3.common.MediaMetadata.Builder()
         .setTitle(track.title)
         .setArtist(track.artist)
-    // 封面不阻塞构建，留空让 Media3 自行 fallback 或播放时再展示
+    // 使用 content:// URI 指向本地缓存封面，避免在 MediaItem 中嵌入 byte 数组
+    // Media3 的 MediaSession 会自动为 content:// URI 授予控制器读取权限
+    MusicCoverProvider.buildUri(context.packageName, track.coverCachePath)?.let { uri ->
+        metadata.setArtworkUri(uri)
+    }
     return MediaItem.Builder()
         .setMediaId(track.id.toString())
         .setUri(Uri.parse(track.audioUri))

@@ -451,7 +451,12 @@ class MusicPanelViewManager(
                             Uri.parse(track.audioUri), track.albumId, track.path
                         ) ?: return@async null
                         val coverBytes = MusicMetadataCache.bitmapToBytes(cover) ?: return@async null
+                        val oldPath = track.coverCachePath
                         val coverPath = MusicMetadataCache.saveCover(context, track.albumId, coverBytes).orEmpty()
+                        // 清理旧封面文件（如 covers_original 中的回退文件）
+                        if (oldPath.isNotBlank() && oldPath != coverPath) {
+                            MusicMetadataCache.deleteCoverFile(oldPath)
+                        }
                         track.copy(albumArt = cover, coverCachePath = coverPath)
                     } catch (_: Exception) { null }
                 }
@@ -482,8 +487,13 @@ class MusicPanelViewManager(
                         val match = NeteaseMusicApi.match(track.title, track.artist, track.duration)
                             ?: return@async null
                         val coverBytes = NeteaseMusicApi.loadCoverBytes(match.coverUrl.orEmpty()) ?: return@async null
+                        val oldPath = track.coverCachePath
                         val coverPath = MusicMetadataCache.saveCover(context, match.id, coverBytes).orEmpty()
                         val cover = MusicMetadataCache.loadCover(coverPath)
+                        // 清理旧封面文件（文件名失效等）
+                        if (oldPath.isNotBlank() && oldPath != coverPath) {
+                            MusicMetadataCache.deleteCoverFile(oldPath)
+                        }
                         track.copy(
                             albumArt = track.albumArt ?: cover,
                             neteaseId = match.id,
