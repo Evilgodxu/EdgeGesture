@@ -115,12 +115,7 @@ enum class ThemeMode(val value: String) {
 // 应用语言设置，通过 LocaleManager 管理应用内语言偏好
 enum class AppLanguage(val languageTag: String?) {
     SYSTEM(null),
-    CHINESE("zh"),
-    ENGLISH("en"),
-    JAPANESE("ja"),
-    KOREAN("ko"),
-    RUSSIAN("ru"),
-    GERMAN("de");
+    CHINESE("zh");
 
     companion object {
         fun fromLocaleList(localeList: LocaleList): AppLanguage {
@@ -306,11 +301,6 @@ fun SettingsScreen(
                             subtitle = when (currentLanguage) {
                                 AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
                                 AppLanguage.CHINESE -> stringResource(R.string.settings_language_chinese)
-                                AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
-                                AppLanguage.JAPANESE -> stringResource(R.string.settings_language_japanese)
-                                AppLanguage.KOREAN -> stringResource(R.string.settings_language_korean)
-                                AppLanguage.RUSSIAN -> stringResource(R.string.settings_language_russian)
-                                AppLanguage.GERMAN -> stringResource(R.string.settings_language_german)
                             },
                             onClick = { showLanguageDialog = true }
                         )
@@ -427,11 +417,6 @@ fun SettingsScreen(
                         subtitle = when (currentLanguage) {
                             AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
                             AppLanguage.CHINESE -> stringResource(R.string.settings_language_chinese)
-                            AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
-                            AppLanguage.JAPANESE -> stringResource(R.string.settings_language_japanese)
-                            AppLanguage.KOREAN -> stringResource(R.string.settings_language_korean)
-                            AppLanguage.RUSSIAN -> stringResource(R.string.settings_language_russian)
-                            AppLanguage.GERMAN -> stringResource(R.string.settings_language_german)
                         },
                         onClick = { showLanguageDialog = true }
                     )
