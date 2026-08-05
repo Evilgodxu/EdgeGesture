@@ -465,6 +465,12 @@ class MusicPlaybackState {
             val array = JSONArray(json)
             List(array.length()) { index ->
                 val item = array.getJSONObject(index)
+                val savedLyricPath = item.optString("lyricCachePath", "")
+                val lyricLines = if (MusicMetadataCache.isValid(savedLyricPath)) {
+                    MusicMetadataCache.loadLyrics(savedLyricPath)
+                } else {
+                    emptyList()
+                }
                 MusicTrack(
                     id = item.getLong("id"),
                     path = item.getString("path"),
@@ -477,8 +483,8 @@ class MusicPlaybackState {
                     neteaseCoverUrl = item.optString("neteaseCoverUrl", ""),
                     coverCachePath = item.optString("coverCachePath", ""),
                     isFavorite = item.optBoolean("isFavorite", false),
-                    lyricCachePath = item.optString("lyricCachePath", ""),
-                    lyricLines = emptyList()
+                    lyricCachePath = savedLyricPath.takeIf { lyricLines.isNotEmpty() }.orEmpty(),
+                    lyricLines = lyricLines
                 )
             }
         } catch (_: Exception) {
