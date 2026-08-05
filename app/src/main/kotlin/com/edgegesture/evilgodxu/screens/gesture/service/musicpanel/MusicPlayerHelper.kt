@@ -8,7 +8,6 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.guava.await
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
@@ -87,45 +86,6 @@ suspend fun playTrackAt(
             state.pendingResumePosition = 0L
         }
     }
-
-    // 歌词放到播放时才加载
-    state.playbackScope.launch(Dispatchers.IO) {
-        loadLyricsForTrack(context, state, index)
-    }
-}
-
-private suspend fun loadLyricsForTrack(
-    context: Context,
-    state: MusicPlaybackState,
-    index: Int,
-) {
-    val track = state.playlist.getOrNull(index) ?: return
-    // 已加载歌词，跳过
-    if (track.lyricLines.isNotEmpty()) return
-    // 从缓存文件加载
-    if (track.lyricCachePath.isNotBlank() && MusicMetadataCache.isValid(track.lyricCachePath)) {
-        val lines = MusicMetadataCache.loadLyrics(track.lyricCachePath)
-        if (lines.isNotEmpty()) {
-            withContext(Dispatchers.Main) {
-                state.updateTrack(track.copy(lyricLines = lines))
-            }
-            return
-        }
-    }
-    // 在线匹配歌词
-    try {
-        val neteaseId = if (track.neteaseId != 0L) track.neteaseId
-        else {
-            NeteaseMusicApi.match(track.title, track.artist, track.duration)?.id ?: return
-        }
-        val lyric = NeteaseMusicApi.lyric(neteaseId)
-        if (lyric.lines.isNotEmpty()) {
-            val lyricPath = MusicMetadataCache.saveLyrics(context, neteaseId, lyric.lines).orEmpty()
-            withContext(Dispatchers.Main) {
-                state.updateTrack(track.copy(lyricCachePath = lyricPath, lyricLines = lyric.lines))
-            }
-        }
-    } catch (_: Exception) { }
 }
 
 private fun toMediaItem(context: Context, track: MusicTrack): MediaItem {
