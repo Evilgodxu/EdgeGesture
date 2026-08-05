@@ -450,7 +450,9 @@ class MusicPanelViewManager(
                             context, context.contentResolver,
                             Uri.parse(track.audioUri), track.albumId, track.path
                         ) ?: return@async null
-                        track.copy(albumArt = cover)
+                        val coverBytes = MusicMetadataCache.bitmapToBytes(cover) ?: return@async null
+                        val coverPath = MusicMetadataCache.saveCover(context, track.albumId, coverBytes).orEmpty()
+                        track.copy(albumArt = cover, coverCachePath = coverPath)
                     } catch (_: Exception) { null }
                 }
             }.awaitAll().filterNotNull()
@@ -466,10 +468,10 @@ class MusicPanelViewManager(
         enrichLocalCovers()
         val tracks = withContext(Dispatchers.Main) { playbackState.playlist.toList() }
         // 筛选出需要在线匹配封面的歌曲
+        // 如果本地缓存文件不存在（被清理/saveCover失败等），即使 neteaseCoverUrl 已存在也要重新下载
         val needCover = tracks.filter { track ->
             track.albumArt == null &&
-                !MusicMetadataCache.isCurrentCoverPath(track.coverCachePath) &&
-                track.neteaseCoverUrl.isBlank()
+                !MusicMetadataCache.isValid(track.coverCachePath)
         }
         if (needCover.isEmpty()) return
         // 一次性并行加载所有在线封面
