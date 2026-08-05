@@ -5,7 +5,9 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import android.util.Log
 import java.io.File
+import java.io.FileNotFoundException
 
 /**
  * 向系统媒体控制器（通知栏、锁屏、Android Auto 等）暴露本地缓存的封面文件。
@@ -28,7 +30,12 @@ class MusicCoverProvider : ContentProvider() {
         val file = File(ctx.filesDir, "music_metadata/covers_v2/$id.webp").takeIf { it.isFile }
             ?: File(ctx.filesDir, "music_metadata/covers_original/$id.image").takeIf { it.isFile }
             ?: return null
-        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        return try {
+            ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        } catch (e: FileNotFoundException) {
+            Log.w(TAG, "Cover file not found: ${file.absolutePath}")
+            null
+        }
     }
 
     override fun getType(uri: Uri): String? = "image/*"
@@ -40,6 +47,7 @@ class MusicCoverProvider : ContentProvider() {
 
     companion object {
         const val AUTHORITY_SUFFIX = ".musiccover"
+        private const val TAG = "MusicCoverProvider"
 
         /** 根据 coverCachePath 生成 content:// URI */
         fun buildUri(packageName: String, coverCachePath: String): Uri? {

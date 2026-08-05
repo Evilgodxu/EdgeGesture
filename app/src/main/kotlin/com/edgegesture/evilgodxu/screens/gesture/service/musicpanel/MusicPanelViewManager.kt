@@ -457,7 +457,8 @@ class MusicPanelViewManager(
                         if (oldPath.isNotBlank() && oldPath != coverPath) {
                             MusicMetadataCache.deleteCoverFile(oldPath)
                         }
-                        track.copy(albumArt = cover, coverCachePath = coverPath)
+                        val updatedTrack = track.copy(albumArt = cover, coverCachePath = coverPath)
+                        updatedTrack
                     } catch (_: Exception) { null }
                 }
             }.awaitAll().filterNotNull()
@@ -494,12 +495,13 @@ class MusicPanelViewManager(
                         if (oldPath.isNotBlank() && oldPath != coverPath) {
                             MusicMetadataCache.deleteCoverFile(oldPath)
                         }
-                        track.copy(
+                        val updatedTrack = track.copy(
                             albumArt = track.albumArt ?: cover,
                             neteaseId = match.id,
                             neteaseCoverUrl = match.coverUrl.orEmpty(),
                             coverCachePath = coverPath,
                         )
+                        updatedTrack
                     } catch (_: Exception) { null }
                 }
             }.awaitAll().filterNotNull()
