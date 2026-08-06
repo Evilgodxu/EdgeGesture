@@ -55,6 +55,7 @@ data class TaskPanelApp(val packageName: String, val label: String, val icon: Dr
 fun TaskPanelOverlay(
     apps: List<TaskPanelApp>,
     selectedPackageName: String?,
+    currentPackageName: String?,
     onLaunch: (String) -> Unit,
     onLaunchInFreeform: (String) -> Unit,
     onSwipeAway: (String) -> Unit,
@@ -71,7 +72,9 @@ fun TaskPanelOverlay(
     var singleTapJob by remember { mutableStateOf<Job?>(null) }
     val thresholdPx = with(LocalDensity.current) { 48.dp.toPx() }
     val touchSlopPx = with(LocalDensity.current) { 8.dp.toPx() }
-    val hintTextColor = if (isSystemInDarkTheme()) Color.White else Color.LightGray
+    val hintTextColor = Color.White
+    val hintBackground = Color.Black.copy(alpha = 0.45f)
+    val controlColor = Color.Black.copy(alpha = 0.9f)
     val itemStepPx = with(LocalDensity.current) { 104.dp.toPx() }
     val carouselAnim = remember { Animatable(0f) }
     // 是否正在执行清理（批量删除）动画
@@ -272,10 +275,7 @@ fun TaskPanelOverlay(
                 modifier = Modifier
                     .size(44.dp)
                     .background(
-                        color = if (isSystemInDarkTheme())
-                            Color.White.copy(alpha = 0.2f)
-                        else
-                            Color.Black.copy(alpha = 0.1f),
+                        color = Color.White.copy(alpha = 0.24f),
                         shape = CircleShape
                     )
                     .clickable(
@@ -284,8 +284,11 @@ fun TaskPanelOverlay(
                     ) {
                         if (appList.isEmpty()) { onDismiss(); return@clickable }
                         if (isCleaning) return@clickable
-                        val currentPkg = appList.getOrNull(selectedIndex)?.packageName
-                        val toDelete = appList.filter { it.packageName != currentPkg }
+                        val toDelete = if (currentPackageName != null) {
+                            appList.filter { it.packageName != currentPackageName }
+                        } else {
+                            appList
+                        }
                         cleanDurationMs.intValue = toDelete.size * 100 + 300
                         isCleaning = true
                         scope.launch {
@@ -305,7 +308,7 @@ fun TaskPanelOverlay(
                 contentAlignment = Alignment.Center
             ) {
                 // 进度环
-                val progressRingColor = if (isSystemInDarkTheme()) Color.White else Color.Black
+                val progressRingColor = Color.White
                 Canvas(modifier = Modifier.size(44.dp)) {
                     val sweepAngle = cleanProgress.value * 360f
                     val strokeWidth = 3.dp.toPx()
@@ -321,7 +324,7 @@ fun TaskPanelOverlay(
                 }
                 Text(
                     text = "✕",
-                    color = if (isSystemInDarkTheme()) Color.White else Color.Black,
+                    color = Color.White,
                     fontSize = 18.sp
                 )
             }
@@ -349,7 +352,6 @@ fun TaskPanelOverlay(
                     textAlign = TextAlign.Center
                 )
             }
-            Spacer(modifier = Modifier.height(18.dp))
         }
     }
 }

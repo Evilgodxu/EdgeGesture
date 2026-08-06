@@ -269,7 +269,10 @@ class AccessibilityActionExecutor(
 
     private fun showTaskPanel() {
         if (taskPanelViewManager != null) { dismissTaskPanel(); return }
-        val currentPackage = currentApp ?: service.packageName
+        val currentPackage = service.rootInActiveWindow?.packageName?.toString()
+            ?.takeIf { it != service.packageName }
+            ?: currentApp
+            ?: service.packageName
         val packages = taskPanelHistory
             .asReversed()
             .filter { it != service.packageName }
@@ -282,7 +285,7 @@ class AccessibilityActionExecutor(
             } catch (_: Exception) { null }
         }.take(10).toList()
         taskPanelViewManager = TaskPanelViewManager(
-            service, apps, currentPackage,
+            service, apps, currentPackage, currentPackage,
             { launchApp(it) },
             { freeformAppLauncher.launch(it, useFreeform = true) },
             { packageName -> taskPanelHistory.removeAll { it == packageName } },

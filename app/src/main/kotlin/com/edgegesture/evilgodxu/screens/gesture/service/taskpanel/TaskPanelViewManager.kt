@@ -23,6 +23,7 @@ class TaskPanelViewManager(
     private val context: android.content.Context,
     private val apps: List<TaskPanelApp>,
     private val selectedPackageName: String?,
+    private val currentPackageName: String?,
     private val onLaunch: (String) -> Unit,
     private val onLaunchInFreeform: (String) -> Unit,
     private val onSwipeAway: (String) -> Unit,
@@ -68,6 +69,7 @@ class TaskPanelViewManager(
                 TaskPanelOverlay(
                     apps = apps,
                     selectedPackageName = selectedPackageName,
+                    currentPackageName = currentPackageName,
                     onLaunch = { onLaunch(it); dismiss() },
                     onLaunchInFreeform = { onLaunchInFreeform(it); dismiss() },
                     onSwipeAway = onSwipeAway,
