@@ -366,6 +366,10 @@ fun MusicPanelOverlay(
                                 val updated = if (renameIsTitle) track.copy(title = newValue)
                                               else track.copy(artist = newValue)
                                 playbackState.renameTrackMetadata(updated)
+                                // 手动重命名标题/艺术家后写入音频文件元数据
+                                scope.launch {
+                                    MusicMetadataWriter.writeTitleArtist(context, track, updated.title, updated.artist)
+                                }
                             }
                         },
                         onCancel = { showRename = false }

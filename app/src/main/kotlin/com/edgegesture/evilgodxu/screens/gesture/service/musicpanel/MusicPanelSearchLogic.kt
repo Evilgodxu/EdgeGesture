@@ -111,14 +111,24 @@ internal suspend fun applyCoverCandidate(
     return try {
         val updated = withContext(Dispatchers.IO) {
             val bytes = NeteaseMusicApi.loadCoverBytes(candidate.coverUrl.orEmpty()) ?: return@withContext null
+            // 手动刷新封面：通过 Jaudiotagger 写入音频文件元数据
+            val writeSuccess = MusicMetadataWriter.writeCover(context, track, bytes)
             val path = MusicMetadataCache.saveCover(context, candidate.id, bytes).orEmpty()
             val bitmap = MusicMetadataCache.loadCover(path)
             if (path.isBlank() && bitmap == null) return@withContext null
+            val oldPath = track.coverCachePath
+            if (writeSuccess) {
+                // 封面已内嵌进音频文件：清理在线匹配与本轮下载产生的封面缓存，避免孤立文件
+                MusicMetadataCache.deleteCoverFile(oldPath)
+                MusicMetadataCache.deleteCoverFile(path)
+            } else if (oldPath.isNotBlank() && oldPath != path) {
+                MusicMetadataCache.deleteCoverFile(oldPath)
+            }
             track.copy(
                 albumArt = bitmap,
                 neteaseId = candidate.id,
-                neteaseCoverUrl = candidate.coverUrl.orEmpty(),
-                coverCachePath = path
+                neteaseCoverUrl = if (writeSuccess) "" else candidate.coverUrl.orEmpty(),
+                coverCachePath = if (writeSuccess) "" else path
             )
         } ?: return false
         withContext(Dispatchers.Main) {

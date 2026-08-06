@@ -12,6 +12,7 @@ import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.net.Uri
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
@@ -240,8 +241,10 @@ class AccessibilityActionExecutor(
 
         when {
             ContextCompat.checkSelfPermission(service, Manifest.permission.READ_MEDIA_AUDIO) ==
-                    PackageManager.PERMISSION_GRANTED -> showPanel()
+                    PackageManager.PERMISSION_GRANTED &&
+                    Environment.isExternalStorageManager() -> showPanel()
             else -> {
+                // 每次启动面板都检查音频访问与全部文件访问权限并自动申请
                 MusicPanelPermissionBridge.pendingShowAction = showPanel
                 val intent = Intent(service, MusicPanelPermissionActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK

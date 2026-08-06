@@ -28,6 +28,7 @@ hiddenApiBypass = "6.1"
 
 coil = "3.5.0"
 media3 = "1.10.1"
+jaudiotagger = "3.0.1"
 
 [libraries]
 
@@ -79,3 +80,6 @@ coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp"
 # Media3 ExoPlayer
 androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3" }
 androidx-media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "media3" }
+
+# Jaudiotagger 音频元数据写入
+jaudiotagger = { group = "net.jthink", name = "jaudiotagger", version.ref = "jaudiotagger" }

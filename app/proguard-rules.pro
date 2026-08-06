@@ -51,3 +51,7 @@
 
 # HiddenApiBypass
 -keep class org.lsposed.hiddenapibypass.** { *; }
+
+# Jaudiotagger 音频元数据读写（内部使用反射解析 MP4 box 等）
+-keep class org.jaudiotagger.** { *; }
+-dontwarn org.jaudiotagger.**
