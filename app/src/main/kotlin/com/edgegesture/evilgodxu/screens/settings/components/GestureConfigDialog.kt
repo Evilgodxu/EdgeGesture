@@ -7,14 +7,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FileDownload
-import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.app.DataConfigManager
 import kotlinx.coroutines.launch
 
@@ -40,11 +39,11 @@ fun GestureConfigDialog(onDismiss: () -> Unit) {
             runCatching {
                 context.contentResolver.openOutputStream(uri)?.use {
                     it.write(DataConfigManager.export(context))
-                } ?: error("无法写入文件")
+                } ?: error(context.getString(R.string.gesture_config_export_failed))
             }.onFailure {
-                message = "导出失败：${it.message}"
+                message = context.getString(R.string.gesture_config_export_error, it.message ?: "")
             }.onSuccess {
-                message = "配置已导出"
+                message = context.getString(R.string.gesture_config_export_success)
             }
         }
     }
@@ -52,9 +51,9 @@ fun GestureConfigDialog(onDismiss: () -> Unit) {
         if (uri != null) scope.launch {
             runCatching {
                 context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                    ?: error("无法读取文件")
+                    ?: error(context.getString(R.string.gesture_config_import_failed_read))
             }.onFailure {
-                message = "导入失败：${it.message}"
+                message = context.getString(R.string.gesture_config_import_error, it.message ?: "")
             }.onSuccess {
                 pendingImport = it
                 showImportConfirm = true
@@ -66,14 +65,14 @@ fun GestureConfigDialog(onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "手势配置",
+                text = stringResource(R.string.gesture_config_title),
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center
             )
         },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text("导入或导出手势配置，不包含黑名单、扩展面板快捷方式、主题和语言。")
+                Text(stringResource(R.string.gesture_config_desc))
                 message?.let {
                     Text(it, modifier = Modifier.padding(top = 12.dp))
                 }
@@ -85,15 +84,13 @@ fun GestureConfigDialog(onDismiss: () -> Unit) {
                 horizontalArrangement = Arrangement.Center
             ) {
                 Button(onClick = { importLauncher.launch(arrayOf("application/json", "text/json")) }) {
-                    androidx.compose.material3.Icon(Icons.Default.FileUpload, null)
-                    Text("导入", modifier = Modifier.padding(start = 8.dp))
+                    Text(stringResource(R.string.gesture_config_import))
                 }
                 Button(
                     onClick = { exportLauncher.launch("edgegesture-config.json") },
                     modifier = Modifier.padding(start = 12.dp)
                 ) {
-                    androidx.compose.material3.Icon(Icons.Default.FileDownload, null)
-                    Text("导出", modifier = Modifier.padding(start = 8.dp))
+                    Text(stringResource(R.string.gesture_config_export))
                 }
             }
         }
@@ -102,26 +99,26 @@ fun GestureConfigDialog(onDismiss: () -> Unit) {
     if (showImportConfirm) {
         AlertDialog(
             onDismissRequest = { showImportConfirm = false; pendingImport = null },
-            title = { Text("覆盖手势配置") },
-            text = { Text("导入后将完全覆盖当前手势配置和启动拦截配置。黑名单、扩展面板快捷方式、主题和语言不会改变。") },
+            title = { Text(stringResource(R.string.gesture_config_import_confirm_title)) },
+            text = { Text(stringResource(R.string.gesture_config_import_confirm_desc)) },
             confirmButton = {
                 TextButton(onClick = {
                     showImportConfirm = false
                     scope.launch {
                         runCatching {
-                            DataConfigManager.import(context, pendingImport ?: error("配置为空"))
+                            DataConfigManager.import(context, pendingImport ?: error(context.getString(R.string.gesture_config_empty)))
                         }.onFailure {
-                            message = "导入失败：${it.message}"
+                            message = context.getString(R.string.gesture_config_import_error, it.message ?: "")
                         }.onSuccess {
-                            message = "配置已导入"
+                            message = context.getString(R.string.gesture_config_import_success)
                         }
                         pendingImport = null
                     }
-                }) { Text("继续") }
+                }) { Text(stringResource(R.string.gesture_config_import_confirm_continue)) }
             },
             dismissButton = {
                 TextButton(onClick = { showImportConfirm = false; pendingImport = null }) {
-                    Text("取消")
+                    Text(stringResource(R.string.dialog_cancel))
                 }
             }
         )

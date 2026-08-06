@@ -211,7 +211,7 @@
     <!-- 更多功能 -->
     <string name="more_section_title">更多功能</string>
     <string name="more_expand_panel">扩展面板</string>
-    <string name="more_blacklist">应用黑名单</string>
+    <string name="more_blacklist">应用切换黑名单</string>
     <string name="more_launch_block">启动拦截</string>
     <string name="more_settings">更多设置</string>
 
@@ -228,7 +228,7 @@
     <string name="advanced_gesture_back_tap_disabled">未启用</string>
     <string name="advanced_gesture_back_tap_enabled">已启用</string>
 
-    <!-- 应用黑名单 (App Blacklist) -->
+    <!-- 应用切换黑名单 (App Blacklist) -->
     <string name="settings_more">更多设置</string>
     <string name="settings_about">关于</string>
     <string name="settings_version">版本 %s</string>
@@ -296,18 +296,18 @@
     <string name="launch_block_shizuku_denied_short">需 Shizuku 授权</string>
     <string name="launch_block_add_title">添加拦截规则</string>
     <string name="launch_block_edit_title">编辑拦截规则</string>
-    <string name="launch_block_launcher_label">试图启动者（可选）</string>
+    <string name="launch_block_launcher_label">启动者（可选）</string>
     <string name="launch_block_launcher_hint">输入应用包名，如 com.example.app</string>
-    <string name="launch_block_launcher_supporting">留空则拦截所有应用启动目标应用</string>
+    <string name="launch_block_launcher_supporting">留空则直接拦截被启动者</string>
     <string name="launch_block_target_label">被启动者（必填）</string>
     <string name="launch_block_target_hint">输入应用包名，如 com.example.app</string>
     <string name="launch_block_target_supporting">当此应用被启动时将触发拦截</string>
     <string name="launch_block_target_required">请输入被启动应用</string>
     <string name="launch_block_kill_switch_title">终止启动者</string>
     <string name="launch_block_kill_switch_desc">每次触发拦截时直接终止启动者进程（连续最多5次，之后冷却15秒）</string>
-    <string name="launch_block_kill_switch_disabled_hint">需要先输入试图启动者才能启用</string>
+    <string name="launch_block_kill_switch_disabled_hint">需要先输入启动者才能启用</string>
     <string name="launch_block_kill_target_title">终止被启动者</string>
-    <string name="launch_block_kill_target_desc">拦截后立即终止被启动应用进程</string>
+    <string name="launch_block_kill_target_desc">拦截后终止被启动应用进程</string>
     <string name="launch_block_allow_kill_system_title">允许终止系统程序</string>
     <string name="launch_block_allow_kill_system_desc">警告:终止系统应用可能导致系统不稳定</string>
     <string name="launch_block_rules_title">拦截规则</string>
@@ -349,8 +349,24 @@
     <string name="back_tap_mode_screen_off">熄屏激活</string>
     <string name="back_tap_mode_screen_on">亮屏激活</string>
     <string name="back_tap_pause_on_charging_title">充电时暂停</string>
-    <string name="back_tap_pause_on_charging_desc">充电时自动暂停背面双击以节省电量</string>
+    <string name="back_tap_pause_on_charging_desc">充电时自动暂停检测,减少误触</string>
     <string name="back_tap_config_title">背面双击配置</string>
+
+    <!-- 手势配置对话框 -->
+    <string name="gesture_config_title">手势配置</string>
+    <string name="gesture_config_desc">导入或导出手势配置，不包含黑名单、扩展面板快捷方式、主题和语言。</string>
+    <string name="gesture_config_import">导入</string>
+    <string name="gesture_config_export">导出</string>
+    <string name="gesture_config_import_confirm_title">覆盖手势配置</string>
+    <string name="gesture_config_import_confirm_desc">导入后将完全覆盖当前手势配置和启动拦截配置。黑名单、扩展面板快捷方式、主题和语言不会改变。</string>
+    <string name="gesture_config_import_confirm_continue">继续</string>
+    <string name="gesture_config_export_failed">无法写入文件</string>
+    <string name="gesture_config_export_error">导出失败：%s</string>
+    <string name="gesture_config_export_success">配置已导出</string>
+    <string name="gesture_config_import_failed_read">无法读取文件</string>
+    <string name="gesture_config_import_error">导入失败：%s</string>
+    <string name="gesture_config_import_success">配置已导入</string>
+    <string name="gesture_config_empty">配置为空</string>
 
     <!-- 应用更新 (App Update) -->
     <string name="update_channel_name">应用更新</string>

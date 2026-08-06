@@ -136,8 +136,7 @@ private fun SelectableDataRow(
 ) {
     Surface(
         onClick = { onClick(!selected) },
-        color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-        else MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.surface,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(

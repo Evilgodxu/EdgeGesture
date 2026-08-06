@@ -427,7 +427,7 @@ fun LaunchBlockRuleDialog(
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                contentColor = androidx.compose.ui.graphics.Color.White
                             )
                         ) {
                             Text(

@@ -101,7 +101,7 @@ fun ExpandPanelScreen(
                     letterSpacing = 1.2.sp
                 ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp, bottom = 10.dp)
+                modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 10.dp)
             )
 
             // 系统控制卡片（亮度 + 音量）
