@@ -576,7 +576,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        actionExecutor.markConfigChanged()
         // 延迟更新布局，等待系统完成配置切换
         Handler(Looper.getMainLooper()).postDelayed({
             if (settings.gestureEnabled && edgeViewManager.isViewAttached()) {

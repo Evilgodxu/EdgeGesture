@@ -260,8 +260,6 @@
     <string name="permission_notification_desc">保持手势服务在后台运行所需</string>
     <string name="permission_battery_title">省电优化权限</string>
     <string name="permission_battery_desc">避免系统省电终止手势服务所需</string>
-    <string name="permission_usage_stats_title">使用情况访问权限</string>
-    <string name="permission_usage_stats_desc">切换到上一个应用所需</string>
     <string name="permission_query_packages_title">获取已安装应用权限</string>
     <string name="permission_query_packages_desc">创建应用切换黑名单所需</string>
 

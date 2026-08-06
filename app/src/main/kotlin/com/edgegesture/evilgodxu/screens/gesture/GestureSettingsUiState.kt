@@ -12,7 +12,6 @@ data class GestureSettingsUiState(
     val overlayGranted: Boolean = false,
     val notificationGranted: Boolean = false,
     val batteryOptimized: Boolean = false,
-    val usageStatsGranted: Boolean = false,
     val queryAllPackagesGranted: Boolean = false,
     // 正在等待的权限类型，用于自动返回检测
     val waitingPermission: PermissionType? = null,
@@ -20,5 +19,5 @@ data class GestureSettingsUiState(
     // 检查所有权限是否已授予
     val allPermissionsGranted: Boolean
         get() = overlayGranted && notificationGranted && batteryOptimized &&
-                usageStatsGranted && queryAllPackagesGranted
+                queryAllPackagesGranted
 }

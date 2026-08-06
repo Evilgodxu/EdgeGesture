@@ -50,9 +50,9 @@ import kotlinx.coroutines.runBlocking
 class AccessibilityActionExecutor(
     private val service: AccessibilityService
 ) : ExpandPanelPermissionCallback {
-    private val appHistory = mutableListOf<String>()
+    private val taskPanelHistory = mutableListOf<String>()
     private var currentApp: String? = null
-    private var justConfigChanged: Boolean = false
+    private var previousApp: String? = null
 
     private var flashlightOn = false
     private val cameraManager = service.getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -96,7 +96,7 @@ class AccessibilityActionExecutor(
             GestureAction.FREEFORM_MODE -> launchCurrentAppInFreeform()
             GestureAction.EXPAND_PANEL -> showExpandPanel()
             GestureAction.MUSIC_PANEL -> showMusicPanel()
-            GestureAction.TASK_PANEL -> showTaskPanel(getBlacklistSync())
+            GestureAction.TASK_PANEL -> showTaskPanel()
             GestureAction.ALIPAY_SCAN -> launchScanAlipay()
             GestureAction.WECHAT_SCAN -> launchScanWechat()
             GestureAction.REMIND_1M -> scheduleReminder(1)
@@ -267,21 +267,13 @@ class AccessibilityActionExecutor(
         taskPanelViewManager = null
     }
 
-    private fun showTaskPanel(blacklist: Set<String>) {
+    private fun showTaskPanel() {
         if (taskPanelViewManager != null) { dismissTaskPanel(); return }
         val currentPackage = currentApp ?: service.packageName
-        // 从 appHistory 构建列表，最近使用的在前，当前应用置顶
-        val packages = mutableListOf<String>()
-        if (currentPackage != service.packageName && currentPackage !in blacklist) {
-            packages.add(currentPackage)
-        }
-        packages.addAll(appHistory.reversed().filter {
-            it != currentPackage && it != service.packageName && it !in blacklist
-        })
-        // 确保列表中没有重复项
-        val distinctPackages = packages.distinct()
-        packages.clear()
-        packages.addAll(distinctPackages)
+        val packages = taskPanelHistory
+            .asReversed()
+            .filter { it != service.packageName }
+            .distinct()
         val apps = packages.mapNotNull { pkg ->
             try {
                 service.packageManager.getLaunchIntentForPackage(pkg) ?: return@mapNotNull null
@@ -293,13 +285,9 @@ class AccessibilityActionExecutor(
             service, apps, currentPackage,
             { launchApp(it) },
             { freeformAppLauncher.launch(it, useFreeform = true) },
-            { removeFromHistory(it) },
+            { packageName -> taskPanelHistory.removeAll { it == packageName } },
             { taskPanelViewManager = null }
         ).also { it.show() }
-    }
-
-    private fun removeFromHistory(packageName: String) {
-        appHistory.removeAll { it == packageName }
     }
 
     // 清理资源
@@ -310,42 +298,26 @@ class AccessibilityActionExecutor(
         executorScope.cancel()
     }
 
-    // 监听窗口变化事件，记录应用切换历史，用于实现"切换到上一个应用"功能
+    // 监听窗口变化事件，维护当前应用和上一个应用
     fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+            event?.eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED
+        ) return
 
-        val packageName = event.packageName?.toString()
-        if (packageName == null || packageName == service.packageName) return
+        val packageName = event.packageName?.toString() ?: return
+        if (packageName == service.packageName) return
+
+        if (packageName == currentApp) return
+
+        taskPanelHistory.remove(packageName)
+        taskPanelHistory.add(packageName)
+        if (taskPanelHistory.size > 10) taskPanelHistory.removeAt(0)
 
         val blacklist = getBlacklistSync()
+        if (packageName in blacklist) return
 
-        // 屏幕旋转等配置变化会导致Activity重建，此时不应记录为应用切换
-        if (justConfigChanged) {
-            justConfigChanged = false
-            if (packageName == currentApp) {
-                return
-            }
-        }
-
-        if (currentApp == packageName) return
-
-        // 将当前应用添加到历史记录，用于后续返回
-        currentApp?.let { current ->
-            if (current != packageName && current !in blacklist) {
-                appHistory.remove(packageName)
-                appHistory.remove(current)
-                appHistory.add(current)
-                // 限制历史记录大小，避免内存无限增长
-                if (appHistory.size > 20) {
-                    appHistory.removeAt(0)
-                }
-            }
-        }
+        previousApp = currentApp
         currentApp = packageName
-    }
-
-    fun markConfigChanged() {
-        justConfigChanged = true
     }
 
     private fun launchCurrentAppInFreeform() {
@@ -355,30 +327,10 @@ class AccessibilityActionExecutor(
     }
 
     private fun switchToLastApp() {
-        try {
-            val blacklist = getBlacklistSync()
-            val target = appHistory.findLast { it != currentApp && it !in blacklist }
-            if (target != null && target != service.packageName && target != currentApp) {
-                val launched = launchApp(target)
-                if (launched) {
-                    currentApp?.let { current ->
-                        if (current != target && current !in blacklist) {
-                            appHistory.remove(target)
-                            appHistory.add(current)
-                            if (appHistory.size > 20) {
-                                appHistory.removeAt(0)
-                            }
-                        }
-                    }
-                    currentApp = target
-                } else {
-                    service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
-                }
-            } else {
-                service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
-            }
-        } catch (_: Exception) {
-            service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
+        val target = previousApp ?: return
+        if (launchApp(target)) {
+            previousApp = currentApp
+            currentApp = target
         }
     }
 

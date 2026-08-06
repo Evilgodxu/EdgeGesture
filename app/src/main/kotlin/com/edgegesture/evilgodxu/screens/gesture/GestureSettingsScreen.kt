@@ -43,7 +43,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Android
-import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.BatteryFull
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Notifications
@@ -549,28 +548,6 @@ private fun GestureSettingsSwitchesColumn(
             }
         )
         PermissionCard(
-            title = stringResource(R.string.permission_usage_stats_title),
-            description = stringResource(R.string.permission_usage_stats_desc),
-            granted = uiState.usageStatsGranted,
-            onRequest = {
-                if (activity != null) {
-                    viewModel.startPermissionMonitor(PermissionType.USAGE_STATS, activity)
-                }
-                val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
-                    data = "package:${context.packageName}".toUri()
-                }
-                activity?.startActivity(intent)
-            },
-            icon = {
-                Icon(
-                    imageVector = Icons.Outlined.BarChart,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
-        )
-        PermissionCard(
             title = stringResource(R.string.permission_query_packages_title),
             description = stringResource(R.string.permission_query_packages_desc),
             granted = uiState.queryAllPackagesGranted,
@@ -925,7 +902,7 @@ private fun ServiceStatusCard(
                     StatItem(
                         icon = {
                             Icon(
-                                imageVector = Icons.Outlined.BarChart,
+                                imageVector = Icons.Filled.DataUsage,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
                                 tint = MaterialTheme.colorScheme.primary

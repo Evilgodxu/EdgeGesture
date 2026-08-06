@@ -3,7 +3,6 @@ package com.edgegesture.evilgodxu.screens.gesture
 import android.Manifest
 import android.app.Activity
 import android.app.Application
-import android.app.AppOpsManager
 import android.content.pm.PackageManager
 import android.os.PowerManager
 import android.os.Process
@@ -77,7 +76,6 @@ class GestureSettingsViewModel(
         val overlayGranted: Boolean = false,
         val notificationGranted: Boolean = false,
         val batteryOptimized: Boolean = false,
-        val usageStatsGranted: Boolean = false,
         val queryAllPackagesGranted: Boolean = false,
     )
 
@@ -97,7 +95,6 @@ class GestureSettingsViewModel(
             overlayGranted = permissions.overlayGranted,
             notificationGranted = permissions.notificationGranted,
             batteryOptimized = permissions.batteryOptimized,
-            usageStatsGranted = permissions.usageStatsGranted,
             queryAllPackagesGranted = permissions.queryAllPackagesGranted,
             waitingPermission = waitingPermission,
         )
@@ -169,14 +166,12 @@ class GestureSettingsViewModel(
             Manifest.permission.POST_NOTIFICATIONS
         ) == PackageManager.PERMISSION_GRANTED
         val battery = isIgnoringBatteryOptimizations(context)
-        val usageStats = hasUsageStatsPermission(context)
         val queryAllPackages = hasQueryAllPackagesPermission(context)
 
         _permissionsFlow.value = PermissionsState(
             overlayGranted = overlay,
             notificationGranted = notification,
             batteryOptimized = battery,
-            usageStatsGranted = usageStats,
             queryAllPackagesGranted = queryAllPackages,
         )
     }
@@ -190,17 +185,6 @@ class GestureSettingsViewModel(
     private fun isIgnoringBatteryOptimizations(ctx: android.content.Context): Boolean {
         val powerManager = ctx.getSystemService(android.content.Context.POWER_SERVICE) as PowerManager
         return powerManager.isIgnoringBatteryOptimizations(ctx.packageName)
-    }
-
-    // 检查是否有使用情况统计权限
-    private fun hasUsageStatsPermission(ctx: android.content.Context): Boolean {
-        val appOps = ctx.getSystemService(android.content.Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = appOps.checkOpNoThrow(
-            AppOpsManager.OPSTR_GET_USAGE_STATS,
-            Process.myUid(),
-            ctx.packageName
-        )
-        return mode == AppOpsManager.MODE_ALLOWED
     }
 
     // 检查是否有查询所有应用权限

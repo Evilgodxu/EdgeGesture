@@ -1,10 +1,8 @@
 package com.edgegesture.evilgodxu.data.permission
 
 import android.Manifest
-import android.app.AppOpsManager
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Process
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
@@ -16,7 +14,6 @@ enum class PermissionType {
     OVERLAY,
     NOTIFICATION,
     BATTERY_OPTIMIZATION,
-    USAGE_STATS,
     QUERY_ALL_PACKAGES,
     ACCESSIBILITY,
     WRITE_SETTINGS
@@ -40,17 +37,6 @@ class PermissionMonitor(private val context: Context) {
     fun isBatteryOptimizationIgnored(): Boolean {
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
         return powerManager.isIgnoringBatteryOptimizations(context.packageName)
-    }
-
-    // 检查使用情况统计权限
-    fun isUsageStatsGranted(): Boolean {
-        val appOps = context.getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = appOps.checkOpNoThrow(
-            AppOpsManager.OPSTR_GET_USAGE_STATS,
-            Process.myUid(),
-            context.packageName
-        )
-        return mode == AppOpsManager.MODE_ALLOWED
     }
 
     // 检查查询所有应用权限
@@ -83,7 +69,6 @@ class PermissionMonitor(private val context: Context) {
             PermissionType.OVERLAY -> isOverlayGranted()
             PermissionType.NOTIFICATION -> isNotificationGranted()
             PermissionType.BATTERY_OPTIMIZATION -> isBatteryOptimizationIgnored()
-            PermissionType.USAGE_STATS -> isUsageStatsGranted()
             PermissionType.QUERY_ALL_PACKAGES -> isQueryAllPackagesGranted()
             PermissionType.ACCESSIBILITY -> isAccessibilityGranted()
             PermissionType.WRITE_SETTINGS -> isWriteSettingsGranted()
