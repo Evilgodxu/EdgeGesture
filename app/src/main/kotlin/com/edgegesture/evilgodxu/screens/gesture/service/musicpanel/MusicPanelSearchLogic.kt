@@ -11,6 +11,51 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URL
 
+internal suspend fun searchCoverCandidates(
+    playbackState: MusicPlaybackState,
+    track: MusicTrack,
+) {
+    playbackState.isCoverSearching = true
+    playbackState.coverCandidates = emptyList()
+    try {
+        val query = listOf(track.title, track.artist).filter { it.isNotBlank() }.joinToString(" ")
+        playbackState.coverCandidates = NeteaseMusicApi.searchSongs(query)
+            .filter { !it.coverUrl.isNullOrBlank() }
+            .take(5)
+    } catch (_: Exception) {
+        playbackState.coverCandidates = emptyList()
+    } finally {
+        playbackState.isCoverSearching = false
+    }
+}
+
+internal suspend fun applyCoverCandidate(
+    context: Context,
+    playbackState: MusicPlaybackState,
+    track: MusicTrack,
+    candidate: NeteaseSongSearchResult,
+): Boolean {
+    return try {
+        val bytes = NeteaseMusicApi.loadCoverBytes(candidate.coverUrl.orEmpty()) ?: return false
+        val path = MusicMetadataCache.saveCover(context, candidate.id, bytes).orEmpty()
+        val bitmap = MusicMetadataCache.loadCover(path)
+        if (path.isBlank() && bitmap == null) return false
+        val updated = track.copy(
+            albumArt = bitmap,
+            neteaseId = candidate.id,
+            neteaseCoverUrl = candidate.coverUrl.orEmpty(),
+            coverCachePath = path
+        )
+        withContext(Dispatchers.Main) {
+            playbackState.updateTrack(updated)
+            playbackState.coverCandidates = emptyList()
+        }
+        true
+    } catch (_: Exception) {
+        false
+    }
+}
+
 internal suspend fun performSearch(
     playbackState: MusicPlaybackState,
     context: Context,

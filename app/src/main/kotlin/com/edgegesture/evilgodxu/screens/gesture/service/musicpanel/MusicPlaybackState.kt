@@ -265,6 +265,8 @@ class MusicPlaybackState {
     var showSearchResults by mutableStateOf(false)
     /** 在线搜索结果列表剩余待播曲目（播放失败时自动播下一首） */
     var pendingSearchResults by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
+    var coverCandidates by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
+    var isCoverSearching by mutableStateOf(false)
 
     private fun hasUriAccess(context: Context, audioUri: String): Boolean {
         val uri = Uri.parse(audioUri)

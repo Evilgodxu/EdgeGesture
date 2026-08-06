@@ -60,9 +60,11 @@ internal fun CurrentCover(
     track: MusicTrack?,
     isPlaying: Boolean,
     onClick: () -> Unit,
+    onRefreshCover: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val rotation = remember { Animatable(0f) }
+    var showMenu by remember { mutableStateOf(false) }
     LaunchedEffect(isPlaying) {
         if (isPlaying) {
             while (isActive) {
@@ -80,7 +82,10 @@ internal fun CurrentCover(
         modifier = modifier
             .fillMaxWidth()
             .height(72.dp)
-            .clickable(onClick = onClick),
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = { if (track != null) showMenu = true }
+            ),
         contentAlignment = Alignment.Center
     ) {
         Box(
@@ -91,6 +96,14 @@ internal fun CurrentCover(
         ) {
             AlbumArt(track = track, modifier = Modifier.fillMaxSize())
         }
+        CoverContextMenu(
+            visible = showMenu,
+            onRefresh = {
+                showMenu = false
+                onRefreshCover()
+            },
+            onDismiss = { showMenu = false }
+        )
     }
 }
 
@@ -126,6 +139,29 @@ internal fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CoverContextMenu(
+    visible: Boolean,
+    onRefresh: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    if (visible) {
+        Popup(alignment = Alignment.BottomCenter, properties = PopupProperties(focusable = true), onDismissRequest = onDismiss) {
+            Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceVariant, tonalElevation = 4.dp) {
+                Surface(shape = RoundedCornerShape(6.dp), color = Color.Transparent, onClick = onRefresh) {
+                    Text(
+                        text = stringResource(R.string.music_panel_refresh_cover),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                    )
+                }
             }
         }
     }

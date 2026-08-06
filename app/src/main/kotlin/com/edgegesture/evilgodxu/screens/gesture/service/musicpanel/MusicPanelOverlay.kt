@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -44,6 +45,8 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.edgegesture.evilgodxu.R
 import androidx.compose.ui.unit.dp
 import com.edgegesture.evilgodxu.screens.settings.ThemeMode
 import com.edgegesture.evilgodxu.screens.settings.settingsFlow
@@ -96,6 +99,10 @@ fun MusicPanelOverlay(
     var showRename by remember { mutableStateOf(false) }
     var renameIsTitle by remember { mutableStateOf(true) }
     var renameInitValue by remember { mutableStateOf("") }
+    var showCoverRefresh by remember { mutableStateOf(false) }
+    var showCoverReplace by remember { mutableStateOf(false) }
+    var selectedCoverCandidate by remember { mutableStateOf<NeteaseSongSearchResult?>(null) }
+    var coverSaveFailed by remember { mutableStateOf(false) }
 
     MaterialTheme(colorScheme = colorScheme) {
         Box(
@@ -244,7 +251,11 @@ fun MusicPanelOverlay(
                                         CurrentCover(
                                             track = playbackState.currentTrack,
                                             isPlaying = playbackState.isPlaying,
-                                            onClick = { playbackState.isLyricsVisible = true }
+                                            onClick = { playbackState.isLyricsVisible = true },
+                                            onRefreshCover = {
+                                                showCoverRefresh = true
+                                                scope.launch { searchCoverCandidates(playbackState, playbackState.currentTrack!!) }
+                                            }
                                         )
                                     }
                                 }
@@ -356,6 +367,64 @@ fun MusicPanelOverlay(
                         onShowSoundEffectsChange = { showSoundEffects = it },
                         onDismiss = { showSettings = false }
                     )
+
+                    CoverRefreshOverlay(
+                        visible = showCoverRefresh && !showCoverReplace,
+                        track = playbackState.currentTrack,
+                        playbackState = playbackState,
+                        context = context,
+                        selectedId = selectedCoverCandidate?.id,
+                        onCandidateSelected = { selectedCoverCandidate = it },
+                        onConfirm = {
+                            val candidate = selectedCoverCandidate
+                            val track = playbackState.currentTrack
+                            if (candidate != null && track != null) {
+                                val hasCover = track.albumArt != null || MusicMetadataCache.isValid(track.coverCachePath) || track.neteaseCoverUrl.isNotBlank()
+                                if (hasCover) {
+                                    showCoverReplace = true
+                                } else {
+                                    scope.launch {
+                                        coverSaveFailed = !applyCoverCandidate(context, playbackState, track, candidate)
+                                        if (!coverSaveFailed) {
+                                            showCoverRefresh = false
+                                            selectedCoverCandidate = null
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        onCancel = {
+                            showCoverRefresh = false
+                            selectedCoverCandidate = null
+                            playbackState.coverCandidates = emptyList()
+                        }
+                    )
+
+                    CoverReplaceOverlay(
+                        visible = showCoverReplace,
+                        track = playbackState.currentTrack,
+                        candidate = selectedCoverCandidate,
+                        onConfirm = {
+                            val candidate = selectedCoverCandidate ?: return@CoverReplaceOverlay
+                            val track = playbackState.currentTrack ?: return@CoverReplaceOverlay
+                            scope.launch {
+                                coverSaveFailed = !applyCoverCandidate(context, playbackState, track, candidate)
+                                if (!coverSaveFailed) {
+                                    showCoverReplace = false
+                                    showCoverRefresh = false
+                                    selectedCoverCandidate = null
+                                }
+                            }
+                        },
+                        onCancel = { showCoverReplace = false }
+                    )
+                    if (coverSaveFailed) {
+                        Text(
+                            text = stringResource(R.string.music_panel_cover_save_failed),
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
 
                     AudioSignalPathOverlay(
                         visible = showAudioSignalPath,
