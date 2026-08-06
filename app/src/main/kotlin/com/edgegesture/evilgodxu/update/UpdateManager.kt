@@ -108,7 +108,10 @@ object UpdateManager {
         return try {
             val url = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
             val jsonStr = withContext(Dispatchers.IO) {
-                URL(url).openStream().bufferedReader().use { it.readText() }
+                val conn = URL(url).openConnection() as java.net.HttpURLConnection
+                conn.connectTimeout = 10_000
+                conn.readTimeout = 15_000
+                conn.inputStream.bufferedReader().use { it.readText() }
             }
             val release = json.decodeFromString<GitHubRelease>(jsonStr)
 
