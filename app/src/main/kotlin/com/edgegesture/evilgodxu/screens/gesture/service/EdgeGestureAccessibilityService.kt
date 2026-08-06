@@ -160,6 +160,9 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     // 边缘视图添加失败后的重启保护
     private var consecutiveAttachFailures = 0
     private val restartHandler = Handler(Looper.getMainLooper())
+    private val launchBlockHandler = Handler(Looper.getMainLooper())
+    private var pendingBlockAction: Runnable? = null
+    private var pendingKillAction: Runnable? = null
     private val restartRunnable = Runnable {
         if (!isAvailable()) return@Runnable
         consecutiveAttachFailures = 0
@@ -187,7 +190,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         GestureStatsManager.init(this)
 
         actionExecutor = AccessibilityActionExecutor(this)
-        gestureDetector = AccessibilityGestureDetector(this, this)
+        gestureDetector = AccessibilityGestureDetector(this)
         edgeViewManager = AccessibilityEdgeViewManager(this, gestureDetector) { onEdgeViewAttachFailed() }
 
         // 初始化 Shizuku
@@ -263,19 +266,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             .launchIn(serviceScope)
     }
 
-    private fun hasSizeOrPositionChanged(old: GestureSettingsState, new: GestureSettingsState): Boolean {
-        return old.leftEdgeWidth != new.leftEdgeWidth ||
-            old.leftEdgeHeightPercent != new.leftEdgeHeightPercent ||
-            old.leftEdgePositionPercent != new.leftEdgePositionPercent ||
-            old.leftSegmentCount != new.leftSegmentCount ||
-            old.rightEdgeWidth != new.rightEdgeWidth ||
-            old.rightEdgeHeightPercent != new.rightEdgeHeightPercent ||
-            old.rightEdgePositionPercent != new.rightEdgePositionPercent ||
-            old.rightSegmentCount != new.rightSegmentCount ||
-            old.bottomEdgeHeight != new.bottomEdgeHeight ||
-            old.bottomEdgeWidthPercent != new.bottomEdgeWidthPercent ||
-            old.bottomSegmentCount != new.bottomSegmentCount
-    }
 
     private fun updateBackTapDetector(old: GestureSettingsState, new: GestureSettingsState) {
         val enabledChanged = old.backTapEnabled != new.backTapEnabled
@@ -392,8 +382,14 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
 
         // 仅在规则启用时执行拦截
+        pendingBlockAction?.let(launchBlockHandler::removeCallbacks)
+        pendingKillAction?.let(launchBlockHandler::removeCallbacks)
+        pendingBlockAction = null
+        pendingKillAction = null
         if (rule.enabled) {
             val blockAction = Runnable {
+                pendingBlockAction = null
+                if (!isAvailable() || currentPackage != targetPackage) return@Runnable
                 // 执行拦截：切换应用或返回桌面
                 if (isLauncherSystemApp) {
                     performGlobalAction(GLOBAL_ACTION_HOME)
@@ -403,8 +399,9 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                     performGlobalAction(GLOBAL_ACTION_HOME)
                 }
             }
+            pendingBlockAction = blockAction
             if (rule.blockDelay > 0) {
-                Handler(Looper.getMainLooper()).postDelayed(blockAction, rule.blockDelay.toLong())
+                launchBlockHandler.postDelayed(blockAction, rule.blockDelay.toLong())
             } else {
                 blockAction.run()
             }
@@ -413,12 +410,15 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         // 终止被启动者进程（由 enableKillTarget 开关控制）
         if (rule.enableKillTarget) {
             val killAction = Runnable {
+                pendingKillAction = null
+                if (!isAvailable() || currentPackage != targetPackage) return@Runnable
                 if (!isTargetSystemApp || rule.allowKillSystemApp) {
                     killAppProcess(targetPackage)
                 }
             }
+            pendingKillAction = killAction
             if (rule.blockDelay > 0) {
-                Handler(Looper.getMainLooper()).postDelayed(killAction, rule.blockDelay.toLong())
+                launchBlockHandler.postDelayed(killAction, rule.blockDelay.toLong())
             } else {
                 killAction.run()
             }
@@ -599,6 +599,11 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     override fun onUnbind(intent: Intent?): Boolean {
         weakInstance = null
         restartHandler.removeCallbacks(restartRunnable)
+        pendingBlockAction?.let(launchBlockHandler::removeCallbacks)
+        pendingKillAction?.let(launchBlockHandler::removeCallbacks)
+        pendingBlockAction = null
+        pendingKillAction = null
+        launchBlockHandler.removeCallbacksAndMessages(null)
         unregisterReceiver(settingsReceiver)
         unregisterReceiver(screenStateReceiver)
         unregisterReceiver(batteryReceiver)

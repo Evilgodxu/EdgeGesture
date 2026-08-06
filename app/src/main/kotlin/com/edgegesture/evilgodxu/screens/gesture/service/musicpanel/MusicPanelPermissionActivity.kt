@@ -41,7 +41,7 @@ class MusicPanelPermissionActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        MusicPanelPermissionBridge.pendingShowAction = null
+        MusicPanelPermissionBridge.clearPendingShowAction()
     }
 
     private fun hasAudioPermission(): Boolean {
@@ -78,13 +78,32 @@ class MusicPanelPermissionActivity : ComponentActivity() {
     }
 
     private fun completeAndFinish() {
-        MusicPanelPermissionBridge.pendingShowAction?.invoke()
-        MusicPanelPermissionBridge.pendingShowAction = null
+        MusicPanelPermissionBridge.takePendingShowAction()?.invoke()
         finish()
     }
 }
 
 // 权限申请与面板显示的桥接对象
 object MusicPanelPermissionBridge {
-    var pendingShowAction: (() -> Unit)? = null
+    private var pendingToken = 0L
+    private var pendingAction: (() -> Unit)? = null
+
+    var pendingShowAction: (() -> Unit)?
+        @Synchronized get() = pendingAction
+        @Synchronized set(value) {
+            pendingToken++
+            pendingAction = value
+        }
+
+    @Synchronized
+    fun clearPendingShowAction() {
+        pendingToken++
+        pendingAction = null
+    }
+
+    @Synchronized
+    fun takePendingShowAction(): (() -> Unit)? {
+        pendingToken++
+        return pendingAction.also { pendingAction = null }
+    }
 }

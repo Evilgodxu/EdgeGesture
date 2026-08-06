@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -42,6 +44,7 @@ object GestureStatsManager {
 
     private var scope: CoroutineScope? = null
     private var _initialized = false
+    private val statsMutex = Mutex()
 
     private val STATS_PERIOD_KEY = intPreferencesKey("stats_period")
 
@@ -91,18 +94,16 @@ object GestureStatsManager {
     // 手势操作计数 +1
     fun incrementGestureCount(context: Context) {
         scope?.launch {
-            val today = getTodayDateString()
-            val key = intPreferencesKey("daily_gesture_$today")
-            val current = context.gestureDataStore.data.first()[key] ?: 0
-            val latest = current + 1
-            context.gestureDataStore.edit { prefs ->
-                prefs[key] = latest
-            }
-            // 仅在周期为1天时直接更新内存计数，否则重新加载
-            if (_period.value == StatsPeriod.DAY_1) {
-                _stats.value = _stats.value.copy(gestureCount = latest)
-            } else {
-                loadStats(context)
+            statsMutex.withLock {
+                val today = getTodayDateString()
+                val key = intPreferencesKey("daily_gesture_$today")
+                var latest = 0
+                context.gestureDataStore.edit { prefs ->
+                    latest = (prefs[key] ?: 0) + 1
+                    prefs[key] = latest
+                }
+                if (_period.value == StatsPeriod.DAY_1) _stats.value = _stats.value.copy(gestureCount = latest)
+                else loadStats(context)
             }
         }
     }
@@ -110,17 +111,19 @@ object GestureStatsManager {
     // 拦截计数 +1
     fun incrementBlockCount(context: Context) {
         scope?.launch {
-            val today = getTodayDateString()
-            val key = intPreferencesKey("daily_block_$today")
-            val current = context.gestureDataStore.data.first()[key] ?: 0
-            val latest = current + 1
-            context.gestureDataStore.edit { prefs ->
-                prefs[key] = latest
-            }
-            if (_period.value == StatsPeriod.DAY_1) {
-                _stats.value = _stats.value.copy(blockCount = latest)
-            } else {
-                loadStats(context)
+            statsMutex.withLock {
+                val today = getTodayDateString()
+                val key = intPreferencesKey("daily_block_$today")
+                var latest = 0
+                context.gestureDataStore.edit { prefs ->
+                    latest = (prefs[key] ?: 0) + 1
+                    prefs[key] = latest
+                }
+                if (_period.value == StatsPeriod.DAY_1) {
+                    _stats.value = _stats.value.copy(blockCount = latest)
+                } else {
+                    loadStats(context)
+                }
             }
         }
     }

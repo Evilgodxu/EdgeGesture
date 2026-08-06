@@ -12,7 +12,6 @@ import com.edgegesture.evilgodxu.data.gesture.EdgePosition
 import kotlin.math.abs
 
 class AccessibilityGestureDetector(
-    private val context: Context,
     private val callback: GestureCallback
 ) {
 
@@ -238,7 +237,4 @@ class AccessibilityGestureDetector(
         }
     }
 
-    companion object {
-        private const val TAG = "GestureDetector"
-    }
 }

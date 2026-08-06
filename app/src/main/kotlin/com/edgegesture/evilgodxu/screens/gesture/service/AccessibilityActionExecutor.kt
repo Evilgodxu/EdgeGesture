@@ -43,9 +43,11 @@ import com.edgegesture.evilgodxu.screens.gesture.service.taskpanel.TaskPanelView
 import com.edgegesture.evilgodxu.screens.settings.themeModeFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -65,16 +67,23 @@ class AccessibilityActionExecutor(
     private var pendingExpandPanelShow = false
     private var musicPanelViewManager: MusicPanelViewManager? = null
     private var taskPanelViewManager: TaskPanelViewManager? = null
+    private var pendingTaskPanelShow = false
+    private var taskPanelLoadJob: Job? = null
     private val permissionMonitor = PermissionMonitor(service)
     private val executorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // 等待权限监控任务
     private var writeSettingsMonitorJob: kotlinx.coroutines.Job? = null
 
-    // 缓存黑名单避免频繁读取 DataStore
-    private var cachedBlacklist: Set<String>? = null
-    private var lastBlacklistCacheTime: Long = 0
-    private val blacklistCacheValidityMs = 5000L // 5秒缓存有效期
+    @Volatile private var blacklistSnapshot: Set<String> = emptySet()
+
+    init {
+        executorScope.launch {
+            (service as Context).gestureDataStore.data
+                .map { prefs -> prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] ?: emptySet() }
+                .collect { blacklistSnapshot = it }
+        }
+    }
 
     fun performAction(action: GestureAction, settings: GestureSettingsState) {
         if (action == GestureAction.NONE) return
@@ -250,7 +259,12 @@ class AccessibilityActionExecutor(
                 val intent = Intent(service, MusicPanelPermissionActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
-                service.startActivity(intent)
+                try {
+                    service.startActivity(intent)
+                } catch (e: Exception) {
+                    MusicPanelPermissionBridge.clearPendingShowAction()
+                    CrashLogManager.logException("AccessibilityActionExecutor", "启动音乐面板权限页面失败", e)
+                }
             }
         }
     }
@@ -268,18 +282,26 @@ class AccessibilityActionExecutor(
     }
 
     fun dismissTaskPanel() {
+        taskPanelLoadJob?.cancel()
+        taskPanelLoadJob = null
         taskPanelViewManager?.dismiss()
         taskPanelViewManager = null
+        pendingTaskPanelShow = false
     }
 
     private fun showTaskPanel() {
         if (taskPanelViewManager != null) { dismissTaskPanel(); return }
+        if (pendingTaskPanelShow) {
+            dismissTaskPanel()
+            return
+        }
+        pendingTaskPanelShow = true
         val currentPackage = service.rootInActiveWindow?.packageName?.toString()
             ?.takeIf { it != service.packageName }
             ?: currentApp
             ?: service.packageName
-        executorScope.launch {
-            val blacklist = getBlacklistSync()
+        taskPanelLoadJob = executorScope.launch {
+            val blacklist = blacklistSnapshot
             val packages = taskPanelHistory
                 .asReversed()
                 .filter { it != service.packageName }
@@ -297,14 +319,20 @@ class AccessibilityActionExecutor(
             }.take(10).toList()
             withContext(Dispatchers.Main) {
                 // 异步加载期间可能已被关闭，不再显示
-                if (taskPanelViewManager != null) return@withContext
+                if (!pendingTaskPanelShow) return@withContext
+                pendingTaskPanelShow = false
                 taskPanelViewManager = TaskPanelViewManager(
                     service, apps, currentPackage, currentPackage,
                     { launchApp(it) },
                     { freeformAppLauncher.launch(it, useFreeform = true) },
                     { packageName -> taskPanelHistory.removeAll { it == packageName } },
-                    { taskPanelViewManager = null }
-                ).also { it.show() }
+                    { taskPanelViewManager = null; pendingTaskPanelShow = false }
+                ).also {
+                    taskPanelLoadJob = null
+                    if (!it.show()) {
+                        taskPanelViewManager = null
+                    }
+                }
             }
         }
     }
@@ -314,6 +342,9 @@ class AccessibilityActionExecutor(
         dismissExpandPanel()
         dismissMusicPanel()
         dismissTaskPanel()
+        writeSettingsMonitorJob?.cancel()
+        writeSettingsMonitorJob = null
+        MusicPanelPermissionBridge.clearPendingShowAction()
         executorScope.cancel()
     }
 
@@ -332,7 +363,7 @@ class AccessibilityActionExecutor(
         taskPanelHistory.add(packageName)
         if (taskPanelHistory.size > 10) taskPanelHistory.removeAt(0)
 
-        val blacklist = getBlacklistSync()
+        val blacklist = blacklistSnapshot
         if (packageName in blacklist) return
 
         previousApp = currentApp
@@ -353,33 +384,7 @@ class AccessibilityActionExecutor(
         }
     }
 
-    private fun getBlacklistSync(): Set<String> {
-        // 检查缓存是否有效
-        val now = System.currentTimeMillis()
-        cachedBlacklist?.let { cached ->
-            if (now - lastBlacklistCacheTime < blacklistCacheValidityMs) {
-                return cached
-            }
-        }
-
-        // 缓存无效或不存在，从 DataStore 读取
-        return try {
-            val prefs = runBlocking { (service as Context).gestureDataStore.data.first() }
-            val blacklist = prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] ?: emptySet()
-            // 更新缓存
-            cachedBlacklist = blacklist
-            lastBlacklistCacheTime = now
-            blacklist
-        } catch (e: Exception) {
-            CrashLogManager.logException("AccessibilityActionExecutor", "读取应用切换黑名单失败", e)
-            emptySet()
-        }
-    }
-
-    // 清除黑名单缓存，在设置变更时调用
     fun invalidateBlacklistCache() {
-        cachedBlacklist = null
-        lastBlacklistCacheTime = 0
     }
 
     private fun launchApp(packageName: String): Boolean {

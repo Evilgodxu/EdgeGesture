@@ -50,6 +50,7 @@ class MusicPlaybackState {
     private val searchHistoryKey = "music_search_history"
     private val searchHistoryPreferences = "music_search_history_preferences"
     private var persistenceJob: Job? = null
+    private val persistenceMutex = Mutex()
     var appContext: Context? = null
     var mediaController: MediaController? by mutableStateOf(null)
     var player: Player? by mutableStateOf(null)
@@ -538,11 +539,15 @@ class MusicPlaybackState {
         val position = currentPosition
         val mode = playMode.ordinal
         persistenceJob?.cancel()
-        persistenceJob = CoroutineScope(Dispatchers.IO).launch {
-            context.gestureDataStore.edit { preferences ->
-                preferences[savedUriKey] = track.audioUri
-                preferences[savedPositionKey] = position
-                preferences[savedModeKey] = mode
+        persistenceJob = playbackScope.launch {
+            persistenceMutex.withLock {
+                withContext(Dispatchers.IO) {
+                    context.gestureDataStore.edit { preferences ->
+                        preferences[savedUriKey] = track.audioUri
+                        preferences[savedPositionKey] = position
+                        preferences[savedModeKey] = mode
+                    }
+                }
             }
         }
     }

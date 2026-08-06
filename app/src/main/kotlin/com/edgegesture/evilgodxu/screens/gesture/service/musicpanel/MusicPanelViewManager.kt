@@ -344,8 +344,8 @@ class MusicPanelViewManager(
                 playbackState.setSortedPlaylist(mergedTracks)
                 playbackState.persistPlaylist()
             }
-            // 刷新后后台加载封面
-            managerScope.launch { enrichPlaylistMetadata() }
+            // 刷新后后台加载封面与歌词，完成合并后再清理孤立缓存
+            managerScope.launch { enrichAndCleanupMetadata() }
         } finally {
             withContext(Dispatchers.Main + kotlinx.coroutines.NonCancellable) {
                 playbackState.isScanning = false
@@ -426,7 +426,7 @@ class MusicPanelViewManager(
                 restoreCurrentTrack()
             }
             // 封面后台加载，不阻塞 isScanning 重置
-            managerScope.launch { enrichPlaylistMetadata() }
+            managerScope.launch { enrichAndCleanupMetadata() }
         } finally {
             // 使用非取消式上下文确保 isScanning 一定被重置（防止竟态导致卡死）
             withContext(Dispatchers.Main + kotlinx.coroutines.NonCancellable) {
@@ -472,6 +472,16 @@ class MusicPanelViewManager(
         if (updates.isEmpty()) return
         withContext(Dispatchers.Main) {
             playbackState.batchUpdateTracks(updates)
+        }
+    }
+
+    private suspend fun enrichAndCleanupMetadata() {
+        enrichPlaylistMetadata()
+        val referenced = withContext(Dispatchers.Main) {
+            playbackState.playlist.flatMap { listOf(it.coverCachePath, it.lyricCachePath) }.toSet()
+        }
+        withContext(Dispatchers.IO) {
+            MusicMetadataCache.cleanupOrphanedMetadata(context, referenced)
         }
     }
 
