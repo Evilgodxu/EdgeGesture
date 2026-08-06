@@ -7,9 +7,9 @@ import java.io.File
 import java.io.FileWriter
 import java.io.PrintWriter
 import java.io.StringWriter
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.system.exitProcess
 
 /**
@@ -33,8 +33,8 @@ object CrashLogManager : Thread.UncaughtExceptionHandler {
     /** 保留天数：最多保留最近 3 天的日志 */
     private const val KEEP_DAYS = 3L
 
-    private val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-    private val timeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
+    private val dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+    private val timeFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
 
     private var logDir: File? = null
     private var appVersion = "unknown"
@@ -81,11 +81,11 @@ object CrashLogManager : Thread.UncaughtExceptionHandler {
     private fun writeLog(title: String, thread: Thread? = null, throwable: Throwable?, withDeviceInfo: Boolean = false) {
         cleanOldLogs()
         val dir = logDir ?: return
-        val logFile = File(dir, "$LOG_FILE_PREFIX${dateFormat.format(Date())}.log")
+        val logFile = File(dir, "$LOG_FILE_PREFIX${LocalDate.now().format(dateFormat)}.log")
         try {
             FileWriter(logFile, true).use { writer ->
                 writer.appendLine("================ $title ================")
-                writer.appendLine("时间: ${timeFormat.format(Date())}")
+                writer.appendLine("时间: ${LocalDateTime.now().format(timeFormat)}")
                 if (withDeviceInfo) {
                     writer.appendLine("线程: ${thread?.name}")
                     writer.appendLine("进程: ${android.os.Process.myPid()}")
