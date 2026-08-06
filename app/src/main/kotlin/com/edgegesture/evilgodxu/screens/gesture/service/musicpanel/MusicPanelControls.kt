@@ -33,15 +33,19 @@ import kotlinx.coroutines.launch
 internal fun ControlBar(
     playbackState: MusicPlaybackState,
     onPlaylistClick: () -> Unit,
+    onLyricsRefreshClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    Row(
+    Box(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-        verticalAlignment = Alignment.CenterVertically
+        contentAlignment = Alignment.Center
     ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
         val modeIcon = when (playbackState.playMode) {
             PlayMode.RepeatAll -> Icons.Default.Repeat
             PlayMode.RepeatOne -> Icons.Default.RepeatOne
@@ -111,6 +115,26 @@ internal fun ControlBar(
             size = 32.dp,
             iconSize = 21.dp
         )
+        }
+
+        if (playbackState.isLyricsVisible) {
+            Surface(
+                shape = CircleShape,
+                color = androidx.compose.ui.graphics.Color.Transparent,
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .size(32.dp),
+                onClick = onLyricsRefreshClick
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "词",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
+        }
     }
 }
 

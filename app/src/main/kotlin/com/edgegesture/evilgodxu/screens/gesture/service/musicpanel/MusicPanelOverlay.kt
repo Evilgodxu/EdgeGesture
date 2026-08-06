@@ -103,6 +103,8 @@ fun MusicPanelOverlay(
     var showCoverReplace by remember { mutableStateOf(false) }
     var selectedCoverCandidate by remember { mutableStateOf<NeteaseSongSearchResult?>(null) }
     var coverSaveFailed by remember { mutableStateOf(false) }
+    var showLyricsRefresh by remember { mutableStateOf(false) }
+    var selectedLyricsCandidate by remember { mutableStateOf<NeteaseSongSearchResult?>(null) }
 
     MaterialTheme(colorScheme = colorScheme) {
         Box(
@@ -110,7 +112,12 @@ fun MusicPanelOverlay(
                 .fillMaxSize()
                 .onPreviewKeyEvent { event ->
                     if (event.type == KeyEventType.KeyUp && event.key == Key.Back) {
-                        onDismiss()
+                        if (showLyricsRefresh) {
+                            showLyricsRefresh = false
+                            selectedLyricsCandidate = null
+                            playbackState.lyricsCandidates = emptyList()
+                            playbackState.lyricsRefreshError = null
+                        } else onDismiss()
                         true
                     } else false
                 }
@@ -274,7 +281,11 @@ fun MusicPanelOverlay(
 
                                 ControlBar(
                                     playbackState = playbackState,
-                                    onPlaylistClick = { showPlaylist = true }
+                                    onPlaylistClick = { showPlaylist = true },
+                                    onLyricsRefreshClick = {
+                                        showLyricsRefresh = true
+                                        playbackState.currentTrack?.let { track -> scope.launch { searchLyricsCandidates(playbackState, track) } }
+                                    }
                                 )
                             }
                         }
@@ -354,7 +365,7 @@ fun MusicPanelOverlay(
                             if (track != null) {
                                 val updated = if (renameIsTitle) track.copy(title = newValue)
                                               else track.copy(artist = newValue)
-                                playbackState.renameAndRefreshMetadata(updated)
+                                playbackState.renameTrackMetadata(updated)
                             }
                         },
                         onCancel = { showRename = false }
@@ -397,6 +408,34 @@ fun MusicPanelOverlay(
                             showCoverRefresh = false
                             selectedCoverCandidate = null
                             playbackState.coverCandidates = emptyList()
+                        }
+                    )
+
+                    LyricsRefreshOverlay(
+                        visible = showLyricsRefresh,
+                        track = playbackState.currentTrack,
+                        playbackState = playbackState,
+                        selectedId = selectedLyricsCandidate?.id,
+                        onCandidateSelected = { selectedLyricsCandidate = it },
+                        onConfirm = {
+                            val candidate = selectedLyricsCandidate
+                            val track = playbackState.currentTrack
+                            if (candidate != null && track != null) scope.launch {
+                                val success = applyLyricsCandidate(context, playbackState, track, candidate)
+                                if (success) {
+                                    showLyricsRefresh = false
+                                    selectedLyricsCandidate = null
+                                    playbackState.lyricsCandidates = emptyList()
+                                } else {
+                                    playbackState.lyricsRefreshError = context.getString(R.string.music_panel_lyrics_refresh_failed)
+                                }
+                            }
+                        },
+                        onCancel = {
+                            showLyricsRefresh = false
+                            selectedLyricsCandidate = null
+                            playbackState.lyricsCandidates = emptyList()
+                            playbackState.lyricsRefreshError = null
                         }
                     )
 

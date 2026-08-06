@@ -267,6 +267,10 @@ class MusicPlaybackState {
     var pendingSearchResults by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
     var coverCandidates by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
     var isCoverSearching by mutableStateOf(false)
+    var lyricsCandidates by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
+    var isLyricsSearching by mutableStateOf(false)
+    var isLyricsRefreshing by mutableStateOf(false)
+    var lyricsRefreshError by mutableStateOf<String?>(null)
 
     private fun hasUriAccess(context: Context, audioUri: String): Boolean {
         val uri = Uri.parse(audioUri)
@@ -648,48 +652,8 @@ class MusicPlaybackState {
         persistPlaylist()
     }
 
-    fun renameAndRefreshMetadata(renamed: MusicTrack) {
-        val oldCoverPath = renamed.coverCachePath
-        val oldLyricPath = renamed.lyricCachePath
-        val cleared = renamed.copy(
-            neteaseId = 0L,
-            neteaseCoverUrl = "",
-            coverCachePath = "",
-            lyricCachePath = "",
-            lyricLines = emptyList()
-        )
-        updateTrack(cleared)
-        val ctx = appContext ?: return
-        playbackScope.launch {
-            try {
-                val match = NeteaseMusicApi.match(cleared.title, cleared.artist, cleared.duration)
-                    ?: return@launch
-                val coverBytes = NeteaseMusicApi.loadCoverBytes(match.coverUrl.orEmpty())
-                val lyric = NeteaseMusicApi.lyric(match.id)
-                val coverPath = coverBytes?.let { MusicMetadataCache.saveCover(ctx, match.id, it) }.orEmpty()
-                val cover = MusicMetadataCache.loadCover(coverPath)
-                val lyricPath = MusicMetadataCache.saveLyrics(ctx, match.id, lyric.lines).orEmpty()
-                // 新文件已保存成功，清理旧文件
-                if (oldCoverPath != coverPath) MusicMetadataCache.deleteCoverFile(oldCoverPath)
-                if (oldLyricPath != lyricPath) MusicMetadataCache.deleteLyricFile(oldLyricPath)
-                withContext(Dispatchers.Main) {
-                    val idx = playlist.indexOfFirst { it.id == cleared.id }
-                    if (idx >= 0) {
-                        val enriched = playlist[idx].copy(
-                            albumArt = playlist[idx].albumArt ?: cover,
-                            neteaseId = match.id,
-                            neteaseCoverUrl = match.coverUrl.orEmpty(),
-                            coverCachePath = coverPath,
-                            lyricCachePath = lyricPath,
-                            lyricLines = lyric.lines
-                        )
-                        playlist = playlist.toMutableList().apply { set(idx, enriched) }
-                        if (currentTrack?.id == cleared.id) currentTrack = enriched
-                        persistPlaylist()
-                    }
-                }
-            } catch (_: Exception) { }
-        }
+    fun renameTrackMetadata(renamed: MusicTrack) {
+        updateTrack(renamed)
     }
 
     fun syncPlaybackState() {

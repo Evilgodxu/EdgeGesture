@@ -11,6 +11,63 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URL
 
+internal suspend fun searchLyricsCandidates(
+    playbackState: MusicPlaybackState,
+    track: MusicTrack,
+) {
+    playbackState.isLyricsSearching = true
+    playbackState.lyricsCandidates = emptyList()
+    playbackState.lyricsRefreshError = null
+    try {
+        val occupied = NeteaseMusicApi.searchSongs("${track.title} ${track.artist}")
+            .filter { !it.coverUrl.isNullOrBlank() }
+            .take(5)
+        val occupiedIds = occupied.map { it.id }.toSet()
+        val titleOnly = NeteaseMusicApi.searchSongs(track.title)
+            .filter { it.id !in occupiedIds && !it.coverUrl.isNullOrBlank() }
+            .take(5)
+        playbackState.lyricsCandidates = (occupied + titleOnly).distinctBy { it.id }.take(10)
+    } catch (_: Exception) {
+        playbackState.lyricsCandidates = emptyList()
+    } finally {
+        playbackState.isLyricsSearching = false
+    }
+}
+
+internal suspend fun applyLyricsCandidate(
+    context: Context,
+    playbackState: MusicPlaybackState,
+    track: MusicTrack,
+    candidate: NeteaseSongSearchResult,
+): Boolean {
+    playbackState.isLyricsRefreshing = true
+    playbackState.lyricsRefreshError = null
+    return try {
+        val updated = withContext(Dispatchers.IO) {
+            val lyric = NeteaseMusicApi.lyric(candidate.id)
+            if (lyric.lines.isEmpty()) return@withContext null
+            val path = MusicMetadataCache.saveLyrics(context, candidate.id, lyric.lines).orEmpty()
+            if (path.isBlank()) return@withContext null
+            track.copy(
+                lyricCachePath = path,
+                lyricLines = lyric.lines,
+                neteaseId = candidate.id,
+                neteaseCoverUrl = candidate.coverUrl.orEmpty()
+            )
+        } ?: return false
+        withContext(Dispatchers.Main) {
+            playbackState.updateTrack(updated)
+        }
+        true
+    } catch (_: Exception) {
+        false
+    } finally {
+        withContext(Dispatchers.Main) {
+            playbackState.isLyricsRefreshing = false
+        }
+    }
+}
+
 internal suspend fun searchCoverCandidates(
     playbackState: MusicPlaybackState,
     track: MusicTrack,
@@ -18,10 +75,22 @@ internal suspend fun searchCoverCandidates(
     playbackState.isCoverSearching = true
     playbackState.coverCandidates = emptyList()
     try {
-        val query = listOf(track.title, track.artist).filter { it.isNotBlank() }.joinToString(" ")
-        playbackState.coverCandidates = NeteaseMusicApi.searchSongs(query)
-            .filter { !it.coverUrl.isNullOrBlank() }
-            .take(5)
+        val titleArtist = listOf(track.title, track.artist)
+            .filter { it.isNotBlank() }
+            .joinToString(" ")
+        val titleArtistCandidates = if (titleArtist.isBlank()) emptyList() else {
+            NeteaseMusicApi.searchSongs(titleArtist)
+                .filter { !it.coverUrl.isNullOrBlank() }
+                .take(5)
+        }
+        val titleCandidates = if (track.title.isBlank()) emptyList() else {
+            NeteaseMusicApi.searchSongs(track.title)
+                .filter { !it.coverUrl.isNullOrBlank() }
+                .take(5)
+        }
+        playbackState.coverCandidates = (titleArtistCandidates + titleCandidates)
+            .distinctBy { it.id }
+            .take(10)
     } catch (_: Exception) {
         playbackState.coverCandidates = emptyList()
     } finally {
