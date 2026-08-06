@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -122,7 +123,8 @@ internal fun ControlBar(
                 shape = CircleShape,
                 color = androidx.compose.ui.graphics.Color.Transparent,
                 modifier = Modifier
-                    .align(Alignment.CenterStart)
+                    .align(Alignment.Center)
+                    .offset(x = (-110).dp)
                     .size(32.dp),
                 onClick = onLyricsRefreshClick
             ) {
