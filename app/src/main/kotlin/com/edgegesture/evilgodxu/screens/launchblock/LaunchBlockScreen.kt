@@ -53,7 +53,6 @@ import com.edgegesture.evilgodxu.data.launchblock.removeLaunchBlockRule
 import com.edgegesture.evilgodxu.data.launchblock.updateLaunchBlockRule
 import com.edgegesture.evilgodxu.data.launchblock.setLaunchBlockEnabled
 import com.edgegesture.evilgodxu.screens.settings.components.LaunchBlockRuleDialog
-import com.edgegesture.evilgodxu.screens.settings.components.LaunchBlockRulesList
 import android.content.Context
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit

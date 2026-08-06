@@ -5,12 +5,10 @@
     <string name="task_panel_empty">暂无最近使用的应用</string>
     <string name="task_panel_single_tap_hint">单击启动</string>
     <string name="task_panel_double_tap_hint">双击小窗</string>
-    <string name="task_panel_clean_button">清理其他</string>
 
     <!-- 设置页 (Settings) -->
     <!-- 页面通用 -->
     <string name="settings_title">更多设置</string>
-    <string name="settings_back_content_description">返回</string>
 
     <!-- 外观设置 -->
     <string name="settings_section_appearance">外观</string>
@@ -174,7 +172,6 @@
     <string name="gesture_remind_channel_name">手势提醒</string>
     <string name="gesture_remind_notify_title">手势提醒</string>
     <string name="gesture_remind_notify_body">您设置的%d分钟提醒时间到了</string>
-    <string name="gesture_remind_timer_label">手势提醒</string>
 
     <!-- 手势操作选择对话框 -->
     <string name="gesture_select_action_title">选择操作</string>
@@ -229,12 +226,10 @@
     <string name="advanced_gesture_back_tap_enabled">已启用</string>
 
     <!-- 应用切换黑名单 (App Blacklist) -->
-    <string name="settings_more">更多设置</string>
     <string name="settings_about">关于</string>
     <string name="settings_version">版本 %s</string>
     <string name="nav_back">返回</string>
     <string name="settings_blacklist_title">应用切换黑名单</string>
-    <string name="settings_blacklist_dialog_title">应用切换黑名单</string>
     <string name="settings_blacklist_search_hint">搜索应用</string>
     <string name="settings_blacklist_system_tag">系统</string>
     <string name="settings_blacklist_loading">加载中…</string>
@@ -315,8 +310,6 @@
     <string name="launch_block_add_rule">添加规则</string>
     <string name="launch_block_edit_rule">编辑</string>
     <string name="launch_block_delete_rule">删除</string>
-    <string name="launch_block_expand">展开</string>
-    <string name="launch_block_collapse">收起</string>
     <string name="launch_block_no_rules">暂无拦截规则，点击 + 添加</string>
     <string name="launch_block_rule_launcher">启动者：%s</string>
     <string name="launch_block_rule_target">目标：%s</string>

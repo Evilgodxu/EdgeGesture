@@ -14,7 +14,7 @@ import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.outlined.QueueMusic
+import androidx.compose.material.icons.automirrored.outlined.QueueMusic
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -106,7 +106,7 @@ internal fun ControlBar(
         )
 
         ControlIconButton(
-            icon = Icons.Outlined.QueueMusic,
+            icon = Icons.AutoMirrored.Outlined.QueueMusic,
             onClick = onPlaylistClick,
             size = 32.dp,
             iconSize = 21.dp

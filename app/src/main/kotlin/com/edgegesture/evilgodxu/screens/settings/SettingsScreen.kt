@@ -70,7 +70,6 @@ import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.update.DownloadState
 import com.edgegesture.evilgodxu.update.UpdateInfo
 import com.edgegesture.evilgodxu.update.UpdateManager
-import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuState
 import com.edgegesture.evilgodxu.ui.adaptive.rememberWindowSizeClass
@@ -80,7 +79,6 @@ import com.edgegesture.evilgodxu.screens.settings.components.LanguageSelectionDi
 import com.edgegesture.evilgodxu.screens.settings.components.OpenSourceLicensesDialog
 import com.edgegesture.evilgodxu.screens.settings.components.SettingsClickableItem
 import com.edgegesture.evilgodxu.screens.settings.components.SettingsSection
-import com.edgegesture.evilgodxu.screens.settings.components.SettingsSwitchItem
 import com.edgegesture.evilgodxu.screens.settings.components.ThemeSelectionDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -144,8 +142,7 @@ fun Context.setAppLanguage(language: AppLanguage) {
 
 // 设置状态数据类
 data class SettingsState(
-    val themeMode: ThemeMode = ThemeMode.SYSTEM,
-    val vibrationEnabled: Boolean = false
+    val themeMode: ThemeMode = ThemeMode.SYSTEM
 )
 
 // 获取设置状态流，合并主题和震动设置
@@ -153,8 +150,6 @@ fun Context.settingsFlow(): Flow<SettingsState> = settingsDataStore.data.map { p
     SettingsState(
         themeMode = ThemeMode.fromValue(preferences[SettingsKeys.THEME_MODE] ?: ThemeMode.SYSTEM.value)
     )
-}.combine(gestureSettingsFlow()) { settings, gestureSettings ->
-    settings.copy(vibrationEnabled = gestureSettings.vibrationEnabled)
 }
 
 // 获取主题模式流

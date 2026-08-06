@@ -112,9 +112,7 @@ import com.edgegesture.evilgodxu.data.permission.PermissionType
 import com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService
 import com.edgegesture.evilgodxu.ui.adaptive.rememberWindowSizeClass
 import com.edgegesture.evilgodxu.screens.gesture.components.ActionSelectionDialog
-import com.edgegesture.evilgodxu.screens.gesture.components.BottomEdgeSettingsSection
 import com.edgegesture.evilgodxu.screens.gesture.components.EdgeGestureSection
-import com.edgegesture.evilgodxu.screens.gesture.components.EdgeSettingsSection
 import com.edgegesture.evilgodxu.screens.gesture.components.GesturePreview
 import com.edgegesture.evilgodxu.screens.gesture.components.GestureSettingsSwitchItem
 import com.edgegesture.evilgodxu.screens.gesture.components.PermissionCard
