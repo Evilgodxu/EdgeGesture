@@ -281,6 +281,7 @@ class AccessibilityActionExecutor(
             .asReversed()
             .filter { it != service.packageName }
             .distinct()
+            .filter { it !in getBlacklistSync() }
         val apps = packages.mapNotNull { pkg ->
             try {
                 service.packageManager.getLaunchIntentForPackage(pkg) ?: return@mapNotNull null
