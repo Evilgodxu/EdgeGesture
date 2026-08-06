@@ -36,16 +36,18 @@ internal suspend fun applyCoverCandidate(
     candidate: NeteaseSongSearchResult,
 ): Boolean {
     return try {
-        val bytes = NeteaseMusicApi.loadCoverBytes(candidate.coverUrl.orEmpty()) ?: return false
-        val path = MusicMetadataCache.saveCover(context, candidate.id, bytes).orEmpty()
-        val bitmap = MusicMetadataCache.loadCover(path)
-        if (path.isBlank() && bitmap == null) return false
-        val updated = track.copy(
-            albumArt = bitmap,
-            neteaseId = candidate.id,
-            neteaseCoverUrl = candidate.coverUrl.orEmpty(),
-            coverCachePath = path
-        )
+        val updated = withContext(Dispatchers.IO) {
+            val bytes = NeteaseMusicApi.loadCoverBytes(candidate.coverUrl.orEmpty()) ?: return@withContext null
+            val path = MusicMetadataCache.saveCover(context, candidate.id, bytes).orEmpty()
+            val bitmap = MusicMetadataCache.loadCover(path)
+            if (path.isBlank() && bitmap == null) return@withContext null
+            track.copy(
+                albumArt = bitmap,
+                neteaseId = candidate.id,
+                neteaseCoverUrl = candidate.coverUrl.orEmpty(),
+                coverCachePath = path
+            )
+        } ?: return false
         withContext(Dispatchers.Main) {
             playbackState.updateTrack(updated)
             playbackState.coverCandidates = emptyList()
