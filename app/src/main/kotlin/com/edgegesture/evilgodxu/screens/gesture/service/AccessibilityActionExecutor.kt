@@ -48,6 +48,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 class AccessibilityActionExecutor(
     private val service: AccessibilityService
@@ -277,28 +278,35 @@ class AccessibilityActionExecutor(
             ?.takeIf { it != service.packageName }
             ?: currentApp
             ?: service.packageName
-        val packages = taskPanelHistory
-            .asReversed()
-            .filter { it != service.packageName }
-            .distinct()
-            .filter { it !in getBlacklistSync() }
-        val apps = packages.mapNotNull { pkg ->
-            try {
-                service.packageManager.getLaunchIntentForPackage(pkg) ?: return@mapNotNull null
-                val info = service.packageManager.getApplicationInfo(pkg, 0)
-                TaskPanelApp(pkg, service.packageManager.getApplicationLabel(info).toString(), service.packageManager.getApplicationIcon(info))
-            } catch (e: Exception) {
-                CrashLogManager.logException("AccessibilityActionExecutor", "获取任务面板应用信息失败", e)
-                null
+        executorScope.launch {
+            val blacklist = getBlacklistSync()
+            val packages = taskPanelHistory
+                .asReversed()
+                .filter { it != service.packageName }
+                .distinct()
+                .filter { it !in blacklist }
+            val apps = packages.mapNotNull { pkg ->
+                try {
+                    service.packageManager.getLaunchIntentForPackage(pkg) ?: return@mapNotNull null
+                    val info = service.packageManager.getApplicationInfo(pkg, 0)
+                    TaskPanelApp(pkg, service.packageManager.getApplicationLabel(info).toString(), service.packageManager.getApplicationIcon(info))
+                } catch (e: Exception) {
+                    CrashLogManager.logException("AccessibilityActionExecutor", "获取任务面板应用信息失败", e)
+                    null
+                }
+            }.take(10).toList()
+            withContext(Dispatchers.Main) {
+                // 异步加载期间可能已被关闭，不再显示
+                if (taskPanelViewManager != null) return@withContext
+                taskPanelViewManager = TaskPanelViewManager(
+                    service, apps, currentPackage, currentPackage,
+                    { launchApp(it) },
+                    { freeformAppLauncher.launch(it, useFreeform = true) },
+                    { packageName -> taskPanelHistory.removeAll { it == packageName } },
+                    { taskPanelViewManager = null }
+                ).also { it.show() }
             }
-        }.take(10).toList()
-        taskPanelViewManager = TaskPanelViewManager(
-            service, apps, currentPackage, currentPackage,
-            { launchApp(it) },
-            { freeformAppLauncher.launch(it, useFreeform = true) },
-            { packageName -> taskPanelHistory.removeAll { it == packageName } },
-            { taskPanelViewManager = null }
-        ).also { it.show() }
+        }
     }
 
     // 清理资源
