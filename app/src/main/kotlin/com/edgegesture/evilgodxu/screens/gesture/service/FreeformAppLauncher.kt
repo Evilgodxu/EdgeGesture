@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.Rect
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.min
 import org.lsposed.hiddenapibypass.HiddenApiBypass
@@ -29,14 +30,16 @@ class FreeformAppLauncher(private val context: Context) {
                     )
                     computeFreeformBounds(launchIntent)?.let(options::setLaunchBounds)
                     context.startActivity(launchIntent, options.toBundle())
-                } catch (_: Throwable) {
+                } catch (e: Throwable) {
+                    CrashLogManager.logException("FreeformAppLauncher", "小窗模式启动应用失败，回退常规启动", e)
                     context.startActivity(launchIntent)
                 }
             } else {
                 context.startActivity(launchIntent)
             }
             true
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("FreeformAppLauncher", "启动应用失败", e)
             false
         }
     }
@@ -87,7 +90,8 @@ class FreeformAppLauncher(private val context: Context) {
             if (hiddenApiInitialized.compareAndSet(false, true)) {
                 try {
                     HiddenApiBypass.addHiddenApiExemptions("Landroid.app.ActivityOptions;")
-                } catch (_: Throwable) {
+                } catch (e: Throwable) {
+                    CrashLogManager.logException("FreeformAppLauncher", "设置隐藏 API 豁免失败", e)
                 }
             }
         }

@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -47,7 +48,8 @@ fun Context.launchBlockFlow(): Flow<LaunchBlockState> = launchBlockDataStore.dat
     val rulesJson = prefs[LaunchBlockKeys.RULES] ?: "[]"
     val rules = try {
         json.decodeFromString<List<LaunchBlockRule>>(rulesJson)
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        CrashLogManager.logException("LaunchBlockSettings", "解析拦截规则失败", e)
         emptyList()
     }
     LaunchBlockState(
@@ -67,7 +69,8 @@ suspend fun Context.addLaunchBlockRule(rule: LaunchBlockRule) = withContext(Disp
         val currentJson = prefs[LaunchBlockKeys.RULES] ?: "[]"
         val currentRules = try {
             json.decodeFromString<List<LaunchBlockRule>>(currentJson)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("LaunchBlockSettings", "解析拦截规则失败", e)
             emptyList()
         }
         prefs[LaunchBlockKeys.RULES] = json.encodeToString(currentRules + rule)
@@ -79,7 +82,8 @@ suspend fun Context.removeLaunchBlockRule(ruleId: String) = withContext(Dispatch
         val currentJson = prefs[LaunchBlockKeys.RULES] ?: "[]"
         val currentRules = try {
             json.decodeFromString<List<LaunchBlockRule>>(currentJson)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("LaunchBlockSettings", "解析拦截规则失败", e)
             emptyList()
         }
         prefs[LaunchBlockKeys.RULES] = json.encodeToString(
@@ -93,7 +97,8 @@ suspend fun Context.updateLaunchBlockRule(updatedRule: LaunchBlockRule) = withCo
         val currentJson = prefs[LaunchBlockKeys.RULES] ?: "[]"
         val currentRules = try {
             json.decodeFromString<List<LaunchBlockRule>>(currentJson)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("LaunchBlockSettings", "解析拦截规则失败", e)
             emptyList()
         }
         prefs[LaunchBlockKeys.RULES] = json.encodeToString(

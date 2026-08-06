@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -27,7 +28,8 @@ internal suspend fun searchLyricsCandidates(
             .filter { it.id !in occupiedIds && !it.coverUrl.isNullOrBlank() }
             .take(5)
         playbackState.lyricsCandidates = (occupied + titleOnly).distinctBy { it.id }.take(10)
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicPanelSearchLogic", "搜索歌词候选失败", e)
         playbackState.lyricsCandidates = emptyList()
     } finally {
         playbackState.isLyricsSearching = false
@@ -59,7 +61,8 @@ internal suspend fun applyLyricsCandidate(
             playbackState.updateTrack(updated)
         }
         true
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicPanelSearchLogic", "应用歌词候选失败", e)
         false
     } finally {
         withContext(Dispatchers.Main) {
@@ -91,7 +94,8 @@ internal suspend fun searchCoverCandidates(
         playbackState.coverCandidates = (titleArtistCandidates + titleCandidates)
             .distinctBy { it.id }
             .take(10)
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicPanelSearchLogic", "搜索封面候选失败", e)
         playbackState.coverCandidates = emptyList()
     } finally {
         playbackState.isCoverSearching = false
@@ -122,7 +126,8 @@ internal suspend fun applyCoverCandidate(
             playbackState.coverCandidates = emptyList()
         }
         true
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicPanelSearchLogic", "应用封面候选失败", e)
         false
     }
 }
@@ -141,7 +146,8 @@ internal suspend fun performSearch(
         playbackState.searchResults = results
         if (results.isNotEmpty()) playbackState.addSearchHistory(query)
         playbackState.showSearchResults = true
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicPanelSearchLogic", "搜索歌曲失败", e)
         playbackState.searchResults = emptyList()
     } finally {
         playbackState.isSearching = false
@@ -202,7 +208,9 @@ internal suspend fun downloadAndPlay(
                     }
                 }
             }
-        } catch (_: Exception) { }
+        } catch (e: Exception) {
+            CrashLogManager.logException("MusicPanelSearchLogic", "获取在线歌词失败", e)
+        }
     }
 
     playbackState.playbackScope.launch(Dispatchers.IO) {
@@ -251,7 +259,8 @@ internal suspend fun cacheToDownloads(
         withContext(Dispatchers.Main) {
             updateTrackAudioUri(playbackState, trackId, audioUri)
         }
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicPanelSearchLogic", "缓存下载文件失败", e)
     }
 }
 
@@ -295,7 +304,9 @@ internal suspend fun enrichOnlineMetadata(
                 playbackState.currentTrack = updated
             }
         }
-    } catch (_: Exception) { }
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicPanelSearchLogic", "获取在线元数据失败", e)
+    }
 }
 
 internal suspend fun findExistingDownload(
@@ -314,7 +325,9 @@ internal suspend fun findExistingDownload(
                 return@withContext Uri.withAppendedPath(collection, id.toString()).toString()
             }
         }
-    } catch (_: Exception) { }
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicPanelSearchLogic", "查询已下载文件失败", e)
+    }
     null
 }
 

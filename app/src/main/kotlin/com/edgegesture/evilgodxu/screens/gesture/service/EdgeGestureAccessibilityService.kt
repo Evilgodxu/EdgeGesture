@@ -28,6 +28,7 @@ import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockState
 import com.edgegesture.evilgodxu.data.launchblock.launchBlockFlow
 import com.edgegesture.evilgodxu.data.launchblock.updateLaunchBlockRule
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -373,7 +374,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             try {
                 val appInfo = packageManager.getApplicationInfo(pkg, 0)
                 (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                CrashLogManager.logException("EdgeGestureAccessibilityService", "获取启动者应用信息失败", e)
                 false
             }
         } ?: false
@@ -383,7 +385,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             try {
                 val appInfo = packageManager.getApplicationInfo(pkg, 0)
                 (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                CrashLogManager.logException("EdgeGestureAccessibilityService", "获取被启动者应用信息失败", e)
                 false
             }
         }
@@ -457,7 +460,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         val isSystemApp = try {
             val appInfo = packageManager.getApplicationInfo(launcherPackage, 0)
             (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("EdgeGestureAccessibilityService", "获取启动者应用信息失败", e)
             false
         }
 
@@ -478,8 +482,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         try {
             val am = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
             am.killBackgroundProcesses(packageName)
-        } catch (_: Exception) {
-            // 终止失败，忽略错误
+        } catch (e: Exception) {
+            CrashLogManager.logException("EdgeGestureAccessibilityService", "终止应用进程失败", e)
         }
     }
 

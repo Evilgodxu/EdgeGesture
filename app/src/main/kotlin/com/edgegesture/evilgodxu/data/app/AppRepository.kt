@@ -11,6 +11,7 @@ import com.edgegesture.evilgodxu.data.gesture.clearExpandPanelShortcut
 import com.edgegesture.evilgodxu.data.gesture.initBlacklistIfNeeded
 import com.edgegesture.evilgodxu.data.gesture.removeFromAppSwitchBlacklist
 import com.edgegesture.evilgodxu.data.gesture.resetBlacklistInitialized
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -120,7 +121,8 @@ class AppRepository private constructor(private val context: Context) {
         return try {
             refreshAppsInternal()
             true
-        } catch (_: SecurityException) {
+        } catch (e: SecurityException) {
+            CrashLogManager.logException("AppRepository", "刷新应用列表失败", e)
             false
         }
     }

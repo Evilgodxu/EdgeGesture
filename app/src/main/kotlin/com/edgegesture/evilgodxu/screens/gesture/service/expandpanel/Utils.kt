@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.AudioManager
 import android.provider.Settings
 import android.view.KeyEvent
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.math.roundToInt
@@ -28,7 +29,9 @@ fun sendMediaKeyEvent(context: Context, keyCode: Int) {
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
         audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
-    } catch (_: Exception) {}
+    } catch (e: Exception) {
+        CrashLogManager.logException("ExpandPanelUtils", "发送媒体按键事件失败", e)
+    }
 }
 
 // 获取当前亮度百分比 (0.0 - 1.0)，使用 AOSP 相同的 HLG 伽马曲线转换
@@ -36,7 +39,8 @@ fun getCurrentBrightnessPercent(context: Context): Float {
     return try {
         val brightness = Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
         convertLinearToGamma(brightness, BRIGHTNESS_MIN, BRIGHTNESS_MAX)
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        CrashLogManager.logException("ExpandPanelUtils", "获取当前屏幕亮度失败", e)
         0.5f
     }
 }
@@ -50,7 +54,9 @@ fun setBrightness(context: Context, percent: Float) {
             BRIGHTNESS_MAX
         )
         Settings.System.putInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, brightness)
-    } catch (_: Exception) {}
+    } catch (e: Exception) {
+        CrashLogManager.logException("ExpandPanelUtils", "设置屏幕亮度失败", e)
+    }
 }
 
 // 将系统线性亮度值转换为伽马空间滑块值 (0.0-1.0)

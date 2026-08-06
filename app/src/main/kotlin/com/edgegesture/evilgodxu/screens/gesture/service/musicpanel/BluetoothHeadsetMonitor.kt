@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.core.content.ContextCompat
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -124,11 +125,14 @@ class BluetoothHeadsetMonitor(
                     btDevice.name?.takeIf { it.isNotBlank() }?.let { return it }
                 }
             }
-        } catch (_: SecurityException) {
+        } catch (e: SecurityException) {
+            CrashLogManager.logException("BluetoothHeadsetMonitor", "获取蓝牙设备名称失败（蓝牙权限不足）", e)
             // BLUETOOTH_CONNECT 权限不足，回退到 productName
-        } catch (_: IllegalArgumentException) {
+        } catch (e: IllegalArgumentException) {
+            CrashLogManager.logException("BluetoothHeadsetMonitor", "获取蓝牙设备名称失败（设备地址无效）", e)
             // address 格式无效，回退到 productName
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("BluetoothHeadsetMonitor", "获取蓝牙设备名称失败", e)
             // 其他异常，回退到 productName
         }
         // 回退到 AudioDeviceInfo.productName

@@ -29,6 +29,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.log.CrashLogManager
 
 class RemindAlarmService : Service() {
 
@@ -182,9 +183,12 @@ class RemindAlarmService : Service() {
 
             wm.addView(root, params)
             alarmOverlayView = root
-        } catch (_: SecurityException) {
+        } catch (e: SecurityException) {
+            CrashLogManager.logException("RemindAlarmService", "显示闹钟悬浮窗失败（无悬浮窗权限）", e)
             // 没有悬浮窗权限，仅保留通知和铃声
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            CrashLogManager.logException("RemindAlarmService", "显示闹钟悬浮窗失败", e)
+        }
     }
 
     // ============================================================
@@ -204,7 +208,9 @@ class RemindAlarmService : Service() {
                 isLooping = true
                 play()
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            CrashLogManager.logException("RemindAlarmService", "播放闹钟铃声失败", e)
+        }
     }
 
     private fun vibrate() {
@@ -213,7 +219,9 @@ class RemindAlarmService : Service() {
             vm.defaultVibrator.vibrate(
                 VibrationEffect.createWaveform(longArrayOf(0, 1000, 500), intArrayOf(1, 0), 2)
             )
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            CrashLogManager.logException("RemindAlarmService", "闹钟震动失败", e)
+        }
     }
 
     // ============================================================
@@ -227,11 +235,15 @@ class RemindAlarmService : Service() {
         ringtone = null
 
         // 移除熄屏监听
-        try { unregisterReceiver(screenOffReceiver) } catch (_: Exception) {}
+        try { unregisterReceiver(screenOffReceiver) } catch (e: Exception) {
+            CrashLogManager.logException("RemindAlarmService", "注销熄屏广播接收器失败", e)
+        }
 
         // 移除悬浮窗
         alarmOverlayView?.let { view ->
-            try { (getSystemService(WINDOW_SERVICE) as WindowManager).removeView(view) } catch (_: Exception) {}
+            try { (getSystemService(WINDOW_SERVICE) as WindowManager).removeView(view) } catch (e: Exception) {
+                CrashLogManager.logException("RemindAlarmService", "移除闹钟悬浮窗失败", e)
+            }
             alarmOverlayView = null
         }
 
@@ -242,7 +254,9 @@ class RemindAlarmService : Service() {
 
     override fun onDestroy() {
         stopAlarm()
-        try { unregisterReceiver(screenOffReceiver) } catch (_: Exception) {}
+        try { unregisterReceiver(screenOffReceiver) } catch (e: Exception) {
+            CrashLogManager.logException("RemindAlarmService", "注销熄屏广播接收器失败", e)
+        }
         super.onDestroy()
     }
 

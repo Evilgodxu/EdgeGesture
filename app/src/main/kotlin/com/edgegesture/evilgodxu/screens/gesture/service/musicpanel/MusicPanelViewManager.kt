@@ -30,6 +30,7 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -144,7 +145,8 @@ class MusicPanelViewManager(
                 uri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
-        } catch (_: SecurityException) {
+        } catch (e: SecurityException) {
+            CrashLogManager.logException("MusicPanelViewManager", "获取外部音频持久访问权限失败", e)
             // 外部应用可能只授予临时读取权限，仍需继续播放当前 URI
         }
         pendingExternalUri = uri
@@ -234,6 +236,7 @@ class MusicPanelViewManager(
         try {
             windowManager.addView(view, params)
         } catch (e: WindowManager.BadTokenException) {
+            CrashLogManager.logException("MusicPanelViewManager", "添加音乐面板失败（窗口令牌失效）", e)
             composeView = null
             onShowFailed?.invoke(e)
             return
@@ -459,7 +462,10 @@ class MusicPanelViewManager(
                         }
                         val updatedTrack = track.copy(albumArt = cover, coverCachePath = coverPath)
                         updatedTrack
-                    } catch (_: Exception) { null }
+                    } catch (e: Exception) {
+                        CrashLogManager.logException("MusicPanelViewManager", "提取本地封面失败", e)
+                        null
+                    }
                 }
             }.awaitAll().filterNotNull()
         }
@@ -514,7 +520,10 @@ class MusicPanelViewManager(
                             neteaseCoverUrl = match.coverUrl.orEmpty(),
                             coverCachePath = coverPath
                         )
-                    } catch (_: Exception) { null }
+                    } catch (e: Exception) {
+                        CrashLogManager.logException("MusicPanelViewManager", "获取在线封面失败", e)
+                        null
+                    }
                 }
             }.awaitAll().filterNotNull()
         }
@@ -536,7 +545,10 @@ class MusicPanelViewManager(
                         if (lyric.lines.isEmpty()) return@async null
                         val lyricPath = MusicMetadataCache.saveLyrics(context, match.id, lyric.lines).orEmpty()
                         track.copy(lyricCachePath = lyricPath, lyricLines = lyric.lines)
-                    } catch (_: Exception) { null }
+                    } catch (e: Exception) {
+                        CrashLogManager.logException("MusicPanelViewManager", "获取在线歌词失败", e)
+                        null
+                    }
                 }
             }.awaitAll().filterNotNull()
         }
@@ -596,7 +608,8 @@ class MusicPanelViewManager(
                     if (view.windowToken != null) {
                         windowManager.removeView(view)
                     }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    CrashLogManager.logException("MusicPanelViewManager", "移除音乐面板失败", e)
                 }
                 composeView = null
                 isDismissing = false

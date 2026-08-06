@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.LruCache
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -60,7 +61,10 @@ internal object MusicMetadataCache {
             parentFile?.mkdirs()
             writeBytes(originalBytes)
         }.absolutePath
-    } catch (_: Exception) { null }
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicMetadataCache", "保存封面失败", e)
+        null
+    }
 
     fun saveLyrics(context: Context, id: Long, lines: List<LyricLine>): String? = try {
         val file = lyricFile(context, id)
@@ -83,7 +87,10 @@ internal object MusicMetadataCache {
         }
         file.writeText(array.toString())
         file.absolutePath
-    } catch (_: Exception) { null }
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicMetadataCache", "保存歌词失败", e)
+        null
+    }
 
     fun loadLyrics(path: String): List<LyricLine> = try {
         val array = JSONArray(File(path).readText())
@@ -99,7 +106,10 @@ internal object MusicMetadataCache {
                 }
             )
         }
-    } catch (_: Exception) { emptyList() }
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicMetadataCache", "加载歌词失败", e)
+        emptyList()
+    }
 
     fun isValid(path: String): Boolean = path.isNotBlank() && File(path).let { it.isFile && it.length() > 0 }
 
@@ -107,7 +117,10 @@ internal object MusicMetadataCache {
 
     fun loadCoverBytes(path: String): ByteArray? = try {
         if (!isValid(path)) null else File(path).readBytes()
-    } catch (_: Exception) { null }
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicMetadataCache", "读取封面文件失败", e)
+        null
+    }
 
     fun deleteCoverFile(path: String) {
         if (path.isNotBlank()) {
@@ -127,5 +140,8 @@ internal object MusicMetadataCache {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
             output.toByteArray()
         }
-    } catch (_: Exception) { null }
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicMetadataCache", "位图转字节失败", e)
+        null
+    }
 }

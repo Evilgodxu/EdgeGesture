@@ -67,6 +67,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowSizeClass
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import com.edgegesture.evilgodxu.update.DownloadState
 import com.edgegesture.evilgodxu.update.UpdateInfo
 import com.edgegesture.evilgodxu.update.UpdateManager
@@ -178,7 +179,10 @@ fun SettingsScreen(
     val versionName = remember {
         try {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: ""
-        } catch (_: Exception) { "" }
+        } catch (e: Exception) {
+            CrashLogManager.logException("SettingsScreen", "获取版本号失败", e)
+            ""
+        }
     }
 
     // 通过 ViewModel 获取设置状态，自动响应设置变更

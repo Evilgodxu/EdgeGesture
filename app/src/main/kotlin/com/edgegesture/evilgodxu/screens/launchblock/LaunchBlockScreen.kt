@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockRule
 import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockState
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import com.edgegesture.evilgodxu.data.launchblock.launchBlockFlow
 import com.edgegesture.evilgodxu.data.launchblock.addLaunchBlockRule
 import com.edgegesture.evilgodxu.data.launchblock.removeLaunchBlockRule
@@ -353,7 +354,8 @@ private fun getAppName(context: Context, packageName: String): String {
         val pm = context.packageManager
         val appInfo = pm.getApplicationInfo(packageName, 0)
         pm.getApplicationLabel(appInfo).toString()
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        CrashLogManager.logException("LaunchBlockScreen", "获取应用名称失败", e)
         packageName
     }
 }

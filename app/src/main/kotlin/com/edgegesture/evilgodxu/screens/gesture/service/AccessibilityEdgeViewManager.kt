@@ -9,6 +9,7 @@ import android.view.WindowManager
 import androidx.core.graphics.toColorInt
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
 import com.edgegesture.evilgodxu.data.gesture.EdgePosition
+import com.edgegesture.evilgodxu.log.CrashLogManager
 
 class AccessibilityEdgeViewManager(
     private val context: Context,
@@ -198,10 +199,10 @@ class AccessibilityEdgeViewManager(
         try {
             windowManager.addView(view, params)
         } catch (e: WindowManager.BadTokenException) {
-            android.util.Log.w(TAG, "BadTokenException adding edge view, service token may be invalid", e)
+            CrashLogManager.logException("AccessibilityEdgeViewManager", "添加边缘触摸视图失败（窗口令牌失效）", e)
             onAttachFailed?.invoke(e)
         } catch (e: IllegalStateException) {
-            android.util.Log.w(TAG, "IllegalStateException adding edge view", e)
+            CrashLogManager.logException("AccessibilityEdgeViewManager", "添加边缘触摸视图失败", e)
         }
     }
 
@@ -209,17 +210,23 @@ class AccessibilityEdgeViewManager(
         leftEdgeViews.forEach { view ->
             try {
                 if (view.windowToken != null) windowManager.removeView(view)
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                CrashLogManager.logException("AccessibilityEdgeViewManager", "移除左侧边缘视图失败", e)
+            }
         }
         rightEdgeViews.forEach { view ->
             try {
                 if (view.windowToken != null) windowManager.removeView(view)
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                CrashLogManager.logException("AccessibilityEdgeViewManager", "移除右侧边缘视图失败", e)
+            }
         }
         bottomEdgeViews.forEach { view ->
             try {
                 if (view.windowToken != null) windowManager.removeView(view)
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                CrashLogManager.logException("AccessibilityEdgeViewManager", "移除底部边缘视图失败", e)
+            }
         }
         leftEdgeViews.clear()
         rightEdgeViews.clear()
@@ -275,7 +282,8 @@ class AccessibilityEdgeViewManager(
             }
             try {
                 windowManager.updateViewLayout(view, params)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                CrashLogManager.logException("AccessibilityEdgeViewManager", "更新左侧边缘视图布局失败", e)
             }
         }
 
@@ -308,7 +316,8 @@ class AccessibilityEdgeViewManager(
             }
             try {
                 windowManager.updateViewLayout(view, params)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                CrashLogManager.logException("AccessibilityEdgeViewManager", "更新右侧边缘视图布局失败", e)
             }
         }
 
@@ -341,7 +350,8 @@ class AccessibilityEdgeViewManager(
             }
             try {
                 windowManager.updateViewLayout(view, params)
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                CrashLogManager.logException("AccessibilityEdgeViewManager", "更新底部边缘视图布局失败", e)
             }
         }
     }
@@ -364,7 +374,9 @@ class AccessibilityEdgeViewManager(
             params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
             try {
                 windowManager.updateViewLayout(view, params)
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                CrashLogManager.logException("AccessibilityEdgeViewManager", "禁用边缘视图触摸失败", e)
+            }
         }
     }
 
@@ -379,11 +391,9 @@ class AccessibilityEdgeViewManager(
             params.flags = params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
             try {
                 windowManager.updateViewLayout(view, params)
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                CrashLogManager.logException("AccessibilityEdgeViewManager", "启用边缘视图触摸失败", e)
+            }
         }
-    }
-
-    companion object {
-        private const val TAG = "EdgeViewManager"
     }
 }

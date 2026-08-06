@@ -15,6 +15,7 @@ import android.net.Uri
 import androidx.core.content.edit
 import androidx.compose.runtime.setValue
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import org.json.JSONArray
 import org.json.JSONObject
 import androidx.media3.common.Player
@@ -193,9 +194,12 @@ class MusicPlaybackState {
                                     }
                                 }
                             }
-                        } catch (_: Exception) { }
+                        } catch (e: Exception) {
+                            CrashLogManager.logException("MusicPlaybackState", "获取在线歌词失败", e)
+                        }
                     }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    CrashLogManager.logException("MusicPlaybackState", "播放搜索候选失败，切换下一首", e)
                     playNextPendingSearchResult(ctx, failedTrack)
                 }
             }
@@ -222,7 +226,8 @@ class MusicPlaybackState {
                         removeTrack(track.id)
                     }
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                CrashLogManager.logException("MusicPlaybackState", "重试播放失败，移除歌曲", e)
                 withContext(Dispatchers.Main) {
                     removeTrack(track.id)
                 }
@@ -279,7 +284,8 @@ class MusicPlaybackState {
             }) return false
         return try {
             context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { true } ?: false
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("MusicPlaybackState", "检查媒体访问权限失败", e)
             false
         }
     }
@@ -493,7 +499,8 @@ class MusicPlaybackState {
                     lyricLines = lyricLines
                 )
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("MusicPlaybackState", "读取缓存的播放列表失败", e)
             emptyList()
         }
     }

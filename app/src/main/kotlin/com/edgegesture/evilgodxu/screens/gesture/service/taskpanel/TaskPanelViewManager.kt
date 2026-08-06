@@ -18,6 +18,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.edgegesture.evilgodxu.log.CrashLogManager
 
 class TaskPanelViewManager(
     private val context: android.content.Context,
@@ -99,7 +100,8 @@ class TaskPanelViewManager(
                 .setInterpolator(DecelerateInterpolator())
                 .start()
             true
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("TaskPanelViewManager", "显示任务面板失败", e)
             view = null
             false
         }
@@ -123,7 +125,9 @@ class TaskPanelViewManager(
                     if (current.windowToken != null) {
                         windowManager.removeView(current)
                     }
-                } catch (_: Exception) { }
+                } catch (e: Exception) {
+                    CrashLogManager.logException("TaskPanelViewManager", "移除任务面板失败", e)
+                }
                 view = null
                 isDismissing = false
                 onDismiss()

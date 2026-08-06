@@ -31,6 +31,7 @@ import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcut
 import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcutFreeform
 import com.edgegesture.evilgodxu.data.permission.PermissionMonitor
 import com.edgegesture.evilgodxu.data.permission.PermissionType
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelPermissionCallback
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelViewManager
 import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelPermissionActivity
@@ -282,7 +283,10 @@ class AccessibilityActionExecutor(
                 service.packageManager.getLaunchIntentForPackage(pkg) ?: return@mapNotNull null
                 val info = service.packageManager.getApplicationInfo(pkg, 0)
                 TaskPanelApp(pkg, service.packageManager.getApplicationLabel(info).toString(), service.packageManager.getApplicationIcon(info))
-            } catch (_: Exception) { null }
+            } catch (e: Exception) {
+                CrashLogManager.logException("AccessibilityActionExecutor", "获取任务面板应用信息失败", e)
+                null
+            }
         }.take(10).toList()
         taskPanelViewManager = TaskPanelViewManager(
             service, apps, currentPackage, currentPackage,
@@ -354,7 +358,8 @@ class AccessibilityActionExecutor(
             cachedBlacklist = blacklist
             lastBlacklistCacheTime = now
             blacklist
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "读取应用切换黑名单失败", e)
             emptySet()
         }
     }
@@ -376,7 +381,8 @@ class AccessibilityActionExecutor(
             } else {
                 false
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "启动应用失败", e)
             false
         }
     }
@@ -390,7 +396,8 @@ class AccessibilityActionExecutor(
             audioManager.dispatchMediaKeyEvent(android.view.KeyEvent(
                 android.view.KeyEvent.ACTION_UP, keyCode
             ))
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "发送媒体按键失败", e)
         }
     }
 
@@ -404,7 +411,8 @@ class AccessibilityActionExecutor(
                 flashlightOn = !flashlightOn
                 cameraManager.setTorchMode(id, flashlightOn)
             }
-        } catch (_: CameraAccessException) {
+        } catch (e: CameraAccessException) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "切换手电筒失败", e)
         }
     }
 
@@ -415,7 +423,8 @@ class AccessibilityActionExecutor(
                 addCategory(Intent.CATEGORY_DEFAULT)
             }
             service.startActivity(intent)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "启动语音助手失败", e)
         }
     }
 
@@ -441,7 +450,9 @@ class AccessibilityActionExecutor(
             }
             service.startActivity(intent)
             return
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "打开微信扫一扫失败", e)
+        }
 
         // 备用 BaseCaptureUI（部分微信版本）
         try {
@@ -451,7 +462,9 @@ class AccessibilityActionExecutor(
             }
             service.startActivity(intent)
             return
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "打开微信扫一扫备用页面失败", e)
+        }
 
         // 兜底：打开微信
         try {
@@ -460,7 +473,9 @@ class AccessibilityActionExecutor(
                 launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 service.startActivity(launchIntent)
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "打开微信失败", e)
+        }
     }
 
     // 支付宝扫一扫
@@ -472,14 +487,17 @@ class AccessibilityActionExecutor(
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
             service.startActivity(intent)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "打开支付宝扫一扫失败", e)
             try {
                 val launchIntent = service.packageManager.getLaunchIntentForPackage("com.eg.android.AlipayGphone")
                 if (launchIntent != null) {
                     launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     service.startActivity(launchIntent)
                 }
-            } catch (_: Exception) {}
+            } catch (e2: Exception) {
+                CrashLogManager.logException("AccessibilityActionExecutor", "打开支付宝失败", e2)
+            }
         }
     }
 
@@ -517,7 +535,9 @@ class AccessibilityActionExecutor(
                 service.getString(R.string.gesture_remind_feedback, minutes),
                 Toast.LENGTH_SHORT
             ).show()
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "显示提醒反馈失败", e)
+        }
     }
 
     private fun cancelRemind(minutes: Int, pi: PendingIntent) {
@@ -525,14 +545,18 @@ class AccessibilityActionExecutor(
             val alarmManager = service.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             alarmManager.cancel(pi)
             pi.cancel()
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "取消提醒闹钟失败", e)
+        }
         try {
             Toast.makeText(
                 service,
                 service.getString(R.string.gesture_remind_cancelled, minutes),
                 Toast.LENGTH_SHORT
             ).show()
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "显示取消提醒反馈失败", e)
+        }
     }
 
     private fun scheduleOwnAlarm(minutes: Int) {
@@ -556,7 +580,8 @@ class AccessibilityActionExecutor(
                 triggerTime,
                 pendingIntent
             )
-        } catch (_: SecurityException) {
+        } catch (e: SecurityException) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "设置精确闹钟失败（无精确闹钟权限）", e)
             // 没有 USE_EXACT_ALARM 权限时，使用非精确闹钟
             try {
                 val alarmManager = service.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -572,8 +597,12 @@ class AccessibilityActionExecutor(
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
                 alarmManager.set(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
-            } catch (_: Exception) {}
-        } catch (_: Exception) {}
+            } catch (e2: Exception) {
+                CrashLogManager.logException("AccessibilityActionExecutor", "设置普通闹钟失败", e2)
+            }
+        } catch (e: Exception) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "设置提醒闹钟失败", e)
+        }
     }
 
     companion object {

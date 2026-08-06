@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.Settings
 import androidx.core.content.ContextCompat
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -46,6 +47,7 @@ class PermissionMonitor(private val context: Context) {
             val apps = pm.getInstalledApplications(0)
             apps.isNotEmpty() && apps.any { it.packageName != context.packageName }
         } catch (e: Exception) {
+            CrashLogManager.logException("PermissionMonitor", "获取已安装应用列表失败", e)
             false
         }
     }

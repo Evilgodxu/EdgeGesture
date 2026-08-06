@@ -12,6 +12,7 @@ import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.update.UpdateCheckWorker
 import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
 import com.edgegesture.evilgodxu.di.appModule
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -21,6 +22,9 @@ import java.util.concurrent.TimeUnit
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+
+        // 最先初始化崩溃日志系统，捕获启动阶段及后续所有未捕获异常
+        CrashLogManager.init(this)
 
         startKoin {
             androidLogger()

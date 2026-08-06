@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.IBinder
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import com.edgegesture.evilgodxu.service.ICommandService
 import com.edgegesture.evilgodxu.service.CommandUserService
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -131,6 +132,7 @@ object ShizukuManager {
             val args = CommandUserService.createServiceArgs()
             Shizuku.bindUserService(args, serviceConnection)
         } catch (e: Exception) {
+            CrashLogManager.logException("ShizukuManager", "绑定 UserService 失败", e)
             isServiceBinding = false
         }
     }
@@ -145,6 +147,7 @@ object ShizukuManager {
                     true
                 )
             } catch (e: Exception) {
+                CrashLogManager.logException("ShizukuManager", "解绑 UserService 失败", e)
             }
             commandService = null
         }
@@ -158,6 +161,7 @@ object ShizukuManager {
                 val result = service.executeCommand(command)
                 Result.success(result)
             } catch (e: Exception) {
+                CrashLogManager.logException("ShizukuManager", "执行命令失败", e)
                 Result.failure(e)
             }
         } else {
@@ -179,6 +183,7 @@ object ShizukuManager {
                     Result.failure(Exception("Failed to force stop package"))
                 }
             } catch (e: Exception) {
+                CrashLogManager.logException("ShizukuManager", "强制停止应用失败", e)
                 Result.failure(e)
             }
         } else {
@@ -191,7 +196,8 @@ object ShizukuManager {
         return try {
             context.packageManager.getPackageInfo(ShizukuProvider.MANAGER_APPLICATION_ID, 0)
             true
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("ShizukuManager", "检查 Shizuku 安装状态失败", e)
             false
         }
     }

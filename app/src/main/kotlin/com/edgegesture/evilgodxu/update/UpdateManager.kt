@@ -1,6 +1,7 @@
 package com.edgegesture.evilgodxu.update
 
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.log.CrashLogManager
 
 import android.app.DownloadManager
 import android.content.Context
@@ -137,7 +138,7 @@ object UpdateManager {
                 null
             }
         } catch (e: Exception) {
-            android.util.Log.w(TAG, "Update check failed: ${e.message}")
+            CrashLogManager.logException("UpdateManager", "检查更新失败", e)
             null
         }
     }
@@ -150,6 +151,7 @@ object UpdateManager {
             val pkgInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             pkgInfo.versionName ?: "0.0.0"
         } catch (e: PackageManager.NameNotFoundException) {
+            CrashLogManager.logException("UpdateManager", "获取当前版本号失败", e)
             "0.0.0"
         }
     }

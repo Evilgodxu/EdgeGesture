@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import com.edgegesture.evilgodxu.log.CrashLogManager
 
 internal fun formatTime(ms: Long): String {
     val totalSeconds = ms / 1000
@@ -30,6 +31,7 @@ internal fun copyToClipboard(context: Context, text: String) {
         val clip = ClipData.newPlainText("label", text)
         clipboard.setPrimaryClip(clip)
         Toast.makeText(context, "已复制: $text", Toast.LENGTH_SHORT).show()
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicPanelUtils", "复制到剪贴板失败", e)
     }
 }

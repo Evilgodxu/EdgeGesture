@@ -2,6 +2,7 @@ package com.edgegesture.evilgodxu.service
 
 import android.content.ComponentName
 import android.os.IBinder
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import rikka.shizuku.Shizuku
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -49,6 +50,7 @@ class CommandUserService : ICommandService.Stub() {
                 "Error (exit code $exitCode): $error"
             }
         } catch (e: Exception) {
+            CrashLogManager.logException("CommandUserService", "执行 shell 命令失败", e)
             "Exception: ${e.message}"
         }
     }
@@ -58,6 +60,7 @@ class CommandUserService : ICommandService.Stub() {
             val result = executeCommand("am force-stop $packageName")
             !result.startsWith("Error") && !result.startsWith("Exception")
         } catch (e: Exception) {
+            CrashLogManager.logException("CommandUserService", "强制停止应用失败", e)
             false
         }
     }

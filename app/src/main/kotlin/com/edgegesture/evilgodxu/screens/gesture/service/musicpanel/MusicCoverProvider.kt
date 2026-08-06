@@ -5,7 +5,7 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
 import android.os.ParcelFileDescriptor
-import android.util.Log
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import java.io.File
 import java.io.FileNotFoundException
 
@@ -33,7 +33,7 @@ class MusicCoverProvider : ContentProvider() {
         return try {
             ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
         } catch (e: FileNotFoundException) {
-            Log.w(TAG, "Cover file not found: ${file.absolutePath}")
+            CrashLogManager.logException("MusicCoverProvider", "封面文件不存在", e)
             null
         }
     }
@@ -47,7 +47,6 @@ class MusicCoverProvider : ContentProvider() {
 
     companion object {
         const val AUTHORITY_SUFFIX = ".musiccover"
-        private const val TAG = "MusicCoverProvider"
 
         /** 根据 coverCachePath 生成 content:// URI */
         fun buildUri(packageName: String, coverCachePath: String): Uri? {

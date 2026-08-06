@@ -10,6 +10,7 @@ import android.net.Uri
 import android.provider.MediaStore
 import android.util.Size
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -38,12 +39,14 @@ object MusicScanner {
                 albumId = 0L,
                 albumArt = art
             )
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("MusicScanner", "读取外部音频元数据失败", e)
             null
         } finally {
             try {
                 retriever.release()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                CrashLogManager.logException("MusicScanner", "释放元数据读取器失败", e)
             }
         }
     }
@@ -106,7 +109,8 @@ object MusicScanner {
                     )
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("MusicScanner", "扫描本地音乐失败", e)
         }
         tracks
     }
@@ -125,7 +129,8 @@ object MusicScanner {
                 contentResolver.openInputStream(uri)?.use { input ->
                     BitmapFactory.decodeStream(input)?.let { return it }
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                CrashLogManager.logException("MusicScanner", "读取专辑封面失败", e)
             }
         }
         fallbackPath.takeIf { it.isNotBlank() }?.let { path ->
@@ -133,7 +138,8 @@ object MusicScanner {
         }
         return try {
             contentResolver.loadThumbnail(audioUri, Size(256, 256), null)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("MusicScanner", "加载缩略图封面失败", e)
             null
         }
     }
@@ -143,12 +149,14 @@ object MusicScanner {
         return try {
             retriever.setDataSource(context, audioUri)
             retriever.embeddedPicture?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("MusicScanner", "提取内嵌封面失败", e)
             null
         } finally {
             try {
                 retriever.release()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                CrashLogManager.logException("MusicScanner", "释放元数据读取器失败", e)
             }
         }
     }
@@ -158,12 +166,14 @@ object MusicScanner {
         return try {
             retriever.setDataSource(path)
             retriever.embeddedPicture?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("MusicScanner", "提取内嵌封面失败", e)
             null
         } finally {
             try {
                 retriever.release()
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                CrashLogManager.logException("MusicScanner", "释放元数据读取器失败", e)
             }
         }
     }

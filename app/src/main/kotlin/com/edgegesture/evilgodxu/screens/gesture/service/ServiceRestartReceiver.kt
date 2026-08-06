@@ -3,6 +3,7 @@ package com.edgegesture.evilgodxu.screens.gesture.service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -46,7 +47,8 @@ class ServiceRestartReceiver : BroadcastReceiver() {
             if (EdgeGestureAccessibilityService.isAvailable()) {
                 EdgeGestureAccessibilityService.startGesture(context)
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("ServiceRestartReceiver", "恢复手势服务失败", e)
         }
     }
 

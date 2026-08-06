@@ -43,6 +43,7 @@ import com.edgegesture.evilgodxu.data.gesture.saveVibrationEnabled
 import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.permission.PermissionMonitor
 import com.edgegesture.evilgodxu.data.permission.PermissionType
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -194,6 +195,7 @@ class GestureSettingsViewModel(
             val apps = pm.getInstalledApplications(0)
             apps.isNotEmpty() && apps.any { it.packageName != ctx.packageName }
         } catch (e: Exception) {
+            CrashLogManager.logException("GestureSettingsViewModel", "获取已安装应用列表失败", e)
             false
         }
     }

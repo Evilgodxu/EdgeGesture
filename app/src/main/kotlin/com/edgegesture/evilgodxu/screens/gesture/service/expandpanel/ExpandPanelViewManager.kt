@@ -21,6 +21,7 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.edgegesture.evilgodxu.data.gesture.ExpandPanelShortcutsState
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import com.edgegesture.evilgodxu.screens.settings.ThemeMode
 import kotlinx.coroutines.flow.Flow
 
@@ -126,7 +127,7 @@ class ExpandPanelViewManager(
         try {
             windowManager.addView(view, params)
         } catch (e: WindowManager.BadTokenException) {
-            android.util.Log.w(TAG, "BadTokenException adding expand panel, service token may be invalid", e)
+            CrashLogManager.logException("ExpandPanelViewManager", "添加扩展面板失败（窗口令牌失效）", e)
             composeView = null
             onShowFailed?.invoke(e)
             return false
@@ -148,12 +149,10 @@ class ExpandPanelViewManager(
             if (view.windowToken != null) {
                 windowManager.removeView(view)
             }
-        } catch (_: Exception) {}
+        } catch (e: Exception) {
+            CrashLogManager.logException("ExpandPanelViewManager", "移除扩展面板失败", e)
+        }
         composeView = null
         onDismiss()
-    }
-
-    companion object {
-        private const val TAG = "ExpandPanelViewManager"
     }
 }

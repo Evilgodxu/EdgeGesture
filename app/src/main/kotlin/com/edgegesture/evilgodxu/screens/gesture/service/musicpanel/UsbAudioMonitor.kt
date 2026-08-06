@@ -13,6 +13,7 @@ import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioManager
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelChildren
@@ -112,7 +113,8 @@ class UsbAudioMonitor(
             try {
                 context.unregisterReceiver(usbReceiver)
                 context.unregisterReceiver(usbPermissionReceiver)
-            } catch (_: IllegalArgumentException) {
+            } catch (e: IllegalArgumentException) {
+                CrashLogManager.logException("UsbAudioMonitor", "注销 USB 广播接收器失败", e)
             }
             receiverRegistered = false
         }
@@ -143,7 +145,8 @@ class UsbAudioMonitor(
     private fun hasUsbPermission(device: UsbDevice): Boolean {
         return try {
             usbManager.hasPermission(device)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("UsbAudioMonitor", "检查 USB 权限失败", e)
             false
         }
     }
@@ -159,9 +162,11 @@ class UsbAudioMonitor(
             }
             false
         } catch (e: SecurityException) {
+            CrashLogManager.logException("UsbAudioMonitor", "检查 USB 音频设备失败（权限不足）", e)
             onError?.invoke("USB 权限不足: ${e.message}")
             false
         } catch (e: Exception) {
+            CrashLogManager.logException("UsbAudioMonitor", "检查 USB 音频设备失败", e)
             onError?.invoke("USB 设备检测异常: ${e.message}")
             false
         }
@@ -177,7 +182,8 @@ class UsbAudioMonitor(
                         handleDeviceAttached()
                         return@withContext
                     }
-                } catch (_: Exception) {
+                } catch (e: Exception) {
+                    CrashLogManager.logException("UsbAudioMonitor", "检查已连接的音频设备失败", e)
                 }
             }
             // 通过 UsbManager 检查（需要 USB 权限，用 try-catch 保护）
@@ -189,7 +195,8 @@ class UsbAudioMonitor(
                         return@launch
                     }
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                CrashLogManager.logException("UsbAudioMonitor", "检查已连接的 USB 设备失败", e)
             }
         }
     }
@@ -224,7 +231,8 @@ class UsbAudioMonitor(
                     device.manufacturerName?.takeIf { it.isNotBlank() }?.let { return it }
                 }
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("UsbAudioMonitor", "获取 USB 设备名称失败", e)
         }
 
         return context.getString(R.string.usb_audio_default_name)

@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.log.CrashLogManager
 
 // 捐赠对话框
 @Composable
@@ -61,13 +62,15 @@ fun DonateDialog(
                                 }
                                 context.startActivity(alipayIntent)
                             } catch (e: Exception) {
+                                CrashLogManager.logException("DonateDialog", "打开支付宝失败", e)
                                 // 如果支付宝应用未安装，降级到浏览器打开
                                 try {
                                     val browserIntent = Intent(Intent.ACTION_VIEW).apply {
                                         data = "https://qr.alipay.com/fkx19806mp7pzmxerluwrfd".toUri()
                                     }
                                     context.startActivity(browserIntent)
-                                } catch (_: Exception) {
+                                } catch (e2: Exception) {
+                                    CrashLogManager.logException("DonateDialog", "打开浏览器支付页失败", e2)
                                 }
                             }
                             onDismiss()

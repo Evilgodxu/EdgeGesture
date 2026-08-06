@@ -2,6 +2,7 @@ package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -39,7 +40,8 @@ internal object NeteaseMusicApi {
         if (url.isBlank()) return@withContext null
         try {
             URL(url).openStream().use { it.readBytes() }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("NeteaseMusicApi", "下载封面失败", e)
             null
         }
     }
@@ -130,7 +132,8 @@ internal object NeteaseMusicApi {
                     } else result
                 } else result
             }
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("NeteaseMusicApi", "补全歌曲封面失败", e)
             return results
         }
     }
@@ -151,6 +154,7 @@ internal object NeteaseMusicApi {
             val hasFreeTrial = data.has("freeTrialInfo") && !data.isNull("freeTrialInfo")
             SongUrlInfo(url = ensureHttps(url), trial = hasFreeTrial)
         } catch (e: Exception) {
+            CrashLogManager.logException("NeteaseMusicApi", "获取歌曲播放地址失败", e)
             null
         }
     }
@@ -193,7 +197,8 @@ internal object NeteaseMusicApi {
                 coverThumbUrl = cover?.let { thumbUrl(it) },
                 duration = item.optLong("dt", 0L)
             )
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            CrashLogManager.logException("NeteaseMusicApi", "获取歌曲详情失败", e)
             null
         }
     }
