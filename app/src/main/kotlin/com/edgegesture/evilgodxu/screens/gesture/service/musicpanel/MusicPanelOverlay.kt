@@ -105,6 +105,9 @@ fun MusicPanelOverlay(
     var coverSaveFailed by remember { mutableStateOf(false) }
     var showLyricsRefresh by remember { mutableStateOf(false) }
     var selectedLyricsCandidate by remember { mutableStateOf<NeteaseSongSearchResult?>(null) }
+    var coverTargetId by remember { mutableStateOf<Long?>(null) }
+    var renameTargetId by remember { mutableStateOf<Long?>(null) }
+    var lyricsTargetId by remember { mutableStateOf<Long?>(null) }
 
     MaterialTheme(colorScheme = colorScheme) {
         Box(
@@ -260,6 +263,7 @@ fun MusicPanelOverlay(
                                             isPlaying = playbackState.isPlaying,
                                             onClick = { playbackState.isLyricsVisible = true },
                                             onRefreshCover = {
+                                                coverTargetId = playbackState.currentTrack?.id
                                                 showCoverRefresh = true
                                                 scope.launch { searchCoverCandidates(playbackState, playbackState.currentTrack!!) }
                                             }
@@ -273,6 +277,7 @@ fun MusicPanelOverlay(
                                         onRenameRequest = { isTitle, text ->
                                             renameIsTitle = isTitle
                                             renameInitValue = text
+                                            renameTargetId = playbackState.currentTrack?.id
                                             showRename = true
                                         }
                                     )
@@ -283,6 +288,7 @@ fun MusicPanelOverlay(
                                     playbackState = playbackState,
                                     onPlaylistClick = { showPlaylist = true },
                                     onLyricsRefreshClick = {
+                                        lyricsTargetId = playbackState.currentTrack?.id
                                         showLyricsRefresh = true
                                         playbackState.currentTrack?.let { track -> scope.launch { searchLyricsCandidates(playbackState, track) } }
                                     }
@@ -362,7 +368,7 @@ fun MusicPanelOverlay(
                         onConfirm = { newValue ->
                             showRename = false
                             val track = playbackState.currentTrack
-                            if (track != null) {
+                            if (track != null && track.id == renameTargetId) {
                                 val updated = if (renameIsTitle) track.copy(title = newValue)
                                               else track.copy(artist = newValue)
                                 playbackState.renameTrackMetadata(updated)
@@ -393,7 +399,7 @@ fun MusicPanelOverlay(
                         onConfirm = {
                             val candidate = selectedCoverCandidate
                             val track = playbackState.currentTrack
-                            if (candidate != null && track != null) {
+                            if (candidate != null && track != null && track.id == coverTargetId) {
                                 val hasCover = track.albumArt != null || MusicMetadataCache.isValid(track.coverCachePath) || track.neteaseCoverUrl.isNotBlank()
                                 if (hasCover) {
                                     showCoverReplace = true
@@ -424,7 +430,7 @@ fun MusicPanelOverlay(
                         onConfirm = {
                             val candidate = selectedLyricsCandidate
                             val track = playbackState.currentTrack
-                            if (candidate != null && track != null) scope.launch {
+                            if (candidate != null && track != null && track.id == lyricsTargetId) scope.launch {
                                 val success = applyLyricsCandidate(context, playbackState, track, candidate)
                                 if (success) {
                                     showLyricsRefresh = false
@@ -450,6 +456,7 @@ fun MusicPanelOverlay(
                         onConfirm = {
                             val candidate = selectedCoverCandidate ?: return@CoverReplaceOverlay
                             val track = playbackState.currentTrack ?: return@CoverReplaceOverlay
+                            if (track.id != coverTargetId) return@CoverReplaceOverlay
                             scope.launch {
                                 coverSaveFailed = !applyCoverCandidate(context, playbackState, track, candidate)
                                 if (!coverSaveFailed) {
