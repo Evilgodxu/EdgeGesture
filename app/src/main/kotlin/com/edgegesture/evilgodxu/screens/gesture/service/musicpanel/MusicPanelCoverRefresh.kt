@@ -37,10 +37,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
 import com.edgegesture.evilgodxu.R
 
 @Composable
@@ -84,7 +87,10 @@ internal fun CoverRefreshOverlay(
                                 color = MaterialTheme.colorScheme.surfaceVariant
                             ) {
                                 AsyncImage(
-                                    model = candidate.coverUrl,
+                                    model = ImageRequest.Builder(LocalContext.current)
+                                        .data(candidate.coverUrl)
+                                        .diskCachePolicy(CachePolicy.DISABLED)
+                                        .build(),
                                     contentDescription = candidate.title,
                                     contentScale = ContentScale.Crop,
                                     modifier = Modifier.size(84.dp).clip(RoundedCornerShape(8.dp))
@@ -134,7 +140,15 @@ internal fun CoverReplaceOverlay(
                 Text(stringResource(R.string.music_panel_cover_replace_title), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(vertical = 18.dp)) {
                     AlbumArt(track = track, modifier = Modifier.size(96.dp).clip(RoundedCornerShape(10.dp)))
-                    AsyncImage(model = candidate.coverUrl, contentDescription = candidate.title, contentScale = ContentScale.Crop, modifier = Modifier.size(96.dp).clip(RoundedCornerShape(10.dp)))
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(candidate.coverUrl)
+                            .diskCachePolicy(CachePolicy.DISABLED)
+                            .build(),
+                        contentDescription = candidate.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(96.dp).clip(RoundedCornerShape(10.dp))
+                    )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha = .08f), onClick = onCancel) {

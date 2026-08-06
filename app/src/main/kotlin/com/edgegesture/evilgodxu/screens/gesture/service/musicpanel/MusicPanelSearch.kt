@@ -59,6 +59,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
 import com.edgegesture.evilgodxu.R
 import kotlinx.coroutines.launch
 
@@ -373,7 +375,10 @@ internal fun SearchResultRow(
             val coverModel = (result.coverThumbUrl ?: result.coverUrl)?.takeIf { it.isNotBlank() }
             if (coverModel != null) {
                 AsyncImage(
-                    model = coverModel,
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(coverModel)
+                        .diskCachePolicy(CachePolicy.DISABLED)
+                        .build(),
                     contentDescription = result.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),

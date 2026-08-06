@@ -1,6 +1,5 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
-import android.content.Context
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -35,7 +34,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Context
 import coil3.compose.AsyncImage
+import coil3.request.CachePolicy
+import coil3.request.ImageRequest
 import com.edgegesture.evilgodxu.R
 
 @Composable
@@ -44,6 +46,7 @@ internal fun LyricsRefreshOverlay(
     track: MusicTrack?,
     playbackState: MusicPlaybackState,
     selectedId: Long?,
+    context: Context,
     onCandidateSelected: (NeteaseSongSearchResult) -> Unit,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
@@ -79,7 +82,7 @@ internal fun LyricsRefreshOverlay(
                                 verticalArrangement = Arrangement.spacedBy(1.dp)
                             ) {
                                 Surface(shape = RoundedCornerShape(8.dp), border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null) {
-                                    AsyncImage(model = candidate.coverUrl, contentDescription = candidate.title, contentScale = ContentScale.Crop, modifier = Modifier.size(96.dp).clip(RoundedCornerShape(8.dp)))
+                                    AsyncImage(model = ImageRequest.Builder(context).data(candidate.coverUrl).diskCachePolicy(CachePolicy.DISABLED).build(), contentDescription = candidate.title, contentScale = ContentScale.Crop, modifier = Modifier.size(96.dp).clip(RoundedCornerShape(8.dp)))
                                 }
                                 Text(
                                     text = candidate.title,

@@ -138,7 +138,11 @@ internal object MusicMetadataCache {
     fun cleanupOrphanedMetadata(context: Context, referencedPaths: Set<String>) {
         val referenced = referencedPaths.filter(String::isNotBlank).toSet()
         listOf("covers_v2", "covers_original", "lyrics").forEach { directoryName ->
-            File(root(context), directoryName).listFiles().orEmpty().forEach { file ->
+            File(root(context), directoryName)
+                .takeIf { it.exists() }
+                ?.listFiles()
+                .orEmpty()
+                .forEach { file ->
                 if (file.isFile && file.absolutePath !in referenced) {
                     if (directoryName != "lyrics") removeCover(file.absolutePath)
                     file.delete()

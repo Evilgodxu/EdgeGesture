@@ -426,6 +426,7 @@ fun MusicPanelOverlay(
                         track = playbackState.currentTrack,
                         playbackState = playbackState,
                         selectedId = selectedLyricsCandidate?.id,
+                        context = context,
                         onCandidateSelected = { selectedLyricsCandidate = it },
                         onConfirm = {
                             val candidate = selectedLyricsCandidate

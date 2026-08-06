@@ -45,7 +45,7 @@ object CrashLogManager : Thread.UncaughtExceptionHandler {
         logDir = File(context.getExternalFilesDir(null), LOG_DIR_NAME).apply { mkdirs() }
         appVersion = runCatching {
             val info = context.packageManager.getPackageInfo(context.packageName, 0)
-            "${info.versionName} (${info.versionCode})"
+            "${info.versionName} (${info.longVersionCode})"
         }.getOrDefault("unknown")
 
         // 链式接管默认处理器，保留系统默认崩溃流程
