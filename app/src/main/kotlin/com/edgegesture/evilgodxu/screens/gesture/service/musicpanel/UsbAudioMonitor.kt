@@ -12,6 +12,7 @@ import android.media.AudioAttributes
 import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioManager
+import android.media.AudioMixerAttributes
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.CoroutineScope
@@ -241,42 +242,31 @@ class UsbAudioMonitor(
     companion object {
         private const val ACTION_USB_PERMISSION = "com.edgegesture.evilgodxu.USB_PERMISSION"
 
-        // USB 音频输出设备类型（AudioDeviceInfo.TYPE_* 常量，API 33+）
+        // USB 音频输出设备类型（TYPE_USB_* 均为 API 29 及以下常量，minSdk 34 可直接引用）
         private val usbAudioDeviceTypes = setOf(
             AudioDeviceInfo.TYPE_USB_DEVICE,
             AudioDeviceInfo.TYPE_USB_ACCESSORY,
             AudioDeviceInfo.TYPE_USB_HEADSET,
-            22, // AudioDeviceInfo.TYPE_USB_DAC (API 33+)
         )
 
         fun isUsbAudioDeviceType(type: Int): Boolean = type in usbAudioDeviceTypes
-
-        fun directPlaybackSupport(
-            context: Context,
-            sampleRate: Int = 48000,
-            channels: Int = 2,
-            encoding: Int = AudioFormat.ENCODING_PCM_16BIT,
-        ): Int {
-            val format = AudioFormat.Builder()
-                .setSampleRate(sampleRate)
-                .setEncoding(encoding)
-                .setChannelMask(
-                    if (channels == 1) AudioFormat.CHANNEL_OUT_MONO
-                    else AudioFormat.CHANNEL_OUT_STEREO
-                )
-                .build()
-            val attributes = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_MEDIA)
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                .build()
-            return AudioManager.getDirectPlaybackSupport(format, attributes)
-        }
 
         private val routeLock = Any()
         private var currentSampleRate = 48000
         private var currentChannels = 2
         private var currentEncoding = AudioFormat.ENCODING_PCM_16BIT
+
+        // 当前独占路由的目标设备；播放服务注册输出设置器前已启用独占时用于补设路由
+        @Volatile
+        private var activeUsbDevice: AudioDeviceInfo? = null
+
+        @Volatile
         var audioSinkDeviceSetter: ((AudioDeviceInfo?) -> Unit)? = null
+            set(value) {
+                field = value
+                // 服务在 onDestroy 时置空，此处仅补设非空设置器，避免重复路由
+                value?.invoke(activeUsbDevice)
+            }
 
         fun updatePlaybackFormat(sampleRate: Int, channels: Int, encoding: Int) {
             synchronized(routeLock) {
@@ -286,25 +276,82 @@ class UsbAudioMonitor(
             }
         }
 
+        /**
+         * 启用/关闭 USB 音频独占。
+         *
+         * 官方推荐做法（见 AOSP preferred-mixer-attr 文档）：
+         * 1. 通过 setPreferredDevice 将本应用音频路由到 USB 设备；
+         * 2. API 34+ 通过 setPreferredMixerAttributes(MIXER_BEHAVIOR_BIT_PERFECT)
+         *    请求系统按位完美模式输出（不混音、不重采样）直达 USB DAC。
+         *
+         * 注意：AudioManager.getDirectPlaybackSupport 只报告 offload/bitstream（编码直通）
+         * 支持情况，对普通 PCM 一律返回 DIRECT_PLAYBACK_NOT_SUPPORTED，
+         * 不能用作 PCM 独占的可行性判定。
+         */
         @JvmStatic
         fun setUsbExclusive(context: Context, enable: Boolean): Boolean {
             synchronized(routeLock) {
                 val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-                val usbDevice = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-                    .firstOrNull { isUsbAudioDeviceType(it.type) }
                 if (!enable) {
+                    activeUsbDevice?.let { clearBitPerfectMixerAttributes(audioManager, it) }
+                    activeUsbDevice = null
                     audioSinkDeviceSetter?.invoke(null)
                     return true
                 }
-                if (usbDevice == null || directPlaybackSupport(
-                        context,
-                        currentSampleRate,
-                        currentChannels,
-                        currentEncoding,
-                    ) == AudioManager.DIRECT_PLAYBACK_NOT_SUPPORTED
-                ) return false
+                val usbDevice = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+                    .firstOrNull { isUsbAudioDeviceType(it.type) }
+                    ?: return false
+                activeUsbDevice = usbDevice
+                // 官方位完美（独占）混音属性，minSdk 34 起直接可用
+                applyBitPerfectMixerAttributes(audioManager, usbDevice)
                 audioSinkDeviceSetter?.invoke(usbDevice)
                 return true
+            }
+        }
+
+        // 仅当 USB 设备恰好支持当前播放格式（采样率/位深/声道）的 BIT_PERFECT
+        // 输出时生效，避免格式不匹配被系统忽略或导致异常。
+        // MIXER_BEHAVIOR_BIT_PERFECT 为 API 34 常量，minSdk 34 起可直接使用。
+        private fun applyBitPerfectMixerAttributes(audioManager: AudioManager, device: AudioDeviceInfo) {
+            try {
+                val format = AudioFormat.Builder()
+                    .setSampleRate(currentSampleRate)
+                    .setEncoding(currentEncoding)
+                    .setChannelMask(
+                        if (currentChannels == 1) AudioFormat.CHANNEL_OUT_MONO
+                        else AudioFormat.CHANNEL_OUT_STEREO
+                    )
+                    .build()
+                val attributes = AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+                val matched = audioManager.getSupportedMixerAttributes(device).firstOrNull {
+                    it.mixerBehavior == AudioMixerAttributes.MIXER_BEHAVIOR_BIT_PERFECT &&
+                        it.format.sampleRate == format.sampleRate &&
+                        it.format.encoding == format.encoding &&
+                        it.format.channelMask == format.channelMask
+                }
+                if (matched != null) {
+                    audioManager.setPreferredMixerAttributes(attributes, device, matched)
+                }
+            } catch (e: Exception) {
+                CrashLogManager.logException("UsbAudioMonitor", "设置位完美混音属性失败", e)
+            }
+        }
+
+        // 仅使用 API 31 的 clearPreferredMixerAttributes，minSdk 34 可直接调用
+        private fun clearBitPerfectMixerAttributes(audioManager: AudioManager, device: AudioDeviceInfo) {
+            try {
+                audioManager.clearPreferredMixerAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build(),
+                    device
+                )
+            } catch (e: Exception) {
+                CrashLogManager.logException("UsbAudioMonitor", "清除位完美混音属性失败", e)
             }
         }
     }

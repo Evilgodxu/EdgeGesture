@@ -130,10 +130,8 @@
 | 属性 | 值 |
 | --- | --- |
 | applicationId | `com.edgegesture.evilgodxu` |
-| versionName | `3.1.0` |
-| versionCode | `14` |
-| compileSdk | `37`（Android 15 VanillaIceCream） |
-| minSdk | `33`（Android 13） |
+| compileSdk | `37`（Android 17） |
+| minSdk | `34`（Android 14） |
 | targetSdk | `37` |
 | NDK | arm64-v8a |
 | Java | 21 |
@@ -164,9 +162,3 @@ KEY_PASSWORD=your_key_password
 本项目采用 [AGPL-3.0](LICENSE) 许可证。
 
 ---
-
-<div align="center">
-
-Made with ❤️ by [Evilgodxu](https://github.com/Evilgodxu)
-
-</div>

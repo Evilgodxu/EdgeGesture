@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "com.edgegesture.evilgodxu"
-        minSdk = 33
+        minSdk = 34
         targetSdk = 37
         versionCode = 15
         versionName = "4.7.2"

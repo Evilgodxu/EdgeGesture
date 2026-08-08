@@ -68,6 +68,10 @@ class MusicPlaybackService : MediaSessionService() {
                     val channels = format.channelCount.takeIf { it > 0 } ?: 2
                     val encoding = if (format.pcmEncoding > 0) format.pcmEncoding else android.media.AudioFormat.ENCODING_PCM_16BIT
                     UsbAudioMonitor.updatePlaybackFormat(sampleRate, channels, encoding)
+                    // 独占模式下按新格式重新应用位完美混音属性（采样率/位深可能随曲目变化）
+                    if (state.isUsbExclusiveMode) {
+                        UsbAudioMonitor.setUsbExclusive(this@MusicPlaybackService, true)
+                    }
                     state.audioSignalPathFormat = AudioSignalPathFormat(
                         format = fileFormat ?: "PCM",
                         sampleRate = sampleRate,

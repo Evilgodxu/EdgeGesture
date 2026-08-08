@@ -73,7 +73,7 @@ internal fun HeaderRow(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .alpha(0.72f)
-                    .widthIn(max = 220.dp),
+                    .widthIn(max = 264.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -90,7 +90,7 @@ internal fun HeaderRow(
                         fontSize = 10.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.widthIn(max = 90.dp),
+                        modifier = Modifier.widthIn(max = 108.dp),
                     )
                 }
                 if (hasUsbDevice) {
@@ -106,7 +106,7 @@ internal fun HeaderRow(
                         fontSize = 10.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.widthIn(max = 90.dp),
+                        modifier = Modifier.widthIn(max = 108.dp),
                     )
                 }
             }

@@ -281,6 +281,8 @@ class AccessibilityActionExecutor(
         when {
             ContextCompat.checkSelfPermission(service, Manifest.permission.READ_MEDIA_AUDIO) ==
                     PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(service, Manifest.permission.BLUETOOTH_CONNECT) ==
+                    PackageManager.PERMISSION_GRANTED &&
                     Environment.isExternalStorageManager() -> showPanel()
             else -> {
                 // 每次启动面板都检查音频访问与全部文件访问权限并自动申请

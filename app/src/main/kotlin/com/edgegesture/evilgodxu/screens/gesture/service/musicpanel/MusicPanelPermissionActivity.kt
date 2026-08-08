@@ -13,14 +13,15 @@ import androidx.core.content.ContextCompat
 
 // 透明权限申请 Activity，用于从 Service/无障碍服务上下文动态申请权限：
 // 1. 申请 READ_MEDIA_AUDIO（音频文件访问）
-// 2. 音频权限申请完后，若未授予全部文件访问权限，自动跳转系统设置由用户手动授予
+// 2. 申请 BLUETOOTH_CONNECT（读取已连接蓝牙耳机名称）
+// 3. 音频权限申请完后，若未授予全部文件访问权限，自动跳转系统设置由用户手动授予
 class MusicPanelPermissionActivity : ComponentActivity() {
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {
-        // 音频权限申请流程结束（无论授予与否），继续检查全部文件访问权限
-        requestAllFilesAccessIfNeeded()
+        // 当前权限申请流程结束（无论授予与否），继续检查下一个权限
+        requestNextPermission()
     }
 
     // 音乐面板为高优先级悬浮窗，需等用户从系统设置返回后再展示，避免遮挡设置页
@@ -32,11 +33,7 @@ class MusicPanelPermissionActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        when {
-            hasAudioPermission() && hasAllFilesAccess() -> completeAndFinish()
-            !hasAudioPermission() -> permissionLauncher.launch(Manifest.permission.READ_MEDIA_AUDIO)
-            else -> launchAllFilesSettings()
-        }
+        requestNextPermission()
     }
 
     override fun onDestroy() {
@@ -44,20 +41,27 @@ class MusicPanelPermissionActivity : ComponentActivity() {
         MusicPanelPermissionBridge.clearPendingShowAction()
     }
 
+    // 链式申请缺失的权限：音频 → 蓝牙 → 全部文件访问
+    private fun requestNextPermission() {
+        when {
+            hasAudioPermission() && hasBluetoothPermission() && hasAllFilesAccess() -> completeAndFinish()
+            !hasAudioPermission() -> permissionLauncher.launch(Manifest.permission.READ_MEDIA_AUDIO)
+            !hasBluetoothPermission() -> permissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
+            else -> launchAllFilesSettings()
+        }
+    }
+
     private fun hasAudioPermission(): Boolean {
         return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_AUDIO) ==
                 PackageManager.PERMISSION_GRANTED
     }
 
-    private fun hasAllFilesAccess(): Boolean = Environment.isExternalStorageManager()
-
-    private fun requestAllFilesAccessIfNeeded() {
-        if (hasAllFilesAccess()) {
-            completeAndFinish()
-            return
-        }
-        launchAllFilesSettings()
+    private fun hasBluetoothPermission(): Boolean {
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) ==
+                PackageManager.PERMISSION_GRANTED
     }
+
+    private fun hasAllFilesAccess(): Boolean = Environment.isExternalStorageManager()
 
     private fun launchAllFilesSettings() {
         val intent = Intent(

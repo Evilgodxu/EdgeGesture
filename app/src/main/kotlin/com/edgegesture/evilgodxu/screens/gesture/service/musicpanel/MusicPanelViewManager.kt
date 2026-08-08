@@ -111,11 +111,12 @@ class MusicPanelViewManager(
         context = context,
         onHeadsetConnected = { deviceName, isNewConnection ->
             playbackState.isBluetoothHeadsetConnected = true
-            playbackState.bluetoothHeadsetName = deviceName
+            deviceName?.let { playbackState.bluetoothHeadsetName = it }
             refreshSignalPathState(playbackState)
-            if (isNewConnection) {
-                // 连接蓝牙耳机时自动降低媒体音量到 25%
+            if (isNewConnection && !playbackState.bluetoothVolumeInitialized) {
+                // 单次播放会话内首次连接蓝牙耳机时自动降低媒体音量到 25%
                 BluetoothHeadsetMonitor.reduceMediaVolume(context, 0.25f)
+                playbackState.bluetoothVolumeInitialized = true
             }
         },
         onHeadsetDisconnected = {
