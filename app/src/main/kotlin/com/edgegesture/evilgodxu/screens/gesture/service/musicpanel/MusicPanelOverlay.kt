@@ -135,10 +135,10 @@ fun MusicPanelOverlay(
                                 }
                                 showPlaylist -> showPlaylist = false
                                 showTimer -> showTimer = false
-                            showSoundEffects -> showSoundEffects = false
-                            showAudioSignalPath -> showAudioSignalPath = false
-                            showSettings -> showSettings = false
-                            showRename -> showRename = false
+                                showSoundEffects -> showSoundEffects = false
+                                showAudioSignalPath -> showAudioSignalPath = false
+                                showSettings -> showSettings = false
+                                showRename -> showRename = false
                             playbackState.showSearchResults -> {
                                 playbackState.showSearchResults = false
                                 playbackState.errorMsg = null
