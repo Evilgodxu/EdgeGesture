@@ -387,7 +387,7 @@ class AccessibilityActionExecutor(
     fun invalidateBlacklistCache() {
     }
 
-    private fun launchApp(packageName: String): Boolean {
+    fun launchApp(packageName: String): Boolean {
         return try {
             val launchIntent = service.packageManager.getLaunchIntentForPackage(packageName)
             if (launchIntent != null) {

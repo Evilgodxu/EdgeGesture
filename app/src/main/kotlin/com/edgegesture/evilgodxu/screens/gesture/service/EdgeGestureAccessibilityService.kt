@@ -390,11 +390,11 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             val blockAction = Runnable {
                 pendingBlockAction = null
                 if (!isAvailable() || currentPackage != targetPackage) return@Runnable
-                // 执行拦截：切换应用或返回桌面
+                // 执行拦截：返回当前应用（直接切回启动者应用）或返回桌面
                 if (isLauncherSystemApp) {
                     performGlobalAction(GLOBAL_ACTION_HOME)
                 } else if (launcherPackage != null && launcherPackage != packageName) {
-                    actionExecutor.performAction(GestureAction.LAST_APP, settings)
+                    actionExecutor.launchApp(launcherPackage)
                 } else {
                     performGlobalAction(GLOBAL_ACTION_HOME)
                 }
