@@ -51,6 +51,8 @@ class BluetoothHeadsetMonitor(
                 BluetoothProfile.A2DP -> a2dpProxy = null
                 BluetoothProfile.HEADSET -> headsetProxy = null
             }
+            // Profile 断开时音频设备回调可能尚未触发，主动复核当前路由状态。
+            checkExisting()
         }
     }
 
@@ -231,9 +233,12 @@ class BluetoothHeadsetMonitor(
     }
 
     private fun handleDisconnected() {
-        if (!isHeadsetConnected) return
+        val wasConnected = isHeadsetConnected
         isHeadsetConnected = false
-        onHeadsetDisconnected()
+        // 即使监听器状态未及时记录为已连接，也要通知面板清理可能残留的设备信息。
+        if (wasConnected || registered) {
+            onHeadsetDisconnected()
+        }
     }
 
     companion object {

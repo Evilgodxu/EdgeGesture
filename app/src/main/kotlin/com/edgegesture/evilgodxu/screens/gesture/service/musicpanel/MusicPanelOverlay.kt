@@ -128,9 +128,13 @@ fun MusicPanelOverlay(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = {
-                        when {
-                            showPlaylist -> showPlaylist = false
-                            showTimer -> showTimer = false
+                            when {
+                                showDeleteConfirm -> {
+                                    showDeleteConfirm = false
+                                    deleteTargetTrack = null
+                                }
+                                showPlaylist -> showPlaylist = false
+                                showTimer -> showTimer = false
                             showSoundEffects -> showSoundEffects = false
                             showAudioSignalPath -> showAudioSignalPath = false
                             showSettings -> showSettings = false
