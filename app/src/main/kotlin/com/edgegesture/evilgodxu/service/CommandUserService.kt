@@ -22,9 +22,12 @@ class CommandUserService : ICommandService.Stub() {
 
         /**
          * 构建 UserService 启动参数
+         * 注意：必须设置 processNameSuffix，否则 13.1.5 的 UserServiceArgs 在绑定时会因
+         * processName 为 null 抛 "process name suffix must not be null"
          */
         fun createServiceArgs(): Shizuku.UserServiceArgs {
             return Shizuku.UserServiceArgs(COMPONENT_NAME)
+                .processNameSuffix("user_service")
         }
     }
 
@@ -52,16 +55,6 @@ class CommandUserService : ICommandService.Stub() {
         } catch (e: Exception) {
             CrashLogManager.logException("CommandUserService", "执行 shell 命令失败", e)
             "Exception: ${e.message}"
-        }
-    }
-
-    override fun forceStopPackage(packageName: String): Boolean {
-        return try {
-            val result = executeCommand("am force-stop $packageName")
-            !result.startsWith("Error") && !result.startsWith("Exception")
-        } catch (e: Exception) {
-            CrashLogManager.logException("CommandUserService", "强制停止应用失败", e)
-            false
         }
     }
 

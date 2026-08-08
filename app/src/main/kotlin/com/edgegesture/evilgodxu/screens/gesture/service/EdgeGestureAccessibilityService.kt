@@ -471,19 +471,14 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         launcherKillCount[launcherPackage] = count + 1
     }
 
+    // 与系统最近任务滑掉一致：通过 Shizuku 移除该应用的任务，失败记录日志
     private fun killAppProcess(packageName: String) {
-        // 优先使用 Shizuku 执行 force-stop
         if (ShizukuManager.isAvailable()) {
-            ShizukuManager.forceStopPackage(packageName)
-            return
-        }
-
-        // 降级方案：使用 ActivityManager
-        try {
-            val am = getSystemService(Context.ACTIVITY_SERVICE) as android.app.ActivityManager
-            am.killBackgroundProcesses(packageName)
-        } catch (e: Exception) {
-            CrashLogManager.logException("EdgeGestureAccessibilityService", "终止应用进程失败", e)
+            if (!ShizukuManager.removePackageTasks(packageName)) {
+                CrashLogManager.logException("EdgeGestureAccessibilityService", "移除系统最近任务失败: $packageName")
+            }
+        } else {
+            CrashLogManager.logException("EdgeGestureAccessibilityService", "Shizuku 不可用，无法移除系统最近任务: $packageName")
         }
     }
 

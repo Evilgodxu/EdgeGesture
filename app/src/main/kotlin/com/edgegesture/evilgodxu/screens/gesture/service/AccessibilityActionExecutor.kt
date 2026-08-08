@@ -32,6 +32,8 @@ import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcut
 import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcutFreeform
 import com.edgegesture.evilgodxu.data.permission.PermissionMonitor
 import com.edgegesture.evilgodxu.data.permission.PermissionType
+import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
+import com.edgegesture.evilgodxu.data.shizuku.ShizukuState
 import com.edgegesture.evilgodxu.log.CrashLogManager
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelPermissionCallback
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelViewManager
@@ -45,12 +47,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import rikka.shizuku.Shizuku
 
 class AccessibilityActionExecutor(
     private val service: AccessibilityService
@@ -77,7 +82,31 @@ class AccessibilityActionExecutor(
 
     @Volatile private var blacklistSnapshot: Set<String> = emptySet()
 
+    // 任务面板 Shizuku 权限申请相关
+    private val taskPanelShizukuRequestCode = 2001
+    private var taskPanelPermissionListener: Shizuku.OnRequestPermissionResultListener? = null
+    // 等待 Shizuku 权限结果的协程
+    private val permissionWaiters = mutableListOf<CompletableDeferred<Boolean>>()
+
     init {
+        // 监听任务面板 Shizuku 权限申请结果
+        val listener = Shizuku.OnRequestPermissionResultListener { requestCode, grantResult ->
+            if (requestCode == taskPanelShizukuRequestCode) {
+                val granted = grantResult == PackageManager.PERMISSION_GRANTED
+                if (granted) {
+                    CrashLogManager.logException("AccessibilityActionExecutor", "任务面板 Shizuku 权限已授予")
+                } else {
+                    CrashLogManager.logException("AccessibilityActionExecutor", "任务面板 Shizuku 权限被拒绝，滑掉时仅清理任务面板历史")
+                }
+                synchronized(permissionWaiters) {
+                    permissionWaiters.forEach { it.complete(granted) }
+                    permissionWaiters.clear()
+                }
+            }
+        }
+        ShizukuManager.addPermissionListener(listener)
+        taskPanelPermissionListener = listener
+
         executorScope.launch {
             (service as Context).gestureDataStore.data
                 .map { prefs -> prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] ?: emptySet() }
@@ -289,6 +318,33 @@ class AccessibilityActionExecutor(
         pendingTaskPanelShow = false
     }
 
+    // 申请 Shizuku 权限并等待结果：已授权直接返回 true，不可用/拒绝/超时返回 false
+    private suspend fun awaitShizukuPermission(): Boolean {
+        if (ShizukuManager.isAvailable()) return true
+        when (ShizukuManager.state.value) {
+            is ShizukuState.NotInstalled -> {
+                CrashLogManager.logException("AccessibilityActionExecutor", "任务面板：Shizuku 未安装，滑掉时仅清理任务面板历史")
+                return false
+            }
+            is ShizukuState.NotRunning -> {
+                CrashLogManager.logException("AccessibilityActionExecutor", "任务面板：Shizuku 未运行，滑掉时仅清理任务面板历史")
+                return false
+            }
+            is ShizukuState.Denied, is ShizukuState.Waiting -> {}
+            else -> return false
+        }
+        val deferred = CompletableDeferred<Boolean>()
+        synchronized(permissionWaiters) { permissionWaiters.add(deferred) }
+        ShizukuManager.requestPermission(taskPanelShizukuRequestCode)
+        // 仅当确实发起了新申请（进入 Waiting，系统会弹窗）才等待结果；
+        // 此前拒绝过时系统不再弹窗，立即按失败处理，避免面板卡住
+        if (ShizukuManager.state.value is ShizukuState.Waiting) {
+            return withTimeoutOrNull(10_000) { deferred.await() } ?: false
+        }
+        synchronized(permissionWaiters) { permissionWaiters.remove(deferred) }
+        return false
+    }
+
     private fun showTaskPanel() {
         if (taskPanelViewManager != null) { dismissTaskPanel(); return }
         if (pendingTaskPanelShow) {
@@ -301,6 +357,8 @@ class AccessibilityActionExecutor(
             ?: currentApp
             ?: service.packageName
         taskPanelLoadJob = executorScope.launch {
+            // 先申请 Shizuku 权限（等待授权结果），再显示任务面板
+            awaitShizukuPermission()
             val blacklist = blacklistSnapshot
             val packages = taskPanelHistory
                 .asReversed()
@@ -325,7 +383,7 @@ class AccessibilityActionExecutor(
                     service, apps, currentPackage, currentPackage,
                     { launchApp(it) },
                     { freeformAppLauncher.launch(it, useFreeform = true) },
-                    { packageName -> taskPanelHistory.removeAll { it == packageName } },
+                    { onTaskPanelSwipeAway(it) },
                     { taskPanelViewManager = null; pendingTaskPanelShow = false }
                 ).also {
                     taskPanelLoadJob = null
@@ -337,8 +395,31 @@ class AccessibilityActionExecutor(
         }
     }
 
+    // 任务面板卡片被滑掉/清理后：从历史移除，并尽力结束对应应用的进程
+    private fun onTaskPanelSwipeAway(packageName: String) {
+        taskPanelHistory.removeAll { it == packageName }
+        if (packageName == service.packageName) return
+        executorScope.launch { endAppProcess(packageName) }
+    }
+
+    // 结束第三方应用进程：与系统最近任务滑掉一致，通过 Shizuku 移除该应用的任务，
+    // 否则仅清理任务面板历史栈；失败记录日志
+    private suspend fun endAppProcess(packageName: String) {
+        if (!ShizukuManager.isAvailable()) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "任务面板滑掉后 Shizuku 不可用，仅清理任务面板历史: $packageName")
+            return
+        }
+        if (ShizukuManager.removePackageTasks(packageName)) {
+            CrashLogManager.logException("AccessibilityActionExecutor", "任务面板滑掉后已从系统最近任务移除: $packageName")
+        } else {
+            CrashLogManager.logException("AccessibilityActionExecutor", "任务面板滑掉后移除系统最近任务失败，仅清理任务面板历史: $packageName")
+        }
+    }
+
     // 清理资源
     fun cleanup() {
+        taskPanelPermissionListener?.let { ShizukuManager.removePermissionListener(it) }
+        taskPanelPermissionListener = null
         dismissExpandPanel()
         dismissMusicPanel()
         dismissTaskPanel()

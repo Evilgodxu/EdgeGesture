@@ -171,25 +171,11 @@ object ShizukuManager {
         }
     }
 
-    // 强制停止应用
-    fun forceStopPackage(packageName: String): Result<String> {
-        val service = commandService
-        return if (service != null && service.isAlive) {
-            try {
-                val success = service.forceStopPackage(packageName)
-                if (success) {
-                    Result.success("Package $packageName force stopped")
-                } else {
-                    Result.failure(Exception("Failed to force stop package"))
-                }
-            } catch (e: Exception) {
-                CrashLogManager.logException("ShizukuManager", "强制停止应用失败", e)
-                Result.failure(e)
-            }
-        } else {
-            bindUserService()
-            Result.failure(IllegalStateException("CommandService not connected"))
-        }
+    // 结束指定应用（等效系统最近任务滑掉，需 shell 权限）：
+    // am stop-app 即系统 UI 滑掉任务时调用的接口（REASON_USER_REQUESTED），
+    // 会终止该应用进程与前台服务；无 dumpsys 输出格式依赖，跨版本稳定
+    fun removePackageTasks(packageName: String): Boolean {
+        return executeCommand("am stop-app $packageName").isSuccess
     }
 
     private fun isShizukuInstalled(context: Context): Boolean {
