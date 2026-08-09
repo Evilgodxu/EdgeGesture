@@ -133,8 +133,12 @@ internal object MusicMetadataWriter {
     }
 
     private fun apicFrame(out: ByteArrayOutputStream, cover: ByteArray, version: Int) {
-        val encoding = if (version >= 4) 3 else 1
-        val data = byteArrayOf(encoding.toByte()) + sniffMimeType(cover).toByteArray() + byteArrayOf(0, 3, 0) + cover
+        val mime = sniffMimeType(cover).toByteArray(StandardCharsets.ISO_8859_1)
+        val data = if (version >= 4) {
+            byteArrayOf(3) + mime + byteArrayOf(0, 3, 0) + cover
+        } else {
+            byteArrayOf(1) + mime + byteArrayOf(0) + byteArrayOf(3) + byteArrayOf(0, 0) + cover
+        }
         frame(out, "APIC", data, version)
     }
 
