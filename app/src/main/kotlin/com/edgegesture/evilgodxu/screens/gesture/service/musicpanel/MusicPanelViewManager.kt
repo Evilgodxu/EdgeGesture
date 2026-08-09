@@ -31,6 +31,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.log.CrashLogManager
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -131,6 +132,9 @@ class MusicPanelViewManager(
     )
     private val externalTrackMutex = Mutex()
     private val scanMutex = Mutex()
+    // 封面/歌词后台提取的互斥锁：show / 刷新扫描 / 媒体变更三个入口都会并发触发 enrich，
+    // 不加锁会导致在线封面在本地封面尚未提交时抢先匹配，把有内嵌封面的歌永久变成在线封面
+    private val enrichMutex = Mutex()
     private var initialization: Deferred<Unit>? = null
     private var mediaObserverRegistered = false
     private var refreshJob: Job? = null
@@ -269,7 +273,7 @@ class MusicPanelViewManager(
                     restoreCurrentTrack()
                 }
                 // 封面后台加载，不阻塞初始化
-                managerScope.launch { enrichPlaylistMetadata() }
+                managerScope.launch { enrichAndCleanupMetadata() }
             }
             withContext(Dispatchers.Main) {
                 playbackState.syncPlaybackState()
@@ -442,10 +446,17 @@ class MusicPanelViewManager(
     /** 后台加载本地歌曲封面（从 MediaStore 提取），不阻塞主流程 */
     private suspend fun enrichLocalCovers() {
         val tracks = withContext(Dispatchers.Main) { playbackState.playlist.toList() }
-        // 仅筛选本地/外部音频且没有缓存封面的：在线歌曲跳过（使用在线封面 URL）
+        // 本地音频即使带自动匹配的在线封面也允许重试本地提取，修复在线封面文件缺失/损坏导致的永久在线匹配；
+        // 纯在线歌曲（无本地文件）不参与本地提取，沿用在线封面
         val needCover = tracks.filter { track ->
-            track.neteaseCoverUrl.isBlank() &&
-                !MusicMetadataCache.isCurrentCoverPath(track.coverCachePath)
+            val path = track.coverCachePath
+            val fileId = File(path).nameWithoutExtension.toLongOrNull()
+            // 封面缓存按歌曲身份归属（文件名为 track.id，在线/手动刷新的封面为 neteaseId）才视为有效并跳过；
+            // 旧版本按专辑共享缓存，同一专辑内不同歌曲的封面会互相覆盖，这类共享文件需重新提取为歌曲独立封面
+            val coverOwned = fileId != null &&
+                MusicMetadataCache.isCurrentCoverPath(path) &&
+                (fileId == track.id || (track.neteaseId > 0L && fileId == track.neteaseId))
+            !coverOwned && (track.path.isNotBlank() || track.neteaseCoverUrl.isBlank())
         }
         if (needCover.isEmpty()) return
         val updates = coroutineScope {
@@ -459,14 +470,10 @@ class MusicPanelViewManager(
                         val cover = result.bitmap
                         try {
                             val oldPath = track.coverCachePath
-                            // 内嵌封面按歌曲身份缓存，专辑封面/缩略图按专辑缓存（无专辑则回退歌曲身份），
-                            // 避免无专辑或多内嵌封面的歌曲共享同一缓存文件导致封面串歌
-                            val cacheId = when (result.source) {
-                                MusicScanner.AlbumArtSource.EMBEDDED -> track.id
-                                else -> track.albumId.takeIf { it > 0 } ?: track.id
-                            }
-                            val coverPath = MusicMetadataCache.saveCover(context, cacheId, cover).orEmpty()
-                            // 清理旧封面文件（如 covers_original 中的回退文件）
+                            // 封面一律按歌曲身份缓存：内嵌封面/缩略图/专辑封面统一归属单曲，
+                            // 避免按专辑共享缓存文件导致同一专辑内歌曲封面互相覆盖
+                            val coverPath = MusicMetadataCache.saveCover(context, track.id, cover).orEmpty()
+                            // 清理旧封面文件（如旧版专辑共享缓存、covers_original 中的回退文件）
                             if (oldPath.isNotBlank() && oldPath != coverPath) {
                                 MusicMetadataCache.deleteCoverFile(oldPath)
                             }
@@ -487,7 +494,7 @@ class MusicPanelViewManager(
         }
     }
 
-    private suspend fun enrichAndCleanupMetadata() {
+    private suspend fun enrichAndCleanupMetadata() = enrichMutex.withLock {
         enrichPlaylistMetadata()
         val referenced = withContext(Dispatchers.Main) {
             playbackState.playlist.flatMap { listOf(it.coverCachePath, it.lyricCachePath) }.toSet()
