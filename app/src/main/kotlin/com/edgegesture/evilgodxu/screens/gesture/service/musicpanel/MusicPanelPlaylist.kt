@@ -188,7 +188,7 @@ internal fun PlaylistRow(
                 .size(28.dp)
                 .clip(RoundedCornerShape(6.dp))
         ) {
-            AlbumArt(track = track, modifier = Modifier.fillMaxSize())
+            PlaylistArt(track = track, modifier = Modifier.fillMaxSize())
             if (isActive && isPlaying) {
                 Box(
                     modifier = Modifier

@@ -450,13 +450,20 @@ class MusicPanelViewManager(
             needCover.map { track ->
                 async<MusicTrack?>(Dispatchers.IO) {
                     try {
-                        val cover = MusicScanner.loadAlbumArt(
+                        val result = MusicScanner.loadAlbumArt(
                             context, context.contentResolver,
                             Uri.parse(track.audioUri), track.albumId, track.path
                         ) ?: return@async null
+                        val cover = result.bitmap
                         val coverBytes = MusicMetadataCache.bitmapToBytes(cover) ?: return@async null
                         val oldPath = track.coverCachePath
-                        val coverPath = MusicMetadataCache.saveCover(context, track.albumId, coverBytes).orEmpty()
+                        // 内嵌封面按歌曲身份缓存，专辑封面/缩略图按专辑缓存（无专辑则回退歌曲身份），
+                        // 避免无专辑或多内嵌封面的歌曲共享同一缓存文件导致封面串歌
+                        val cacheId = when (result.source) {
+                            MusicScanner.AlbumArtSource.EMBEDDED -> track.id
+                            else -> track.albumId.takeIf { it > 0 } ?: track.id
+                        }
+                        val coverPath = MusicMetadataCache.saveCover(context, cacheId, coverBytes).orEmpty()
                         // 清理旧封面文件（如 covers_original 中的回退文件）
                         if (oldPath.isNotBlank() && oldPath != coverPath) {
                             MusicMetadataCache.deleteCoverFile(oldPath)
@@ -517,11 +524,10 @@ class MusicPanelViewManager(
                         val match = NeteaseMusicApi.match(track.title, track.artist, track.duration)
                             ?: return@async null
                         val coverBytes = NeteaseMusicApi.loadCoverBytes(match.coverUrl.orEmpty())
+                            ?: return@async null // 下载失败时保留已有缓存与匹配信息，避免下次重复请求
                         val oldPath = track.coverCachePath
-                        val coverPath = coverBytes?.let {
-                            MusicMetadataCache.saveCover(context, match.id, it)
-                        }.orEmpty()
-                        val cover = MusicMetadataCache.loadCover(coverPath)
+                        val coverPath = MusicMetadataCache.saveCover(context, match.id, coverBytes).orEmpty()
+                        val cover = MusicMetadataCache.loadCover(coverPath) ?: return@async null
                         if (oldPath.isNotBlank() && oldPath != coverPath) {
                             MusicMetadataCache.deleteCoverFile(oldPath)
                         }

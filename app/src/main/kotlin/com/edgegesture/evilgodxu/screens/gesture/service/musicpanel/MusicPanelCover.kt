@@ -54,6 +54,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import coil3.compose.AsyncImage
 import com.edgegesture.evilgodxu.R
+import java.io.File
 
 @Composable
 internal fun CurrentCover(
@@ -123,8 +124,11 @@ internal fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
             modifier = modifier.background(Color.Black),
         )
     } else {
-        val model = track?.coverCachePath?.takeIf { MusicMetadataCache.isValid(it) }
-            ?: track?.neteaseCoverUrl?.takeIf { it.isNotBlank() }
+        // 封面缓存为绝对路径字符串，包装成 File 才能被 Coil 识别（直接传路径会丢失 scheme）
+        val coverFile = track?.coverCachePath
+            ?.takeIf { MusicMetadataCache.isValid(it) }
+            ?.let { File(it) }
+        val model: Any? = coverFile ?: track?.neteaseCoverUrl?.takeIf { it.isNotBlank() }
         if (model != null) {
             AsyncImage(
                 model = model,
@@ -145,6 +149,46 @@ internal fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
                     modifier = Modifier.size(24.dp)
                 )
             }
+        }
+    }
+}
+
+@Composable
+internal fun PlaylistArt(track: MusicTrack?, modifier: Modifier = Modifier) {
+    // 列表行小图：优先磁盘缓存文件与在线缩略 URL，避免加载全尺寸封面
+    val coverFile = track?.coverCachePath
+        ?.takeIf { MusicMetadataCache.isValid(it) }
+        ?.let { File(it) }
+    val thumbUrl = track?.neteaseCoverUrl
+        ?.takeIf { it.isNotBlank() }
+        ?.let { NeteaseMusicApi.thumbUrl(it) }
+    val model: Any? = coverFile ?: thumbUrl
+    if (model != null) {
+        AsyncImage(
+            model = model,
+            contentDescription = track?.title,
+            contentScale = ContentScale.Crop,
+            modifier = modifier.background(Color.Black),
+        )
+    } else if (track?.albumArt != null) {
+        Image(
+            bitmap = track.albumArt.asImageBitmap(),
+            contentDescription = track.title,
+            contentScale = ContentScale.Crop,
+            modifier = modifier.background(Color.Black),
+        )
+    } else {
+        Box(
+            modifier = modifier
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.MusicNote,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(12.dp)
+            )
         }
     }
 }

@@ -18,12 +18,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -85,6 +87,7 @@ internal fun LocalCoverOverlay(
     visible: Boolean,
     playbackState: MusicPlaybackState,
     selected: RecentCover?,
+    saving: Boolean,
     onSelected: (RecentCover) -> Unit,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
@@ -116,7 +119,19 @@ internal fun LocalCoverOverlay(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.music_panel_rename_cancel), modifier = Modifier.clickable(onClick = onCancel).padding(12.dp))
-            Text(stringResource(R.string.music_panel_rename_confirm), color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable { if (selected != null) onConfirm() }.padding(12.dp))
+            Box(modifier = Modifier.clickable(enabled = selected != null && !saving) { if (selected != null) onConfirm() }.padding(12.dp)) {
+                Text(
+                    stringResource(R.string.music_panel_rename_confirm),
+                    color = if (saving) Color.Transparent else MaterialTheme.colorScheme.primary
+                )
+                if (saving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center).size(18.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
         }
     }
 }

@@ -308,7 +308,7 @@ internal object NeteaseMusicApi {
     }
 
     // CDN 缩略图 URL，与 QPlayer 的 thumbUrl() 一致：追加 ?param=128y128
-    private fun thumbUrl(coverUrl: String): String {
+    internal fun thumbUrl(coverUrl: String): String {
         return coverUrl + if (coverUrl.contains("?")) "&param=128y128" else "?param=128y128"
     }
 

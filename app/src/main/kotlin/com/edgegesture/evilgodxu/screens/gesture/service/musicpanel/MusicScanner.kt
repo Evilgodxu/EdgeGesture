@@ -17,6 +17,14 @@ import kotlinx.coroutines.withContext
 // 本地音乐扫描器（基于 MediaStore）
 object MusicScanner {
 
+    // 封面来源，用于决定缓存文件归属：内嵌封面属于歌曲，专辑封面/缩略图属于专辑
+    internal enum class AlbumArtSource { EMBEDDED, ALBUM, THUMBNAIL }
+
+    internal data class AlbumArtResult(
+        val bitmap: Bitmap,
+        val source: AlbumArtSource,
+    )
+
     suspend fun fromUri(context: Context, uri: Uri): MusicTrack? = withContext(Dispatchers.IO) {
         val retriever = MediaMetadataRetriever()
         try {
@@ -121,23 +129,23 @@ object MusicScanner {
         audioUri: Uri,
         albumId: Long,
         fallbackPath: String
-    ): Bitmap? {
-        extractEmbeddedArt(context, audioUri)?.let { return it }
+    ): AlbumArtResult? {
+        extractEmbeddedArt(context, audioUri)?.let { return AlbumArtResult(it, AlbumArtSource.EMBEDDED) }
         if (albumId > 0) {
             try {
                 val uri = Uri.parse("content://media/external/audio/albumart/$albumId")
                 contentResolver.openInputStream(uri)?.use { input ->
-                    BitmapFactory.decodeStream(input)?.let { return it }
+                    BitmapFactory.decodeStream(input)?.let { return AlbumArtResult(it, AlbumArtSource.ALBUM) }
                 }
             } catch (e: Exception) {
                 CrashLogManager.logException("MusicScanner", "读取专辑封面失败", e)
             }
         }
         fallbackPath.takeIf { it.isNotBlank() }?.let { path ->
-            extractEmbeddedArt(path)?.let { return it }
+            extractEmbeddedArt(path)?.let { return AlbumArtResult(it, AlbumArtSource.EMBEDDED) }
         }
         return try {
-            contentResolver.loadThumbnail(audioUri, Size(256, 256), null)
+            AlbumArtResult(contentResolver.loadThumbnail(audioUri, Size(256, 256), null), AlbumArtSource.THUMBNAIL)
         } catch (e: Exception) {
             CrashLogManager.logException("MusicScanner", "加载缩略图封面失败", e)
             null

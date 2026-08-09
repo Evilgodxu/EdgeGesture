@@ -105,6 +105,7 @@ fun MusicPanelOverlay(
     var showCoverReplace by remember { mutableStateOf(false) }
     var selectedCoverCandidate by remember { mutableStateOf<NeteaseSongSearchResult?>(null) }
     var coverSaveFailed by remember { mutableStateOf(false) }
+    var coverSaving by remember { mutableStateOf(false) }
     var showLyricsRefresh by remember { mutableStateOf(false) }
     var selectedLyricsCandidate by remember { mutableStateOf<NeteaseSongSearchResult?>(null) }
     var coverTargetId by remember { mutableStateOf<Long?>(null) }
@@ -405,16 +406,22 @@ fun MusicPanelOverlay(
                         visible = showLocalCover,
                         playbackState = playbackState,
                         selected = selectedLocalCover,
+                        saving = coverSaving,
                         onSelected = { selectedLocalCover = it },
                         onConfirm = {
                             val cover = selectedLocalCover
                             val track = playbackState.currentTrack
-                            if (cover != null && track != null && track.id == coverTargetId) scope.launch {
-                                if (applyLocalCover(context, playbackState, track, cover)) {
-                                    showLocalCover = false
-                                    selectedLocalCover = null
-                                } else {
-                                    coverSaveFailed = true
+                            if (cover != null && track != null && track.id == coverTargetId) {
+                                coverSaving = true
+                                coverSaveFailed = false
+                                scope.launch {
+                                    if (applyLocalCover(context, playbackState, track, cover)) {
+                                        showLocalCover = false
+                                        selectedLocalCover = null
+                                    } else {
+                                        coverSaveFailed = true
+                                    }
+                                    coverSaving = false
                                 }
                             }
                         },
@@ -431,6 +438,7 @@ fun MusicPanelOverlay(
                         playbackState = playbackState,
                         context = context,
                         selectedId = selectedCoverCandidate?.id,
+                        saving = coverSaving,
                         onCandidateSelected = { selectedCoverCandidate = it },
                         onConfirm = {
                             val candidate = selectedCoverCandidate
@@ -440,12 +448,15 @@ fun MusicPanelOverlay(
                                 if (hasCover) {
                                     showCoverReplace = true
                                 } else {
+                                    coverSaving = true
+                                    coverSaveFailed = false
                                     scope.launch {
                                         coverSaveFailed = !applyCoverCandidate(context, playbackState, track, candidate)
                                         if (!coverSaveFailed) {
                                             showCoverRefresh = false
                                             selectedCoverCandidate = null
                                         }
+                                        coverSaving = false
                                     }
                                 }
                             }
@@ -490,10 +501,13 @@ fun MusicPanelOverlay(
                         visible = showCoverReplace,
                         track = playbackState.currentTrack,
                         candidate = selectedCoverCandidate,
+                        saving = coverSaving,
                         onConfirm = {
                             val candidate = selectedCoverCandidate ?: return@CoverReplaceOverlay
                             val track = playbackState.currentTrack ?: return@CoverReplaceOverlay
                             if (track.id != coverTargetId) return@CoverReplaceOverlay
+                            coverSaving = true
+                            coverSaveFailed = false
                             scope.launch {
                                 coverSaveFailed = !applyCoverCandidate(context, playbackState, track, candidate)
                                 if (!coverSaveFailed) {
@@ -501,6 +515,7 @@ fun MusicPanelOverlay(
                                     showCoverRefresh = false
                                     selectedCoverCandidate = null
                                 }
+                                coverSaving = false
                             }
                         },
                         onCancel = { showCoverReplace = false }

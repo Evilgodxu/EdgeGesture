@@ -1,6 +1,8 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaScannerConnection
 import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.Dispatchers
@@ -285,7 +287,10 @@ internal object MusicMetadataWriter {
     }
 
     private data class Mp4Atom(val type: String, var data: ByteArray, val children: MutableList<Mp4Atom>?) {
-        fun build(): ByteArray { val body = children?.joinToByteArray() ?: data; return intBytes(body.size + 8) + type.toByteArray(StandardCharsets.ISO_8859_1) + body }
+        fun build(): ByteArray {
+            val body = if (children != null) data + children.joinToByteArray() else data
+            return intBytes(body.size + 8) + type.toByteArray(StandardCharsets.ISO_8859_1) + body
+        }
 
         fun replaceMetadata(title: String?, artist: String?, cover: ByteArray?): Mp4Atom {
             if (type == "moov") {
@@ -295,6 +300,9 @@ internal object MusicMetadataWriter {
                 val meta = children?.firstOrNull { it.type == "meta" }
                 if (meta != null) meta.replaceMetadata(title, artist, cover) else children?.add(metaAtom(title, artist, cover))
             } else if (type == "meta") {
+                if (children?.none { it.type == "hdlr" } == true) {
+                    children.add(0, hdlrAtom())
+                }
                 val ilst = children?.firstOrNull { it.type == "ilst" }
                 if (ilst != null) {
                     ilst.replaceItems(title, artist, cover)
@@ -331,14 +339,15 @@ internal object MusicMetadataWriter {
         }
 
         private fun replaceItems(title: String?, artist: String?, cover: ByteArray?) {
+            val mp4Cover = cover?.let { toMp4Cover(it) }
             val kept = children.orEmpty().filterNot {
                 (title != null && it.type == "©nam") ||
                     (artist != null && it.type == "©ART") ||
-                    (cover != null && it.type == "covr")
+                    (mp4Cover != null && it.type == "covr")
             }.toMutableList()
             if (title != null) kept.add(dataAtom("©nam", title.toByteArray()))
             if (artist != null) kept.add(dataAtom("©ART", artist.toByteArray()))
-            if (cover != null) kept.add(dataAtom("covr", cover, if (sniffMimeType(cover) == "image/png") 14 else 13))
+            if (mp4Cover != null) kept.add(dataAtom("covr", mp4Cover.first, mp4Cover.second))
             children?.clear(); children?.addAll(kept)
         }
 
@@ -352,20 +361,36 @@ internal object MusicMetadataWriter {
                 if (start + 8 > end) return null
                 val size = int32(bytes, start); if (size < 8 || start + size > end) return null
                 val type = String(bytes, start + 4, 4, StandardCharsets.ISO_8859_1); val payloadStart = start + 8; val payloadEnd = start + size
-                val container = type == "moov" || type == "udta" || type == "meta" || type == "ilst" || type == "©nam" || type == "©ART" || type == "covr"
+                // trak/mdia/minf/stbl 按容器解析，调整 stco/co64 时才能遍历到内部的 chunk 偏移
+                val container = type == "moov" || type == "trak" || type == "mdia" || type == "minf" || type == "stbl" ||
+                    type == "udta" || type == "meta" || type == "ilst" || type == "©nam" || type == "©ART" || type == "covr"
                 if (!container) return Mp4Atom(type, bytes.copyOfRange(payloadStart, payloadEnd), null)
                 val head = if (type == "meta") 4 else 0; val children = mutableListOf<Mp4Atom>(); var p = payloadStart + head
                 while (p + 8 <= payloadEnd) { val child = parse(bytes, p, payloadEnd) ?: return null; children += child; val childSize = int32(bytes, p); if (childSize < 8) return null; p += childSize }
                 if (p != payloadEnd) return null
                 return Mp4Atom(type, bytes.copyOfRange(payloadStart, payloadStart + head), children)
             }
-            private fun metaAtom(title: String?, artist: String?, cover: ByteArray?) = Mp4Atom("meta", byteArrayOf(0, 0, 0, 0), mutableListOf(ilstAtom(title, artist, cover)))
+            private fun metaAtom(title: String?, artist: String?, cover: ByteArray?) =
+                Mp4Atom("meta", byteArrayOf(0, 0, 0, 0), mutableListOf(hdlrAtom(), ilstAtom(title, artist, cover)))
+
+            // meta 需要 hdlr（handler_type=mdir）才被识别为 iTunes 风格元数据
+            private fun hdlrAtom(): Mp4Atom {
+                val data = ByteArrayOutputStream()
+                data.write(byteArrayOf(0, 0, 0, 0))
+                data.write(byteArrayOf(0, 0, 0, 0))
+                data.write("mdir".toByteArray(StandardCharsets.ISO_8859_1))
+                data.write(ByteArray(12))
+                data.write(0)
+                return Mp4Atom("hdlr", data.toByteArray(), null)
+            }
             private fun ilstAtom(title: String?, artist: String?, cover: ByteArray?) = Mp4Atom("ilst", ByteArray(0), buildList {
                 if (title != null) add(dataAtom("©nam", title.toByteArray()))
                 if (artist != null) add(dataAtom("©ART", artist.toByteArray()))
-                if (cover != null) add(dataAtom("covr", cover, if (sniffMimeType(cover) == "image/png") 14 else 13))
+                cover?.let { toMp4Cover(it) }?.let { add(dataAtom("covr", it.first, it.second)) }
             }.toMutableList())
-            private fun dataAtom(type: String, value: ByteArray, kind: Int = 1) = Mp4Atom(type, ByteArray(0), mutableListOf(Mp4Atom("data", byteArrayOf(0, 0, 0, kind.toByte(), 0, 0, 0, 0) + value, null)))
+            // data atom 布局：type(4字节，1=文本/13=JPEG/14=PNG) + locale(4字节全0) + 数据
+            private fun dataAtom(type: String, value: ByteArray, kind: Int = 1) =
+                Mp4Atom(type, ByteArray(0), mutableListOf(Mp4Atom("data", intBytes(kind) + byteArrayOf(0, 0, 0, 0) + value, null)))
         }
     }
 
@@ -492,6 +517,23 @@ internal object MusicMetadataWriter {
         bytes.size >= 8 && bytes.copyOfRange(0, 8).contentEquals(byteArrayOf(0x89.toByte(), 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) -> "image/png"
         bytes.size >= 12 && String(bytes, 0, 4, StandardCharsets.US_ASCII) == "RIFF" && String(bytes, 8, 4, StandardCharsets.US_ASCII) == "WEBP" -> "image/webp"
         else -> "image/jpeg"
+    }
+
+    // M4A 的 covr 只支持 JPEG(13)/PNG(14)：其余格式（WEBP/HEIC/BMP 等）解码后转成 JPEG 再内嵌，
+    // 否则播放器按声明的 JPEG 解码真实数据会失败导致封面空白
+    private fun toMp4Cover(cover: ByteArray): Pair<ByteArray, Int>? {
+        if (cover.size >= 3 && cover[0] == 0xff.toByte() && cover[1] == 0xd8.toByte() && cover[2] == 0xff.toByte()) return cover to 13
+        if (cover.size >= 8 && cover.copyOfRange(0, 8).contentEquals(byteArrayOf(0x89.toByte(), 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a))) return cover to 14
+        return try {
+            val bitmap = BitmapFactory.decodeByteArray(cover, 0, cover.size) ?: return null
+            val out = ByteArrayOutputStream()
+            if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)) return null
+            bitmap.recycle()
+            out.toByteArray() to 13
+        } catch (e: Exception) {
+            CrashLogManager.logException("MusicMetadataWriter", "封面转 JPEG 失败", e)
+            null
+        }
     }
 
     private fun oggCrc(bytes: ByteArray): Int { var crc = 0; bytes.forEachIndexed { index, value -> if (index in 22..25) return@forEachIndexed; crc = crc xor ((value.toInt() and 0xff) shl 24); repeat(8) { crc = if (crc and 0x80000000.toInt() != 0) (crc shl 1) xor 0x04c11db7 else crc shl 1 } }; return crc }

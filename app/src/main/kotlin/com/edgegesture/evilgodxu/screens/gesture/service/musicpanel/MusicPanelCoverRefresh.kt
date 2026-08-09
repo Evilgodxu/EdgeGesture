@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -53,6 +54,7 @@ internal fun CoverRefreshOverlay(
     playbackState: MusicPlaybackState,
     context: Context,
     selectedId: Long?,
+    saving: Boolean,
     onCandidateSelected: (NeteaseSongSearchResult) -> Unit,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
@@ -107,10 +109,18 @@ internal fun CoverRefreshOverlay(
                 }
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = if (selectedId != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                    onClick = { if (selectedId != null) onConfirm() }
+                    color = if (selectedId != null && !saving) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                    onClick = { if (selectedId != null && !saving) onConfirm() }
                 ) {
-                    Text(stringResource(R.string.music_panel_rename_confirm), color = if (selectedId != null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp))
+                    Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            stringResource(R.string.music_panel_rename_confirm),
+                            color = if (saving) Color.Transparent else if (selectedId != null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (saving) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                        }
+                    }
                 }
             }
         }
@@ -122,6 +132,7 @@ internal fun CoverReplaceOverlay(
     visible: Boolean,
     track: MusicTrack?,
     candidate: NeteaseSongSearchResult?,
+    saving: Boolean,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -154,8 +165,16 @@ internal fun CoverReplaceOverlay(
                     Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.onSurface.copy(alpha = .08f), onClick = onCancel) {
                         Text(stringResource(R.string.music_panel_rename_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp))
                     }
-                    Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.primary, onClick = onConfirm) {
-                        Text(stringResource(R.string.music_panel_rename_confirm), color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp))
+                    Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.primary, onClick = { if (!saving) onConfirm() }) {
+                        Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp), contentAlignment = Alignment.Center) {
+                            Text(
+                                stringResource(R.string.music_panel_rename_confirm),
+                                color = if (saving) Color.Transparent else MaterialTheme.colorScheme.onPrimary
+                            )
+                            if (saving) {
+                                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
+                            }
+                        }
                     }
                 }
             }
