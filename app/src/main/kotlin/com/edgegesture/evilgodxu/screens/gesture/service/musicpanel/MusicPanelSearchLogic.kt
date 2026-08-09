@@ -111,7 +111,7 @@ internal suspend fun applyCoverCandidate(
     return try {
         val updated = withContext(Dispatchers.IO) {
             val bytes = NeteaseMusicApi.loadCoverBytes(candidate.coverUrl.orEmpty()) ?: return@withContext null
-            // 手动刷新封面：通过 Jaudiotagger 写入音频文件元数据
+            // 手动刷新封面：按音频容器格式原生写入元数据
             val writeSuccess = MusicMetadataWriter.writeCover(context, track, bytes)
             val path = MusicMetadataCache.saveCover(context, candidate.id, bytes).orEmpty()
             val bitmap = MusicMetadataCache.loadCover(path)
