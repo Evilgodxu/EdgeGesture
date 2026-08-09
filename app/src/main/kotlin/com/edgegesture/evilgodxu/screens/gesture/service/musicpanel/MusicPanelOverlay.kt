@@ -100,6 +100,8 @@ fun MusicPanelOverlay(
     var renameIsTitle by remember { mutableStateOf(true) }
     var renameInitValue by remember { mutableStateOf("") }
     var showCoverRefresh by remember { mutableStateOf(false) }
+    var showLocalCover by remember { mutableStateOf(false) }
+    var selectedLocalCover by remember { mutableStateOf<RecentCover?>(null) }
     var showCoverReplace by remember { mutableStateOf(false) }
     var selectedCoverCandidate by remember { mutableStateOf<NeteaseSongSearchResult?>(null) }
     var coverSaveFailed by remember { mutableStateOf(false) }
@@ -266,10 +268,16 @@ fun MusicPanelOverlay(
                                             track = playbackState.currentTrack,
                                             isPlaying = playbackState.isPlaying,
                                             onClick = { playbackState.isLyricsVisible = true },
-                                            onRefreshCover = {
+                                            onOnlineCover = {
                                                 coverTargetId = playbackState.currentTrack?.id
                                                 showCoverRefresh = true
                                                 scope.launch { searchCoverCandidates(playbackState, playbackState.currentTrack!!) }
+                                            },
+                                            onLocalCover = {
+                                                coverTargetId = playbackState.currentTrack?.id
+                                                selectedLocalCover = null
+                                                showLocalCover = true
+                                                scope.launch { playbackState.localCoverCandidates = loadRecentCovers(context) }
                                             }
                                         )
                                     }
@@ -393,8 +401,32 @@ fun MusicPanelOverlay(
                         onDismiss = { showSettings = false }
                     )
 
+                    LocalCoverOverlay(
+                        visible = showLocalCover,
+                        playbackState = playbackState,
+                        selected = selectedLocalCover,
+                        onSelected = { selectedLocalCover = it },
+                        onConfirm = {
+                            val cover = selectedLocalCover
+                            val track = playbackState.currentTrack
+                            if (cover != null && track != null && track.id == coverTargetId) scope.launch {
+                                if (applyLocalCover(context, playbackState, track, cover)) {
+                                    showLocalCover = false
+                                    selectedLocalCover = null
+                                } else {
+                                    coverSaveFailed = true
+                                }
+                            }
+                        },
+                        onCancel = {
+                            showLocalCover = false
+                            selectedLocalCover = null
+                            playbackState.localCoverCandidates = emptyList()
+                        }
+                    )
+
                     CoverRefreshOverlay(
-                        visible = showCoverRefresh && !showCoverReplace,
+                        visible = showCoverRefresh && !showCoverReplace && !showLocalCover,
                         track = playbackState.currentTrack,
                         playbackState = playbackState,
                         context = context,

@@ -281,6 +281,8 @@ class AccessibilityActionExecutor(
         when {
             ContextCompat.checkSelfPermission(service, Manifest.permission.READ_MEDIA_AUDIO) ==
                     PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(service, Manifest.permission.READ_MEDIA_IMAGES) ==
+                    PackageManager.PERMISSION_GRANTED &&
                     ContextCompat.checkSelfPermission(service, Manifest.permission.BLUETOOTH_CONNECT) ==
                     PackageManager.PERMISSION_GRANTED &&
                     Environment.isExternalStorageManager() -> showPanel()

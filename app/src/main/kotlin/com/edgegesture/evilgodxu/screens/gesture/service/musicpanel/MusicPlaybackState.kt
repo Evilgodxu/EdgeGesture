@@ -273,6 +273,7 @@ class MusicPlaybackState {
     var pendingSearchResults by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
     var coverCandidates by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
     var isCoverSearching by mutableStateOf(false)
+    var localCoverCandidates by mutableStateOf<List<RecentCover>>(emptyList())
     var lyricsCandidates by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
     var isLyricsSearching by mutableStateOf(false)
     var isLyricsRefreshing by mutableStateOf(false)

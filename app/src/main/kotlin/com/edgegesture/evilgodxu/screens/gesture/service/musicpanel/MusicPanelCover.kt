@@ -60,7 +60,8 @@ internal fun CurrentCover(
     track: MusicTrack?,
     isPlaying: Boolean,
     onClick: () -> Unit,
-    onRefreshCover: () -> Unit = {},
+    onOnlineCover: () -> Unit = {},
+    onLocalCover: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val rotation = remember { Animatable(0f) }
@@ -98,9 +99,13 @@ internal fun CurrentCover(
         }
         CoverContextMenu(
             visible = showMenu,
-            onRefresh = {
+            onOnlineCover = {
                 showMenu = false
-                onRefreshCover()
+                onOnlineCover()
+            },
+            onLocalCover = {
+                showMenu = false
+                onLocalCover()
             },
             onDismiss = { showMenu = false }
         )
@@ -147,20 +152,32 @@ internal fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
 @Composable
 private fun CoverContextMenu(
     visible: Boolean,
-    onRefresh: () -> Unit,
+    onOnlineCover: () -> Unit,
+    onLocalCover: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     if (visible) {
         Popup(alignment = Alignment.BottomCenter, properties = PopupProperties(focusable = true), onDismissRequest = onDismiss) {
             Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceVariant, tonalElevation = 4.dp) {
-                Surface(shape = RoundedCornerShape(6.dp), color = Color.Transparent, onClick = onRefresh) {
-                    Text(
-                        text = stringResource(R.string.music_panel_refresh_cover),
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
-                    )
+                Row(horizontalArrangement = Arrangement.Center) {
+                    Surface(shape = RoundedCornerShape(6.dp), color = Color.Transparent, onClick = onOnlineCover) {
+                        Text(
+                            text = stringResource(R.string.music_panel_online_cover),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                        )
+                    }
+                    Surface(shape = RoundedCornerShape(6.dp), color = Color.Transparent, onClick = onLocalCover) {
+                        Text(
+                            text = stringResource(R.string.music_panel_local_cover),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
+                        )
+                    }
                 }
             }
         }

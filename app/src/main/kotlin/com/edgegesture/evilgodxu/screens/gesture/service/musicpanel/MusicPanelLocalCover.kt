@@ -1,0 +1,122 @@
+package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
+
+import android.content.ContentResolver
+import android.content.Context
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.provider.MediaStore
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import com.edgegesture.evilgodxu.R
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
+data class RecentCover(val uri: Uri, val id: Long)
+
+internal suspend fun loadRecentCovers(context: Context): List<RecentCover> = withContext(Dispatchers.IO) {
+    val result = mutableListOf<RecentCover>()
+    context.contentResolver.query(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        arrayOf(MediaStore.Images.Media._ID),
+        null,
+        null,
+        "${MediaStore.Images.Media.DATE_MODIFIED} DESC"
+    )?.use { cursor ->
+        val idIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+        while (cursor.moveToNext() && result.size < 10) {
+            val id = cursor.getLong(idIndex)
+            val uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString())
+            if (context.contentResolver.openFileDescriptor(uri, "r")?.use { BitmapFactory.decodeFileDescriptor(it.fileDescriptor) != null } == true) {
+                result += RecentCover(uri, id)
+            }
+        }
+    }
+    result
+}
+
+internal suspend fun applyLocalCover(
+    context: Context,
+    playbackState: MusicPlaybackState,
+    track: MusicTrack,
+    cover: RecentCover,
+): Boolean = withContext(Dispatchers.IO) {
+    try {
+        val bytes = context.contentResolver.openInputStream(cover.uri)?.use { it.readBytes() } ?: return@withContext false
+        val writeSuccess = MusicMetadataWriter.writeCover(context, track, bytes)
+        if (!writeSuccess) return@withContext false
+        val path = MusicMetadataCache.saveCover(context, track.id, bytes) ?: return@withContext false
+        val bitmap = MusicMetadataCache.loadCover(path) ?: return@withContext false
+        val oldPath = track.coverCachePath
+        if (oldPath.isNotBlank() && oldPath != path) MusicMetadataCache.deleteCoverFile(oldPath)
+        withContext(Dispatchers.Main) {
+            playbackState.updateTrack(track.copy(albumArt = bitmap, coverCachePath = path, neteaseCoverUrl = ""))
+            playbackState.localCoverCandidates = emptyList()
+        }
+        true
+    } catch (_: Exception) {
+        false
+    }
+}
+
+@Composable
+internal fun LocalCoverOverlay(
+    visible: Boolean,
+    playbackState: MusicPlaybackState,
+    selected: RecentCover?,
+    onSelected: (RecentCover) -> Unit,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+) {
+    if (!visible) return
+    Column(
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface.copy(alpha = .97f)).padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(stringResource(R.string.music_panel_local_cover), color = MaterialTheme.colorScheme.onSurface)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)) {
+            items(playbackState.localCoverCandidates, key = { it.id }) { cover ->
+                Box(
+                    modifier = Modifier.size(84.dp).clip(RoundedCornerShape(8.dp)).clickable { onSelected(cover) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = cover.uri,
+                        contentDescription = stringResource(R.string.music_panel_local_cover),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    if (cover == selected) {
+                        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primary.copy(alpha = .35f)))
+                    }
+                }
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.music_panel_rename_cancel), modifier = Modifier.clickable(onClick = onCancel).padding(12.dp))
+            Text(stringResource(R.string.music_panel_rename_confirm), color = MaterialTheme.colorScheme.primary, modifier = Modifier.clickable { if (selected != null) onConfirm() }.padding(12.dp))
+        }
+    }
+}
