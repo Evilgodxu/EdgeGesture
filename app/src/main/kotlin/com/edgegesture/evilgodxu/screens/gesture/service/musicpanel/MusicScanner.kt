@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.provider.MediaStore
@@ -35,17 +34,28 @@ object MusicScanner {
                 ?.takeIf { it.isNotBlank() } ?: context.getString(R.string.music_scanner_unknown_artist)
             val duration = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
                 ?.toLongOrNull() ?: 0L
-            val art = retriever.embeddedPicture?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
             val id = -kotlin.math.abs(uri.toString().hashCode().toLong())
+            val trackId = if (id == 0L) -1L else id
+            // 提取内嵌封面写入本地缓存供面板显示，位图用完即回收
+            var coverCachePath = ""
+            retriever.embeddedPicture?.let { picture ->
+                MusicMetadataCache.decodeSampledBitmap(picture)?.let { art ->
+                    try {
+                        coverCachePath = MusicMetadataCache.saveCover(context, trackId, art).orEmpty()
+                    } finally {
+                        art.recycle()
+                    }
+                }
+            }
             MusicTrack(
-                id = if (id == 0L) -1L else id,
+                id = trackId,
                 path = "",
                 audioUri = uri.toString(),
                 title = title,
                 artist = artist,
                 duration = duration,
                 albumId = 0L,
-                albumArt = art
+                coverCachePath = coverCachePath
             )
         } catch (e: Exception) {
             CrashLogManager.logException("MusicScanner", "读取外部音频元数据失败", e)
@@ -130,12 +140,21 @@ object MusicScanner {
         albumId: Long,
         fallbackPath: String
     ): AlbumArtResult? {
+        // 优先官方缩略图 API：从 MediaStore 缩略图缓存读取小图，最轻量且带系统缓存
+        try {
+            contentResolver.loadThumbnail(audioUri, Size(256, 256), null)?.let {
+                return AlbumArtResult(it, AlbumArtSource.THUMBNAIL)
+            }
+        } catch (e: Exception) {
+            CrashLogManager.logException("MusicScanner", "加载缩略图封面失败", e)
+        }
         extractEmbeddedArt(context, audioUri)?.let { return AlbumArtResult(it, AlbumArtSource.EMBEDDED) }
         if (albumId > 0) {
             try {
                 val uri = Uri.parse("content://media/external/audio/albumart/$albumId")
                 contentResolver.openInputStream(uri)?.use { input ->
-                    BitmapFactory.decodeStream(input)?.let { return AlbumArtResult(it, AlbumArtSource.ALBUM) }
+                    MusicMetadataCache.decodeSampledBitmap(input.readBytes())
+                        ?.let { return AlbumArtResult(it, AlbumArtSource.ALBUM) }
                 }
             } catch (e: Exception) {
                 CrashLogManager.logException("MusicScanner", "读取专辑封面失败", e)
@@ -144,19 +163,14 @@ object MusicScanner {
         fallbackPath.takeIf { it.isNotBlank() }?.let { path ->
             extractEmbeddedArt(path)?.let { return AlbumArtResult(it, AlbumArtSource.EMBEDDED) }
         }
-        return try {
-            AlbumArtResult(contentResolver.loadThumbnail(audioUri, Size(256, 256), null), AlbumArtSource.THUMBNAIL)
-        } catch (e: Exception) {
-            CrashLogManager.logException("MusicScanner", "加载缩略图封面失败", e)
-            null
-        }
+        return null
     }
 
     private fun extractEmbeddedArt(context: Context, audioUri: Uri): Bitmap? {
         val retriever = MediaMetadataRetriever()
         return try {
             retriever.setDataSource(context, audioUri)
-            retriever.embeddedPicture?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+            retriever.embeddedPicture?.let { MusicMetadataCache.decodeSampledBitmap(it) }
         } catch (e: Exception) {
             CrashLogManager.logException("MusicScanner", "提取内嵌封面失败", e)
             null
@@ -173,7 +187,7 @@ object MusicScanner {
         val retriever = MediaMetadataRetriever()
         return try {
             retriever.setDataSource(path)
-            retriever.embeddedPicture?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
+            retriever.embeddedPicture?.let { MusicMetadataCache.decodeSampledBitmap(it) }
         } catch (e: Exception) {
             CrashLogManager.logException("MusicScanner", "提取内嵌封面失败", e)
             null

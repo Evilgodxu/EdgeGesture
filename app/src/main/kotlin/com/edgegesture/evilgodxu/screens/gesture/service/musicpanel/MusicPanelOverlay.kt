@@ -444,7 +444,7 @@ fun MusicPanelOverlay(
                             val candidate = selectedCoverCandidate
                             val track = playbackState.currentTrack
                             if (candidate != null && track != null && track.id == coverTargetId) {
-                                val hasCover = track.albumArt != null || MusicMetadataCache.isValid(track.coverCachePath) || track.neteaseCoverUrl.isNotBlank()
+                                val hasCover = MusicMetadataCache.isValid(track.coverCachePath) || track.neteaseCoverUrl.isNotBlank()
                                 if (hasCover) {
                                     showCoverReplace = true
                                 } else {

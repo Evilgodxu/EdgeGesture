@@ -4,12 +4,10 @@ package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,7 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -115,40 +112,30 @@ internal fun CurrentCover(
 
 @Composable
 internal fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    if (track?.albumArt != null) {
-        Image(
-            bitmap = track.albumArt.asImageBitmap(),
-            contentDescription = track.title,
+    // 封面缓存为绝对路径字符串，包装成 File 才能被 Coil 识别（直接传路径会丢失 scheme）
+    val coverFile = track?.coverCachePath
+        ?.takeIf { MusicMetadataCache.isValid(it) }
+        ?.let { File(it) }
+    val model: Any? = coverFile ?: track?.neteaseCoverUrl?.takeIf { it.isNotBlank() }
+    if (model != null) {
+        AsyncImage(
+            model = model,
+            contentDescription = track?.title,
             contentScale = ContentScale.Crop,
             modifier = modifier.background(Color.Black),
         )
     } else {
-        // 封面缓存为绝对路径字符串，包装成 File 才能被 Coil 识别（直接传路径会丢失 scheme）
-        val coverFile = track?.coverCachePath
-            ?.takeIf { MusicMetadataCache.isValid(it) }
-            ?.let { File(it) }
-        val model: Any? = coverFile ?: track?.neteaseCoverUrl?.takeIf { it.isNotBlank() }
-        if (model != null) {
-            AsyncImage(
-                model = model,
-                contentDescription = track?.title,
-                contentScale = ContentScale.Crop,
-                modifier = modifier.background(Color.Black),
+        Box(
+            modifier = modifier
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.MusicNote,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
             )
-        } else {
-            Box(
-                modifier = modifier
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MusicNote,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
         }
     }
 }
@@ -167,13 +154,6 @@ internal fun PlaylistArt(track: MusicTrack?, modifier: Modifier = Modifier) {
         AsyncImage(
             model = model,
             contentDescription = track?.title,
-            contentScale = ContentScale.Crop,
-            modifier = modifier.background(Color.Black),
-        )
-    } else if (track?.albumArt != null) {
-        Image(
-            bitmap = track.albumArt.asImageBitmap(),
-            contentDescription = track.title,
             contentScale = ContentScale.Crop,
             modifier = modifier.background(Color.Black),
         )

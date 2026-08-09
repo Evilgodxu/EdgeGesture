@@ -1,7 +1,5 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
-import android.graphics.Bitmap
-
 // 本地音乐轨道
  data class MusicTrack(
     val id: Long,
@@ -11,7 +9,6 @@ import android.graphics.Bitmap
     val artist: String,
     val duration: Long,
     val albumId: Long,
-    val albumArt: Bitmap? = null,
     val neteaseId: Long = 0L,
     val neteaseCoverUrl: String = "",
     val coverCachePath: String = "",

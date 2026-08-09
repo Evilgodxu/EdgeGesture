@@ -50,7 +50,9 @@ internal suspend fun loadRecentCovers(context: Context): List<RecentCover> = wit
         while (cursor.moveToNext() && result.size < 10) {
             val id = cursor.getLong(idIndex)
             val uri = Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString())
-            if (context.contentResolver.openFileDescriptor(uri, "r")?.use { BitmapFactory.decodeFileDescriptor(it.fileDescriptor) != null } == true) {
+            if (context.contentResolver.openFileDescriptor(uri, "r")?.use { fd ->
+                    BitmapFactory.decodeFileDescriptor(fd.fileDescriptor)?.apply { recycle() } != null
+                } == true) {
                 result += RecentCover(uri, id)
             }
         }
@@ -69,11 +71,10 @@ internal suspend fun applyLocalCover(
         val writeSuccess = MusicMetadataWriter.writeCover(context, track, bytes)
         if (!writeSuccess) return@withContext false
         val path = MusicMetadataCache.saveCover(context, track.id, bytes) ?: return@withContext false
-        val bitmap = MusicMetadataCache.loadCover(path) ?: return@withContext false
         val oldPath = track.coverCachePath
         if (oldPath.isNotBlank() && oldPath != path) MusicMetadataCache.deleteCoverFile(oldPath)
         withContext(Dispatchers.Main) {
-            playbackState.updateTrack(track.copy(albumArt = bitmap, coverCachePath = path, neteaseCoverUrl = ""))
+            playbackState.updateTrack(track.copy(coverCachePath = path, neteaseCoverUrl = ""))
             playbackState.localCoverCandidates = emptyList()
         }
         true

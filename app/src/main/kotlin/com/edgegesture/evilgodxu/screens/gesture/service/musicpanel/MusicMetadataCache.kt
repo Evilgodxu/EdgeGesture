@@ -3,63 +3,59 @@ package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.LruCache
 import com.edgegesture.evilgodxu.log.CrashLogManager
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.ByteArrayOutputStream
 import java.io.File
 
 internal object MusicMetadataCache {
+    private const val COVER_MAX_EDGE = 512
+
     private fun root(context: Context) = File(context.filesDir, "music_metadata")
     private fun coverFile(context: Context, id: Long) = File(File(root(context), "covers_v2"), "$id.webp")
     private fun originalCoverFile(context: Context, id: Long) = File(File(root(context), "covers_original"), "$id.image")
     private fun lyricFile(context: Context, id: Long) = File(File(root(context), "lyrics"), "$id.json")
-    private val coverMemoryCache = object : LruCache<String, Bitmap>(8 * 1024) {
-        override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount / 1024
-    }
 
-    @Synchronized
-    fun loadCover(path: String): Bitmap? {
-        if (path.isBlank()) return null
-        coverMemoryCache.get(path)?.let { return it }
-        val bitmap = BitmapFactory.decodeFile(path) ?: return null
-        coverMemoryCache.put(path, bitmap)
-        return bitmap
-    }
-
-    @Synchronized
-    fun putCover(path: String, bitmap: Bitmap) {
-        if (path.isNotBlank()) coverMemoryCache.put(path, bitmap)
-    }
-
-    @Synchronized
-    fun removeCover(path: String) {
-        if (path.isNotBlank()) coverMemoryCache.remove(path)
+    /** 封面在面板中只显示 64dp 小图，解码前按最长边 512px 采样，避免全尺寸位图的内存峰值 */
+    fun decodeSampledBitmap(bytes: ByteArray): Bitmap? {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        var sampleSize = 1
+        while (bounds.outWidth / (sampleSize * 2) >= COVER_MAX_EDGE &&
+            bounds.outHeight / (sampleSize * 2) >= COVER_MAX_EDGE
+        ) {
+            sampleSize *= 2
+        }
+        val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
     }
 
     fun saveCover(context: Context, id: Long, originalBytes: ByteArray): String? = try {
-        val bitmap = BitmapFactory.decodeByteArray(originalBytes, 0, originalBytes.size)
-        val convertedFile = coverFile(context, id)
-        if (bitmap != null) {
-            convertedFile.parentFile?.mkdirs()
-            var success = false
-            convertedFile.outputStream().use { output ->
-                success = bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 85, output)
-            }
+        val bitmap = decodeSampledBitmap(originalBytes) ?: return null
+        try {
+            saveCover(context, id, bitmap)
+        } finally {
             bitmap.recycle()
-            if (success && isValid(convertedFile.absolutePath) &&
-                BitmapFactory.decodeFile(convertedFile.absolutePath) != null
-            ) {
-                val path = convertedFile.absolutePath
-                loadCover(path)?.let { putCover(path, it) }
-                return path
-            }
         }
-        // WEBP 转换失败，回退到原始格式
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicMetadataCache", "保存封面失败", e)
+        null
+    }
+
+    fun saveCover(context: Context, id: Long, bitmap: Bitmap): String? = try {
+        val convertedFile = coverFile(context, id)
+        convertedFile.parentFile?.mkdirs()
+        // compress 返回值已反映编码结果，配合文件长度校验即可，无需再解码验证
+        val success = convertedFile.outputStream().use { output ->
+            bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 85, output)
+        }
+        if (success && isValid(convertedFile.absolutePath)) {
+            return convertedFile.absolutePath
+        }
+        // WEBP 编码失败，回退为 PNG 原样保存
         originalCoverFile(context, id).apply {
             parentFile?.mkdirs()
-            writeBytes(originalBytes)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream())
         }.absolutePath
     } catch (e: Exception) {
         CrashLogManager.logException("MusicMetadataCache", "保存封面失败", e)
@@ -124,7 +120,6 @@ internal object MusicMetadataCache {
 
     fun deleteCoverFile(path: String) {
         if (path.isNotBlank()) {
-            removeCover(path)
             File(path).delete()
         }
     }
@@ -144,20 +139,9 @@ internal object MusicMetadataCache {
                 .orEmpty()
                 .forEach { file ->
                 if (file.isFile && file.absolutePath !in referenced) {
-                    if (directoryName != "lyrics") removeCover(file.absolutePath)
                     file.delete()
                 }
             }
         }
-    }
-
-    fun bitmapToBytes(bitmap: Bitmap): ByteArray? = try {
-        ByteArrayOutputStream().use { output ->
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
-            output.toByteArray()
-        }
-    } catch (e: Exception) {
-        CrashLogManager.logException("MusicMetadataCache", "位图转字节失败", e)
-        null
     }
 }
