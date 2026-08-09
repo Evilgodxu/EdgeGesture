@@ -18,7 +18,7 @@ import androidx.work.WorkerParameters
 
 /**
  * 应用更新检查 Worker
- * 由 WorkManager 周期性调度（最小间隔 15 分钟，内部遵守 1 小时冷却）
+ * 由 WorkManager 周期性调度（最小间隔 15 分钟，内部遵守 24 小时冷却）
  *
  * 检查到更新时：
  * - 应用在前台 → 不做处理，由 MainActivity 的 Lifecycle 回调弹出对话框

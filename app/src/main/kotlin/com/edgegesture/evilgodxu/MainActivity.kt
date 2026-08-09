@@ -152,7 +152,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             },
                             onOpenBrowser = {
-                                val url = updateInfo!!.downloadUrl
+                                val url = UpdateManager.GITHUB_REPOSITORY_URL
                                 if (url.startsWith("http")) {
                                     startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
                                 }

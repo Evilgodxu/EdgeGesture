@@ -383,4 +383,7 @@
     <string name="update_dialog_download">下载</string>
     <string name="update_dialog_later">稍后</string>
     <string name="update_dialog_open_browser">在浏览器中打开</string>
+    <string name="update_dialog_error_title">检查更新失败</string>
+    <string name="update_dialog_error_description">网络连接超时或暂时无法访问更新服务，请前往 GitHub 仓库获取最新版本。</string>
+    <string name="update_dialog_open_github">前往 GitHub</string>
 </resources>

@@ -52,7 +52,7 @@ class MyApplication : Application() {
         // 创建更新通知渠道
         createUpdateNotificationChannel()
 
-        // 调度周期性更新检查（最小间隔 15 分钟，内部有 1 小时冷却）
+        // 调度周期性更新检查（最小间隔 15 分钟，内部有 24 小时冷却）
         scheduleUpdateCheck()
     }
 

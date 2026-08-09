@@ -48,12 +48,13 @@ object UpdateManager {
     private const val KEY_PENDING_URL = "pending_url"
     private const val KEY_PENDING_CHANGELOG = "pending_changelog"
     private const val KEY_IGNORED_VERSION = "ignored_version"
-    private const val CHECK_INTERVAL_MS = 60 * 60 * 1000L // 1 小时
+    private const val CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000L // 24 小时
     private const val TAG = "UpdateManager"
 
     // GitHub 仓库配置
     private const val GITHUB_OWNER = "Evilgodxu"
     private const val GITHUB_REPO = "EdgeGesture"
+    const val GITHUB_REPOSITORY_URL = "https://github.com/$GITHUB_OWNER/$GITHUB_REPO"
 
     private val json = Json { ignoreUnknownKeys = true }
     private val prefsMap = ConcurrentHashMap<String, android.content.SharedPreferences>()
@@ -81,13 +82,17 @@ object UpdateManager {
     )
 
     /**
-     * 检查是否有新版本（含 1 小时冷却）
+     * 检查是否有新版本（含 24 小时冷却）
      */
-    suspend fun checkForUpdate(context: Context, force: Boolean = false): UpdateInfo? {
+    suspend fun checkForUpdate(
+        context: Context,
+        force: Boolean = false,
+        onError: ((Exception) -> Unit)? = null
+    ): UpdateInfo? {
         val prefs = prefs(context)
         val now = System.currentTimeMillis()
 
-        // 非强制检查时遵守 1 小时冷却
+        // 非强制检查时遵守 24 小时冷却
         if (!force) {
             val lastCheck = prefs.getLong(KEY_LAST_CHECK, 0L)
             if (now - lastCheck < CHECK_INTERVAL_MS) {
@@ -109,7 +114,7 @@ object UpdateManager {
             val url = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
             val jsonStr = withContext(Dispatchers.IO) {
                 val conn = URL(url).openConnection() as java.net.HttpURLConnection
-                conn.connectTimeout = 10_000
+                conn.connectTimeout = 15_000
                 conn.readTimeout = 15_000
                 conn.inputStream.bufferedReader().use { it.readText() }
             }
@@ -142,6 +147,7 @@ object UpdateManager {
             }
         } catch (e: Exception) {
             CrashLogManager.logException("UpdateManager", "检查更新失败", e)
+            onError?.invoke(e)
             null
         }
     }
@@ -175,6 +181,7 @@ object UpdateManager {
     fun downloadApk(context: Context, updateInfo: UpdateInfo): Long {
         val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val req = DownloadManager.Request(Uri.parse(updateInfo.downloadUrl))
+            .setMimeType("application/vnd.android.package-archive")
             .setTitle(context.getString(R.string.app_name) + " 更新")
             .setDescription("正在下载 ${updateInfo.latestVersion}")
             .setDestinationInExternalPublicDir(
@@ -191,7 +198,7 @@ object UpdateManager {
     /**
      * 下载 APK 并引导安装（用于对话框点击「下载」）
      * 下载到应用私有目录，通过 onProgress 回调进度，完成后通过 FileProvider 打开安装界面
-     * 长时间无进度变动（30 秒）判定为超时失败
+     * 长时间无进度变动（15 秒）判定为超时失败
      *
      * @return true 表示下载成功并启动了安装界面，false 表示下载失败
      */
@@ -221,7 +228,7 @@ object UpdateManager {
         val downloadId = dm.enqueue(req)
         var lastProgressBytes = -1L
         var stallCount = 0
-        val STALL_TIMEOUT = 60  // 60 次无进度 * 500ms = 30 秒
+        val STALL_TIMEOUT = 30  // 30 次无进度 * 500ms = 15 秒
 
         // 轮询下载进度
         while (true) {

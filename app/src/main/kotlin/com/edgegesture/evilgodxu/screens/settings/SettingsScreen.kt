@@ -214,6 +214,7 @@ fun SettingsScreen(
     var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
     var showUpdateDialog by remember { mutableStateOf(false) }
     var showUpToDate by remember { mutableStateOf(false) }
+    var showUpdateError by remember { mutableStateOf(false) }
     var downloadState by remember { mutableStateOf<DownloadState>(DownloadState.Idle) }
     val checkScope = androidx.compose.runtime.rememberCoroutineScope()
 
@@ -472,10 +473,17 @@ fun SettingsScreen(
                         .fillMaxWidth()
                         .clickable {
                             checkScope.launch {
-                                val result = UpdateManager.checkForUpdate(context, force = true)
+                                var checkFailed = false
+                                val result = UpdateManager.checkForUpdate(
+                                    context,
+                                    force = true,
+                                    onError = { checkFailed = true }
+                                )
                                 if (result != null) {
                                     updateInfo = result
                                     showUpdateDialog = true
+                                } else if (checkFailed) {
+                                    showUpdateError = true
                                 } else {
                                     showUpToDate = true
                                 }
@@ -642,7 +650,7 @@ fun SettingsScreen(
                     isFailed -> TextButton(onClick = {
                         showUpdateDialog = false
                         downloadState = DownloadState.Idle
-                        val url = updateInfo!!.downloadUrl
+                        val url = UpdateManager.GITHUB_REPOSITORY_URL
                         if (url.startsWith("http")) {
                             context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                         }
@@ -676,6 +684,28 @@ fun SettingsScreen(
                     TextButton(onClick = { showUpdateDialog = false; downloadState = DownloadState.Idle; UpdateManager.clearPendingUpdate(context) }) {
                         Text(stringResource(R.string.update_dialog_later))
                     }
+                }
+            }
+        )
+    }
+
+    // 手动检查更新失败提示
+    if (showUpdateError) {
+        AlertDialog(
+            onDismissRequest = { showUpdateError = false },
+            title = { Text(stringResource(R.string.update_dialog_error_title)) },
+            text = { Text(stringResource(R.string.update_dialog_error_description)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showUpdateError = false
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(UpdateManager.GITHUB_REPOSITORY_URL)))
+                }) {
+                    Text(stringResource(R.string.update_dialog_open_github))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUpdateError = false }) {
+                    Text(stringResource(R.string.update_dialog_later))
                 }
             }
         )
