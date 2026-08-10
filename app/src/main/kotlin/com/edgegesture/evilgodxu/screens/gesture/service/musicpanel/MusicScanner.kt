@@ -142,9 +142,10 @@ object MusicScanner {
     ): AlbumArtResult? {
         // 优先官方缩略图 API：从 MediaStore 缩略图缓存读取小图，最轻量且带系统缓存
         try {
-            contentResolver.loadThumbnail(audioUri, Size(256, 256), null)?.let {
-                return AlbumArtResult(it, AlbumArtSource.THUMBNAIL)
-            }
+            return AlbumArtResult(
+                contentResolver.loadThumbnail(audioUri, Size(256, 256), null),
+                AlbumArtSource.THUMBNAIL
+            )
         } catch (e: Exception) {
             CrashLogManager.logException("MusicScanner", "加载缩略图封面失败", e)
         }

@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -119,18 +120,34 @@ internal fun LocalCoverOverlay(
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.music_panel_rename_cancel), modifier = Modifier.clickable(onClick = onCancel).padding(12.dp))
-            Box(modifier = Modifier.clickable(enabled = selected != null && !saving) { if (selected != null) onConfirm() }.padding(12.dp)) {
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = .08f),
+                onClick = onCancel
+            ) {
                 Text(
-                    stringResource(R.string.music_panel_rename_confirm),
-                    color = if (saving) Color.Transparent else MaterialTheme.colorScheme.primary
+                    stringResource(R.string.music_panel_rename_cancel),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp)
                 )
-                if (saving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center).size(18.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.primary
+            }
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = if (selected != null && !saving) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                onClick = { if (selected != null && !saving) onConfirm() }
+            ) {
+                Box(modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        stringResource(R.string.music_panel_rename_confirm),
+                        color = if (saving) Color.Transparent else if (selected != null) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    if (saving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
             }
         }

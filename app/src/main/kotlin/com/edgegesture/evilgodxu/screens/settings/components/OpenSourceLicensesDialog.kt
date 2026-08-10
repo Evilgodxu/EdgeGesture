@@ -20,23 +20,27 @@ import com.edgegesture.evilgodxu.R
 
 private data class OpenSourceLibrary(
     val name: String,
+    val version: String,
     val license: String
 )
 
 private val libraries = listOf(
-    OpenSourceLibrary("AndroidX Core KTX", "Apache License 2.0"),
-    OpenSourceLibrary("AndroidX Lifecycle", "Apache License 2.0"),
-    OpenSourceLibrary("AndroidX Activity Compose", "Apache License 2.0"),
-    OpenSourceLibrary("Jetpack Compose", "Apache License 2.0"),
-    OpenSourceLibrary("AndroidX DataStore", "Apache License 2.0"),
-    OpenSourceLibrary("AndroidX Navigation", "Apache License 2.0"),
-    OpenSourceLibrary("AndroidX WorkManager", "Apache License 2.0"),
-    OpenSourceLibrary("AndroidX Window", "Apache License 2.0"),
-    OpenSourceLibrary("Material3 Adaptive", "Apache License 2.0"),
-    OpenSourceLibrary("Koin", "Apache License 2.0"),
-    OpenSourceLibrary("Kotlinx Serialization JSON", "Apache License 2.0"),
-    OpenSourceLibrary("Shizuku", "Apache License 2.0"),
-    OpenSourceLibrary("Hidden API Bypass", "Apache License 2.0")
+    OpenSourceLibrary("AndroidX Core KTX", "1.19.0", "Apache License 2.0"),
+    OpenSourceLibrary("AndroidX Lifecycle", "2.11.0", "Apache License 2.0"),
+    OpenSourceLibrary("AndroidX Activity Compose", "1.13.0", "Apache License 2.0"),
+    OpenSourceLibrary("Jetpack Compose", "2026.06.01", "Apache License 2.0"),
+    OpenSourceLibrary("Coil", "3.5.0", "Apache License 2.0"),
+    OpenSourceLibrary("AndroidX DataStore", "1.2.1", "Apache License 2.0"),
+    OpenSourceLibrary("AndroidX Navigation", "2.9.8", "Apache License 2.0"),
+    OpenSourceLibrary("AndroidX WorkManager", "2.11.2", "Apache License 2.0"),
+    OpenSourceLibrary("AndroidX Window", "1.5.1", "Apache License 2.0"),
+    OpenSourceLibrary("Material3 Adaptive", "1.2.0", "Apache License 2.0"),
+    OpenSourceLibrary("Koin", "4.2.2", "Apache License 2.0"),
+    OpenSourceLibrary("Kotlinx Coroutines", "1.11.0", "Apache License 2.0"),
+    OpenSourceLibrary("Kotlinx Serialization JSON", "1.11.0", "Apache License 2.0"),
+    OpenSourceLibrary("Shizuku", "13.1.5", "Apache License 2.0"),
+    OpenSourceLibrary("Hidden API Bypass", "6.1", "Apache License 2.0"),
+    OpenSourceLibrary("AndroidX Media3", "1.10.1", "Apache License 2.0")
 )
 
 // 开源许可对话框，展示项目使用的开源库列表
@@ -73,7 +77,7 @@ fun OpenSourceLicensesDialog(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = library.license,
+                            text = "${library.version} · ${library.license}",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
