@@ -1,6 +1,7 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothA2dp
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothHeadset
@@ -19,6 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 // 蓝牙耳机监听器，检测蓝牙耳机连接并自动降低媒体音量
 class BluetoothHeadsetMonitor(
@@ -52,7 +54,11 @@ class BluetoothHeadsetMonitor(
                 BluetoothProfile.HEADSET -> headsetProxy = null
             }
             // Profile 断开时音频设备回调可能尚未触发，主动复核当前路由状态。
-            checkExisting()
+            // 延迟复核，避免音频设备列表更新滞后导致状态判断错误
+            scope.launch {
+                delay(200)
+                checkExisting()
+            }
         }
     }
 
@@ -66,10 +72,18 @@ class BluetoothHeadsetMonitor(
 
         override fun onAudioDevicesRemoved(removedDevices: Array<AudioDeviceInfo>) {
             if (removedDevices.any { isBluetoothA2dp(it) }) {
-                // 确认是否还有其他蓝牙设备连接
                 val remaining = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
                 if (remaining.none { isBluetoothA2dp(it) }) {
                     handleDisconnected()
+                } else {
+                    // 音频设备列表可能存在更新延迟，延迟复核避免漏判断开
+                    scope.launch {
+                        delay(300)
+                        val remainingAfterDelay = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+                        if (remainingAfterDelay.none { isBluetoothA2dp(it) }) {
+                            handleDisconnected()
+                        }
+                    }
                 }
             }
         }
@@ -201,7 +215,12 @@ class BluetoothHeadsetMonitor(
      * 在部分厂商 ROM 上为空或格式不一致，因此地址匹配失败时取已连接设备中的
      * 第一个作为兜底，避免回退到本机名称。
      */
+    // 权限已在方法入口（hasBluetoothPermission）及调用方 resolveBluetoothDeviceName 中检查，
+    // lint 无法识别经辅助函数的守卫，故此处标注 SuppressLint
+    @SuppressLint("MissingPermission")
     private fun resolveBluetoothDevice(address: String): BluetoothDevice? {
+        // 下方所有蓝牙 API 均受 BLUETOOTH_CONNECT 保护，先检查权限避免 SecurityException
+        if (!hasBluetoothPermission()) return null
         val manager = context.getSystemService(BluetoothManager::class.java)
         // 官方 API：同步获取当前已连接的蓝牙设备
         // 部分 ROM（如小米）不支持通过 BluetoothManager 按 Profile 查询，需逐个容错

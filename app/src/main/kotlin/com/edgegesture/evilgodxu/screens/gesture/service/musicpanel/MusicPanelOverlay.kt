@@ -73,6 +73,8 @@ fun MusicPanelOverlay(
     }
     val colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme
     val scope = rememberCoroutineScope()
+    // 在组合阶段解析字符串资源，协程内无法调用 stringResource
+    val lyricsRefreshFailedMessage = stringResource(R.string.music_panel_lyrics_refresh_failed)
 
     LaunchedEffect(playbackState.isPlaying, playbackState.currentTrack) {
         while (isActive && playbackState.isPlaying) {
@@ -485,7 +487,7 @@ fun MusicPanelOverlay(
                                     selectedLyricsCandidate = null
                                     playbackState.setLyricsCandidates(emptyList())
                                 } else {
-                                    playbackState.setLyricsRefreshError(context.getString(R.string.music_panel_lyrics_refresh_failed))
+                                    playbackState.setLyricsRefreshError(lyricsRefreshFailedMessage)
                                 }
                             }
                         },

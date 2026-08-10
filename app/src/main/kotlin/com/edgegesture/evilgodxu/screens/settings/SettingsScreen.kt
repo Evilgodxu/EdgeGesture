@@ -173,6 +173,8 @@ fun SettingsScreen(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val currentLanguage = remember(configuration) { context.getAppLanguage() }
+    // 在组合阶段解析字符串资源，LaunchedEffect 内无法调用 stringResource
+    val upToDateMessage = stringResource(R.string.update_dialog_up_to_date)
     val versionName = remember {
         try {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: ""
@@ -600,7 +602,7 @@ fun SettingsScreen(
         if (showUpToDate) {
             android.widget.Toast.makeText(
                 context,
-                context.getString(R.string.update_dialog_up_to_date),
+                upToDateMessage,
                 android.widget.Toast.LENGTH_SHORT
             ).show()
             updateViewModel.clearUpToDate()

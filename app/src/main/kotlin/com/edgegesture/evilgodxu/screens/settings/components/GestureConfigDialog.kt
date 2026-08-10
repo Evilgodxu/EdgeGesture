@@ -33,17 +33,25 @@ fun GestureConfigDialog(onDismiss: () -> Unit) {
     var showImportConfirm by remember { mutableStateOf(false) }
     var pendingImport by remember { mutableStateOf<ByteArray?>(null) }
     var message by remember { mutableStateOf<String?>(null) }
+    // 在组合阶段解析字符串资源，协程内无法调用 stringResource
+    val exportFailedMessage = stringResource(R.string.gesture_config_export_failed)
+    val exportErrorTemplate = stringResource(R.string.gesture_config_export_error)
+    val exportSuccessMessage = stringResource(R.string.gesture_config_export_success)
+    val importFailedReadMessage = stringResource(R.string.gesture_config_import_failed_read)
+    val importErrorTemplate = stringResource(R.string.gesture_config_import_error)
+    val emptyMessage = stringResource(R.string.gesture_config_empty)
+    val importSuccessMessage = stringResource(R.string.gesture_config_import_success)
 
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) scope.launch {
             runCatching {
                 context.contentResolver.openOutputStream(uri)?.use {
                     it.write(DataConfigManager.export(context))
-                } ?: error(context.getString(R.string.gesture_config_export_failed))
+                } ?: error(exportFailedMessage)
             }.onFailure {
-                message = context.getString(R.string.gesture_config_export_error, it.message ?: "")
+                message = exportErrorTemplate.format(it.message ?: "")
             }.onSuccess {
-                message = context.getString(R.string.gesture_config_export_success)
+                message = exportSuccessMessage
             }
         }
     }
@@ -51,9 +59,9 @@ fun GestureConfigDialog(onDismiss: () -> Unit) {
         if (uri != null) scope.launch {
             runCatching {
                 context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                    ?: error(context.getString(R.string.gesture_config_import_failed_read))
+                    ?: error(importFailedReadMessage)
             }.onFailure {
-                message = context.getString(R.string.gesture_config_import_error, it.message ?: "")
+                message = importErrorTemplate.format(it.message ?: "")
             }.onSuccess {
                 pendingImport = it
                 showImportConfirm = true
@@ -106,11 +114,11 @@ fun GestureConfigDialog(onDismiss: () -> Unit) {
                     showImportConfirm = false
                     scope.launch {
                         runCatching {
-                            DataConfigManager.import(context, pendingImport ?: error(context.getString(R.string.gesture_config_empty)))
+                            DataConfigManager.import(context, pendingImport ?: error(emptyMessage))
                         }.onFailure {
-                            message = context.getString(R.string.gesture_config_import_error, it.message ?: "")
+                            message = importErrorTemplate.format(it.message ?: "")
                         }.onSuccess {
-                            message = context.getString(R.string.gesture_config_import_success)
+                            message = importSuccessMessage
                         }
                         pendingImport = null
                     }

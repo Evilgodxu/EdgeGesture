@@ -40,7 +40,7 @@ private val libraries = listOf(
     OpenSourceLibrary("Kotlinx Serialization JSON", "1.11.0", "Apache License 2.0"),
     OpenSourceLibrary("Shizuku", "13.1.5", "Apache License 2.0"),
     OpenSourceLibrary("Hidden API Bypass", "6.1", "Apache License 2.0"),
-    OpenSourceLibrary("AndroidX Media3", "1.10.1", "Apache License 2.0")
+    OpenSourceLibrary("AndroidX Media3", "1.11.0", "Apache License 2.0")
 )
 
 // 开源许可对话框，展示项目使用的开源库列表
