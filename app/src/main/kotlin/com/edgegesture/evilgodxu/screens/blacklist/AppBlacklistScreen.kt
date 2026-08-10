@@ -36,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -53,6 +54,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.app.AppInfo
@@ -75,7 +79,19 @@ fun AppBlacklistScreen(
 
     val allApps by appRepository.appsFlow.collectAsState()
     val isLoading by appRepository.isLoading.collectAsState()
-    val hasPermission = remember { appRepository.hasQueryPermission() }
+
+    // 权限状态实时刷新：每次页面回到前台（ON_RESUME）重新查询，避免授权后不更新
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var hasPermission by remember { mutableStateOf(appRepository.hasQueryPermission()) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasPermission = appRepository.hasQueryPermission()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     var searchQuery by remember { mutableStateOf("") }
     var debouncedQuery by remember { mutableStateOf("") }

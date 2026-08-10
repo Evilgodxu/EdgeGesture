@@ -76,8 +76,8 @@ internal fun SearchOverlay(
         modifier = modifier.pointerInput(Unit) {
             detectHorizontalDragGestures { _, dragAmount ->
                 if (dragAmount < -50f) {
-                    playbackState.isSearchMode = false
-                    playbackState.showSearchResults = false
+                    playbackState.setSearchMode(false)
+                    playbackState.setSearchResultsVisible(false)
                 }
             }
         }
@@ -151,7 +151,7 @@ internal fun SearchOverlay(
             )
             if (playbackState.searchQuery.isNotEmpty()) {
                 IconButton(
-                    onClick = { playbackState.searchQuery = "" },
+                    onClick = { playbackState.setSearchQuery("") },
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .size(32.dp)
@@ -204,7 +204,7 @@ internal fun SearchOverlay(
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
                             .clickable {
-                                playbackState.searchQuery = query
+                                playbackState.setSearchQuery(query)
                                 scope.launch { performSearch(playbackState, context) }
                             }
                             .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp),

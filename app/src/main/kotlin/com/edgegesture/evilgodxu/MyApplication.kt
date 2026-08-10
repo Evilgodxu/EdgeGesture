@@ -13,25 +13,18 @@ import com.edgegesture.evilgodxu.update.UpdateCheckWorker
 import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
 import com.edgegesture.evilgodxu.di.appModule
 import com.edgegesture.evilgodxu.log.CrashLogManager
-import coil3.SingletonImageLoader
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
 import java.util.concurrent.TimeUnit
 
-// 应用入口类，初始化 Koin 依赖注入框架和应用缓存
+// 应用入口类，初始化崩溃日志、Koin 依赖注入与后台任务
 class MyApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
         // 最先初始化崩溃日志系统，捕获启动阶段及后续所有未捕获异常
         CrashLogManager.init(this)
-        CoroutineScope(Dispatchers.IO).launch {
-            SingletonImageLoader.get(this@MyApplication).diskCache?.clear()
-        }
 
         startKoin {
             androidLogger()

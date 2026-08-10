@@ -83,7 +83,7 @@ fun MusicPanelOverlay(
 
     LaunchedEffect(playbackState.timerAutoStopped) {
         if (playbackState.timerAutoStopped) {
-            playbackState.timerAutoStopped = false
+            playbackState.setTimerAutoStopped(false)
             onDismiss()
         }
     }
@@ -121,8 +121,8 @@ fun MusicPanelOverlay(
                         if (showLyricsRefresh) {
                             showLyricsRefresh = false
                             selectedLyricsCandidate = null
-                            playbackState.lyricsCandidates = emptyList()
-                            playbackState.lyricsRefreshError = null
+                            playbackState.setLyricsCandidates(emptyList())
+                            playbackState.setLyricsRefreshError(null)
                         } else onDismiss()
                         true
                     } else false
@@ -143,13 +143,13 @@ fun MusicPanelOverlay(
                                 showSettings -> showSettings = false
                                 showRename -> showRename = false
                             playbackState.showSearchResults -> {
-                                playbackState.showSearchResults = false
-                                playbackState.errorMsg = null
-                            }
-                            playbackState.isSearchMode -> {
-                                playbackState.isSearchMode = false
-                                playbackState.showSearchResults = false
-                            }
+                                playbackState.setSearchResultsVisible(false)
+                            playbackState.setErrorMsg(null)
+                        }
+                        playbackState.isSearchMode -> {
+                            playbackState.setSearchMode(false)
+                            playbackState.setSearchResultsVisible(false)
+                        }
                             else -> onDismiss()
                         }
                     }
@@ -235,7 +235,7 @@ fun MusicPanelOverlay(
                                                 if (!showPlaylist && !showTimer && !showSettings) {
                                                     when {
                                                         totalDy < -80f && kotlin.math.abs(totalDy) > kotlin.math.abs(totalDx) -> showAudioSignalPath = true
-                                                        totalDx > 50f && kotlin.math.abs(totalDx) > kotlin.math.abs(totalDy) -> playbackState.isSearchMode = true
+                                                        totalDx > 50f && kotlin.math.abs(totalDx) > kotlin.math.abs(totalDy) -> playbackState.setSearchMode(true)
                                                         totalDx < -50f && kotlin.math.abs(totalDx) > kotlin.math.abs(totalDy) -> showSettings = true
                                                     }
                                                 } else if (showAudioSignalPath && totalDy > 80f) {
@@ -262,13 +262,13 @@ fun MusicPanelOverlay(
                                         LyricsPanel(
                                             playbackState = playbackState,
                                             modifier = Modifier.fillMaxSize(),
-                                            onClick = { playbackState.isLyricsVisible = false }
+                                            onClick = { playbackState.setLyricsVisible(false) }
                                         )
                                     } else {
                                         CurrentCover(
                                             track = playbackState.currentTrack,
                                             isPlaying = playbackState.isPlaying,
-                                            onClick = { playbackState.isLyricsVisible = true },
+                                            onClick = { playbackState.setLyricsVisible(true) },
                                             onOnlineCover = {
                                                 coverTargetId = playbackState.currentTrack?.id
                                                 showCoverRefresh = true
@@ -278,7 +278,7 @@ fun MusicPanelOverlay(
                                                 coverTargetId = playbackState.currentTrack?.id
                                                 selectedLocalCover = null
                                                 showLocalCover = true
-                                                scope.launch { playbackState.localCoverCandidates = loadRecentCovers(context) }
+                                                scope.launch { playbackState.setLocalCoverCandidates(loadRecentCovers(context)) }
                                             }
                                         )
                                     }
@@ -286,7 +286,7 @@ fun MusicPanelOverlay(
                                 if (!playbackState.isLyricsVisible) {
                                     TrackInfo(
                                         playbackState = playbackState,
-                                        onClick = { playbackState.isLyricsVisible = true },
+                                        onClick = { playbackState.setLyricsVisible(true) },
                                         onRenameRequest = { isTitle, text ->
                                             renameIsTitle = isTitle
                                             renameInitValue = text
@@ -330,7 +330,7 @@ fun MusicPanelOverlay(
                     TimerOverlay(
                         visible = showTimer,
                         minutes = playbackState.timerMinutes,
-                        onMinutesChange = { playbackState.timerMinutes = it },
+                        onMinutesChange = { playbackState.setTimerMinutes(it) },
                         onConfirm = {
                             playbackState.startTimer(playbackState.timerMinutes)
                             showTimer = false
@@ -343,8 +343,8 @@ fun MusicPanelOverlay(
                         playbackState = playbackState,
                         context = context,
                         onClose = {
-                            playbackState.showSearchResults = false
-                            playbackState.errorMsg = null
+                            playbackState.setSearchResultsVisible(false)
+                            playbackState.setErrorMsg(null)
                         },
                         onRefresh = {
                             scope.launch {
@@ -428,7 +428,7 @@ fun MusicPanelOverlay(
                         onCancel = {
                             showLocalCover = false
                             selectedLocalCover = null
-                            playbackState.localCoverCandidates = emptyList()
+                            playbackState.setLocalCoverCandidates(emptyList())
                         }
                     )
 
@@ -464,7 +464,7 @@ fun MusicPanelOverlay(
                         onCancel = {
                             showCoverRefresh = false
                             selectedCoverCandidate = null
-                            playbackState.coverCandidates = emptyList()
+                            playbackState.setCoverCandidates(emptyList())
                         }
                     )
 
@@ -483,17 +483,17 @@ fun MusicPanelOverlay(
                                 if (success) {
                                     showLyricsRefresh = false
                                     selectedLyricsCandidate = null
-                                    playbackState.lyricsCandidates = emptyList()
+                                    playbackState.setLyricsCandidates(emptyList())
                                 } else {
-                                    playbackState.lyricsRefreshError = context.getString(R.string.music_panel_lyrics_refresh_failed)
+                                    playbackState.setLyricsRefreshError(context.getString(R.string.music_panel_lyrics_refresh_failed))
                                 }
                             }
                         },
                         onCancel = {
                             showLyricsRefresh = false
                             selectedLyricsCandidate = null
-                            playbackState.lyricsCandidates = emptyList()
-                            playbackState.lyricsRefreshError = null
+                            playbackState.setLyricsCandidates(emptyList())
+                            playbackState.setLyricsRefreshError(null)
                         }
                     )
 

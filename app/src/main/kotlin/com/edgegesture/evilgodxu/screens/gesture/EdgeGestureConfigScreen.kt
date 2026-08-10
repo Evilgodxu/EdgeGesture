@@ -40,7 +40,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,7 +54,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -64,25 +62,10 @@ import androidx.compose.ui.unit.sp
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
-import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
-import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeGesture
-import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeHeight
-import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeWidthPercent
-import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeGesture
-import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeHeightPercent
-import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgePositionPercent
-import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeWidth
-import com.edgegesture.evilgodxu.data.gesture.saveLeftSegmentCount
-import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeGesture
-import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeHeightPercent
-import com.edgegesture.evilgodxu.data.gesture.saveRightEdgePositionPercent
-import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeWidth
-import com.edgegesture.evilgodxu.data.gesture.saveRightSegmentCount
-import com.edgegesture.evilgodxu.data.gesture.saveBottomSegmentCount as saveBottomSegmentCount1
 import com.edgegesture.evilgodxu.screens.gesture.components.ActionSelectionDialog
 import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
-import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import org.koin.androidx.compose.koinViewModel
 
 enum class EdgeType { LEFT, RIGHT, BOTTOM }
 
@@ -90,11 +73,11 @@ enum class EdgeType { LEFT, RIGHT, BOTTOM }
 @Composable
 fun EdgeGestureConfigScreen(
     edgeType: EdgeType,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: EdgeGestureConfigViewModel = koinViewModel(),
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val settings by context.gestureSettingsFlow().collectAsState(initial = null)
+    val settings by viewModel.settings.collectAsState()
+    val currentSettings = settings
 
     var selectedSegment by remember { mutableIntStateOf(1) }
     var showActionDialog by remember { mutableStateOf(false) }
@@ -105,8 +88,6 @@ fun EdgeGestureConfigScreen(
         EdgeType.RIGHT -> stringResource(R.string.gesture_config_right)
         EdgeType.BOTTOM -> stringResource(R.string.gesture_config_bottom)
     }
-
-    val currentSettings = settings
 
     // 当前边缘的本地状态，滑块变化时立即更新预览
     val initW = when (edgeType) {
@@ -133,6 +114,8 @@ fun EdgeGestureConfigScreen(
         EdgeType.RIGHT -> currentSettings?.rightSegmentCount ?: 1
         EdgeType.BOTTOM -> currentSettings?.bottomSegmentCount ?: 1
     }
+    // 分段数量本地状态，拖动预览用，松手时才持久化
+    var localSegmentCount by remember(currentSettings, edgeType) { mutableIntStateOf(maxSegments) }
 
     Scaffold(
         topBar = {
@@ -189,7 +172,7 @@ fun EdgeGestureConfigScreen(
                         width = localWidth,
                         heightPercent = localHeightPercent,
                         positionPercent = localPositionPercent,
-                        segmentCount = maxSegments,
+                        segmentCount = localSegmentCount,
                         selectedSegment = selectedSegment,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -202,35 +185,22 @@ fun EdgeGestureConfigScreen(
                         BottomDimensionSliders(
                             height = localWidth,
                             widthPercent = localHeightPercent,
-                            onHeightChange = { v -> localWidth = v; scope.launch { context.saveBottomEdgeHeight(v) } },
-                            onWidthPercentChange = { v -> localHeightPercent = v; scope.launch { context.saveBottomEdgeWidthPercent(v) } }
+                            onHeightChange = { v -> localWidth = v },
+                            onWidthPercentChange = { v -> localHeightPercent = v },
+                            onHeightChangeFinished = { viewModel.saveWidth(edgeType, localWidth) },
+                            onWidthPercentChangeFinished = { viewModel.saveHeightPercent(edgeType, localHeightPercent) }
                         )
                     } else {
                         EdgeDimensionSliders(
                             width = localWidth,
                             heightPercent = localHeightPercent,
                             positionPercent = localPositionPercent,
-                            onWidthChange = { v ->
-                                localWidth = v
-                                scope.launch {
-                                    if (edgeType == EdgeType.LEFT) context.saveLeftEdgeWidth(v)
-                                    else context.saveRightEdgeWidth(v)
-                                }
-                            },
-                            onHeightPercentChange = { v ->
-                                localHeightPercent = v
-                                scope.launch {
-                                    if (edgeType == EdgeType.LEFT) context.saveLeftEdgeHeightPercent(v)
-                                    else context.saveRightEdgeHeightPercent(v)
-                                }
-                            },
-                            onPositionPercentChange = { v ->
-                                localPositionPercent = v
-                                scope.launch {
-                                    if (edgeType == EdgeType.LEFT) context.saveLeftEdgePositionPercent(v)
-                                    else context.saveRightEdgePositionPercent(v)
-                                }
-                            }
+                            onWidthChange = { v -> localWidth = v },
+                            onHeightPercentChange = { v -> localHeightPercent = v },
+                            onPositionPercentChange = { v -> localPositionPercent = v },
+                            onWidthChangeFinished = { viewModel.saveWidth(edgeType, localWidth) },
+                            onHeightPercentChangeFinished = { viewModel.saveHeightPercent(edgeType, localHeightPercent) },
+                            onPositionPercentChangeFinished = { viewModel.savePositionPercent(edgeType, localPositionPercent) }
                         )
                     }
 
@@ -238,17 +208,12 @@ fun EdgeGestureConfigScreen(
 
                     // 分段数量
                     SegmentCountSlider(
-                        segmentCount = maxSegments,
+                        segmentCount = localSegmentCount,
                         onSegmentCountChange = { count ->
-                            scope.launch {
-                                when (edgeType) {
-                                    EdgeType.LEFT -> context.saveLeftSegmentCount(count)
-                                    EdgeType.RIGHT -> context.saveRightSegmentCount(count)
-                                    EdgeType.BOTTOM -> context.saveBottomSegmentCount1(count)
-                                }
-                            }
+                            localSegmentCount = count
                             if (selectedSegment > count) selectedSegment = count
-                        }
+                        },
+                        onSegmentCountChangeFinished = { viewModel.saveSegmentCount(edgeType, localSegmentCount) }
                     )
                 }
             }
@@ -312,18 +277,11 @@ fun EdgeGestureConfigScreen(
                     val gestureLabels = getGestureLabels(edgeType)
                     val gestures = getGestureActions(edgeType, selectedSegment, currentSettings)
                     gestures.forEachIndexed { index, (action, key) ->
-                        val rot = when {
-                            gestureLabels[index].contains(stringResource(R.string.gesture_swipe_right)) -> 0f
-                            gestureLabels[index].contains(stringResource(R.string.gesture_swipe_left)) -> 180f
-                            gestureLabels[index].contains(stringResource(R.string.gesture_swipe_up)) -> -90f
-                            gestureLabels[index].contains(stringResource(R.string.gesture_swipe_down)) -> 90f
-                            else -> 0f
-                        }
                         GestureActionRow(
                             label = gestureLabels[index],
                             actionName = getActionDisplayName(action),
                             isLongPress = index % 2 == 1,
-                            iconRotation = rot,
+                            iconRotation = gestureIconRotation(edgeType, index),
                             onClick = {
                                 currentActionKey = key
                                 showActionDialog = true
@@ -342,21 +300,38 @@ fun EdgeGestureConfigScreen(
 
     // 动作选择对话框
     if (showActionDialog && currentActionKey != null && currentSettings != null) {
+        // 提前解包为非空局部变量，避免委托属性无法智能转换
+        val key = currentActionKey ?: return
         ActionSelectionDialog(
-            currentAction = getCurrentActionForDialog(edgeType, selectedSegment, currentSettings, currentActionKey),
+            currentAction = getCurrentActionForDialog(edgeType, selectedSegment, currentSettings, key),
             onDismiss = { showActionDialog = false },
             onActionSelected = { action ->
-                scope.launch {
-                    when (edgeType) {
-                        EdgeType.LEFT -> context.saveLeftEdgeGesture(currentActionKey!!, action)
-                        EdgeType.RIGHT -> context.saveRightEdgeGesture(currentActionKey!!, action)
-                        EdgeType.BOTTOM -> context.saveBottomEdgeGesture(currentActionKey!!, action)
-                    }
-                }
+                viewModel.saveGestureAction(edgeType, key, action)
                 showActionDialog = false
             },
             getActionDisplayName = { getActionDisplayName(it) }
         )
+    }
+}
+
+// 根据边缘类型与行序号确定方向图标旋转角度，与显示文案解耦
+private fun gestureIconRotation(edgeType: EdgeType, index: Int): Float {
+    return when (edgeType) {
+        EdgeType.LEFT -> when (index) {
+            0, 1 -> 0f      // 右滑
+            2, 3 -> -90f    // 上滑
+            else -> 90f     // 下滑
+        }
+        EdgeType.RIGHT -> when (index) {
+            0, 1 -> 180f    // 左滑
+            2, 3 -> -90f    // 上滑
+            else -> 90f     // 下滑
+        }
+        EdgeType.BOTTOM -> when (index) {
+            0, 1 -> -90f    // 上滑
+            2, 3 -> 180f    // 左滑
+            else -> 0f      // 右滑
+        }
     }
 }
 
@@ -531,7 +506,10 @@ private fun EdgeDimensionSliders(
     positionPercent: Int,
     onWidthChange: (Int) -> Unit,
     onHeightPercentChange: (Int) -> Unit,
-    onPositionPercentChange: (Int) -> Unit
+    onPositionPercentChange: (Int) -> Unit,
+    onWidthChangeFinished: () -> Unit,
+    onHeightPercentChangeFinished: () -> Unit,
+    onPositionPercentChangeFinished: () -> Unit
 ) {
     SliderSetting(
         label = stringResource(R.string.edge_width),
@@ -539,7 +517,8 @@ private fun EdgeDimensionSliders(
         range = 10f..50f,
         steps = 39,
         suffix = "dp",
-        onValueChange = onWidthChange
+        onValueChange = onWidthChange,
+        onValueChangeFinished = onWidthChangeFinished
     )
     Spacer(modifier = Modifier.height(12.dp))
     SliderSetting(
@@ -548,7 +527,8 @@ private fun EdgeDimensionSliders(
         range = 20f..100f,
         steps = 79,
         suffix = "%",
-        onValueChange = onHeightPercentChange
+        onValueChange = onHeightPercentChange,
+        onValueChangeFinished = onHeightPercentChangeFinished
     )
     Spacer(modifier = Modifier.height(12.dp))
     SliderSetting(
@@ -557,7 +537,8 @@ private fun EdgeDimensionSliders(
         range = 0f..100f,
         steps = 99,
         suffix = "%",
-        onValueChange = onPositionPercentChange
+        onValueChange = onPositionPercentChange,
+        onValueChangeFinished = onPositionPercentChangeFinished
     )
 }
 
@@ -566,7 +547,9 @@ private fun BottomDimensionSliders(
     height: Int,
     widthPercent: Int,
     onHeightChange: (Int) -> Unit,
-    onWidthPercentChange: (Int) -> Unit
+    onWidthPercentChange: (Int) -> Unit,
+    onHeightChangeFinished: () -> Unit,
+    onWidthPercentChangeFinished: () -> Unit
 ) {
     SliderSetting(
         label = stringResource(R.string.edge_height),
@@ -574,7 +557,8 @@ private fun BottomDimensionSliders(
         range = 10f..50f,
         steps = 39,
         suffix = "dp",
-        onValueChange = onHeightChange
+        onValueChange = onHeightChange,
+        onValueChangeFinished = onHeightChangeFinished
     )
     Spacer(modifier = Modifier.height(12.dp))
     SliderSetting(
@@ -583,7 +567,8 @@ private fun BottomDimensionSliders(
         range = 20f..100f,
         steps = 79,
         suffix = "%",
-        onValueChange = onWidthPercentChange
+        onValueChange = onWidthPercentChange,
+        onValueChangeFinished = onWidthPercentChangeFinished
     )
 }
 
@@ -594,7 +579,8 @@ private fun SliderSetting(
     range: ClosedFloatingPointRange<Float>,
     steps: Int,
     suffix: String,
-    onValueChange: (Int) -> Unit
+    onValueChange: (Int) -> Unit,
+    onValueChangeFinished: () -> Unit
 ) {
     val density = LocalDensity.current
 
@@ -642,10 +628,14 @@ private fun SliderSetting(
                             newValue
                         }
                         onValueChange(stepped.toInt().coerceIn(range.start.toInt(), range.endInclusive.toInt()))
+                        onValueChangeFinished()
                     }
                 }
                 .pointerInput(Unit) {
-                    detectHorizontalDragGestures { change, _ ->
+                    detectHorizontalDragGestures(
+                        onDragEnd = { onValueChangeFinished() },
+                        onDragCancel = { onValueChangeFinished() }
+                    ) { change, _ ->
                         change.consume()
                         val widthPx = size.width.toFloat()
                         val ratio = (change.position.x / widthPx).coerceIn(0f, 1f)
@@ -704,7 +694,8 @@ private fun SliderSetting(
 @Composable
 private fun SegmentCountSlider(
     segmentCount: Int,
-    onSegmentCountChange: (Int) -> Unit
+    onSegmentCountChange: (Int) -> Unit,
+    onSegmentCountChangeFinished: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -742,10 +733,14 @@ private fun SegmentCountSlider(
                         val ratio = (offset.x / widthPx).coerceIn(0f, 1f)
                         val newCount = (1 + ratio * 2).roundToInt().coerceIn(1, 3)
                         onSegmentCountChange(newCount)
+                        onSegmentCountChangeFinished()
                     }
                 }
                 .pointerInput(Unit) {
-                    detectHorizontalDragGestures { change, _ ->
+                    detectHorizontalDragGestures(
+                        onDragEnd = { onSegmentCountChangeFinished() },
+                        onDragCancel = { onSegmentCountChangeFinished() }
+                    ) { change, _ ->
                         change.consume()
                         val widthPx = size.width.toFloat()
                         val ratio = (change.position.x / widthPx).coerceIn(0f, 1f)

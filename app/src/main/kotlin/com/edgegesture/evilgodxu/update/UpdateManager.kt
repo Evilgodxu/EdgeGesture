@@ -116,7 +116,16 @@ object UpdateManager {
                 val conn = URL(url).openConnection() as java.net.HttpURLConnection
                 conn.connectTimeout = 15_000
                 conn.readTimeout = 15_000
-                conn.inputStream.bufferedReader().use { it.readText() }
+                try {
+                    // 检查响应码：非 2xx（如 GitHub API 限流 403）视为失败，避免把错误响应当正常数据解析
+                    val code = conn.responseCode
+                    if (code !in 200..299) {
+                        throw IllegalStateException("GitHub API 响应异常: HTTP $code")
+                    }
+                    conn.inputStream.bufferedReader().use { it.readText() }
+                } finally {
+                    conn.disconnect()
+                }
             }
             val release = json.decodeFromString<GitHubRelease>(jsonStr)
 
@@ -176,26 +185,6 @@ object UpdateManager {
     }
 
     /**
-     * 通过 DownloadManager 自动下载 APK 到系统下载目录
-     */
-    fun downloadApk(context: Context, updateInfo: UpdateInfo): Long {
-        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        val req = DownloadManager.Request(Uri.parse(updateInfo.downloadUrl))
-            .setMimeType("application/vnd.android.package-archive")
-            .setTitle(context.getString(R.string.app_name) + " 更新")
-            .setDescription("正在下载 ${updateInfo.latestVersion}")
-            .setDestinationInExternalPublicDir(
-                Environment.DIRECTORY_DOWNLOADS,
-                "EdgeGesture_${updateInfo.latestVersion}.apk"
-            )
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setAllowedOverMetered(false)   // 仅在 WiFi 下允许
-            .setAllowedOverRoaming(false)
-
-        return dm.enqueue(req)
-    }
-
-    /**
      * 下载 APK 并引导安装（用于对话框点击「下载」）
      * 下载到应用私有目录，通过 onProgress 回调进度，完成后通过 FileProvider 打开安装界面
      * 长时间无进度变动（15 秒）判定为超时失败
@@ -213,82 +202,93 @@ object UpdateManager {
             fileName
         )
 
-        // 删除已存在的旧文件
-        if (outFile.exists()) outFile.delete()
+        // 下载、轮询、文件操作全部在 IO 线程执行，避免 DownloadManager IPC 阻塞主线程
+        return withContext(Dispatchers.IO) {
+            // 删除已存在的旧文件
+            if (outFile.exists()) outFile.delete()
 
-        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        val req = DownloadManager.Request(Uri.parse(updateInfo.downloadUrl))
-            .setTitle(context.getString(R.string.app_name) + " 更新")
-            .setDescription("正在下载 ${updateInfo.latestVersion}")
-            .setDestinationUri(Uri.fromFile(outFile))
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
-            .setAllowedOverMetered(true)
-            .setAllowedOverRoaming(true)
+            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+            val req = DownloadManager.Request(Uri.parse(requireHttps(updateInfo.downloadUrl)))
+                .setTitle(context.getString(R.string.app_name) + " 更新")
+                .setDescription("正在下载 ${updateInfo.latestVersion}")
+                .setDestinationUri(Uri.fromFile(outFile))
+                .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE)
+                .setAllowedOverMetered(true)
+                .setAllowedOverRoaming(true)
 
-        val downloadId = dm.enqueue(req)
-        var lastProgressBytes = -1L
-        var stallCount = 0
-        val STALL_TIMEOUT = 30  // 30 次无进度 * 500ms = 15 秒
+            val downloadId = dm.enqueue(req)
+            var lastProgressBytes = -1L
+            var stallCount = 0
+            val STALL_TIMEOUT = 30  // 30 次无进度 * 500ms = 15 秒
 
-        // 轮询下载进度
-        while (true) {
-            val (status, done, total) = dm.query(DownloadManager.Query().setFilterById(downloadId)).use { cursor ->
-                if (!cursor.moveToFirst()) return@use null
-                Triple(
-                    cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)),
-                    cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)),
-                    cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
-                )
-            } ?: break
-
-            when (status) {
-                DownloadManager.STATUS_SUCCESSFUL -> {
-                    onProgress(1f)
-                    // 下载完成，通过 FileProvider 打开安装界面
-                    val uri = androidx.core.content.FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileprovider",
-                        outFile
+            // 轮询下载进度
+            while (true) {
+                val (status, done, total) = dm.query(DownloadManager.Query().setFilterById(downloadId)).use { cursor ->
+                    if (!cursor.moveToFirst()) return@use null
+                    Triple(
+                        cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)),
+                        cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)),
+                        cursor.getLong(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
                     )
-                    val installIntent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
-                        setDataAndType(uri, "application/vnd.android.package-archive")
-                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    context.startActivity(installIntent)
-                    clearPendingUpdate(context)
-                    return true
-                }
-                DownloadManager.STATUS_FAILED -> {
-                    android.util.Log.w(TAG, "Download failed")
-                    onProgress(-1f)
-                    return false
-                }
-                else -> {
-                    // 上报进度
-                    if (total > 0) {
-                        onProgress(done.toFloat() / total)
-                    }
+                } ?: break
 
-                    // 检测进度停滞超时
-                    if (done == lastProgressBytes) {
-                        stallCount++
-                        if (stallCount >= STALL_TIMEOUT) {
-                            android.util.Log.w(TAG, "Download stalled for 30s, aborting")
-                            dm.remove(downloadId)
-                            onProgress(-1f)
-                            return false
+                when (status) {
+                    DownloadManager.STATUS_SUCCESSFUL -> {
+                        onProgress(1f)
+                        // 下载完成，通过 FileProvider 打开安装界面
+                        val uri = androidx.core.content.FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileprovider",
+                            outFile
+                        )
+                        val installIntent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, "application/vnd.android.package-archive")
+                            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
-                    } else {
-                        lastProgressBytes = done
-                        stallCount = 0
+                        context.startActivity(installIntent)
+                        clearPendingUpdate(context)
+                        return@withContext true
                     }
-                    kotlinx.coroutines.delay(500)
+                    DownloadManager.STATUS_FAILED -> {
+                        android.util.Log.w(TAG, "Download failed")
+                        onProgress(-1f)
+                        return@withContext false
+                    }
+                    else -> {
+                        // 上报进度
+                        if (total > 0) {
+                            onProgress(done.toFloat() / total)
+                        }
+
+                        // 检测进度停滞超时
+                        if (done == lastProgressBytes) {
+                            stallCount++
+                            if (stallCount >= STALL_TIMEOUT) {
+                                android.util.Log.w(TAG, "Download stalled for 30s, aborting")
+                                dm.remove(downloadId)
+                                onProgress(-1f)
+                                return@withContext false
+                            }
+                        } else {
+                            lastProgressBytes = done
+                            stallCount = 0
+                        }
+                        kotlinx.coroutines.delay(500)
+                    }
                 }
             }
+            onProgress(-1f)
+            false
         }
-        onProgress(-1f)
-        return false
+    }
+
+    // 仅允许 HTTPS 下载地址，防止下载降级到明文传输
+    private fun requireHttps(url: String): String {
+        if (!url.startsWith("https://")) {
+            throw IllegalArgumentException("不安全的下载地址: $url")
+        }
+        return url
     }
 
     /**

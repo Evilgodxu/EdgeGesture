@@ -34,6 +34,21 @@ object ShizukuManager {
     private var commandService: ICommandService? = null
     private var isServiceBinding = false
 
+    // init 幂等标志：binder 监听器只注册一次，避免重复注册导致监听器累积
+    @Volatile
+    private var initialized = false
+
+    private val binderReceivedListener = Shizuku.OnBinderReceivedListener {
+        updateState()
+        // Binder 可用时自动绑定 UserService
+        bindUserService()
+    }
+
+    private val binderDeadListener = Shizuku.OnBinderDeadListener {
+        _state.value = ShizukuState.NotRunning
+        commandService = null
+    }
+
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             commandService = ICommandService.Stub.asInterface(service)
@@ -53,16 +68,11 @@ object ShizukuManager {
             return
         }
 
-        // 添加 Binder 接收监听
-        Shizuku.addBinderReceivedListener {
-            updateState()
-            // Binder 可用时自动绑定 UserService
-            bindUserService()
-        }
-
-        Shizuku.addBinderDeadListener {
-            _state.value = ShizukuState.NotRunning
-            commandService = null
+        // 只注册一次 binder 监听器，重复 init 仅刷新状态
+        if (!initialized) {
+            initialized = true
+            Shizuku.addBinderReceivedListener(binderReceivedListener)
+            Shizuku.addBinderDeadListener(binderDeadListener)
         }
 
         // 初始状态检查
@@ -156,7 +166,8 @@ object ShizukuManager {
     // 通过 UserService 执行 shell 命令
     fun executeCommand(command: String): Result<String> {
         val service = commandService
-        return if (service != null && service.isAlive) {
+        // commandService 非空即表示 binder 连接有效（断开时会被置空），无需额外存活检查
+        return if (service != null) {
             try {
                 val result = service.executeCommand(command)
                 Result.success(result)

@@ -58,17 +58,18 @@ fun VerticalSlidersSection() {
 
     var brightness by remember { mutableFloatStateOf(getCurrentBrightnessPercent(context)) }
 
-    val maxAlarmVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+    // 个别设备流最大音量可能为 0，按 1 兜底避免归一化时除零产生 NaN
+    val maxAlarmVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM).coerceAtLeast(1)
     var alarmVolume by remember {
         mutableFloatStateOf(audioManager.getStreamVolume(AudioManager.STREAM_ALARM).toFloat() / maxAlarmVolume)
     }
 
-    val maxRingVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING)
+    val maxRingVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_RING).coerceAtLeast(1)
     var ringVolume by remember {
         mutableFloatStateOf(audioManager.getStreamVolume(AudioManager.STREAM_RING).toFloat() / maxRingVolume)
     }
 
-    val maxMusicVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+    val maxMusicVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
     var mediaVolume by remember {
         mutableFloatStateOf(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat() / maxMusicVolume)
     }

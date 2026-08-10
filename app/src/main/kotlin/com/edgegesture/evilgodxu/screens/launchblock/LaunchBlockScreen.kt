@@ -1,7 +1,6 @@
 package com.edgegesture.evilgodxu.screens.launchblock
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +16,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -26,48 +27,36 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import com.edgegesture.evilgodxu.screens.gesture.components.GestureSettingsSwitchItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockRule
-import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockState
-import com.edgegesture.evilgodxu.log.CrashLogManager
-import com.edgegesture.evilgodxu.data.launchblock.launchBlockFlow
-import com.edgegesture.evilgodxu.data.launchblock.addLaunchBlockRule
-import com.edgegesture.evilgodxu.data.launchblock.removeLaunchBlockRule
-import com.edgegesture.evilgodxu.data.launchblock.updateLaunchBlockRule
-import com.edgegesture.evilgodxu.data.launchblock.setLaunchBlockEnabled
+import com.edgegesture.evilgodxu.screens.gesture.components.GestureSettingsSwitchItem
 import com.edgegesture.evilgodxu.screens.settings.components.LaunchBlockRuleDialog
-import android.content.Context
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LaunchBlockScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: LaunchBlockViewModel = koinViewModel(),
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-
-    val launchBlockState by context.launchBlockFlow().collectAsState(initial = LaunchBlockState())
+    val launchBlockState by viewModel.state.collectAsStateWithLifecycle()
+    val appNames by viewModel.appNames.collectAsStateWithLifecycle()
 
     var showRuleDialog by remember { mutableStateOf(false) }
     var editingRule by remember { mutableStateOf<LaunchBlockRule?>(null) }
@@ -126,9 +115,7 @@ fun LaunchBlockScreen(
                     subtitle = stringResource(R.string.settings_launch_block_desc),
                     checked = launchBlockState.enabled,
                     onCheckedChange = { enabled ->
-                        scope.launch {
-                            context.setLaunchBlockEnabled(enabled)
-                        }
+                        viewModel.setEnabled(enabled)
                     }
                 )
             }
@@ -191,14 +178,14 @@ fun LaunchBlockScreen(
                         launchBlockState.rules.forEach { rule ->
                             RuleCard(
                                 rule = rule,
+                                appNames = appNames,
+                                onResolveAppName = viewModel::resolveAppName,
                                 onEdit = {
                                     editingRule = rule
                                     showRuleDialog = true
                                 },
                                 onDelete = {
-                                    scope.launch {
-                                        context.removeLaunchBlockRule(rule.id)
-                                    }
+                                    viewModel.removeRule(rule.id)
                                 }
                             )
                         }
@@ -234,19 +221,15 @@ fun LaunchBlockScreen(
             rule = editingRule,
             onDismiss = { showRuleDialog = false },
             onConfirm = { rule ->
-                scope.launch {
-                    if (editingRule != null) {
-                        context.updateLaunchBlockRule(rule)
-                    } else {
-                        context.addLaunchBlockRule(rule)
-                    }
+                if (editingRule != null) {
+                    viewModel.updateRule(rule)
+                } else {
+                    viewModel.addRule(rule)
                 }
                 showRuleDialog = false
             },
             onDelete = if (editingRule != null) { { ruleId ->
-                scope.launch {
-                    context.removeLaunchBlockRule(ruleId)
-                }
+                viewModel.removeRule(ruleId)
                 showRuleDialog = false
             } } else null
         )
@@ -256,16 +239,20 @@ fun LaunchBlockScreen(
 @Composable
 private fun RuleCard(
     rule: LaunchBlockRule,
+    appNames: Map<String, String>,
+    onResolveAppName: (String) -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val context = LocalContext.current
-    val launcherName = remember(rule.launcherApp) {
-        if (rule.launcherApp.isNotBlank()) getAppName(context, rule.launcherApp) else ""
+    // 应用名在组合外异步解析，避免同步 IPC 卡顿主线程；解析完成后经 appNames 刷新
+    LaunchedEffect(rule.launcherApp, rule.targetApp) {
+        onResolveAppName(rule.launcherApp)
+        onResolveAppName(rule.targetApp)
     }
-    val targetName = remember(rule.targetApp) {
-        getAppName(context, rule.targetApp)
-    }
+    val launcherName = if (rule.launcherApp.isNotBlank()) {
+        appNames[rule.launcherApp] ?: rule.launcherApp
+    } else ""
+    val targetName = appNames[rule.targetApp] ?: rule.targetApp
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -345,17 +332,5 @@ private fun RuleCard(
                 }
             }
         }
-    }
-}
-
-// 获取应用名称，如果获取失败则返回包名
-private fun getAppName(context: Context, packageName: String): String {
-    return try {
-        val pm = context.packageManager
-        val appInfo = pm.getApplicationInfo(packageName, 0)
-        pm.getApplicationLabel(appInfo).toString()
-    } catch (e: Exception) {
-        CrashLogManager.logException("LaunchBlockScreen", "获取应用名称失败", e)
-        packageName
     }
 }

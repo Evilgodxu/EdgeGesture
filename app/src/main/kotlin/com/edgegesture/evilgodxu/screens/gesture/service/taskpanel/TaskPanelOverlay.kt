@@ -323,7 +323,7 @@ fun TaskPanelOverlay(
                     )
                 }
                 Text(
-                    text = "✕",
+                    text = stringResource(R.string.task_panel_clear),
                     color = Color.White,
                     fontSize = 18.sp
                 )

@@ -31,15 +31,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
-
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -124,7 +119,6 @@ internal fun LyricsPanel(
                             nextTimeMs = nextTimeMs,
                             positionMs = lyricPosition,
                             isCurrent = isCurrent,
-                            text = buildLyricText(line, nextTimeMs, lyricPosition, isCurrent),
                             fontSize = 12.sp,
                             fontWeight = if (isCurrent) FontWeight.Medium else FontWeight.Normal,
                             modifier = Modifier
@@ -153,7 +147,6 @@ internal fun LyricText(
     nextTimeMs: Long,
     positionMs: Long,
     isCurrent: Boolean,
-    text: AnnotatedString,
     fontSize: TextUnit,
     fontWeight: FontWeight,
     modifier: Modifier = Modifier,
@@ -195,61 +188,6 @@ internal fun LyricText(
         fontWeight = fontWeight,
         modifier = modifier
     )
-}
-
-@Composable
-internal fun buildLyricText(
-    line: LyricLine,
-    nextTimeMs: Long,
-    positionMs: Long,
-    isCurrent: Boolean,
-): AnnotatedString {
-    val primary = MaterialTheme.colorScheme.primary
-    val idle = MaterialTheme.colorScheme.onSurfaceVariant
-    val pendingColor = idle.copy(alpha = 0.72f)
-    val activeColor = primary.copy(alpha = 1f)
-    val highlightShadow = Shadow(
-        primary.copy(alpha = 0.65f),
-        blurRadius = 7f
-    )
-
-    val tokens = if (line.words.isNotEmpty()) {
-        line.words
-    } else {
-        val parts = splitLyricText(line.text)
-        val duration = (nextTimeMs - line.timeMs).coerceAtLeast(1L)
-        val partDuration = (duration / parts.size.coerceAtLeast(1)).coerceAtLeast(1L)
-        parts.mapIndexed { index, part ->
-            LyricWord(
-                startMs = line.timeMs + index * partDuration,
-                durationMs = if (index == parts.lastIndex) {
-                    (nextTimeMs - (line.timeMs + index * partDuration)).coerceAtLeast(1L)
-                } else partDuration,
-                text = part
-            )
-        }
-    }
-
-    return buildAnnotatedString {
-        tokens.forEachIndexed { tokenIndex, token ->
-            val tokenEndMs = if (tokenIndex + 1 < tokens.size) {
-                tokens[tokenIndex + 1].startMs.coerceAtLeast(token.startMs + 1L)
-            } else {
-                token.startMs + token.durationMs.coerceAtLeast(1L)
-            }
-            val progress = if (isCurrent) {
-                ((positionMs - token.startMs).toFloat() / (tokenEndMs - token.startMs)).coerceIn(0f, 1f)
-            } else 0f
-            val split = (token.text.length * progress).toInt()
-            withStyle(
-                SpanStyle(
-                    color = activeColor,
-                    shadow = if (split > 0) highlightShadow else null
-                )
-            ) { append(token.text.take(split)) }
-            withStyle(SpanStyle(color = pendingColor)) { append(token.text.drop(split)) }
-        }
-    }
 }
 
 internal fun splitLyricText(text: String): List<String> {

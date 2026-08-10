@@ -25,43 +25,39 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.edgegesture.evilgodxu.data.app.DataConfigManager
-import com.edgegesture.evilgodxu.data.app.ManagedDataItem
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.app.ManagedDataType
-import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelStateHolder
-import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 import java.util.Locale
 
 @androidx.compose.material3.ExperimentalMaterial3Api
 @androidx.compose.runtime.Composable
-fun DataConfigScreen(onNavigateBack: () -> Unit) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    var items by remember { mutableStateOf<List<ManagedDataItem>>(emptyList()) }
+fun DataConfigScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: DataConfigViewModel = koinViewModel(),
+) {
+    val items by viewModel.items.collectAsStateWithLifecycle()
+    val message by viewModel.message.collectAsStateWithLifecycle()
     val checked = remember { mutableStateMapOf<ManagedDataType, Boolean>() }
     var showClearConfirm by remember { mutableStateOf(false) }
-    var message by remember { mutableStateOf<String?>(null) }
-
-    fun refresh() = scope.launch { items = DataConfigManager.listData(context) }
-    LaunchedEffect(Unit) { refresh() }
 
     Scaffold(topBar = {
         TopAppBar(
-            title = { Text("音乐缓存") },
-            navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "返回") } }
+            title = { Text(stringResource(R.string.data_config_title)) },
+            navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.nav_back)) } }
         )
     }) { padding ->
         Column(
@@ -69,7 +65,7 @@ fun DataConfigScreen(onNavigateBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                "缓存数据",
+                stringResource(R.string.data_config_section_cache),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 10.dp)
@@ -95,7 +91,7 @@ fun DataConfigScreen(onNavigateBack: () -> Unit) {
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(Icons.Default.DeleteSweep, null)
-                Text("清理所选数据", modifier = Modifier.padding(start = 8.dp))
+                Text(stringResource(R.string.data_config_clear_selected), modifier = Modifier.padding(start = 8.dp))
             }
             message?.let {
                 Text(
@@ -111,19 +107,14 @@ fun DataConfigScreen(onNavigateBack: () -> Unit) {
 
     if (showClearConfirm) AlertDialog(
         onDismissRequest = { showClearConfirm = false },
-        title = { Text("确认清理") },
-        text = { Text("清理所选数据后，相关模块将重新初始化。音乐数据清理会停止并释放播放器。") },
+        title = { Text(stringResource(R.string.data_config_confirm_title)) },
+        text = { Text(stringResource(R.string.data_config_confirm_message)) },
         confirmButton = { TextButton(onClick = {
             showClearConfirm = false
-            scope.launch {
-                val selected = checked.filterValues { it }.keys
-                DataConfigManager.clear(context, selected) { MusicPanelStateHolder.state.release() }
-                checked.clear()
-                refresh()
-                message = "清理完成，相关数据已重新初始化"
-            }
-        }) { Text("清理") } },
-        dismissButton = { TextButton(onClick = { showClearConfirm = false }) { Text("取消") } }
+            viewModel.clearData(checked.filterValues { it }.keys)
+            checked.clear()
+        }) { Text(stringResource(R.string.data_config_clear)) } },
+        dismissButton = { TextButton(onClick = { showClearConfirm = false }) { Text(stringResource(R.string.dialog_cancel)) } }
     )
 }
 
@@ -150,7 +141,7 @@ private fun SelectableDataRow(
             if (selected) {
                 Icon(
                     imageVector = Icons.Default.Check,
-                    contentDescription = "已选中",
+                    contentDescription = stringResource(R.string.data_config_selected),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 8.dp)
                 )
@@ -159,9 +150,10 @@ private fun SelectableDataRow(
     }
 }
 
+@Composable
 private fun dataName(type: ManagedDataType): String = when (type) {
-    ManagedDataType.MUSIC_COVERS -> "音乐封面缓存"
-    ManagedDataType.MUSIC_LYRICS -> "音乐歌词缓存"
+    ManagedDataType.MUSIC_COVERS -> stringResource(R.string.data_config_cover_cache)
+    ManagedDataType.MUSIC_LYRICS -> stringResource(R.string.data_config_lyrics_cache)
 }
 
 private fun formatSize(size: Long): String = when {

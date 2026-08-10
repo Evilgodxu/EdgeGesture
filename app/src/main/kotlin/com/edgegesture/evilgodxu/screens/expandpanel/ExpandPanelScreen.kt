@@ -23,12 +23,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -36,25 +34,23 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.edgegesture.evilgodxu.R
-import com.edgegesture.evilgodxu.data.gesture.expandPanelShortcutsFlow
-import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcut
-import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcutFreeform
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.AppPickerScreen
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ShortcutsGrid
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.VerticalSlidersSection
 import com.edgegesture.evilgodxu.screens.gesture.service.FreeformAppLauncher
-import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpandPanelScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: ExpandPanelViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
     val freeformAppLauncher = remember(context) { FreeformAppLauncher(context) }
-    val scope = rememberCoroutineScope()
-    val shortcutsState by context.expandPanelShortcutsFlow().collectAsState(initial = null)
+    val shortcutsState by viewModel.shortcuts.collectAsStateWithLifecycle()
 
     var showAppPicker by remember { mutableStateOf(false) }
     var selectedIndex by remember { mutableIntStateOf(-1) }
@@ -152,9 +148,7 @@ fun ExpandPanelScreen(
                                     showAppPicker = true
                                 } else {
                                     // 直接传入包名保存（来自外部恢复等场景）
-                                    scope.launch {
-                                        context.saveExpandPanelShortcut(index, packageName)
-                                    }
+                                    viewModel.saveShortcut(index, packageName)
                                 }
                             },
                             onLaunchApp = { packageName, index ->
@@ -163,9 +157,7 @@ fun ExpandPanelScreen(
                                 showAppPicker = true
                             },
                             onFreeformToggle = { index, enabled ->
-                                scope.launch {
-                                    context.saveExpandPanelShortcutFreeform(index, enabled)
-                                }
+                                viewModel.saveShortcutFreeform(index, enabled)
                             }
                         )
                     }
@@ -194,9 +186,7 @@ fun ExpandPanelScreen(
                     onAppSelected = { packageName ->
                         // 必须提前捕获 selectedIndex，避免协程调度时被下方 reset 覆盖
                         val targetIndex = selectedIndex
-                        scope.launch {
-                            context.saveExpandPanelShortcut(targetIndex, packageName)
-                        }
+                        viewModel.saveShortcut(targetIndex, packageName)
                         showAppPicker = false
                         selectedIndex = -1
                     },

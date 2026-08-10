@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.withLock
+import kotlin.jvm.JvmName
 
 data class AudioSignalPathFormat(
     val format: String,
@@ -114,7 +115,8 @@ class MusicPlaybackState {
         }
 
         override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-            errorMsg = appContext?.getString(R.string.music_panel_play_failed) ?: "播放失败"
+            // errorMsg 为可空类型，appContext 为空时置 null（播放不会发生，正常显示无错误）
+            errorMsg = appContext?.getString(R.string.music_panel_play_failed)
             isPlaying = false
             isPrepared = false
             val failedTrack = currentTrack
@@ -730,4 +732,37 @@ class MusicPlaybackState {
 
     // 构造上一首索引
     fun previousIndex(): Int = calculateIndex(direction = -1, repeatOne = false)
+
+    // ===== UI 层状态写入口：悬浮窗 UI 统一通过这些方法写入状态，避免直接对 public var 赋值 =====
+    // 方法与属性 setter 同名会冲突，故用 @JvmName 指定不同 JVM 名
+    @JvmName("updatePlayMode")
+    fun setPlayMode(mode: PlayMode) { playMode = mode }
+    @JvmName("updateSearchMode")
+    fun setSearchMode(enabled: Boolean) { isSearchMode = enabled }
+    @JvmName("updateSearchResultsVisible")
+    fun setSearchResultsVisible(visible: Boolean) { showSearchResults = visible }
+    @JvmName("updateSearchQuery")
+    fun setSearchQuery(query: String) { searchQuery = query }
+    @JvmName("updateLyricsVisible")
+    fun setLyricsVisible(visible: Boolean) { isLyricsVisible = visible }
+    @JvmName("updateLocalCoverCandidates")
+    fun setLocalCoverCandidates(candidates: List<RecentCover>) { localCoverCandidates = candidates }
+    @JvmName("updateCoverCandidates")
+    fun setCoverCandidates(candidates: List<NeteaseSongSearchResult>) { coverCandidates = candidates }
+    @JvmName("updateLyricsCandidates")
+    fun setLyricsCandidates(candidates: List<NeteaseSongSearchResult>) { lyricsCandidates = candidates }
+    @JvmName("updateLyricsRefreshError")
+    fun setLyricsRefreshError(error: String?) { lyricsRefreshError = error }
+    @JvmName("updateErrorMsg")
+    fun setErrorMsg(message: String?) { errorMsg = message }
+    @JvmName("updateTimerMinutes")
+    fun setTimerMinutes(minutes: Int) { timerMinutes = minutes }
+    @JvmName("updateTimerAutoStopped")
+    fun setTimerAutoStopped(stopped: Boolean) { timerAutoStopped = stopped }
+    @JvmName("updateCurrentPosition")
+    fun setCurrentPosition(position: Long) { currentPosition = position }
+    @JvmName("updateUsbExclusiveEnabled")
+    fun setUsbExclusiveEnabled(enabled: Boolean) { usbExclusiveEnabled = enabled }
+    @JvmName("updateUsbExclusiveMode")
+    fun setUsbExclusiveMode(enabled: Boolean) { isUsbExclusiveMode = enabled }
 }

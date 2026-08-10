@@ -80,6 +80,11 @@ object DataConfigManager {
         require(root.optInt("formatVersion") == FORMAT_VERSION) { "不支持的配置版本" }
         val gesture = root.getJSONObject("gesture")
         val launch = root.getJSONObject("launchBlock")
+
+        // 先完整解析校验所有键值，全部通过后再写入，避免写入中途异常导致配置被清空
+        validateObject(gesture)
+        validateObject(launch)
+
         val currentGesture = context.gestureDataStore.data.first().asMap()
         context.gestureDataStore.edit { prefs ->
             val preserved = currentGesture.filter { !isExportedKey(it.key.name) }
@@ -90,6 +95,24 @@ object DataConfigManager {
         context.launchBlockDataStore.edit { prefs ->
             prefs.clear()
             putObject(prefs, launch)
+        }
+    }
+
+    // 校验导入对象中的每个键值类型，非法数据在此抛出，不会触发清空写入
+    private fun validateObject(obj: JSONObject) {
+        obj.keys().forEach { name ->
+            val encoded = obj.getJSONObject(name)
+            when (encoded.getString("type")) {
+                "boolean" -> encoded.getBoolean("value")
+                "int" -> encoded.getInt("value")
+                "long" -> encoded.getLong("value")
+                "string" -> encoded.getString("value")
+                "stringSet" -> {
+                    val array = encoded.getJSONArray("value")
+                    for (i in 0 until array.length()) array.getString(i)
+                }
+                else -> throw IllegalArgumentException("未知配置类型: $name")
+            }
         }
     }
 

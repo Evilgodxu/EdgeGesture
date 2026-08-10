@@ -13,7 +13,6 @@ import com.edgegesture.evilgodxu.screens.gesture.GestureSettingsScreen
 import com.edgegesture.evilgodxu.screens.launchblock.LaunchBlockScreen
 import com.edgegesture.evilgodxu.screens.settings.DataConfigScreen
 import com.edgegesture.evilgodxu.screens.settings.SettingsScreen
-import com.edgegesture.evilgodxu.screens.settings.ThemeMode
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -51,7 +50,6 @@ data object ExpandPanelRoute
 fun NavGraph(
     navController: NavHostController,
     startDestination: GestureRoute = GestureRoute,
-    onThemeChange: (ThemeMode) -> Unit = {},
 ) {
     NavHost(
         navController = navController,
@@ -92,9 +90,6 @@ fun NavGraph(
                     if (navController.previousBackStackEntry != null) {
                         navController.popBackStack()
                     }
-                },
-                onThemeChange = { themeMode ->
-                    onThemeChange(themeMode)
                 },
                 onNavigateToDataConfig = {
                     navController.navigate(DataConfigRoute)

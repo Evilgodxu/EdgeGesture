@@ -10,6 +10,8 @@ import java.io.StringWriter
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import kotlin.system.exitProcess
 
 /**
@@ -39,6 +41,12 @@ object CrashLogManager : Thread.UncaughtExceptionHandler {
     private var logDir: File? = null
     private var appVersion = "unknown"
     private var previousHandler: Thread.UncaughtExceptionHandler? = null
+    private var lastCleanDate: LocalDate? = null
+
+    // 单线程异步写日志，避免调用线程（可能是主线程）阻塞在文件 IO
+    private val logExecutor: ExecutorService = Executors.newSingleThreadExecutor { r ->
+        Thread(r, "CrashLogWriter").apply { isDaemon = true }
+    }
 
     /** 初始化日志系统，应在 Application.onCreate 最前面调用 */
     fun init(context: Context) {
@@ -68,10 +76,14 @@ object CrashLogManager : Thread.UncaughtExceptionHandler {
             Log.e(TAG, "$className: $description", throwable)
             return
         }
-        writeLog(title = "$className: $description", throwable = throwable)
+        // 异步写入，不阻塞调用线程
+        logExecutor.execute {
+            writeLog(title = "$className: $description", throwable = throwable)
+        }
     }
 
     override fun uncaughtException(thread: Thread, throwable: Throwable) {
+        // 崩溃日志必须同步落盘，确保进程终止前写入完成
         writeLog(title = "未捕获异常（线程 ${thread.name}）", thread = thread, throwable = throwable, withDeviceInfo = true)
         // 交给原处理器；没有原处理器时主动结束进程，保持系统默认行为
         previousHandler?.uncaughtException(thread, throwable) ?: exitProcess(2)
@@ -79,9 +91,14 @@ object CrashLogManager : Thread.UncaughtExceptionHandler {
 
     @Synchronized
     private fun writeLog(title: String, thread: Thread? = null, throwable: Throwable?, withDeviceInfo: Boolean = false) {
-        cleanOldLogs()
         val dir = logDir ?: return
-        val logFile = File(dir, "$LOG_FILE_PREFIX${LocalDate.now().format(dateFormat)}.log")
+        // 旧日志清理每天一次，避免每次写入都遍历目录
+        val today = LocalDate.now()
+        if (lastCleanDate != today) {
+            lastCleanDate = today
+            cleanOldLogs()
+        }
+        val logFile = File(dir, "$LOG_FILE_PREFIX${today.format(dateFormat)}.log")
         try {
             FileWriter(logFile, true).use { writer ->
                 writer.appendLine("================ $title ================")

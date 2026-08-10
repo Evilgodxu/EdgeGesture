@@ -39,9 +39,9 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,7 +49,6 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -58,30 +57,29 @@ import com.edgegesture.evilgodxu.R
 
 import com.edgegesture.evilgodxu.data.gesture.BackTapMode
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
-import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
-import com.edgegesture.evilgodxu.data.gesture.saveBackTapAction
-import com.edgegesture.evilgodxu.data.gesture.saveBackTapEnabled
-import com.edgegesture.evilgodxu.data.gesture.saveBackTapMode
-import com.edgegesture.evilgodxu.data.gesture.saveBackTapPauseOnCharging
-import com.edgegesture.evilgodxu.data.gesture.saveBackTapRange
-import com.edgegesture.evilgodxu.data.gesture.saveBackTapSensitivity
 import com.edgegesture.evilgodxu.screens.gesture.components.ActionSelectionDialog
 import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
-import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BackTapScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: BackTapViewModel = koinViewModel(),
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val gestureSettings by context.gestureSettingsFlow().collectAsState(initial = null)
+    val gestureSettings by viewModel.gestureSettings.collectAsState()
+    val settings = gestureSettings
 
     var showActionDialog by remember { mutableStateOf(false) }
 
-    val settings = gestureSettings
+    // 滑块本地状态，拖动预览用，松手时才持久化
+    var localSensitivity by remember(settings?.backTapSensitivity) {
+        mutableIntStateOf(settings?.backTapSensitivity ?: 5)
+    }
+    var localRange by remember(settings?.backTapRange) {
+        mutableIntStateOf(settings?.backTapRange ?: 5)
+    }
 
     Scaffold(
         topBar = {
@@ -140,9 +138,7 @@ fun BackTapScreen(
                         title = stringResource(R.string.back_tap_enable_title),
                         description = stringResource(R.string.back_tap_enable_desc),
                         checked = settings?.backTapEnabled ?: false,
-                        onCheckedChange = { enabled ->
-                            scope.launch { context.saveBackTapEnabled(enabled) }
-                        }
+                        onCheckedChange = viewModel::setBackTapEnabled
                     )
 
                     if (settings?.backTapEnabled == true) {
@@ -151,10 +147,9 @@ fun BackTapScreen(
                         // 灵敏度滑块
                         SettingsSliderItem(
                             label = stringResource(R.string.back_tap_sensitivity),
-                            value = settings.backTapSensitivity,
-                            onValueChange = { value ->
-                                scope.launch { context.saveBackTapSensitivity(value) }
-                            }
+                            value = localSensitivity,
+                            onValueChange = { value -> localSensitivity = value },
+                            onValueChangeFinished = { viewModel.setBackTapSensitivity(localSensitivity) }
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -162,10 +157,9 @@ fun BackTapScreen(
                         // 检测范围滑块
                         SettingsSliderItem(
                             label = stringResource(R.string.back_tap_range),
-                            value = settings.backTapRange,
-                            onValueChange = { value ->
-                                scope.launch { context.saveBackTapRange(value) }
-                            }
+                            value = localRange,
+                            onValueChange = { value -> localRange = value },
+                            onValueChangeFinished = { viewModel.setBackTapRange(localRange) }
                         )
 
                         Spacer(modifier = Modifier.height(20.dp))
@@ -189,7 +183,7 @@ fun BackTapScreen(
                                     BackTapMode.SCREEN_ON -> stringResource(R.string.back_tap_mode_screen_on)
                                 }
                                 FilledTonalButton(
-                                    onClick = { scope.launch { context.saveBackTapMode(mode) } },
+                                    onClick = { viewModel.setBackTapMode(mode) },
                                     modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(10.dp),
                                     colors = ButtonDefaults.filledTonalButtonColors(
@@ -219,9 +213,7 @@ fun BackTapScreen(
                             title = stringResource(R.string.back_tap_pause_on_charging_title),
                             description = stringResource(R.string.back_tap_pause_on_charging_desc),
                             checked = settings.backTapPauseOnCharging,
-                            onCheckedChange = { pause ->
-                                scope.launch { context.saveBackTapPauseOnCharging(pause) }
-                            }
+                            onCheckedChange = viewModel::setBackTapPauseOnCharging
                         )
                     }
                 }
@@ -288,7 +280,7 @@ fun BackTapScreen(
             currentAction = settings.backTapAction,
             onDismiss = { showActionDialog = false },
             onActionSelected = { action ->
-                scope.launch { context.saveBackTapAction(action) }
+                viewModel.setBackTapAction(action)
                 showActionDialog = false
             },
             getActionDisplayName = { getActionDisplayName(it) }
@@ -332,7 +324,8 @@ private fun SettingsToggleRow(
 private fun SettingsSliderItem(
     label: String,
     value: Int,
-    onValueChange: (Int) -> Unit
+    onValueChange: (Int) -> Unit,
+    onValueChangeFinished: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -369,10 +362,14 @@ private fun SettingsSliderItem(
                         val widthPx = size.width.toFloat()
                         val ratio = (offset.x / widthPx).coerceIn(0f, 1f)
                         onValueChange((1 + ratio * 9).roundToInt().coerceIn(1, 10))
+                        onValueChangeFinished()
                     }
                 }
                 .pointerInput(Unit) {
-                    detectHorizontalDragGestures { change, _ ->
+                    detectHorizontalDragGestures(
+                        onDragEnd = { onValueChangeFinished() },
+                        onDragCancel = { onValueChangeFinished() }
+                    ) { change, _ ->
                         change.consume()
                         val widthPx = size.width.toFloat()
                         val ratio = (change.position.x / widthPx).coerceIn(0f, 1f)

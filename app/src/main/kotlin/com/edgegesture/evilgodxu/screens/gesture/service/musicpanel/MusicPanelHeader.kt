@@ -25,9 +25,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.edgegesture.evilgodxu.R
 
 @Composable
 internal fun HeaderRow(
@@ -51,6 +53,7 @@ internal fun HeaderRow(
         ) {
             HeaderIconButton(
                 icon = Icons.Default.Timer,
+                contentDescription = stringResource(R.string.music_panel_timer_title),
                 onClick = onTimerClick,
                 modifier = Modifier.offset(y = 4.dp)
             )
@@ -80,7 +83,7 @@ internal fun HeaderRow(
                 if (hasBluetoothDevice) {
                     Icon(
                         imageVector = Icons.Default.Bluetooth,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.music_panel_bluetooth_device),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(15.dp),
                     )
@@ -96,7 +99,7 @@ internal fun HeaderRow(
                 if (hasUsbDevice) {
                     Icon(
                         imageVector = Icons.Default.Usb,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.music_panel_usb_device),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(15.dp),
                     )
@@ -114,6 +117,7 @@ internal fun HeaderRow(
 
         HeaderIconButton(
             icon = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+            contentDescription = stringResource(R.string.music_panel_favorite),
             onClick = {
                 currentTrackId?.let { playbackState.toggleFavorite(it) }
             },
@@ -128,6 +132,7 @@ internal fun HeaderRow(
 @Composable
 internal fun HeaderIconButton(
     icon: ImageVector,
+    contentDescription: String? = null,
     onClick: () -> Unit,
     tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     modifier: Modifier = Modifier,
@@ -140,7 +145,7 @@ internal fun HeaderIconButton(
     ) {
         Icon(
             icon,
-            contentDescription = null,
+            contentDescription = contentDescription,
             modifier = Modifier.size(21.dp),
             tint = if (enabled) tint else tint.copy(alpha = 0.3f)
         )

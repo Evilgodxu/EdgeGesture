@@ -27,7 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.edgegesture.evilgodxu.R
 import kotlinx.coroutines.launch
 
 @Composable
@@ -54,12 +56,13 @@ internal fun ControlBar(
         }
         ControlIconButton(
             icon = modeIcon,
+            contentDescription = stringResource(R.string.music_panel_play_mode),
             onClick = {
-                playbackState.playMode = when (playbackState.playMode) {
+                playbackState.setPlayMode(when (playbackState.playMode) {
                     PlayMode.RepeatAll -> PlayMode.RepeatOne
                     PlayMode.RepeatOne -> PlayMode.Shuffle
                     PlayMode.Shuffle -> PlayMode.RepeatAll
-                }
+                })
                 playbackState.mediaController?.let { controller ->
                     applyPlaybackMode(controller, playbackState.playMode)
                 }
@@ -71,6 +74,7 @@ internal fun ControlBar(
 
         ControlIconButton(
             icon = Icons.Default.SkipPrevious,
+            contentDescription = stringResource(R.string.music_panel_previous_track),
             onClick = {
                 val prev = playbackState.previousIndex()
                 if (prev >= 0) scope.launch { playTrackAt(context, playbackState, prev) }
@@ -92,7 +96,9 @@ internal fun ControlBar(
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = null,
+                    contentDescription = stringResource(
+                        if (playbackState.isPlaying) R.string.music_panel_pause else R.string.music_panel_play
+                    ),
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(18.dp)
                 )
@@ -101,6 +107,7 @@ internal fun ControlBar(
 
         ControlIconButton(
             icon = Icons.Default.SkipNext,
+            contentDescription = stringResource(R.string.music_panel_next_track),
             onClick = {
                 val next = playbackState.nextIndex()
                 if (next >= 0) scope.launch { playTrackAt(context, playbackState, next) }
@@ -112,6 +119,7 @@ internal fun ControlBar(
 
         ControlIconButton(
             icon = Icons.AutoMirrored.Outlined.QueueMusic,
+            contentDescription = stringResource(R.string.music_panel_playlist),
             onClick = onPlaylistClick,
             size = 32.dp,
             iconSize = 21.dp
@@ -130,7 +138,7 @@ internal fun ControlBar(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
-                        text = "词",
+                        text = stringResource(R.string.music_panel_lyrics_short),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.titleMedium
                     )
@@ -143,6 +151,7 @@ internal fun ControlBar(
 @Composable
 internal fun ControlIconButton(
     icon: ImageVector,
+    contentDescription: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
     size: androidx.compose.ui.unit.Dp = 32.dp,
@@ -155,7 +164,7 @@ internal fun ControlIconButton(
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = null,
+            contentDescription = contentDescription,
             modifier = Modifier.size(iconSize),
             tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant
             else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)

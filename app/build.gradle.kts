@@ -1,3 +1,4 @@
+import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -23,8 +24,8 @@ android {
         applicationId = "com.edgegesture.evilgodxu"
         minSdk = 34
         targetSdk = 37
-        versionCode = 15
-        versionName = "4.8.0"
+        versionCode = 16
+        versionName = "4.9.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -51,9 +52,6 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
-        }
-        debug {
-            isDebuggable = false
         }
     }
     androidResources {
@@ -101,6 +99,17 @@ android {
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
+    }
+}
+
+// 构建产物统一命名为 EdgeGesture-<versionName>-arm64.apk
+val apkVersionName = android.defaultConfig.versionName ?: "0.0.0"
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set("EdgeGesture-$apkVersionName-arm64.apk")
+        }
     }
 }
 

@@ -132,15 +132,16 @@ internal fun SettingsOverlay(
                                 else
                                     playbackState.usbExclusiveEnabled,
                                 onCheckedChange = { enabled ->
-                                    playbackState.usbExclusiveEnabled = enabled
+                                    playbackState.setUsbExclusiveEnabled(enabled)
                                     if (playbackState.isUsbDeviceConnected) {
                                         settingsScope.launch {
                                             if (enabled) {
-                                                playbackState.isUsbExclusiveMode =
+                                                playbackState.setUsbExclusiveMode(
                                                     UsbAudioMonitor.setUsbExclusive(context, true)
+                                                )
                                             } else {
                                                 UsbAudioMonitor.setUsbExclusive(context, false)
-                                                playbackState.isUsbExclusiveMode = false
+                                                playbackState.setUsbExclusiveMode(false)
                                             }
                                         }
                                     }

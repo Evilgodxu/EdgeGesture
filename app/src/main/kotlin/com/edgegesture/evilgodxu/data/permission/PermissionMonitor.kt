@@ -1,14 +1,18 @@
 package com.edgegesture.evilgodxu.data.permission
 
 import android.Manifest
+import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 import com.edgegesture.evilgodxu.log.CrashLogManager
+import com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 
 // 需要监控的权限类型
 enum class PermissionType {
@@ -58,8 +62,12 @@ class PermissionMonitor(private val context: Context) {
             context.contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         ) ?: return false
-        val packageName = context.packageName
-        return enabledServices.contains(packageName)
+        // 按组件全名精确匹配，避免包名前缀相同的服务被误判
+        val expected = ComponentName(
+            context,
+            EdgeGestureAccessibilityService::class.java
+        ).flattenToString()
+        return enabledServices.split(':').any { it.equals(expected, ignoreCase = true) }
     }
 
     // 检查修改系统设置权限
@@ -86,7 +94,7 @@ class PermissionMonitor(private val context: Context) {
             if (granted) break
             delay(intervalMs)
         }
-    }
+    }.flowOn(Dispatchers.IO)
 
     // 同时监控多个权限
     fun monitorPermissions(permissionTypes: List<PermissionType>, intervalMs: Long = 500): Flow<Map<PermissionType, Boolean>> = flow {
@@ -96,5 +104,5 @@ class PermissionMonitor(private val context: Context) {
             if (result.all { it.value }) break
             delay(intervalMs)
         }
-    }
+    }.flowOn(Dispatchers.IO)
 }

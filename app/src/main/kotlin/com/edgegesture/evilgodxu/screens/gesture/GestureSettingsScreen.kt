@@ -88,6 +88,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -109,7 +110,7 @@ import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
 import com.edgegesture.evilgodxu.data.gesture.StatsPeriod
 import com.edgegesture.evilgodxu.data.permission.PermissionType
 import com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService
-import com.edgegesture.evilgodxu.ui.adaptive.rememberWindowSizeClass
+import com.edgegesture.evilgodxu.ui.adaptive.currentWindowSizeClass
 import com.edgegesture.evilgodxu.screens.gesture.components.ActionSelectionDialog
 import com.edgegesture.evilgodxu.screens.gesture.components.EdgeGestureSection
 import com.edgegesture.evilgodxu.screens.gesture.components.GesturePreview
@@ -136,7 +137,7 @@ fun GestureSettingsScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val settings = uiState.settings
     val lifecycleOwner = LocalLifecycleOwner.current
-    val windowSizeClass = rememberWindowSizeClass()
+    val windowSizeClass = currentWindowSizeClass()
 
     // 加载状态处理
     if (uiState.isLoading) {
@@ -152,7 +153,7 @@ fun GestureSettingsScreen(
     var waitingForSystemSetting by remember { mutableStateOf(false) }
 
     // rememberUpdatedState 确保在 DisposableEffect 中也能获取到最新的 waitingForSystemSetting 值
-    val currentWaitingState by rememberUpdatedState { waitingForSystemSetting }
+    val currentWaitingState by rememberUpdatedState(waitingForSystemSetting)
     val setWaitingState = { value: Boolean ->
         waitingForSystemSetting = value
     }
@@ -171,7 +172,7 @@ fun GestureSettingsScreen(
                 // 用户可能刚从系统设置页返回，需要刷新权限状态
                 viewModel.refreshAccessibilityState()
                 viewModel.refreshPermissions()
-                if (currentWaitingState()) {
+                if (currentWaitingState) {
                     setWaitingState(false)
                 }
                 // 页面返回时停止权限监控
@@ -302,8 +303,16 @@ private fun GestureSettingsContent(
                     )
 
                     TriggerAreaSettingsCard(
-                        settings = settings,
-                        viewModel = viewModel
+                        hideOverlay = settings.hideOverlay,
+                        hideFromRecents = settings.hideFromRecents,
+                        avoidKeyboardOverlap = settings.avoidKeyboardOverlap,
+                        vibrationEnabled = settings.vibrationEnabled,
+                        doubleSwipeEnabled = settings.doubleSwipeEnabled,
+                        onHideOverlayChange = viewModel::setHideOverlay,
+                        onHideFromRecentsChange = viewModel::setHideFromRecents,
+                        onAvoidKeyboardOverlapChange = viewModel::setAvoidKeyboardOverlap,
+                        onVibrationEnabledChange = viewModel::setVibrationEnabled,
+                        onDoubleSwipeEnabledChange = viewModel::setDoubleSwipeEnabled,
                     )
 
                     MoreGridCard(
@@ -364,8 +373,16 @@ private fun GestureSettingsContent(
 
             AnimatedVisibility(visible = settings.gestureEnabled) {
                 TriggerAreaSettingsCard(
-                    settings = settings,
-                    viewModel = viewModel
+                    hideOverlay = settings.hideOverlay,
+                    hideFromRecents = settings.hideFromRecents,
+                    avoidKeyboardOverlap = settings.avoidKeyboardOverlap,
+                    vibrationEnabled = settings.vibrationEnabled,
+                    doubleSwipeEnabled = settings.doubleSwipeEnabled,
+                    onHideOverlayChange = viewModel::setHideOverlay,
+                    onHideFromRecentsChange = viewModel::setHideFromRecents,
+                    onAvoidKeyboardOverlapChange = viewModel::setAvoidKeyboardOverlap,
+                    onVibrationEnabledChange = viewModel::setVibrationEnabled,
+                    onDoubleSwipeEnabledChange = viewModel::setDoubleSwipeEnabled,
                 )
             }
 
@@ -392,6 +409,8 @@ private fun GestureSettingsSwitchesColumn(
     val context = LocalContext.current
     val stats by GestureStatsManager.stats.collectAsState()
     val statsPeriod by GestureStatsManager.period.collectAsState()
+    // 手势配置数仅在设置变化时重新统计，避免每次重组全量遍历
+    val totalGestureCount = remember(settings) { countNonNoneGestures(settings) }
     var showStatsPeriodDialog by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -423,7 +442,7 @@ private fun GestureSettingsSwitchesColumn(
         enabled = settings.gestureEnabled,
         isAccessibilityEnabled = uiState.isAccessibilityEnabled,
         totalSegments = settings.leftSegmentCount + settings.rightSegmentCount + settings.bottomSegmentCount,
-        totalGestures = countNonNoneGestures(settings),
+        totalGestures = totalGestureCount,
         stats = stats,
         statsPeriod = statsPeriod,
         onToggleService = { enable ->
@@ -825,6 +844,7 @@ private fun ServiceStatusCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .combinedClickable(
+                        // onClick 为空实现仅为支撑长按手势，单击本身无实际作用
                         onClick = {},
                         onLongClick = onLongPressStats
                     ),
@@ -1336,8 +1356,16 @@ private fun SummaryCard(
 
 @Composable
 private fun TriggerAreaSettingsCard(
-    settings: GestureSettingsState,
-    viewModel: GestureSettingsViewModel,
+    hideOverlay: Boolean,
+    hideFromRecents: Boolean,
+    avoidKeyboardOverlap: Boolean,
+    vibrationEnabled: Boolean,
+    doubleSwipeEnabled: Boolean,
+    onHideOverlayChange: (Boolean) -> Unit,
+    onHideFromRecentsChange: (Boolean) -> Unit,
+    onAvoidKeyboardOverlapChange: (Boolean) -> Unit,
+    onVibrationEnabledChange: (Boolean) -> Unit,
+    onDoubleSwipeEnabledChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -1370,50 +1398,40 @@ private fun TriggerAreaSettingsCard(
                     GestureSettingsSwitchItem(
                         title = stringResource(R.string.gesture_hide_overlay_title),
                         subtitle = stringResource(R.string.gesture_hide_overlay_desc),
-                        checked = settings.hideOverlay,
-                        onCheckedChange = { hide ->
-                            viewModel.setHideOverlay(hide)
-                        }
+                        checked = hideOverlay,
+                        onCheckedChange = onHideOverlayChange
                     )
 
                     // 隐藏后台
                     GestureSettingsSwitchItem(
                         title = stringResource(R.string.gesture_hide_recents_title),
                     subtitle = stringResource(R.string.gesture_hide_recents_desc),
-                    checked = settings.hideFromRecents,
-                    onCheckedChange = { hide ->
-                        viewModel.setHideFromRecents(hide)
-                    }
+                    checked = hideFromRecents,
+                    onCheckedChange = onHideFromRecentsChange
                 )
 
                 // 避免遮挡
                 GestureSettingsSwitchItem(
                     title = stringResource(R.string.gesture_avoid_keyboard_overlap_title),
                     subtitle = stringResource(R.string.gesture_avoid_keyboard_overlap_desc),
-                    checked = settings.avoidKeyboardOverlap,
-                    onCheckedChange = { enabled ->
-                        viewModel.setAvoidKeyboardOverlap(enabled)
-                    }
+                    checked = avoidKeyboardOverlap,
+                    onCheckedChange = onAvoidKeyboardOverlapChange
                 )
 
                 // 震动反馈
                 GestureSettingsSwitchItem(
                     title = stringResource(R.string.settings_vibration_title),
                     subtitle = stringResource(R.string.settings_vibration_desc),
-                    checked = settings.vibrationEnabled,
-                    onCheckedChange = { enabled ->
-                        viewModel.setVibrationEnabled(enabled)
-                    }
+                    checked = vibrationEnabled,
+                    onCheckedChange = onVibrationEnabledChange
                 )
 
                 // 二次滑动
                 GestureSettingsSwitchItem(
                     title = stringResource(R.string.gesture_double_swipe_title),
                     subtitle = stringResource(R.string.gesture_double_swipe_desc),
-                    checked = settings.doubleSwipeEnabled,
-                    onCheckedChange = { enabled ->
-                        viewModel.setDoubleSwipeEnabled(enabled)
-                    }
+                    checked = doubleSwipeEnabled,
+                    onCheckedChange = onDoubleSwipeEnabledChange
                 )
             }
         }

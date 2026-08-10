@@ -20,8 +20,9 @@ fun ProvideWindowSizeClass(content: @Composable () -> Unit) {
     }
 }
 
-// 获取当前窗口尺寸类，用于判断设备类型（手机/平板/折叠屏）和屏幕方向
+// 获取当前窗口尺寸类，用于判断设备类型（手机/平板/折叠屏）和屏幕方向。
+// 仅读取 CompositionLocal，无记忆/缓存效果，故不命名为 remember 前缀
 @Composable
-fun rememberWindowSizeClass(): WindowSizeClass {
+fun currentWindowSizeClass(): WindowSizeClass {
     return LocalWindowSizeClass.current
 }

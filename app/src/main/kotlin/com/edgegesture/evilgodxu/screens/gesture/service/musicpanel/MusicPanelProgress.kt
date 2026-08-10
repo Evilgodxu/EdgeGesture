@@ -86,7 +86,7 @@ internal fun ProgressSection(playbackState: MusicPlaybackState) {
                                 isSeeking = true
                                 if (event.changes.first().pressed) {
                                     seekTo(playbackState, (seekFraction * playbackState.duration).toLong())
-                                    playbackState.currentPosition = (seekFraction * playbackState.duration).toLong().coerceIn(0L, playbackState.duration)
+                                    playbackState.setCurrentPosition((seekFraction * playbackState.duration).toLong().coerceIn(0L, playbackState.duration))
                                 }
                                 if (event.changes.all { !it.pressed }) {
                                     isSeeking = false

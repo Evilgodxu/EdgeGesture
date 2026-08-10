@@ -6,6 +6,8 @@ import com.edgegesture.evilgodxu.log.CrashLogManager
 import rikka.shizuku.Shizuku
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
 
 /**
  * Shizuku UserService 实现类
@@ -19,6 +21,9 @@ class CommandUserService : ICommandService.Stub() {
             "com.edgegesture.evilgodxu",
             "com.edgegesture.evilgodxu.service.CommandUserService"
         )
+
+        private const val COMMAND_TIMEOUT_SECONDS = 30L
+        private const val READER_JOIN_TIMEOUT_MS = 5000L
 
         /**
          * 构建 UserService 启动参数
@@ -37,16 +42,29 @@ class CommandUserService : ICommandService.Stub() {
             val output = StringBuilder()
             val error = StringBuilder()
 
-            BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
-                reader.lineSequence().forEach { output.appendLine(it) }
+            // 并发读取 stdout/stderr，避免任一管道缓冲写满时子进程阻塞导致死锁
+            val stdoutReader = thread(name = "stdout-reader") {
+                BufferedReader(InputStreamReader(process.inputStream)).use { reader ->
+                    reader.lineSequence().forEach { output.appendLine(it) }
+                }
+            }
+            val stderrReader = thread(name = "stderr-reader") {
+                BufferedReader(InputStreamReader(process.errorStream)).use { reader ->
+                    reader.lineSequence().forEach { error.appendLine(it) }
+                }
             }
 
-            BufferedReader(InputStreamReader(process.errorStream)).use { reader ->
-                reader.lineSequence().forEach { error.appendLine(it) }
+            // 等待命令完成，超时后强制终止，避免挂起命令长期占住 Shizuku binder 线程
+            val completed = process.waitFor(COMMAND_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            stdoutReader.join(READER_JOIN_TIMEOUT_MS)
+            stderrReader.join(READER_JOIN_TIMEOUT_MS)
+
+            if (!completed) {
+                process.destroyForcibly()
+                return "Error (timeout after $COMMAND_TIMEOUT_SECONDS seconds)"
             }
 
-            val exitCode = process.waitFor()
-
+            val exitCode = process.exitValue()
             if (exitCode == 0) {
                 output.toString()
             } else {
@@ -58,6 +76,8 @@ class CommandUserService : ICommandService.Stub() {
         }
     }
 
+    // UserService 绑定成功后进程即存活；binder 断开时 Shizuku 会回调
+    // onServiceDisconnected 置空连接，因此客户端判断 commandService 非空即可
     override fun isAlive(): Boolean {
         return true
     }

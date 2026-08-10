@@ -60,7 +60,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
 
         fun stopGesture(context: Context) {
-            getInstance()?.requestGestureSync()
+            getInstance()?.stopGestureInternal()
         }
 
         fun updateSettings(context: Context) {
@@ -152,6 +152,19 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                     } else {
                         edgeViewManager.removeEdgeViews()
                     }
+                }
+            }
+        }
+    }
+
+    // 停止手势：显式移除边缘视图，不依赖 DataStore 写入的异步完成，
+    // 避免关闭开关后立即同步读到旧值导致视图残留
+    private fun stopGestureInternal() {
+        serviceScope.launch {
+            if (!::edgeViewManager.isInitialized) return@launch
+            edgeViewMutex.withLock {
+                withContext(Dispatchers.Main) {
+                    edgeViewManager.removeEdgeViews()
                 }
             }
         }

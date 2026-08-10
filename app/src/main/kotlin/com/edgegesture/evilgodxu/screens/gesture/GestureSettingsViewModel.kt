@@ -3,6 +3,7 @@ package com.edgegesture.evilgodxu.screens.gesture
 import android.Manifest
 import android.app.Activity
 import android.app.Application
+import android.content.ComponentName
 import android.content.pm.PackageManager
 import android.os.PowerManager
 import android.os.Process
@@ -44,6 +45,7 @@ import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.permission.PermissionMonitor
 import com.edgegesture.evilgodxu.data.permission.PermissionType
 import com.edgegesture.evilgodxu.log.CrashLogManager
+import com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -377,7 +379,7 @@ class GestureSettingsViewModel(
     fun setVibrationEnabled(enabled: Boolean) {
         viewModelScope.launch {
             context.saveVibrationEnabled(enabled)
-            com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService.updateSettings(context)
+            EdgeGestureAccessibilityService.updateSettings(context)
         }
     }
 
@@ -396,6 +398,10 @@ private fun isAccessibilityServiceEnabled(context: android.content.Context): Boo
         context.contentResolver,
         Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
     ) ?: return false
-    val packageName = context.packageName
-    return enabledServices.contains(packageName)
+    // 按组件全名精确匹配，避免包名前缀相同的服务被误判
+    val expected = ComponentName(
+        context,
+        EdgeGestureAccessibilityService::class.java
+    ).flattenToString()
+    return enabledServices.split(':').any { it.equals(expected, ignoreCase = true) }
 }

@@ -62,14 +62,19 @@ fun ExpandPanelOverlay(
         }
     }
 
-    LaunchedEffect(shortcutsFlow) {
-        shortcutsFlow.collect { state ->
+    // 固定 Flow 实例：调用方每次组合可能传入新实例（DataStore 数据源相同），
+    // 若直接用作 LaunchedEffect key 会导致重复收集
+    val rememberedShortcutsFlow = remember { shortcutsFlow }
+    val rememberedThemeModeFlow = remember { themeModeFlow }
+
+    LaunchedEffect(rememberedShortcutsFlow) {
+        rememberedShortcutsFlow.collect { state ->
             currentShortcuts = state
         }
     }
 
-    LaunchedEffect(themeModeFlow) {
-        themeModeFlow.collect { mode ->
+    LaunchedEffect(rememberedThemeModeFlow) {
+        rememberedThemeModeFlow.collect { mode ->
             themeMode = mode
         }
     }
