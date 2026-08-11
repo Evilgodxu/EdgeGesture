@@ -42,6 +42,7 @@ import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelPe
 import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelViewManager
 import com.edgegesture.evilgodxu.screens.gesture.service.taskpanel.TaskPanelApp
 import com.edgegesture.evilgodxu.screens.gesture.service.taskpanel.TaskPanelViewManager
+import com.edgegesture.evilgodxu.screens.gesture.service.translate.TranslationOverlayManager
 import com.edgegesture.evilgodxu.screens.settings.themeModeFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -74,6 +75,7 @@ class AccessibilityActionExecutor(
     private var taskPanelViewManager: TaskPanelViewManager? = null
     private var pendingTaskPanelShow = false
     private var taskPanelLoadJob: Job? = null
+    private var translationOverlayManager: TranslationOverlayManager? = null
     private val permissionMonitor = PermissionMonitor(service)
     private val executorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -119,6 +121,9 @@ class AccessibilityActionExecutor(
         vibrate(settings)
         GestureStatsManager.incrementGestureCount(service)
 
+        // 导航类手势会改变当前页面，先关闭屏幕翻译
+        if (action in NAVIGATION_ACTIONS) dismissTranslation()
+
         when (action) {
             GestureAction.HOME -> {
                 dismissTaskPanel()
@@ -138,6 +143,7 @@ class AccessibilityActionExecutor(
             GestureAction.EXPAND_PANEL -> showExpandPanel()
             GestureAction.MUSIC_PANEL -> showMusicPanel()
             GestureAction.TASK_PANEL -> showTaskPanel()
+            GestureAction.TRANSLATE -> toggleTranslation()
             GestureAction.ALIPAY_SCAN -> launchScanAlipay()
             GestureAction.WECHAT_SCAN -> launchScanWechat()
             GestureAction.REMIND_1M -> scheduleReminder(1)
@@ -322,6 +328,22 @@ class AccessibilityActionExecutor(
         pendingTaskPanelShow = false
     }
 
+    // 屏幕翻译：开关式交互，再次触发或切换应用时关闭
+    private fun toggleTranslation() {
+        if (translationOverlayManager != null) {
+            dismissTranslation()
+            return
+        }
+        val manager = TranslationOverlayManager(service) { translationOverlayManager = null }
+        translationOverlayManager = manager
+        manager.show()
+    }
+
+    fun dismissTranslation() {
+        translationOverlayManager?.dismiss()
+        translationOverlayManager = null
+    }
+
     // 申请 Shizuku 权限并等待结果：已授权直接返回 true，不可用/拒绝/超时返回 false
     private suspend fun awaitShizukuPermission(): Boolean {
         if (ShizukuManager.isAvailable()) return true
@@ -427,6 +449,7 @@ class AccessibilityActionExecutor(
         dismissExpandPanel()
         dismissMusicPanel()
         dismissTaskPanel()
+        dismissTranslation()
         writeSettingsMonitorJob?.cancel()
         writeSettingsMonitorJob = null
         MusicPanelPermissionBridge.clearPendingShowAction()
@@ -441,6 +464,14 @@ class AccessibilityActionExecutor(
 
         val packageName = event.packageName?.toString() ?: return
         if (packageName == service.packageName) return
+
+        // 屏幕翻译开启时，窗口状态变化（返回、页面跳转、弹窗、切换应用等）即关闭，
+        // 避免译文停留在旧页面；切换应用时窗口内容类型变化也能触发关闭
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
+            (currentApp != null && packageName != currentApp)
+        ) {
+            dismissTranslation()
+        }
 
         if (packageName == currentApp) return
 
@@ -710,5 +741,14 @@ class AccessibilityActionExecutor(
     companion object {
         private const val TAG = "ActionExecutor"
         private const val REMIND_REQUEST_CODE_BASE = 3000
+
+        // 会改变当前页面的导航类手势
+        private val NAVIGATION_ACTIONS = setOf(
+            GestureAction.HOME,
+            GestureAction.RECENT,
+            GestureAction.BACK,
+            GestureAction.LAST_APP,
+            GestureAction.LOCK_SCREEN
+        )
     }
 }

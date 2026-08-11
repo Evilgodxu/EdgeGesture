@@ -14,6 +14,7 @@ import android.os.BatteryManager
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityWindowInfo
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
@@ -115,7 +116,10 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                 Intent.ACTION_USER_PRESENT -> backTapDetector?.setScreenOn(true)
                 Intent.ACTION_SCREEN_OFF -> {
                     backTapDetector?.setScreenOn(false)
-                    if (::actionExecutor.isInitialized) actionExecutor.dismissTaskPanel()
+                    if (::actionExecutor.isInitialized) {
+                        actionExecutor.dismissTaskPanel()
+                        actionExecutor.dismissTranslation()
+                    }
                 }
             }
         }
@@ -633,6 +637,15 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
     override fun onSwipeAction(action: GestureAction) {
         actionExecutor.performAction(action, settings)
+    }
+
+    // 系统返回键（含手势导航返回）触发时关闭屏幕翻译；
+    // 返回 false 不拦截按键，仍交由系统处理
+    override fun onKeyEvent(event: KeyEvent): Boolean {
+        if (event.keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
+            if (::actionExecutor.isInitialized) actionExecutor.dismissTranslation()
+        }
+        return super.onKeyEvent(event)
     }
 
     private suspend fun loadSettings() {

@@ -25,7 +25,7 @@ android {
         minSdk = 34
         targetSdk = 37
         versionCode = 16
-        versionName = "4.9.1"
+        versionName = "5.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -154,6 +154,9 @@ dependencies {
     // Media3 ExoPlayer — 多格式音频播放引擎
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.session)
+
+    // 屏幕翻译网络请求
+    implementation(libs.okhttp)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

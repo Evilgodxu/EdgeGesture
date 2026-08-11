@@ -144,6 +144,8 @@ enum class GestureAction(val value: String) {
     MUSIC_PANEL("music_panel"),
     // 任务面板
     TASK_PANEL("task_panel"),
+    // 屏幕翻译
+    TRANSLATE("translate"),
     // 扫一扫
     ALIPAY_SCAN("alipay_scan"),
     WECHAT_SCAN("wechat_scan"),

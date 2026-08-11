@@ -83,6 +83,12 @@
     <string name="gesture_action_expand_panel">扩展面板</string>
     <string name="gesture_action_music_panel">音乐面板</string>
     <string name="gesture_action_task_panel">任务面板</string>
+    <string name="gesture_action_translate">屏幕翻译</string>
+
+    <!-- 屏幕翻译 -->
+    <string name="translate_started">正在翻译当前页面…</string>
+    <string name="translate_failed">翻译失败，请重试</string>
+    <string name="translate_no_text">当前页面没有可翻译的文本</string>
 
     <!-- 音乐面板 -->
     <string name="music_panel_empty">暂无本地音乐</string>
