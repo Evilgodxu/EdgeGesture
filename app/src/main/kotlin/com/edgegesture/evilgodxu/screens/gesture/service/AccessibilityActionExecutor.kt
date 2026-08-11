@@ -35,6 +35,7 @@ import com.edgegesture.evilgodxu.data.permission.PermissionType
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuState
 import com.edgegesture.evilgodxu.log.CrashLogManager
+import com.edgegesture.evilgodxu.screens.gesture.service.compassclock.CompassClockViewManager
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelPermissionCallback
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelViewManager
 import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelPermissionActivity
@@ -75,6 +76,7 @@ class AccessibilityActionExecutor(
     private var taskPanelViewManager: TaskPanelViewManager? = null
     private var pendingTaskPanelShow = false
     private var taskPanelLoadJob: Job? = null
+    private var compassClockViewManager: CompassClockViewManager? = null
     private var translationOverlayManager: TranslationOverlayManager? = null
     private val permissionMonitor = PermissionMonitor(service)
     private val executorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -121,8 +123,11 @@ class AccessibilityActionExecutor(
         vibrate(settings)
         GestureStatsManager.incrementGestureCount(service)
 
-        // 导航类手势会改变当前页面，先关闭屏幕翻译
-        if (action in NAVIGATION_ACTIONS) dismissTranslation()
+        // 导航类手势会改变当前页面，先关闭屏幕翻译与罗盘时钟
+        if (action in NAVIGATION_ACTIONS) {
+            dismissTranslation()
+            dismissCompassClock()
+        }
 
         when (action) {
             GestureAction.HOME -> {
@@ -143,6 +148,7 @@ class AccessibilityActionExecutor(
             GestureAction.EXPAND_PANEL -> showExpandPanel()
             GestureAction.MUSIC_PANEL -> showMusicPanel()
             GestureAction.TASK_PANEL -> showTaskPanel()
+            GestureAction.COMPASS_CLOCK -> showCompassClock()
             GestureAction.TRANSLATE -> toggleTranslation()
             GestureAction.ALIPAY_SCAN -> launchScanAlipay()
             GestureAction.WECHAT_SCAN -> launchScanWechat()
@@ -328,6 +334,27 @@ class AccessibilityActionExecutor(
         pendingTaskPanelShow = false
     }
 
+    // 罗盘时钟：开关式交互，再次触发时关闭
+    private fun showCompassClock() {
+        if (compassClockViewManager != null) {
+            compassClockViewManager?.dismiss()
+            return
+        }
+        val manager = CompassClockViewManager(
+            context = service,
+            onDismiss = { compassClockViewManager = null }
+        )
+        compassClockViewManager = manager
+        if (!manager.show()) {
+            compassClockViewManager = null
+        }
+    }
+
+    fun dismissCompassClock() {
+        compassClockViewManager?.dismiss()
+        compassClockViewManager = null
+    }
+
     // 屏幕翻译：开关式交互，再次触发或切换应用时关闭
     private fun toggleTranslation() {
         if (translationOverlayManager != null) {
@@ -449,6 +476,7 @@ class AccessibilityActionExecutor(
         dismissExpandPanel()
         dismissMusicPanel()
         dismissTaskPanel()
+        dismissCompassClock()
         dismissTranslation()
         writeSettingsMonitorJob?.cancel()
         writeSettingsMonitorJob = null

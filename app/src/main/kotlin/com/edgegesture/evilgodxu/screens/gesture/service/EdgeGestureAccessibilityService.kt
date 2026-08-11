@@ -118,6 +118,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                     backTapDetector?.setScreenOn(false)
                     if (::actionExecutor.isInitialized) {
                         actionExecutor.dismissTaskPanel()
+                        actionExecutor.dismissCompassClock()
                         actionExecutor.dismissTranslation()
                     }
                 }
