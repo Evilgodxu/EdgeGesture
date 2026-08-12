@@ -303,6 +303,7 @@ fun TaskPanelOverlay(
                             }
                             deletingPackages.value = emptySet()
                             isCleaning = false
+                            onDismiss()
                         }
                     },
                 contentAlignment = Alignment.Center

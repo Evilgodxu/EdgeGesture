@@ -58,6 +58,9 @@ class PermissionMonitor(private val context: Context) {
 
     // 检查无障碍服务权限
     fun isAccessibilityGranted(): Boolean {
+        // 服务实例存活说明无障碍服务正在运行，这是权限已生效的直接证据；
+        // 系统设置串在个别机型上可能读取不到或滞后，不能作为唯一判断依据
+        if (EdgeGestureAccessibilityService.isAvailable()) return true
         val enabledServices = Settings.Secure.getString(
             context.contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
