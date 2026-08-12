@@ -55,12 +55,16 @@ class TaskPanelViewManager(
             WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                 WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
                 WindowManager.LayoutParams.FLAG_BLUR_BEHIND,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.CENTER
             blurBehindRadius = 80
+            // 不避让系统栏插入边，让窗口延伸到状态栏及挖孔区域，保证全屏遮罩颜色一致
+            setFitInsetsTypes(0)
+            layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
         }
         val compose = ComposeView(context).apply {
             alpha = 0f

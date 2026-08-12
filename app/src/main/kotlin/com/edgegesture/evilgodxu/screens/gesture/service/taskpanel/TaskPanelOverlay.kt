@@ -182,6 +182,7 @@ fun TaskPanelOverlay(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color(0x99000000))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
