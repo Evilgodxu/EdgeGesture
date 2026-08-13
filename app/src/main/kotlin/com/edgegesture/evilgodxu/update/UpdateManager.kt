@@ -38,7 +38,7 @@ sealed class DownloadState {
 
 /**
  * 应用更新管理器
- * 负责检查 GitHub Releases、版本比较、WiFi 自动下载
+ * 负责检查 GitHub Releases、版本比较和 APK 下载
  */
 object UpdateManager {
 
@@ -55,6 +55,8 @@ object UpdateManager {
     private const val GITHUB_OWNER = "Evilgodxu"
     private const val GITHUB_REPO = "EdgeGesture"
     const val GITHUB_REPOSITORY_URL = "https://github.com/$GITHUB_OWNER/$GITHUB_REPO"
+    private const val WAKU_GAME_ID = 101900
+    private const val WAKU_GAME_API_URL = "https://wakudemo.cn/api/v1/games/$WAKU_GAME_ID"
 
     private val json = Json { ignoreUnknownKeys = true }
     private val prefsMap = ConcurrentHashMap<String, android.content.SharedPreferences>()
@@ -79,6 +81,19 @@ object UpdateManager {
     private data class GitHubAsset(
         val name: String = "",
         val browser_download_url: String = ""
+    )
+
+    @Serializable
+    private data class WakuGame(
+        val gameFileUrl: String? = null,
+        val gamePackageFiles: List<WakuPackageFile> = emptyList()
+    )
+
+    @Serializable
+    private data class WakuPackageFile(
+        val index: Int = 0,
+        val fileName: String = "",
+        val platform: String = ""
     )
 
     /**
@@ -111,42 +126,33 @@ object UpdateManager {
         }
 
         return try {
-            val url = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
-            val jsonStr = withContext(Dispatchers.IO) {
-                val conn = URL(url).openConnection() as java.net.HttpURLConnection
-                conn.connectTimeout = 15_000
-                conn.readTimeout = 15_000
-                try {
-                    // 检查响应码：非 2xx（如 GitHub API 限流 403）视为失败，避免把错误响应当正常数据解析
-                    val code = conn.responseCode
-                    if (code !in 200..299) {
-                        throw IllegalStateException("GitHub API 响应异常: HTTP $code")
-                    }
-                    conn.inputStream.bufferedReader().use { it.readText() }
-                } finally {
-                    conn.disconnect()
-                }
+            val release = withContext(Dispatchers.IO) {
+                val url = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
+                json.decodeFromString<GitHubRelease>(readJson(url))
             }
-            val release = json.decodeFromString<GitHubRelease>(jsonStr)
 
-            val latest = release.tag_name.trimStart('v', 'V')
+            val latest = normalizeVersion(release.tag_name)
             val current = getCurrentVersion(context)
-            val ignored = prefs.getString(KEY_IGNORED_VERSION, null)
+            val ignored = prefs.getString(KEY_IGNORED_VERSION, null)?.let(::normalizeVersion)
 
-            if (isNewerVersion(latest, current) && release.tag_name != ignored) {
+            if (isNewerVersion(latest, current) && latest != ignored) {
                 val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk") }
-                val downloadUrl = apkAsset?.browser_download_url
-                    ?: "https://github.com/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
+                val githubDownloadUrl = apkAsset?.browser_download_url?.takeIf { it.isNotBlank() }
+                val wakuDownloadUrl = withContext(Dispatchers.IO) {
+                    findMatchingWakuDownloadUrl(latest)
+                }
+                val downloadUrl = wakuDownloadUrl ?: githubDownloadUrl
+                    ?: throw IllegalStateException("GitHub 和 Waku 均未提供可用 APK")
 
                 prefs.edit()
                     .putLong(KEY_LAST_CHECK, now)
-                    .putString(KEY_PENDING_VERSION, release.tag_name)
+                    .putString(KEY_PENDING_VERSION, latest)
                     .putString(KEY_PENDING_URL, downloadUrl)
                     .putString(KEY_PENDING_CHANGELOG, release.body)
                     .apply()
 
                 UpdateInfo(
-                    latestVersion = release.tag_name,
+                    latestVersion = latest,
                     downloadUrl = downloadUrl,
                     changelog = release.body
                 )
@@ -159,6 +165,49 @@ object UpdateManager {
             onError?.invoke(e)
             null
         }
+    }
+
+    private fun readJson(url: String): String {
+        val conn = URL(url).openConnection() as java.net.HttpURLConnection
+        conn.connectTimeout = 15_000
+        conn.readTimeout = 15_000
+        conn.setRequestProperty("Accept", "application/json")
+        conn.setRequestProperty("User-Agent", "EdgeGesture/$GITHUB_REPO")
+        return try {
+            val code = conn.responseCode
+            if (code !in 200..299) {
+                throw IllegalStateException("更新服务响应异常: HTTP $code")
+            }
+            conn.inputStream.bufferedReader().use { it.readText() }
+        } finally {
+            conn.disconnect()
+        }
+    }
+
+    private fun findMatchingWakuDownloadUrl(githubVersion: String): String? {
+        val game = runCatching {
+            json.decodeFromString<WakuGame>(readJson(WAKU_GAME_API_URL))
+        }.getOrNull() ?: return null
+
+        val packages = game.gamePackageFiles
+            .filter { it.platform.equals("Android", ignoreCase = true) }
+            .filter { it.fileName.endsWith(".apk", ignoreCase = true) }
+            .sortedWith(compareByDescending<WakuPackageFile> { it.fileName.contains("arm64", ignoreCase = true) }.thenBy { it.index })
+
+        val packageFile = packages.firstOrNull() ?: return null
+        val wakuVersion = extractVersion(packageFile.fileName) ?: return null
+        if (wakuVersion != githubVersion) return null
+
+        return game.gameFileUrl?.takeIf { it.isNotBlank() && it.startsWith("https://") }
+    }
+
+    private fun extractVersion(fileName: String): String? {
+        val match = Regex("(?:^|[-_])([0-9]+\\.[0-9]+(?:\\.[0-9]+)+)(?:[-_.]|$)").find(fileName)
+        return match?.groupValues?.getOrNull(1)?.let(::normalizeVersion)
+    }
+
+    private fun normalizeVersion(version: String): String {
+        return version.trim().trimStart('v', 'V')
     }
 
     /**
