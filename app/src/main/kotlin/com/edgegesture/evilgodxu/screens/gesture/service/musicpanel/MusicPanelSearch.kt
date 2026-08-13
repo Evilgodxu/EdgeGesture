@@ -299,17 +299,9 @@ internal fun SearchResultsOverlay(
 
                 val errorMsg = playbackState.errorMsg
                 if (errorMsg != null) {
-                    Text(
-                        text = errorMsg,
-                        color = MaterialTheme.colorScheme.error,
-                        fontSize = 11.sp,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
-                                RoundedCornerShape(6.dp)
-                            )
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    MusicErrorBanner(
+                        message = errorMsg,
+                        onDismiss = { playbackState.setErrorMsg(null) }
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                 }
@@ -335,7 +327,8 @@ internal fun SearchResultsOverlay(
                     ) {
                         itemsIndexed(
                             items = playbackState.searchResults,
-                            key = { _, result -> result.id }
+                            // 聚合两种来源后 id 可能重复，key 需结合来源保证唯一
+                            key = { _, result -> "${result.source}-${result.id}" }
                         ) { index, result ->
                             SearchResultRow(
                                 result = result,
@@ -414,7 +407,14 @@ internal fun SearchResultRow(
         }
 
         Text(
-            text = stringResource(R.string.music_panel_search_source),
+            text = stringResource(
+                when (result.source) {
+                    MusicSearchSource.JAMENDO -> R.string.music_panel_search_source_jamendo
+                    MusicSearchSource.QQ -> R.string.music_panel_search_source_qq
+                    MusicSearchSource.KUGOU -> R.string.music_panel_search_source_kugou
+                    MusicSearchSource.NETEASE -> R.string.music_panel_search_source
+                }
+            ),
             color = MaterialTheme.colorScheme.primary,
             fontSize = 9.sp,
             fontWeight = FontWeight.Medium,

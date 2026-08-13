@@ -8,6 +8,9 @@ import android.provider.MediaStore
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URL
@@ -20,11 +23,11 @@ internal suspend fun searchLyricsCandidates(
     playbackState.lyricsCandidates = emptyList()
     playbackState.lyricsRefreshError = null
     try {
-        val occupied = NeteaseMusicApi.searchSongs("${track.title} ${track.artist}")
+        val occupied = NeteaseMusicApi.search("${track.title} ${track.artist}")
             .filter { !it.coverUrl.isNullOrBlank() }
             .take(5)
         val occupiedIds = occupied.map { it.id }.toSet()
-        val titleOnly = NeteaseMusicApi.searchSongs(track.title)
+        val titleOnly = NeteaseMusicApi.search(track.title)
             .filter { it.id !in occupiedIds && !it.coverUrl.isNullOrBlank() }
             .take(5)
         playbackState.lyricsCandidates = (occupied + titleOnly).distinctBy { it.id }.take(10)
@@ -82,12 +85,12 @@ internal suspend fun searchCoverCandidates(
             .filter { it.isNotBlank() }
             .joinToString(" ")
         val titleArtistCandidates = if (titleArtist.isBlank()) emptyList() else {
-            NeteaseMusicApi.searchSongs(titleArtist)
+            NeteaseMusicApi.search(titleArtist)
                 .filter { !it.coverUrl.isNullOrBlank() }
                 .take(5)
         }
         val titleCandidates = if (track.title.isBlank()) emptyList() else {
-            NeteaseMusicApi.searchSongs(track.title)
+            NeteaseMusicApi.search(track.title)
                 .filter { !it.coverUrl.isNullOrBlank() }
                 .take(5)
         }
@@ -149,10 +152,22 @@ internal suspend fun performSearch(
     playbackState.searchResults = emptyList()
     playbackState.errorMsg = null
     try {
-        val results = NeteaseMusicApi.searchSongs(query)
+        // 并行查询所有已注册的音乐源并聚合展示（单个来源失败不影响其他来源）
+        // 各来源仅对自身结果按 id 去重，不跨平台去重，避免误过滤另一平台的歌曲
+        val results = coroutineScope {
+            onlineMusicSources.map { source ->
+                async {
+                    runCatching { source.search(query) }.getOrDefault(emptyList())
+                        .distinctBy { it.id }
+                }
+            }.awaitAll().flatten()
+        }
         playbackState.searchResults = results
         if (results.isNotEmpty()) playbackState.addSearchHistory(query)
         playbackState.showSearchResults = true
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        // 搜索界面退出导致的协程取消，不是失败，向上传递取消
+        throw e
     } catch (e: Exception) {
         CrashLogManager.logException("MusicPanelSearchLogic", "搜索歌曲失败", e)
         playbackState.searchResults = emptyList()
@@ -176,7 +191,8 @@ internal suspend fun downloadAndPlay(
         artist = result.artist,
         duration = result.duration,
         albumId = 0L,
-        neteaseId = result.id,
+        // Jamendo 结果不写入 neteaseId，避免播放失败重试时误向网易云请求
+        neteaseId = if (result.source == MusicSearchSource.NETEASE) result.id else 0L,
         neteaseCoverUrl = result.coverUrl.orEmpty()
     )
 
@@ -194,29 +210,37 @@ internal suspend fun downloadAndPlay(
         playTrackAt(context, playbackState, targetIndex)
     }
 
-    playbackState.playbackScope.launch(Dispatchers.IO) {
-        try {
-            val lyric = NeteaseMusicApi.lyric(result.id)
-            if (lyric.lines.isNotEmpty()) {
-                val lyricPath = MusicMetadataCache.saveLyrics(context, result.id, lyric.lines).orEmpty()
-                withContext(Dispatchers.Main) {
-                    val idx = playbackState.playlist.indexOfFirst { it.id == trackId }
-                    if (idx >= 0) {
-                        val updated = playbackState.playlist[idx].copy(
-                            lyricCachePath = lyricPath,
-                            lyricLines = lyric.lines
-                        )
-                        val list = playbackState.playlist.toMutableList()
-                        list[idx] = updated
-                        playbackState.playlist = list
-                        if (playbackState.currentTrack?.id == trackId) {
-                            playbackState.currentTrack = updated
+    // 在线结果后台加载歌词：网易云/QQ/酷狗各有歌词接口，Jamendo 无歌词接口，跳过
+    if (result.source != MusicSearchSource.JAMENDO) {
+        playbackState.playbackScope.launch(Dispatchers.IO) {
+            try {
+                val lines = when (result.source) {
+                    MusicSearchSource.NETEASE -> NeteaseMusicApi.lyric(result.id).lines
+                    MusicSearchSource.QQ -> QQMusicApi.lyricLines(result).orEmpty()
+                    MusicSearchSource.KUGOU -> KugouMusicApi.lyricLines(result).orEmpty()
+                    MusicSearchSource.JAMENDO -> emptyList()
+                }
+                if (lines.isNotEmpty()) {
+                    val lyricPath = MusicMetadataCache.saveLyrics(context, result.id, lines).orEmpty()
+                    withContext(Dispatchers.Main) {
+                        val idx = playbackState.playlist.indexOfFirst { it.id == trackId }
+                        if (idx >= 0) {
+                            val updated = playbackState.playlist[idx].copy(
+                                lyricCachePath = lyricPath,
+                                lyricLines = lines
+                            )
+                            val list = playbackState.playlist.toMutableList()
+                            list[idx] = updated
+                            playbackState.playlist = list
+                            if (playbackState.currentTrack?.id == trackId) {
+                                playbackState.currentTrack = updated
+                            }
                         }
                     }
                 }
+            } catch (e: Exception) {
+                CrashLogManager.logException("MusicPanelSearchLogic", "获取在线歌词失败", e)
             }
-        } catch (e: Exception) {
-            CrashLogManager.logException("MusicPanelSearchLogic", "获取在线歌词失败", e)
         }
     }
 
@@ -371,8 +395,10 @@ internal suspend fun playSearchResult(
     if (localMatch != null) {
         val idx = playbackState.playlist.indexOfFirst { it.id == localMatch.id }
         if (idx >= 0) {
-            scope.launch {
-                enrichOnlineMetadata(context, playbackState, localMatch, target)
+            if (target.source == MusicSearchSource.NETEASE) {
+                scope.launch {
+                    enrichOnlineMetadata(context, playbackState, localMatch, target)
+                }
             }
             playbackState.errorMsg = null
             playbackState.currentIndex = idx
@@ -386,35 +412,43 @@ internal suspend fun playSearchResult(
         }
     }
 
-    val clickedIndex = playbackState.searchResults.indexOfFirst { it.id == target.id }
-    playbackState.pendingSearchResults = if (clickedIndex >= 0) {
-        playbackState.searchResults.drop(clickedIndex + 1)
-    } else emptyList()
+    playbackState.pendingSearchResults = emptyList()
 
-    val fullResult = if (target.coverUrl.isNullOrBlank() || target.duration <= 0L) {
-        withContext(Dispatchers.IO) {
-            NeteaseMusicApi.songDetail(target.id) ?: target
+    // Jamendo 搜索结果自带音频地址，直接播放；QQ/酷狗按平台标识解析播放地址；网易云结果需向接口请求播放 URL
+    val playTarget: NeteaseSongSearchResult
+    val url: String?
+    when (target.source) {
+        MusicSearchSource.JAMENDO -> {
+            playTarget = target
+            url = target.audioUrl
         }
-    } else target
-
-    val url = withContext(Dispatchers.IO) {
-        NeteaseMusicApi.getSongUrlWithFallback(fullResult.id)
+        MusicSearchSource.QQ -> {
+            playTarget = target
+            url = withContext(Dispatchers.IO) { QQMusicApi.songUrl(target.sourceId.orEmpty()) }
+        }
+        MusicSearchSource.KUGOU -> {
+            playTarget = target
+            url = withContext(Dispatchers.IO) { KugouMusicApi.songUrl(target.sourceId.orEmpty()) }
+        }
+        MusicSearchSource.NETEASE -> {
+            val fullResult = if (target.coverUrl.isNullOrBlank() || target.duration <= 0L) {
+                withContext(Dispatchers.IO) {
+                    NeteaseMusicApi.songDetail(target.id) ?: target
+                }
+            } else target
+            playTarget = fullResult
+            url = withContext(Dispatchers.IO) {
+                NeteaseMusicApi.getSongUrlWithFallback(fullResult.id)
+            }
+        }
     }
+
     if (url != null) {
         playbackState.errorMsg = null
-        downloadAndPlay(context, playbackState, fullResult, url)
-        playbackState.isSearchMode = false
-        playbackState.showSearchResults = false
-        playbackState.searchQuery = ""
-        playbackState.searchResults = emptyList()
+        playbackState.closeSearchResultsOnReady = true
+        downloadAndPlay(context, playbackState, playTarget, url)
     } else {
         playbackState.errorMsg = context.getString(R.string.music_panel_play_error)
-        val pending = playbackState.pendingSearchResults
-        if (pending.isNotEmpty()) {
-            playbackState.pendingSearchResults = pending.drop(1)
-            playSearchResult(pending.first(), playbackState, context, scope)
-        } else {
-            playbackState.pendingSearchResults = emptyList()
-        }
+        playbackState.pendingSearchResults = emptyList()
     }
 }

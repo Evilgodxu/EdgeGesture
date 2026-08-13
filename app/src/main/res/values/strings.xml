@@ -112,6 +112,9 @@
     <string name="music_panel_search_history_delete">删除历史</string>
     <string name="music_panel_search_no_results">未找到相关歌曲</string>
     <string name="music_panel_search_source">网易云</string>
+    <string name="music_panel_search_source_jamendo">Jamendo</string>
+    <string name="music_panel_search_source_qq">QQ音乐</string>
+    <string name="music_panel_search_source_kugou">酷狗</string>
     <string name="music_panel_playback_settings">播放设置</string>
     <string name="music_panel_usb_exclusive">USB 音频独占</string>
     <string name="music_panel_usb_enabled">已启用：%s</string>

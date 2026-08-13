@@ -523,10 +523,12 @@ fun MusicPanelOverlay(
                         onCancel = { showCoverReplace = false }
                     )
                     if (coverSaveFailed) {
-                        Text(
-                            text = stringResource(R.string.music_panel_cover_save_failed),
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.align(Alignment.Center)
+                        MusicErrorBanner(
+                            message = stringResource(R.string.music_panel_cover_save_failed),
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            onDismiss = { coverSaveFailed = false }
                         )
                     }
 

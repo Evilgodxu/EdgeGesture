@@ -15,6 +15,9 @@ internal data class NeteaseSongMatch(
     val coverUrl: String?
 )
 
+// 在线音乐搜索来源
+enum class MusicSearchSource { NETEASE, JAMENDO, QQ, KUGOU }
+
 data class NeteaseSongSearchResult(
     val id: Long,
     val title: String,
@@ -22,7 +25,12 @@ data class NeteaseSongSearchResult(
     val coverUrl: String?,
     /** CDN 缩略图 URL（封面 + ?param=128y128），列表行使用以加快加载 */
     val coverThumbUrl: String? = null,
-    val duration: Long = 0L
+    val duration: Long = 0L,
+    val source: MusicSearchSource = MusicSearchSource.NETEASE,
+    /** Jamendo 结果自带可直接播放的音频地址，网易云结果为空 */
+    val audioUrl: String? = null,
+    /** 平台内歌曲标识（QQ 的 songmid、酷狗的 hash），取播放地址/歌词时使用 */
+    val sourceId: String? = null,
 )
 
 internal data class NeteaseLyricData(val lines: List<LyricLine>)
@@ -35,7 +43,7 @@ data class LyricLine(
     val words: List<LyricWord> = emptyList()
 )
 
-internal object NeteaseMusicApi {
+internal object NeteaseMusicApi : OnlineMusicSource {
     suspend fun loadCoverBytes(url: String): ByteArray? = withContext(Dispatchers.IO) {
         if (url.isBlank()) return@withContext null
         try {
@@ -48,7 +56,7 @@ internal object NeteaseMusicApi {
 
     suspend fun match(title: String, artist: String, durationMs: Long): NeteaseSongMatch? = withContext(Dispatchers.IO) {
         val keyword = if (artist.isBlank() || artist == "未知艺术家" || artist == "<unknown>") title else "$title $artist"
-        val songs = search(keyword)
+        val songs = searchMatch(keyword)
         val best = songs.minByOrNull { score(it, title, artist, durationMs) } ?: return@withContext null
         if (!best.coverUrl.isNullOrBlank()) best else detail(best)
     }
@@ -76,12 +84,12 @@ internal object NeteaseMusicApi {
         return song.copy(coverUrl = album?.optString("picUrl")?.takeIf { it.isNotBlank() })
     }
 
-    // 公开搜索方法，返回完整的搜索结果显示
-    suspend fun searchSongs(keyword: String): List<NeteaseSongSearchResult> = withContext(Dispatchers.IO) {
+    // 在线音乐源统一接口实现，返回完整的搜索结果显示
+    override suspend fun search(keyword: String): List<NeteaseSongSearchResult> = withContext(Dispatchers.IO) {
         val body = JSONObject().apply {
             put("s", keyword)
             put("type", 1)
-            put("limit", 30)
+            put("limit", 20)
             put("offset", 0)
         }
         val root = request("search/get", body)
@@ -203,7 +211,7 @@ internal object NeteaseMusicApi {
         }
     }
 
-    private fun search(keyword: String): List<NeteaseSongMatch> {
+    private fun searchMatch(keyword: String): List<NeteaseSongMatch> {
         val body = JSONObject().apply {
             put("s", keyword)
             put("type", 1)
@@ -270,16 +278,7 @@ internal object NeteaseMusicApi {
     private fun parseLrc(lrc: String, yrc: String): NeteaseLyricData {
         val wordLines = parseYrc(yrc)
         if (wordLines.isNotEmpty()) return NeteaseLyricData(wordLines)
-        val lines = lrc.lineSequence().mapNotNull { line ->
-            val match = Regex("\\[(\\d+):(\\d+)(?:\\.(\\d+))?](.*)").find(line) ?: return@mapNotNull null
-            LyricLine(
-                timeMs = match.groupValues[1].toLong() * 60_000 +
-                        match.groupValues[2].toLong() * 1_000 +
-                        match.groupValues[3].padEnd(3, '0').take(3).toLong(),
-                text = match.groupValues[4].trim()
-            ).takeIf { it.text.isNotBlank() }
-        }.sortedBy { it.timeMs }.toList()
-        return NeteaseLyricData(lines)
+        return NeteaseLyricData(parseLrcText(lrc))
     }
 
     private fun parseYrc(raw: String): List<LyricLine> {
@@ -316,4 +315,28 @@ internal object NeteaseMusicApi {
     private fun ensureHttps(url: String): String {
         return if (url.startsWith("http://")) url.replace("http://", "https://") else url
     }
+}
+
+// 标准 LRC 解析：网易云（无逐字标签时）、QQ、酷狗均复用
+internal fun parseLrcText(lrc: String): List<LyricLine> {
+    return lrc.lineSequence().mapNotNull { line ->
+        val match = Regex("\\[(\\d+):(\\d+)(?:\\.(\\d+))?](.*)").find(line) ?: return@mapNotNull null
+        LyricLine(
+            timeMs = match.groupValues[1].toLong() * 60_000 +
+                    match.groupValues[2].toLong() * 1_000 +
+                    match.groupValues[3].padEnd(3, '0').take(3).toLong(),
+            text = match.groupValues[4].trim()
+        ).takeIf { it.text.isNotBlank() }
+    }.sortedBy { it.timeMs }.toList()
+}
+
+// 把字符串平台标识（QQ 的 songmid、酷狗的 hash）转成稳定的数字 id，
+// 搜索结果列表和播放列表统一用 Long 类型 id 做去重与关联
+internal fun stableIdFromString(value: String): Long {
+    var hash = -0x340d631b7bdddcdbL
+    for (c in value) {
+        hash = hash xor c.code.toLong()
+        hash *= 0x100000001b3L
+    }
+    return hash
 }

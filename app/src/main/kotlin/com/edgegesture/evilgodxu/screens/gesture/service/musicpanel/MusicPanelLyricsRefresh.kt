@@ -96,7 +96,10 @@ internal fun LyricsRefreshOverlay(
                     }
                 }
                 playbackState.lyricsRefreshError?.let { error ->
-                    Text(error, color = MaterialTheme.colorScheme.error)
+                    MusicErrorBanner(
+                        message = error,
+                        onDismiss = { playbackState.setLyricsRefreshError(null) }
+                    )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant, onClick = onCancel) { Text(stringResource(R.string.music_panel_rename_cancel), Modifier.padding(horizontal = 24.dp, vertical = 10.dp)) }
