@@ -52,15 +52,24 @@ object DataConfigManager {
 
     // 配置导出范围：边缘手势、背面双击、触发区设置、启动拦截
     private const val FORMAT_VERSION = 1
+    // 触发区设置中的开关（尺寸/分段通过下方正则匹配）
+    private val TRIGGER_AREA_SWITCH_KEYS = setOf(
+        "hide_overlay",
+        "hide_from_recents",
+        "avoid_keyboard_overlap",
+        "vibration_enabled",
+        "double_swipe_enabled"
+    )
     // 匹配 gestureDataStore 中属于导出范围的键名：
     // - 边缘手势：left/right/bottom 开头，可带段号，后接 _swipe_
     // - 背面双击：back_tap_ 开头
-    // - 触发区设置：left/right/bottom 的 edge_ 或 segment_count
+    // - 触发区尺寸：left/right/bottom 的 edge_ 或 segment_count
     private val GESTURE_EXPORT_PATTERN = Regex(
         "^(left|right|bottom)(_\\d)?_swipe_|^back_tap_|^(left|right|bottom)_(edge_|segment_count)"
     )
 
-    private fun isGestureExportKey(name: String): Boolean = GESTURE_EXPORT_PATTERN.containsMatchIn(name)
+    private fun isGestureExportKey(name: String): Boolean =
+        name in TRIGGER_AREA_SWITCH_KEYS || GESTURE_EXPORT_PATTERN.containsMatchIn(name)
 
     suspend fun export(context: Context): ByteArray = withContext(Dispatchers.IO) {
         val root = JSONObject().put("formatVersion", FORMAT_VERSION)
