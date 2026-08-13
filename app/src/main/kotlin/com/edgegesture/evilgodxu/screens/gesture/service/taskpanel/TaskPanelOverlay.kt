@@ -1,5 +1,6 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.taskpanel
 
+import android.content.res.Configuration
 import android.graphics.drawable.Drawable
 import android.widget.ImageView
 import androidx.compose.animation.core.Animatable
@@ -9,16 +10,14 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -61,12 +61,10 @@ fun TaskPanelOverlay(
     onSwipeAway: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    // 使用可变的快照列表，支持动态删除
     val appList = remember(apps) { mutableStateListOf(*apps.toTypedArray()) }
     var selectedIndex by remember(apps, selectedPackageName) {
         mutableIntStateOf(appList.indexOfFirst { it.packageName == selectedPackageName }.coerceAtLeast(0))
     }
-    // 正在执行删除动画的包名集合
     val deletingPackages = remember { mutableStateOf(setOf<String>()) }
     val scope = rememberCoroutineScope()
     var singleTapJob by remember { mutableStateOf<Job?>(null) }
@@ -77,8 +75,10 @@ fun TaskPanelOverlay(
     val controlColor = Color.Black.copy(alpha = 0.9f)
     val itemStepPx = with(LocalDensity.current) { 104.dp.toPx() }
     val carouselAnim = remember { Animatable(0f) }
-    // 是否正在执行清理（批量删除）动画
     var isCleaning by remember { mutableStateOf(false) }
+
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     LaunchedEffect(apps.size, selectedPackageName) {
         if (appList.isNotEmpty()) {
@@ -86,7 +86,6 @@ fun TaskPanelOverlay(
         }
     }
 
-    // 从列表中移除指定包名，并调整选中索引
     fun removeApp(packageName: String) {
         val removeIdx = appList.indexOfFirst { it.packageName == packageName }
         if (removeIdx < 0) return
@@ -129,7 +128,6 @@ fun TaskPanelOverlay(
                 }
                 if (hasMoved) {
                     if (abs(totalY) > abs(totalX) && abs(totalY) >= thresholdPx && totalY < 0 && appList.isNotEmpty() && selectedIndex < appList.size) {
-                        // 上滑删除
                         val pkg = appList[selectedIndex].packageName
                         if (pkg !in deletingPackages.value) {
                             deletingPackages.value = deletingPackages.value + pkg
@@ -142,7 +140,6 @@ fun TaskPanelOverlay(
                         }
                         scope.launch { carouselAnim.animateTo(0f, animationSpec = tween(200)) }
                     } else if (abs(totalX) >= thresholdPx && appList.size > 1) {
-                        // 水平滑动切换
                         val target = if (totalX < 0) -1f else 1f
                         scope.launch {
                             carouselAnim.animateTo(target, animationSpec = tween(durationMillis = 200))
@@ -158,7 +155,6 @@ fun TaskPanelOverlay(
                         }
                     }
                 } else if (!isCleaning && appList.isNotEmpty() && selectedIndex < appList.size) {
-                    // 点击处理
                     val packageName = appList[selectedIndex].packageName
                     if (singleTapJob?.isActive == true) {
                         singleTapJob?.cancel()
@@ -192,9 +188,10 @@ fun TaskPanelOverlay(
     ) {
         Column(
             modifier = Modifier
-                .width(320.dp)
+                .widthIn(max = 480.dp)
+                .fillMaxWidth(if (isLandscape) 0.7f else 0.85f)
                 .background(Color.Transparent)
-                .padding(bottom = 48.dp)
+                .padding(bottom = if (isLandscape) 24.dp else 48.dp)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -202,17 +199,15 @@ fun TaskPanelOverlay(
                 ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 应用图标轮播
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(96.dp)
+                    .height(if (isLandscape) 80.dp else 96.dp)
                     .taskGesture(),
                 contentAlignment = Alignment.Center
             ) {
                 if (appList.isNotEmpty()) {
                     if (appList.size == 1) {
-                        // 只有一个应用时，只显示中间图标，不重复
                         CarouselIcon(
                             app = appList[0],
                             offset = 0,
@@ -236,7 +231,6 @@ fun TaskPanelOverlay(
                             scale = scaleForDistance(abs(animOffset)),
                             isDeleting = appList[selectedIndex].packageName in deletingPackages.value
                         )
-                        // 当只有2个应用时，prev和next指向同一个，跳过重复
                         if (prevIndex != nextIndex) {
                             CarouselIcon(
                                 app = appList[nextIndex],
@@ -249,9 +243,11 @@ fun TaskPanelOverlay(
                 }
             }
 
-            // 控制区域
             Box(
-                Modifier.fillMaxWidth().height(300.dp).taskGesture(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(if (isLandscape) 80.dp else 300.dp)
+                    .taskGesture(),
                 contentAlignment = Alignment.Center
             ) {
                 if (appList.isEmpty()) {
@@ -261,7 +257,7 @@ fun TaskPanelOverlay(
                     )
                 }
             }
-            // 清理按钮，水平居中，位于控制区域与提示信息之间
+
             val cleanProgress = remember { Animatable(0f) }
             val cleanDurationMs = remember { mutableIntStateOf(0) }
             LaunchedEffect(isCleaning) {
@@ -309,7 +305,6 @@ fun TaskPanelOverlay(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                // 进度环
                 val progressRingColor = Color.White
                 Canvas(modifier = Modifier.size(44.dp)) {
                     val sweepAngle = cleanProgress.value * 360f
@@ -331,7 +326,6 @@ fun TaskPanelOverlay(
                 )
             }
 
-            // 提示信息
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

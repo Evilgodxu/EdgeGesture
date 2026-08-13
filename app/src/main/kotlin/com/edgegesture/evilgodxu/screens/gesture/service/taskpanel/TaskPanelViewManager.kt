@@ -5,8 +5,7 @@ import android.view.Gravity
 import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.compose.ui.platform.ComposeView
-import android.view.animation.AccelerateInterpolator
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.PathInterpolator
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -62,14 +61,10 @@ class TaskPanelViewManager(
         ).apply {
             gravity = Gravity.CENTER
             blurBehindRadius = 80
-            // 不避让系统栏插入边，让窗口延伸到状态栏及挖孔区域，保证全屏遮罩颜色一致
             setFitInsetsTypes(0)
             layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
         }
         val compose = ComposeView(context).apply {
-            alpha = 0f
-            scaleX = 0.9f
-            scaleY = 0.9f
             setContent {
                 TaskPanelOverlay(
                     apps = apps,
@@ -96,13 +91,6 @@ class TaskPanelViewManager(
             windowManager.addView(compose, params)
             lifecycleOwner.event(Lifecycle.Event.ON_CREATE)
             lifecycleOwner.event(Lifecycle.Event.ON_RESUME)
-            compose.animate()
-                .alpha(1f)
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(250)
-                .setInterpolator(DecelerateInterpolator())
-                .start()
             true
         } catch (e: Exception) {
             CrashLogManager.logException("TaskPanelViewManager", "显示任务面板失败", e)
@@ -118,10 +106,8 @@ class TaskPanelViewManager(
         lifecycleOwner.event(Lifecycle.Event.ON_PAUSE)
         current.animate()
             .alpha(0f)
-            .scaleX(0.9f)
-            .scaleY(0.9f)
-            .setDuration(200)
-            .setInterpolator(AccelerateInterpolator())
+            .setDuration(500)
+            .setInterpolator(PathInterpolator(0.4f, 0f, 0.2f, 1f))
             .withEndAction {
                 lifecycleOwner.event(Lifecycle.Event.ON_STOP)
                 lifecycleOwner.event(Lifecycle.Event.ON_DESTROY)
