@@ -1,7 +1,6 @@
 package com.edgegesture.evilgodxu.data.app
 
 import android.content.Context
-import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -51,21 +50,24 @@ object DataConfigManager {
 
     private fun directorySize(file: File?): Long = file?.takeIf { it.exists() }?.walkTopDown()?.filter { it.isFile }?.sumOf { it.length() } ?: 0L
 
-    // 配置导出（手势配置 + 启动拦截配置）
+    // 配置导出范围：边缘手势、背面双击、触发区设置、启动拦截
     private const val FORMAT_VERSION = 1
-    private val excludedKeys = setOf(
-        "music_saved_uri",
-        "music_saved_position",
-        "app_switch_blacklist",
-        "blacklist_initialized"
+    // 匹配 gestureDataStore 中属于导出范围的键名：
+    // - 边缘手势：left/right/bottom 开头，可带段号，后接 _swipe_
+    // - 背面双击：back_tap_ 开头
+    // - 触发区设置：left/right/bottom 的 edge_ 或 segment_count
+    private val GESTURE_EXPORT_PATTERN = Regex(
+        "^(left|right|bottom)(_\\d)?_swipe_|^back_tap_|^(left|right|bottom)_(edge_|segment_count)"
     )
+
+    private fun isGestureExportKey(name: String): Boolean = GESTURE_EXPORT_PATTERN.containsMatchIn(name)
 
     suspend fun export(context: Context): ByteArray = withContext(Dispatchers.IO) {
         val root = JSONObject().put("formatVersion", FORMAT_VERSION)
         val gesture = JSONObject()
         val prefs = context.gestureDataStore.data.first()
         prefs.asMap().forEach { (key, value) ->
-            if (!isExportedKey(key.name)) gesture.put(key.name, encodeValue(value))
+            if (isGestureExportKey(key.name)) gesture.put(key.name, encodeValue(value))
         }
         root.put("gesture", gesture)
         root.put("launchBlock", JSONObject().apply {
@@ -85,12 +87,9 @@ object DataConfigManager {
         validateObject(gesture)
         validateObject(launch)
 
-        val currentGesture = context.gestureDataStore.data.first().asMap()
         context.gestureDataStore.edit { prefs ->
-            val preserved = currentGesture.filter { !isExportedKey(it.key.name) }
-            prefs.clear()
-            preserved.forEach { (key, value) -> putValue(prefs, key.name, value) }
-            putObject(prefs, gesture)
+            // 仅覆盖导出范围内的键，其余数据保持不变
+            putObject(prefs, gesture) { isGestureExportKey(it) }
         }
         context.launchBlockDataStore.edit { prefs ->
             prefs.clear()
@@ -116,10 +115,6 @@ object DataConfigManager {
         }
     }
 
-    private fun isExportedKey(name: String): Boolean =
-        name.startsWith("expand_panel_shortcut_") || name.startsWith("daily_gesture_") ||
-                name.startsWith("daily_block_") || name == "stats_period" || name in excludedKeys
-
     private fun encodeValue(value: Any): JSONObject = JSONObject().apply {
         when (value) {
             is Boolean -> put("type", "boolean").put("value", value)
@@ -130,18 +125,9 @@ object DataConfigManager {
         }
     }
 
-    private fun putValue(prefs: MutablePreferences, name: String, value: Any) {
-        when (value) {
-            is Boolean -> prefs[booleanPreferencesKey(name)] = value
-            is Int -> prefs[intPreferencesKey(name)] = value
-            is Long -> prefs[longPreferencesKey(name)] = value
-            is String -> prefs[stringPreferencesKey(name)] = value
-            is Set<*> -> prefs[stringSetPreferencesKey(name)] = value.map { it.toString() }.toSet()
-        }
-    }
-
-    private fun putObject(prefs: MutablePreferences, obj: JSONObject) {
+    private fun putObject(prefs: MutablePreferences, obj: JSONObject, include: (String) -> Boolean = { true }) {
         obj.keys().forEach { name ->
+            if (!include(name)) return@forEach
             val encoded = obj.getJSONObject(name)
             when (encoded.getString("type")) {
                 "boolean" -> prefs[booleanPreferencesKey(name)] = encoded.getBoolean("value")

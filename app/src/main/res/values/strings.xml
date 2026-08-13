@@ -364,11 +364,11 @@
 
     <!-- 手势配置对话框 -->
     <string name="gesture_config_title">手势配置</string>
-    <string name="gesture_config_desc">导入或导出手势配置，不包含黑名单、扩展面板快捷方式、主题和语言。</string>
+    <string name="gesture_config_desc">导入或导出手势配置。</string>
     <string name="gesture_config_import">导入</string>
     <string name="gesture_config_export">导出</string>
     <string name="gesture_config_import_confirm_title">覆盖手势配置</string>
-    <string name="gesture_config_import_confirm_desc">导入后将完全覆盖当前手势配置和启动拦截配置。黑名单、扩展面板快捷方式、主题和语言不会改变。</string>
+    <string name="gesture_config_import_confirm_desc">导入后将完全覆盖当前手势配置和启动拦截配置。</string>
     <string name="gesture_config_import_confirm_continue">继续</string>
     <string name="gesture_config_export_failed">无法写入文件</string>
     <string name="gesture_config_export_error">导出失败：%s</string>
