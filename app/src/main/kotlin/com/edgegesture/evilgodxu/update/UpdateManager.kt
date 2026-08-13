@@ -138,9 +138,7 @@ object UpdateManager {
             if (isNewerVersion(latest, current) && latest != ignored) {
                 val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk") }
                 val githubDownloadUrl = apkAsset?.browser_download_url?.takeIf { it.isNotBlank() }
-                val wakuDownloadUrl = withContext(Dispatchers.IO) {
-                    findMatchingWakuDownloadUrl(latest)
-                }
+                val wakuDownloadUrl = findMatchingWakuDownloadUrl(latest)
                 val downloadUrl = wakuDownloadUrl ?: githubDownloadUrl
                     ?: throw IllegalStateException("GitHub 和 Waku 均未提供可用 APK")
 
@@ -184,21 +182,23 @@ object UpdateManager {
         }
     }
 
-    private fun findMatchingWakuDownloadUrl(githubVersion: String): String? {
-        val game = runCatching {
-            json.decodeFromString<WakuGame>(readJson(WAKU_GAME_API_URL))
-        }.getOrNull() ?: return null
+    private suspend fun findMatchingWakuDownloadUrl(githubVersion: String): String? {
+        return withContext(Dispatchers.IO) {
+            val game = runCatching {
+                json.decodeFromString<WakuGame>(readJson(WAKU_GAME_API_URL))
+            }.getOrNull() ?: return@withContext null
 
-        val packages = game.gamePackageFiles
-            .filter { it.platform.equals("Android", ignoreCase = true) }
-            .filter { it.fileName.endsWith(".apk", ignoreCase = true) }
-            .sortedWith(compareByDescending<WakuPackageFile> { it.fileName.contains("arm64", ignoreCase = true) }.thenBy { it.index })
+            val packages = game.gamePackageFiles
+                .filter { it.platform.equals("Android", ignoreCase = true) }
+                .filter { it.fileName.endsWith(".apk", ignoreCase = true) }
+                .sortedWith(compareByDescending<WakuPackageFile> { it.fileName.contains("arm64", ignoreCase = true) }.thenBy { it.index })
 
-        val packageFile = packages.firstOrNull() ?: return null
-        val wakuVersion = extractVersion(packageFile.fileName) ?: return null
-        if (wakuVersion != githubVersion) return null
+            val packageFile = packages.firstOrNull() ?: return@withContext null
+            val wakuVersion = extractVersion(packageFile.fileName) ?: return@withContext null
+            if (wakuVersion != githubVersion) return@withContext null
 
-        return game.gameFileUrl?.takeIf { it.isNotBlank() && it.startsWith("https://") }
+            game.gameFileUrl?.takeIf { it.isNotBlank() && it.startsWith("https://") }
+        }
     }
 
     private fun extractVersion(fileName: String): String? {
