@@ -21,17 +21,10 @@ import kotlin.math.PI
  * （TYPE_LIGHT）判断口袋/遮挡状态，无权限要求。若设备缺少这些传感器，则回退到纯
  * 加速度计运动特征判断。
  *
- * 重构思路参考：
- * - MMA845xQ 等加速度计硬件敲击检测状态机：阈值穿越 + 脉冲宽度 + 不应期 + 双击时序。
- * - Granell & Leiva, ISS 2016：从多轴加速度中提取能量型特征对 BoD 敲击更具判别力。
- * - Android Columbus / TapTap：使用高/低通滤波滤除重力与高频噪声，并以时间窗口约束双击。
- *
- * 新增能力：
- * - 持续振动/晃动过滤：能量长时间高于低阈值时进入抑制状态。
- * - 大波形/饱和过滤：超过饱和阈值的冲击直接拒绝。
- * - 场景感知：根据长期运动能量 + 距离/光线传感器自动区分手持、桌面、运动、口袋，
- *   并动态调整采样率。
- * - 工作模式：始终激活 / 仅黑屏激活 / 仅亮屏激活，按需注册/注销传感器以降低功耗。
+ * 信号处理采用阈值穿越 + 脉冲宽度 + 不应期 + 双击时序的敲击状态机；叠加持续晃动/
+ * 大波形过滤，并结合长期运动能量与距离/光线传感器区分手持、桌面、运动、口袋场景，
+ * 按场景动态调整采样率。工作模式为始终激活 / 仅黑屏激活 / 仅亮屏激活，按需注册/注销
+ * 传感器以降低功耗。
  */
 class BackTapDetector(
     context: Context,
@@ -132,10 +125,6 @@ class BackTapDetector(
                 registerSensors()
             }
         }
-    }
-
-    fun start() {
-        start(5, 5)
     }
 
     fun start(sensitivity: Int, range: Int) {
@@ -246,6 +235,8 @@ class BackTapDetector(
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "EdgeGesture:BackTap")
     }
 
+    // 熄屏期间需持续持锁保证加速度计采样；锁在亮屏/暂停/停止时释放
+    @android.annotation.SuppressLint("WakelockTimeout")
     private fun acquireWakeLock() {
         ensureWakeLock()
         if (!isWakeLockHeld) {

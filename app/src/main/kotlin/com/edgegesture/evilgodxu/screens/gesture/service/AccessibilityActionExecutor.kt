@@ -720,6 +720,8 @@ class AccessibilityActionExecutor(
         }
     }
 
+    // minSdk 34 下 USE_EXACT_ALARM 已覆盖精确闹钟授权，此告警为误报
+    @android.annotation.SuppressLint("MissingPermission")
     private fun scheduleOwnAlarm(minutes: Int) {
         try {
             val alarmManager = service.getSystemService(Context.ALARM_SERVICE) as AlarmManager

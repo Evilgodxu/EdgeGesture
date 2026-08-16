@@ -25,18 +25,6 @@ internal fun formatTime(ms: Long): String {
     return "$minutes:${seconds.toString().padStart(2, '0')}"
 }
 
-internal fun formatSignalRate(rate: Int): String = if (rate >= 1000) {
-    "${rate / 1000.0} kHz"
-} else {
-    "$rate Hz"
-}
-
-internal fun formatSignalChannels(channels: Int): String = when (channels) {
-    1 -> "单声道"
-    2 -> "立体声"
-    else -> "$channels 声道"
-}
-
 internal fun copyToClipboard(context: Context, text: String) {
     try {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager

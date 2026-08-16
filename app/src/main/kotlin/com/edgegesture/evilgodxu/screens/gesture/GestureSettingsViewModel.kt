@@ -15,7 +15,6 @@ import com.edgegesture.evilgodxu.data.gesture.BackTapMode
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
-import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeGesture
 import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeHeight
 import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeWidthPercent
 import com.edgegesture.evilgodxu.data.gesture.saveBottomSegmentCount
@@ -30,12 +29,10 @@ import com.edgegesture.evilgodxu.data.gesture.saveBackTapRange
 import com.edgegesture.evilgodxu.data.gesture.saveBackTapSensitivity
 import com.edgegesture.evilgodxu.data.gesture.saveHideFromRecents
 import com.edgegesture.evilgodxu.data.gesture.saveHideOverlay
-import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeGesture
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeHeightPercent
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgePositionPercent
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeWidth
 import com.edgegesture.evilgodxu.data.gesture.saveLeftSegmentCount
-import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeGesture
 import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeHeightPercent
 import com.edgegesture.evilgodxu.data.gesture.saveRightEdgePositionPercent
 import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeWidth
@@ -309,27 +306,6 @@ class GestureSettingsViewModel(
     fun setBottomSegmentCount(count: Int) {
         viewModelScope.launch {
             context.saveBottomSegmentCount(count)
-        }
-    }
-
-    // 设置左侧边缘手势动作
-    fun setLeftEdgeGesture(key: androidx.datastore.preferences.core.Preferences.Key<String>, action: GestureAction) {
-        viewModelScope.launch {
-            context.saveLeftEdgeGesture(key, action)
-        }
-    }
-
-    // 设置右侧边缘手势动作
-    fun setRightEdgeGesture(key: androidx.datastore.preferences.core.Preferences.Key<String>, action: GestureAction) {
-        viewModelScope.launch {
-            context.saveRightEdgeGesture(key, action)
-        }
-    }
-
-    // 设置底部边缘手势动作
-    fun setBottomEdgeGesture(key: androidx.datastore.preferences.core.Preferences.Key<String>, action: GestureAction) {
-        viewModelScope.launch {
-            context.saveBottomEdgeGesture(key, action)
         }
     }
 

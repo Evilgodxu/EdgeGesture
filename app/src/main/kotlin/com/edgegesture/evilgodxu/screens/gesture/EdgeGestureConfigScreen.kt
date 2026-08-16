@@ -306,7 +306,7 @@ fun EdgeGestureConfigScreen(
             currentAction = getCurrentActionForDialog(edgeType, selectedSegment, currentSettings, key),
             onDismiss = { showActionDialog = false },
             onActionSelected = { action ->
-                viewModel.saveGestureAction(edgeType, key, action)
+                viewModel.saveGestureAction(key, action)
                 showActionDialog = false
             },
             getActionDisplayName = { getActionDisplayName(it) }

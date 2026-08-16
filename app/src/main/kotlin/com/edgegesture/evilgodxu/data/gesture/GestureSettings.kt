@@ -293,6 +293,10 @@ data class GestureSettingsState(
     )
 )
 
+// 从 Preferences 读取手势动作，统一默认值处理
+private fun Preferences.readAction(key: Preferences.Key<String>, default: GestureAction): GestureAction =
+    GestureAction.fromValue(this[key] ?: default.value)
+
 // 从 Preferences 构建 GestureSettingsState，统一默认值处理
 fun Preferences.toGestureSettingsState(): GestureSettingsState {
     return GestureSettingsState(
@@ -306,7 +310,7 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
         backTapEnabled = this[GestureSettingsKeys.BACK_TAP_ENABLED] ?: false,
         backTapSensitivity = this[GestureSettingsKeys.BACK_TAP_SENSITIVITY] ?: 5,
         backTapRange = this[GestureSettingsKeys.BACK_TAP_RANGE] ?: 5,
-        backTapAction = GestureAction.fromValue(this[GestureSettingsKeys.BACK_TAP_ACTION] ?: GestureAction.HOME.value),
+        backTapAction = readAction(GestureSettingsKeys.BACK_TAP_ACTION, GestureAction.HOME),
         backTapMode = BackTapMode.fromValue(this[GestureSettingsKeys.BACK_TAP_MODE] ?: BackTapMode.ALWAYS.value),
         backTapPauseOnCharging = this[GestureSettingsKeys.BACK_TAP_PAUSE_ON_CHARGING] ?: false,
         // 左侧边缘尺寸
@@ -325,78 +329,78 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
         bottomSegmentCount = this[GestureSettingsKeys.BOTTOM_SEGMENT_COUNT] ?: 1,
         // 手势配置（第1段）
         leftEdge = LeftEdgeConfig(
-            swipeRight = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_SWIPE_RIGHT] ?: GestureAction.BACK.value),
-            swipeRightLong = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_SWIPE_RIGHT_LONG] ?: GestureAction.LAST_APP.value),
-            swipeUp = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_SWIPE_UP] ?: GestureAction.PREVIOUS_TRACK.value),
-            swipeUpLong = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_SWIPE_UP_LONG] ?: GestureAction.POWER_MENU.value),
-            swipeDown = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_SWIPE_DOWN] ?: GestureAction.SCREENSHOT.value),
-            swipeDownLong = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_SWIPE_DOWN_LONG] ?: GestureAction.LOCK_SCREEN.value)
+            swipeRight = readAction(GestureSettingsKeys.LEFT_SWIPE_RIGHT, GestureAction.BACK),
+            swipeRightLong = readAction(GestureSettingsKeys.LEFT_SWIPE_RIGHT_LONG, GestureAction.LAST_APP),
+            swipeUp = readAction(GestureSettingsKeys.LEFT_SWIPE_UP, GestureAction.PREVIOUS_TRACK),
+            swipeUpLong = readAction(GestureSettingsKeys.LEFT_SWIPE_UP_LONG, GestureAction.POWER_MENU),
+            swipeDown = readAction(GestureSettingsKeys.LEFT_SWIPE_DOWN, GestureAction.SCREENSHOT),
+            swipeDownLong = readAction(GestureSettingsKeys.LEFT_SWIPE_DOWN_LONG, GestureAction.LOCK_SCREEN)
         ),
         rightEdge = RightEdgeConfig(
-            swipeLeft = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_SWIPE_LEFT] ?: GestureAction.BACK.value),
-            swipeLeftLong = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_SWIPE_LEFT_LONG] ?: GestureAction.LAST_APP.value),
-            swipeUp = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_SWIPE_UP] ?: GestureAction.NEXT_TRACK.value),
-            swipeUpLong = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_SWIPE_UP_LONG] ?: GestureAction.FLASHLIGHT.value),
-            swipeDown = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_SWIPE_DOWN] ?: GestureAction.VOICE_ASSISTANT.value),
-            swipeDownLong = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_SWIPE_DOWN_LONG] ?: GestureAction.EXPAND_PANEL.value)
+            swipeLeft = readAction(GestureSettingsKeys.RIGHT_SWIPE_LEFT, GestureAction.BACK),
+            swipeLeftLong = readAction(GestureSettingsKeys.RIGHT_SWIPE_LEFT_LONG, GestureAction.LAST_APP),
+            swipeUp = readAction(GestureSettingsKeys.RIGHT_SWIPE_UP, GestureAction.NEXT_TRACK),
+            swipeUpLong = readAction(GestureSettingsKeys.RIGHT_SWIPE_UP_LONG, GestureAction.FLASHLIGHT),
+            swipeDown = readAction(GestureSettingsKeys.RIGHT_SWIPE_DOWN, GestureAction.VOICE_ASSISTANT),
+            swipeDownLong = readAction(GestureSettingsKeys.RIGHT_SWIPE_DOWN_LONG, GestureAction.EXPAND_PANEL)
         ),
         bottomEdge = BottomEdgeConfig(
-            swipeUp = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_SWIPE_UP] ?: GestureAction.HOME.value),
-            swipeUpLong = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_SWIPE_UP_LONG] ?: GestureAction.RECENT.value),
-            swipeLeft = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_SWIPE_LEFT] ?: GestureAction.LAST_APP.value),
-            swipeLeftLong = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_SWIPE_LEFT_LONG] ?: GestureAction.NONE.value),
-            swipeRight = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_SWIPE_RIGHT] ?: GestureAction.LAST_APP.value),
-            swipeRightLong = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_SWIPE_RIGHT_LONG] ?: GestureAction.NONE.value)
+            swipeUp = readAction(GestureSettingsKeys.BOTTOM_SWIPE_UP, GestureAction.HOME),
+            swipeUpLong = readAction(GestureSettingsKeys.BOTTOM_SWIPE_UP_LONG, GestureAction.RECENT),
+            swipeLeft = readAction(GestureSettingsKeys.BOTTOM_SWIPE_LEFT, GestureAction.LAST_APP),
+            swipeLeftLong = readAction(GestureSettingsKeys.BOTTOM_SWIPE_LEFT_LONG, GestureAction.NONE),
+            swipeRight = readAction(GestureSettingsKeys.BOTTOM_SWIPE_RIGHT, GestureAction.LAST_APP),
+            swipeRightLong = readAction(GestureSettingsKeys.BOTTOM_SWIPE_RIGHT_LONG, GestureAction.NONE)
         ),
         // 手势配置（第2段）
         leftEdgeSegment2 = LeftEdgeConfig(
-            swipeRight = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_2_SWIPE_RIGHT] ?: GestureAction.NONE.value),
-            swipeRightLong = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_2_SWIPE_RIGHT_LONG] ?: GestureAction.NONE.value),
-            swipeUp = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_2_SWIPE_UP] ?: GestureAction.NONE.value),
-            swipeUpLong = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_2_SWIPE_UP_LONG] ?: GestureAction.NONE.value),
-            swipeDown = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_2_SWIPE_DOWN] ?: GestureAction.NONE.value),
-            swipeDownLong = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_2_SWIPE_DOWN_LONG] ?: GestureAction.NONE.value)
+            swipeRight = readAction(GestureSettingsKeys.LEFT_2_SWIPE_RIGHT, GestureAction.NONE),
+            swipeRightLong = readAction(GestureSettingsKeys.LEFT_2_SWIPE_RIGHT_LONG, GestureAction.NONE),
+            swipeUp = readAction(GestureSettingsKeys.LEFT_2_SWIPE_UP, GestureAction.NONE),
+            swipeUpLong = readAction(GestureSettingsKeys.LEFT_2_SWIPE_UP_LONG, GestureAction.NONE),
+            swipeDown = readAction(GestureSettingsKeys.LEFT_2_SWIPE_DOWN, GestureAction.NONE),
+            swipeDownLong = readAction(GestureSettingsKeys.LEFT_2_SWIPE_DOWN_LONG, GestureAction.NONE)
         ),
         rightEdgeSegment2 = RightEdgeConfig(
-            swipeLeft = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_2_SWIPE_LEFT] ?: GestureAction.NONE.value),
-            swipeLeftLong = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_2_SWIPE_LEFT_LONG] ?: GestureAction.NONE.value),
-            swipeUp = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_2_SWIPE_UP] ?: GestureAction.NONE.value),
-            swipeUpLong = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_2_SWIPE_UP_LONG] ?: GestureAction.NONE.value),
-            swipeDown = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_2_SWIPE_DOWN] ?: GestureAction.NONE.value),
-            swipeDownLong = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_2_SWIPE_DOWN_LONG] ?: GestureAction.NONE.value)
+            swipeLeft = readAction(GestureSettingsKeys.RIGHT_2_SWIPE_LEFT, GestureAction.NONE),
+            swipeLeftLong = readAction(GestureSettingsKeys.RIGHT_2_SWIPE_LEFT_LONG, GestureAction.NONE),
+            swipeUp = readAction(GestureSettingsKeys.RIGHT_2_SWIPE_UP, GestureAction.NONE),
+            swipeUpLong = readAction(GestureSettingsKeys.RIGHT_2_SWIPE_UP_LONG, GestureAction.NONE),
+            swipeDown = readAction(GestureSettingsKeys.RIGHT_2_SWIPE_DOWN, GestureAction.NONE),
+            swipeDownLong = readAction(GestureSettingsKeys.RIGHT_2_SWIPE_DOWN_LONG, GestureAction.NONE)
         ),
         bottomEdgeSegment2 = BottomEdgeConfig(
-            swipeUp = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_2_SWIPE_UP] ?: GestureAction.NONE.value),
-            swipeUpLong = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_2_SWIPE_UP_LONG] ?: GestureAction.NONE.value),
-            swipeLeft = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT] ?: GestureAction.NONE.value),
-            swipeLeftLong = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT_LONG] ?: GestureAction.NONE.value),
-            swipeRight = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT] ?: GestureAction.NONE.value),
-            swipeRightLong = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT_LONG] ?: GestureAction.NONE.value)
+            swipeUp = readAction(GestureSettingsKeys.BOTTOM_2_SWIPE_UP, GestureAction.NONE),
+            swipeUpLong = readAction(GestureSettingsKeys.BOTTOM_2_SWIPE_UP_LONG, GestureAction.NONE),
+            swipeLeft = readAction(GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT, GestureAction.NONE),
+            swipeLeftLong = readAction(GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT_LONG, GestureAction.NONE),
+            swipeRight = readAction(GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT, GestureAction.NONE),
+            swipeRightLong = readAction(GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT_LONG, GestureAction.NONE)
         ),
         // 手势配置（第3段）
         leftEdgeSegment3 = LeftEdgeConfig(
-            swipeRight = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_3_SWIPE_RIGHT] ?: GestureAction.NONE.value),
-            swipeRightLong = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_3_SWIPE_RIGHT_LONG] ?: GestureAction.NONE.value),
-            swipeUp = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_3_SWIPE_UP] ?: GestureAction.NONE.value),
-            swipeUpLong = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_3_SWIPE_UP_LONG] ?: GestureAction.NONE.value),
-            swipeDown = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_3_SWIPE_DOWN] ?: GestureAction.NONE.value),
-            swipeDownLong = GestureAction.fromValue(this[GestureSettingsKeys.LEFT_3_SWIPE_DOWN_LONG] ?: GestureAction.NONE.value)
+            swipeRight = readAction(GestureSettingsKeys.LEFT_3_SWIPE_RIGHT, GestureAction.NONE),
+            swipeRightLong = readAction(GestureSettingsKeys.LEFT_3_SWIPE_RIGHT_LONG, GestureAction.NONE),
+            swipeUp = readAction(GestureSettingsKeys.LEFT_3_SWIPE_UP, GestureAction.NONE),
+            swipeUpLong = readAction(GestureSettingsKeys.LEFT_3_SWIPE_UP_LONG, GestureAction.NONE),
+            swipeDown = readAction(GestureSettingsKeys.LEFT_3_SWIPE_DOWN, GestureAction.NONE),
+            swipeDownLong = readAction(GestureSettingsKeys.LEFT_3_SWIPE_DOWN_LONG, GestureAction.NONE)
         ),
         rightEdgeSegment3 = RightEdgeConfig(
-            swipeLeft = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_3_SWIPE_LEFT] ?: GestureAction.NONE.value),
-            swipeLeftLong = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_3_SWIPE_LEFT_LONG] ?: GestureAction.NONE.value),
-            swipeUp = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_3_SWIPE_UP] ?: GestureAction.NONE.value),
-            swipeUpLong = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_3_SWIPE_UP_LONG] ?: GestureAction.NONE.value),
-            swipeDown = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_3_SWIPE_DOWN] ?: GestureAction.NONE.value),
-            swipeDownLong = GestureAction.fromValue(this[GestureSettingsKeys.RIGHT_3_SWIPE_DOWN_LONG] ?: GestureAction.NONE.value)
+            swipeLeft = readAction(GestureSettingsKeys.RIGHT_3_SWIPE_LEFT, GestureAction.NONE),
+            swipeLeftLong = readAction(GestureSettingsKeys.RIGHT_3_SWIPE_LEFT_LONG, GestureAction.NONE),
+            swipeUp = readAction(GestureSettingsKeys.RIGHT_3_SWIPE_UP, GestureAction.NONE),
+            swipeUpLong = readAction(GestureSettingsKeys.RIGHT_3_SWIPE_UP_LONG, GestureAction.NONE),
+            swipeDown = readAction(GestureSettingsKeys.RIGHT_3_SWIPE_DOWN, GestureAction.NONE),
+            swipeDownLong = readAction(GestureSettingsKeys.RIGHT_3_SWIPE_DOWN_LONG, GestureAction.NONE)
         ),
         bottomEdgeSegment3 = BottomEdgeConfig(
-            swipeUp = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_3_SWIPE_UP] ?: GestureAction.NONE.value),
-            swipeUpLong = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_3_SWIPE_UP_LONG] ?: GestureAction.NONE.value),
-            swipeLeft = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT] ?: GestureAction.NONE.value),
-            swipeLeftLong = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT_LONG] ?: GestureAction.NONE.value),
-            swipeRight = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT] ?: GestureAction.NONE.value),
-            swipeRightLong = GestureAction.fromValue(this[GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT_LONG] ?: GestureAction.NONE.value)
+            swipeUp = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_UP, GestureAction.NONE),
+            swipeUpLong = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_UP_LONG, GestureAction.NONE),
+            swipeLeft = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT, GestureAction.NONE),
+            swipeLeftLong = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT_LONG, GestureAction.NONE),
+            swipeRight = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT, GestureAction.NONE),
+            swipeRightLong = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT_LONG, GestureAction.NONE)
         )
     )
 }
@@ -498,20 +502,8 @@ suspend fun Context.saveBottomSegmentCount(count: Int) = withContext(Dispatchers
     }
 }
 
-// 手势动作设置
-suspend fun Context.saveLeftEdgeGesture(key: Preferences.Key<String>, action: GestureAction) = withContext(Dispatchers.IO) {
-    gestureDataStore.edit { prefs ->
-        prefs[key] = action.value
-    }
-}
-
-suspend fun Context.saveRightEdgeGesture(key: Preferences.Key<String>, action: GestureAction) = withContext(Dispatchers.IO) {
-    gestureDataStore.edit { prefs ->
-        prefs[key] = action.value
-    }
-}
-
-suspend fun Context.saveBottomEdgeGesture(key: Preferences.Key<String>, action: GestureAction) = withContext(Dispatchers.IO) {
+// 保存单个手势动作
+suspend fun Context.saveEdgeGesture(key: Preferences.Key<String>, action: GestureAction) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         prefs[key] = action.value
     }

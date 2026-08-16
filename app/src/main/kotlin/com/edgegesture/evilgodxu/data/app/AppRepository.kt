@@ -127,11 +127,6 @@ class AppRepository private constructor(private val context: Context) {
         }
     }
 
-    // 强制刷新应用列表
-    suspend fun refreshApps() = mutex.withLock {
-        refreshAppsInternal()
-    }
-
     // 用户重新授予 QUERY_ALL_PACKAGES 后调用
     suspend fun onQueryPermissionGranted() = mutex.withLock {
         context.resetBlacklistInitialized()
@@ -153,26 +148,6 @@ class AppRepository private constructor(private val context: Context) {
 
     private suspend fun refreshAppsIfPossible() {
         refreshAppsIfPermitted()
-    }
-
-    fun getAppsSync(): List<AppInfo> = _appsFlow.value
-
-    fun searchApps(query: String): List<AppInfo> {
-        val apps = _appsFlow.value
-        if (query.isBlank()) return apps
-        val lowerQuery = query.lowercase()
-        return apps.filter {
-            it.appName.lowercase().contains(lowerQuery) ||
-            it.packageName.lowercase().contains(lowerQuery)
-        }
-    }
-
-    fun getAppByPackageName(packageName: String): AppInfo? {
-        return _appsFlow.value.find { it.packageName == packageName }
-    }
-
-    fun getAppLabel(packageName: String): String {
-        return getAppByPackageName(packageName)?.appName ?: packageName
     }
 
     private val appChangeReceiver = object : BroadcastReceiver() {
@@ -237,14 +212,4 @@ class AppRepository private constructor(private val context: Context) {
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
     }
-
-    fun unregisterAppChangeReceiver() {
-        if (!isReceiverRegistered) return
-        isReceiverRegistered = false
-        context.unregisterReceiver(appChangeReceiver)
-    }
-}
-
-fun Context.getAppRepository(): AppRepository {
-    return AppRepository.getInstance(this)
 }

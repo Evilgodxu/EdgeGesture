@@ -7,15 +7,13 @@ import androidx.lifecycle.viewModelScope
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
-import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeGesture
 import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeHeight
 import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeWidthPercent
-import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeGesture
+import com.edgegesture.evilgodxu.data.gesture.saveEdgeGesture
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeHeightPercent
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgePositionPercent
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeWidth
 import com.edgegesture.evilgodxu.data.gesture.saveLeftSegmentCount
-import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeGesture
 import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeHeightPercent
 import com.edgegesture.evilgodxu.data.gesture.saveRightEdgePositionPercent
 import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeWidth
@@ -85,13 +83,9 @@ class EdgeGestureConfigViewModel(
     }
 
     // 保存手势动作
-    fun saveGestureAction(edgeType: EdgeType, key: Preferences.Key<String>, action: GestureAction) {
+    fun saveGestureAction(key: Preferences.Key<String>, action: GestureAction) {
         viewModelScope.launch {
-            when (edgeType) {
-                EdgeType.LEFT -> context.saveLeftEdgeGesture(key, action)
-                EdgeType.RIGHT -> context.saveRightEdgeGesture(key, action)
-                EdgeType.BOTTOM -> context.saveBottomEdgeGesture(key, action)
-            }
+            context.saveEdgeGesture(key, action)
         }
     }
 }

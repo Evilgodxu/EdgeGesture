@@ -583,21 +583,17 @@ class MusicPlaybackState {
             currentIndex = index
             currentTrack = playlist[index]
         }
-        if (isActive) {
-            val controllerDuration = controller.duration
-            if (controllerDuration > 0L) duration = controllerDuration
-            val controllerPosition = controller.currentPosition
-            if (controllerPosition >= 0L && duration > 0L) {
-                currentPosition = controllerPosition.coerceIn(0L, duration)
-            }
-        }
-        isPlaying = controller.isPlaying
+        syncPlaybackPosition(controller, isActive)
     }
 
     fun updatePosition() {
         val controller = mediaController ?: return
         val playbackState = controller.playbackState
         val isActive = playbackState == Player.STATE_READY || playbackState == Player.STATE_BUFFERING
+        syncPlaybackPosition(controller, isActive)
+    }
+
+    private fun syncPlaybackPosition(controller: MediaController, isActive: Boolean) {
         if (isActive) {
             val controllerDuration = controller.duration
             if (controllerDuration > 0L) duration = controllerDuration

@@ -236,18 +236,10 @@ class AccessibilityEdgeViewManager(
         bottomParamsList.clear()
     }
 
-    fun updateEdgeViewsAlpha(settings: GestureSettingsState) {
-        val alpha = if (settings.hideOverlay) 0f else 0.6f
-
-        val allViews = leftEdgeViews + rightEdgeViews + bottomEdgeViews
-        allViews.forEach { view ->
-            view.alpha = alpha
-            if (settings.hideOverlay) {
-                view.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            } else {
-                view.setBackgroundColor("#40FF0000".toColorInt())
-            }
-        }
+    private fun applyEdgeBackground(view: View, hideOverlay: Boolean) {
+        view.setBackgroundColor(
+            if (hideOverlay) android.graphics.Color.TRANSPARENT else "#40FF0000".toColorInt()
+        )
     }
 
     fun updateEdgeViewsLayout(settings: GestureSettingsState) {
@@ -275,11 +267,7 @@ class AccessibilityEdgeViewManager(
             params.width = leftWidthPx
             params.height = height
             params.y = y
-            if (settings.hideOverlay) {
-                view.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            } else {
-                view.setBackgroundColor("#40FF0000".toColorInt())
-            }
+            applyEdgeBackground(view, settings.hideOverlay)
             try {
                 windowManager.updateViewLayout(view, params)
             } catch (e: Exception) {
@@ -309,11 +297,7 @@ class AccessibilityEdgeViewManager(
             params.width = rightWidthPx
             params.height = height
             params.y = y
-            if (settings.hideOverlay) {
-                view.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            } else {
-                view.setBackgroundColor("#40FF0000".toColorInt())
-            }
+            applyEdgeBackground(view, settings.hideOverlay)
             try {
                 windowManager.updateViewLayout(view, params)
             } catch (e: Exception) {
@@ -343,11 +327,7 @@ class AccessibilityEdgeViewManager(
             params.width = width
             params.height = bottomHeightPx
             params.x = x
-            if (settings.hideOverlay) {
-                view.setBackgroundColor(android.graphics.Color.TRANSPARENT)
-            } else {
-                view.setBackgroundColor("#40FF0000".toColorInt())
-            }
+            applyEdgeBackground(view, settings.hideOverlay)
             try {
                 windowManager.updateViewLayout(view, params)
             } catch (e: Exception) {

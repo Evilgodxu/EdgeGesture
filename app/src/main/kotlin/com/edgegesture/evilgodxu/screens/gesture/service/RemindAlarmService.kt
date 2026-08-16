@@ -47,13 +47,8 @@ class RemindAlarmService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            ACTION_STOP_ALARM -> stopAlarm()
-            else -> {
-                val minutes = intent?.getIntExtra(EXTRA_MINUTES, 1) ?: 1
-                startAlarm(minutes)
-            }
-        }
+        val minutes = intent?.getIntExtra(EXTRA_MINUTES, 1) ?: 1
+        startAlarm(minutes)
         return START_NOT_STICKY
     }
 
@@ -264,7 +259,6 @@ class RemindAlarmService : Service() {
 
     companion object {
         const val EXTRA_MINUTES = "extra_minutes"
-        const val ACTION_STOP_ALARM = "com.edgegesture.action.STOP_REMIND_ALARM"
         const val NOTIFY_ID_BASE = 3000
     }
 }

@@ -89,7 +89,6 @@
     <!-- 音乐面板 -->
     <string name="music_panel_empty">暂无本地音乐</string>
     <string name="music_panel_scanning">正在扫描音乐…</string>
-    <string name="music_panel_permission_denied">需要音频读取权限才能扫描本地音乐</string>
     <string name="music_panel_playlist_title">播放列表</string>
     <string name="music_panel_timer_title">定时关闭</string>
     <string name="music_panel_timer_minutes">分钟</string>
@@ -116,9 +115,7 @@
     <string name="music_panel_usb_connected_not_enabled">已连接但未启用独占</string>
     <string name="music_panel_usb_not_detected">未检测到 USB 音频设备</string>
     <string name="music_panel_sound_effects_title">音效设置</string>
-    <string name="music_panel_sound_effects_hint">点击设置音效效果</string>
     <string name="music_panel_sound_effects_enter">进入</string>
-    <string name="music_panel_sound_effects_enabled">已启用</string>
     <string name="music_panel_sound_effects_not_implemented">暂未实现</string>
     <string name="music_panel_play_error">该歌曲暂时无法播放（可能为VIP歌曲）</string>
     <string name="music_panel_play_failed">播放失败</string>
@@ -144,7 +141,6 @@
     <string name="music_scanner_unknown_song">未知歌曲</string>
 
     <!-- 设备名称兜底 -->
-    <string name="bluetooth_headset_default_name">蓝牙耳机</string>
     <string name="usb_audio_default_name">USB 音频设备</string>
 
     <!-- 播放链路面板 (Audio Signal Path) -->
@@ -379,7 +375,6 @@
     <string name="update_notification_title">发现新版本</string>
     <string name="update_notification_text">边缘手势 %s 已可用</string>
     <string name="update_dialog_title">发现新版本 %s</string>
-    <string name="update_dialog_description">新版本已可用，是否前往下载？</string>
     <string name="update_dialog_description_alt">是否下载并安装新版本？</string>
     <string name="update_dialog_downloading">正在下载...</string>
     <string name="update_dialog_download_failed">下载失败，请尝试使用浏览器下载</string>
