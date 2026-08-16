@@ -24,7 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,7 +57,7 @@ fun ShortcutsGrid(
     appRepository: AppRepository = koinInject()
 ) {
     // 从缓存仓库获取应用列表，实现图标预加载
-    val apps by appRepository.appsFlow.collectAsState()
+    val apps by appRepository.appsFlow.collectAsStateWithLifecycle()
 
     // 构建包名到图标的映射，避免重复查询
     val iconMap = remember(apps) {

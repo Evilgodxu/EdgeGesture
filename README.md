@@ -10,8 +10,6 @@
 [![License](https://img.shields.io/badge/license-AGPL--3.0-22c55e?style=flat-square)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-13%2B-3ddc84?style=flat-square&logo=android&logoColor=white)](#运行环境)
 
-[在线体验 UI 设计](https://evilgodxu.github.io/EdgeGesture/)
-
 </div>
 
 ---

@@ -29,6 +29,7 @@ hiddenApiBypass = "6.1"
 coil = "3.5.0"
 media3 = "1.11.0"
 okhttp = "5.4.0"
+kotlinxSerializationJson = "1.11.0"
 
 [libraries]
 
@@ -64,7 +65,7 @@ koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin"
 kotlinx-coroutines-guava = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-guava", version.ref = "coroutines" }
 
 # Kotlin Serialization
-kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.11.0" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 
 # Shizuku
 shizuku-api = { group = "dev.rikka.shizuku", name = "api", version = "13.1.5" }

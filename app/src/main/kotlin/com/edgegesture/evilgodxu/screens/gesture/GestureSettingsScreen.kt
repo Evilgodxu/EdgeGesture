@@ -35,8 +35,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.PlayArrow
@@ -67,7 +67,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -407,8 +406,8 @@ private fun GestureSettingsSwitchesColumn(
     notificationPermissionLauncher: androidx.activity.result.ActivityResultLauncher<String>
 ) {
     val context = LocalContext.current
-    val stats by GestureStatsManager.stats.collectAsState()
-    val statsPeriod by GestureStatsManager.period.collectAsState()
+    val stats by GestureStatsManager.stats.collectAsStateWithLifecycle()
+    val statsPeriod by GestureStatsManager.period.collectAsStateWithLifecycle()
     // 手势配置数仅在设置变化时重新统计，避免每次重组全量遍历
     val totalGestureCount = remember(settings) { countNonNoneGestures(settings) }
     var showStatsPeriodDialog by remember { mutableStateOf(false) }
@@ -1287,7 +1286,7 @@ private fun AdvancedGestureCard(
                     )
 
                     Icon(
-                        imageVector = Icons.Filled.ChevronRight,
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1344,7 +1343,7 @@ private fun SummaryCard(
                 )
 
                 Icon(
-                    imageVector = Icons.Filled.ChevronRight,
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = null,
                     modifier = Modifier.size(18.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant

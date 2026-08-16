@@ -32,7 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -70,8 +70,8 @@ fun AppPickerScreen(
     val context = LocalContext.current
 
     // 从缓存仓库获取应用列表，实现即时显示
-    val apps by appRepository.appsFlow.collectAsState()
-    val isLoading by appRepository.isLoading.collectAsState()
+    val apps by appRepository.appsFlow.collectAsStateWithLifecycle()
+    val isLoading by appRepository.isLoading.collectAsStateWithLifecycle()
     var searchQuery by remember { mutableStateOf("") }
 
     // 当应用列表为空时触发后台扫描，确保用户能看到可选应用

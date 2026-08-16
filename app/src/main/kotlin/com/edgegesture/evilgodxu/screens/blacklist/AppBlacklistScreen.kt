@@ -38,7 +38,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -75,10 +75,10 @@ fun AppBlacklistScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val blacklist by context.appSwitchBlacklistFlow().collectAsState(initial = emptySet())
+    val blacklist by context.appSwitchBlacklistFlow().collectAsStateWithLifecycle(initialValue = emptySet())
 
-    val allApps by appRepository.appsFlow.collectAsState()
-    val isLoading by appRepository.isLoading.collectAsState()
+    val allApps by appRepository.appsFlow.collectAsStateWithLifecycle()
+    val isLoading by appRepository.isLoading.collectAsStateWithLifecycle()
 
     // 权限状态实时刷新：每次页面回到前台（ON_RESUME）重新查询，避免授权后不更新
     val lifecycleOwner = LocalLifecycleOwner.current

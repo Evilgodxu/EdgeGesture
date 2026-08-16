@@ -20,7 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AdsClick
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.ButtonDefaults
@@ -37,7 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -68,7 +68,7 @@ fun BackTapScreen(
     onNavigateBack: () -> Unit,
     viewModel: BackTapViewModel = koinViewModel(),
 ) {
-    val gestureSettings by viewModel.gestureSettings.collectAsState()
+    val gestureSettings by viewModel.gestureSettings.collectAsStateWithLifecycle()
     val settings = gestureSettings
 
     var showActionDialog by remember { mutableStateOf(false) }
@@ -262,7 +262,7 @@ fun BackTapScreen(
                     )
 
                     Icon(
-                        imageVector = Icons.Filled.ChevronRight,
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant

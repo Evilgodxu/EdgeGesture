@@ -1,4 +1,3 @@
-import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -26,8 +25,6 @@ android {
         targetSdk = 37
         versionCode = 16
         versionName = "5.0.4"
-
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         ndk {
             abiFilters += listOf("arm64-v8a")

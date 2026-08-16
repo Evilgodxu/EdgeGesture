@@ -77,7 +77,7 @@ import com.edgegesture.evilgodxu.ui.adaptive.currentWindowSizeClass
 import com.edgegesture.evilgodxu.screens.settings.components.DonateDialog
 import com.edgegesture.evilgodxu.screens.settings.components.GestureConfigDialog
 import com.edgegesture.evilgodxu.screens.settings.components.LanguageSelectionDialog
-import com.edgegesture.evilgodxu.screens.settings.components.OpenSourceLicensesDialog
+
 import com.edgegesture.evilgodxu.screens.settings.components.SettingsClickableItem
 import com.edgegesture.evilgodxu.screens.settings.components.SettingsSection
 import com.edgegesture.evilgodxu.screens.settings.components.ThemeSelectionDialog
@@ -202,7 +202,6 @@ fun SettingsScreen(
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showDonateDialog by remember { mutableStateOf(false) }
-    var showOpenSourceDialog by remember { mutableStateOf(false) }
     var showGestureConfigDialog by remember { mutableStateOf(false) }
 
     // 更新检测状态由 UpdateViewModel 统一管理，与主界面共享
@@ -323,13 +322,6 @@ fun SettingsScreen(
                             subtitle = stringResource(R.string.settings_donate_desc),
                             onClick = { showDonateDialog = true }
                         )
-                        HorizontalDivider()
-                        SettingsClickableItem(
-                            icon = Icons.Default.Code,
-                            title = stringResource(R.string.settings_open_source),
-                            subtitle = stringResource(R.string.settings_open_source_desc),
-                            onClick = { showOpenSourceDialog = true }
-                        )
                     }
                 }
             }
@@ -441,13 +433,6 @@ fun SettingsScreen(
                         subtitle = stringResource(R.string.settings_donate_desc),
                         onClick = { showDonateDialog = true }
                     )
-                    HorizontalDivider()
-                    SettingsClickableItem(
-                        icon = Icons.Default.Code,
-                        title = stringResource(R.string.settings_open_source),
-                        subtitle = stringResource(R.string.settings_open_source_desc),
-                        onClick = { showOpenSourceDialog = true }
-                    )
                 }
 
                 // 版本信息（点击检查更新）
@@ -538,13 +523,6 @@ fun SettingsScreen(
     if (showDonateDialog) {
         DonateDialog(
             onDismiss = { showDonateDialog = false }
-        )
-    }
-
-    // 开源许可对话框
-    if (showOpenSourceDialog) {
-        OpenSourceLicensesDialog(
-            onDismiss = { showOpenSourceDialog = false }
         )
     }
 

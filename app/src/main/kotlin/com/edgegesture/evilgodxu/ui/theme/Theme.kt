@@ -12,8 +12,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.edgegesture.evilgodxu.screens.settings.ThemeMode
 import com.edgegesture.evilgodxu.screens.settings.settingsFlow
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 val DarkColorScheme = darkColorScheme(
     primary = md_theme_dark_primary,
@@ -100,7 +100,7 @@ fun MyApplicationTheme(
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
-    val settings by context.settingsFlow().collectAsState(initial = null)
+    val settings by context.settingsFlow().collectAsStateWithLifecycle(initialValue = null)
 
     val isDarkTheme = when (settings?.themeMode) {
         ThemeMode.DARK -> true
