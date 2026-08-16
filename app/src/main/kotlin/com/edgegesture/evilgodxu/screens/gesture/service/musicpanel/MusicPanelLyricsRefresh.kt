@@ -57,6 +57,15 @@ internal fun LyricsRefreshOverlay(
         exit = slideOutVertically { it } + fadeOut()
     ) {
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface.copy(alpha = .97f)).clickable { onCancel() }, contentAlignment = Alignment.Center) {
+            playbackState.lyricsRefreshError?.let { error ->
+                MusicErrorBanner(
+                    message = error,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    onDismiss = { playbackState.setLyricsRefreshError(null) }
+                )
+            }
             Column(Modifier.clickable { }.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     text = stringResource(R.string.music_panel_refresh_lyrics),
@@ -94,12 +103,6 @@ internal fun LyricsRefreshOverlay(
                             }
                         }
                     }
-                }
-                playbackState.lyricsRefreshError?.let { error ->
-                    MusicErrorBanner(
-                        message = error,
-                        onDismiss = { playbackState.setLyricsRefreshError(null) }
-                    )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Surface(shape = RoundedCornerShape(10.dp), color = MaterialTheme.colorScheme.surfaceVariant, onClick = onCancel) { Text(stringResource(R.string.music_panel_rename_cancel), Modifier.padding(horizontal = 24.dp, vertical = 10.dp)) }

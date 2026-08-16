@@ -8,7 +8,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -156,19 +155,9 @@ internal fun SettingsOverlay(
 
                             playbackState.usbError?.let { error ->
                                 Spacer(modifier = Modifier.height(8.dp))
-                                val errorContext = LocalContext.current
-                                Text(
-                                    text = error,
-                                    color = MaterialTheme.colorScheme.error,
-                                    fontSize = 10.sp,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .combinedClickable(
-                                            onClick = {},
-                                            onLongClick = { copyToClipboard(errorContext, error) }
-                                        )
+                                MusicErrorBanner(
+                                    message = error,
+                                    onDismiss = { playbackState.usbError = null }
                                 )
                             }
                         }
