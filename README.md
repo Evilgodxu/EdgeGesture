@@ -155,8 +155,4 @@ KEY_ALIAS=your_key_alias
 KEY_PASSWORD=your_key_password
 ```
 
-## 许可证
-
-本项目采用 [AGPL-3.0](LICENSE) 许可证。
-
 ---
