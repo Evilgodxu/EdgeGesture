@@ -24,6 +24,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -60,7 +61,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -105,6 +105,10 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.log.CrashLogManager
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.edgegesture.evilgodxu.screens.settings.ThemeMode
+import com.edgegesture.evilgodxu.screens.settings.settingsFlow
+import com.edgegesture.evilgodxu.ui.theme.DarkColorScheme
 import com.edgegesture.evilgodxu.ui.theme.LightColorScheme
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -404,9 +408,21 @@ private fun MiniPlayerOverlay(
     val barHeight = with(density) { barHeightPx.toDp() }
     val barWidth = with(density) { barWidthPx.toDp() }
 
-    // 迷你播放器固定浅色外观，不随系统主题变化
-    val colorScheme = LightColorScheme
-    val cardBackground = Color(0xFFF5F5F7).copy(alpha = 0.82f)
+    // 跟随应用主题：设置项优先，其次系统深色模式
+    val settings by context.settingsFlow().collectAsStateWithLifecycle(initialValue = null)
+    val isSystemDark = isSystemInDarkTheme()
+    val isDarkTheme = when (settings?.themeMode) {
+        ThemeMode.DARK -> true
+        ThemeMode.LIGHT -> false
+        else -> isSystemDark
+    }
+    val colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme
+    // 卡片背景半透明，深色/浅色分别配色，透明度更低以更好透出下层内容
+    val cardBackground = if (isDarkTheme) {
+        Color(0xFF161B22).copy(alpha = 0.55f)
+    } else {
+        Color(0xFFF5F5F7).copy(alpha = 0.60f)
+    }
 
     // 屏幕旋转时自动收起播放列表并重新布局
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
