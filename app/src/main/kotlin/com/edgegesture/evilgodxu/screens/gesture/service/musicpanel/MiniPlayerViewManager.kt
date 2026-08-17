@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -170,7 +171,7 @@ class MiniPlayerViewManager(
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
 
         val params = WindowManager.LayoutParams(
-            barWidthPx(),
+            WindowManager.LayoutParams.WRAP_CONTENT,
             barH,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             flags,
@@ -281,12 +282,11 @@ class MiniPlayerViewManager(
         setPlaylistExpanded(false)
     }
 
-    // 重新计算并平滑过渡窗口的宽度、高度与纵向位置
+    // 重新计算并平滑过渡窗口的高度与纵向位置（宽度按内容自适应）
     private fun applyWindowLayout() {
         val view = composeView ?: return
         val params = view.layoutParams as? WindowManager.LayoutParams ?: return
         val barH = barHeightPx()
-        val targetWidth = barWidthPx()
         val targetHeight: Int
         val targetY: Int
         if (playlistExpanded.value) {
@@ -299,10 +299,6 @@ class MiniPlayerViewManager(
         } else {
             targetHeight = barH
             targetY = topOffsetPx()
-        }
-        if (targetWidth != params.width) {
-            params.width = targetWidth
-            runCatching { windowManager.updateViewLayout(view, params) }
         }
         if (targetHeight == params.height && targetY == params.y) return
         ValueAnimator.ofFloat(0f, 1f).apply {
@@ -320,12 +316,6 @@ class MiniPlayerViewManager(
     }
 
     private fun barHeightPx(): Int = dpToPx(BAR_HEIGHT_DP)
-
-    // 横屏时限制窗口宽度并水平居中，竖屏保持全宽
-    private fun barWidthPx(): Int {
-        if (!isLandscape()) return WindowManager.LayoutParams.MATCH_PARENT
-        return minOf(context.resources.displayMetrics.widthPixels, dpToPx(MAX_WIDTH_DP))
-    }
 
     @SuppressLint("DiscouragedApi")
     private fun getStatusBarHeight(): Int {
@@ -393,8 +383,6 @@ class MiniPlayerViewManager(
     companion object {
         // 迷你播放器条高度：紧凑容纳两行文本与 48dp 触控热区
         private const val BAR_HEIGHT_DP = 48
-        // 横屏时的最大宽度，超出则水平居中，避免全宽拉伸
-        private const val MAX_WIDTH_DP = 400
         // 横屏时顶部保留的间距
         private const val LANDSCAPE_TOP_GAP_DP = 1
         private const val PLAYLIST_HEADER_DP = 36
@@ -436,6 +424,8 @@ private fun MiniPlayerOverlay(
     MaterialTheme(colorScheme = colorScheme) {
         Column(
             modifier = Modifier
+                // 展开播放列表时的最大宽度上限，收起时按内容自适应
+                .widthIn(max = 400.dp)
                 // 胶囊圆角：半径取条高（48dp）一半，呈椭圆轮廓
                 .background(cardBackground, RoundedCornerShape(24.dp))
                 .clickable(
@@ -499,7 +489,7 @@ private fun MiniPlayerBar(
                     totalDx += drag
                 }
             }
-            .padding(horizontal = 10.dp),
+            .padding(horizontal = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally)
     ) {
