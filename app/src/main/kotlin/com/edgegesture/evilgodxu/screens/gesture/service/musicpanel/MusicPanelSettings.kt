@@ -99,11 +99,8 @@ internal fun SettingsOverlay(
                         val context = LocalContext.current
                         val settingsScope = rememberCoroutineScope()
                         val miniEnabled by context.miniPlayerEnabledFlow().collectAsState(initial = true)
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(rememberScrollState())
-                        ) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            // 标题与关闭按钮固定在顶部，不随设置项滚动
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -124,59 +121,66 @@ internal fun SettingsOverlay(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            SettingsSwitchRow(
-                                title = stringResource(R.string.music_panel_mini_mode),
-                                subtitle = stringResource(R.string.music_panel_mini_mode_desc),
-                                checked = miniEnabled,
-                                onCheckedChange = { enabled ->
-                                    settingsScope.launch { context.saveMiniPlayerEnabled(enabled) }
-                                }
-                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                SettingsSwitchRow(
+                                    title = stringResource(R.string.music_panel_mini_mode),
+                                    subtitle = stringResource(R.string.music_panel_mini_mode_desc),
+                                    checked = miniEnabled,
+                                    onCheckedChange = { enabled ->
+                                        settingsScope.launch { context.saveMiniPlayerEnabled(enabled) }
+                                    }
+                                )
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                                Spacer(modifier = Modifier.height(12.dp))
 
-                            SettingsSwitchRow(
-                                title = stringResource(R.string.music_panel_usb_exclusive),
-                                subtitle = if (playbackState.isUsbDeviceConnected) {
-                                    if (playbackState.isUsbExclusiveMode) {
-                                        stringResource(R.string.music_panel_usb_enabled, playbackState.usbDeviceName)
-                                    } else stringResource(R.string.music_panel_usb_connected_not_enabled)
-                                } else {
-                                    stringResource(R.string.music_panel_usb_not_detected)
-                                },
-                                checked = if (playbackState.isUsbDeviceConnected)
-                                    playbackState.isUsbExclusiveMode
-                                else
-                                    playbackState.usbExclusiveEnabled,
-                                onCheckedChange = { enabled ->
-                                    playbackState.setUsbExclusiveEnabled(enabled)
-                                    if (playbackState.isUsbDeviceConnected) {
-                                        settingsScope.launch {
-                                            if (enabled) {
-                                                playbackState.setUsbExclusiveMode(
-                                                    UsbAudioMonitor.setUsbExclusive(context, true)
-                                                )
-                                            } else {
-                                                UsbAudioMonitor.setUsbExclusive(context, false)
-                                                playbackState.setUsbExclusiveMode(false)
+                                SettingsSwitchRow(
+                                    title = stringResource(R.string.music_panel_usb_exclusive),
+                                    subtitle = if (playbackState.isUsbDeviceConnected) {
+                                        if (playbackState.isUsbExclusiveMode) {
+                                            stringResource(R.string.music_panel_usb_enabled, playbackState.usbDeviceName)
+                                        } else stringResource(R.string.music_panel_usb_connected_not_enabled)
+                                    } else {
+                                        stringResource(R.string.music_panel_usb_not_detected)
+                                    },
+                                    checked = if (playbackState.isUsbDeviceConnected)
+                                        playbackState.isUsbExclusiveMode
+                                    else
+                                        playbackState.usbExclusiveEnabled,
+                                    onCheckedChange = { enabled ->
+                                        playbackState.setUsbExclusiveEnabled(enabled)
+                                        if (playbackState.isUsbDeviceConnected) {
+                                            settingsScope.launch {
+                                                if (enabled) {
+                                                    playbackState.setUsbExclusiveMode(
+                                                        UsbAudioMonitor.setUsbExclusive(context, true)
+                                                    )
+                                                } else {
+                                                    UsbAudioMonitor.setUsbExclusive(context, false)
+                                                    playbackState.setUsbExclusiveMode(false)
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            SoundEffectEntryRow(
-                                onClick = { onShowSoundEffectsChange(true) }
-                            )
-
-                            playbackState.usbError?.let { error ->
-                                Spacer(modifier = Modifier.height(8.dp))
-                                MusicErrorBanner(
-                                    message = error,
-                                    onDismiss = { playbackState.usbError = null }
                                 )
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                SoundEffectEntryRow(
+                                    onClick = { onShowSoundEffectsChange(true) }
+                                )
+
+                                playbackState.usbError?.let { error ->
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    MusicErrorBanner(
+                                        message = error,
+                                        onDismiss = { playbackState.usbError = null }
+                                    )
+                                }
                             }
                         }
                     }

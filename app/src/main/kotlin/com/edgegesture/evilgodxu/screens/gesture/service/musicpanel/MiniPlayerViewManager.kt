@@ -30,7 +30,6 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +50,9 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.RepeatOne
+import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.automirrored.outlined.QueueMusic
@@ -62,7 +64,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,8 +74,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.center
@@ -97,7 +99,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistry
@@ -106,13 +107,9 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.log.CrashLogManager
-import com.edgegesture.evilgodxu.screens.settings.ThemeMode
-import com.edgegesture.evilgodxu.screens.settings.settingsFlow
-import com.edgegesture.evilgodxu.ui.theme.DarkColorScheme
 import com.edgegesture.evilgodxu.ui.theme.LightColorScheme
 import kotlin.math.max
 import kotlin.math.roundToInt
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -180,7 +177,7 @@ class MiniPlayerViewManager(
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            y = statusBarHeight
+            y = topOffsetPx()
         }
 
         val view = ComposeView(context).apply {
@@ -301,7 +298,7 @@ class MiniPlayerViewManager(
             targetY = max(0, (screenH - targetHeight) / 2)
         } else {
             targetHeight = barH
-            targetY = statusBarHeight
+            targetY = topOffsetPx()
         }
         if (targetWidth != params.width) {
             params.width = targetWidth
@@ -347,6 +344,12 @@ class MiniPlayerViewManager(
             .getInsets(WindowInsetsCompat.Type.statusBars()).top
     }.getOrElse { if (isLandscape()) 0 else getStatusBarHeight() }
 
+    // 迷你播放器纵向位置：横屏状态栏在侧边，顶部仅保留 1dp 间距；
+    // 竖屏位于状态栏下方，状态栏高度未刷新（横屏遗留）时回退到系统标准高度，避免嵌入状态栏
+    private fun topOffsetPx(): Int =
+        if (isLandscape()) dpToPx(LANDSCAPE_TOP_GAP_DP)
+        else max(statusBarHeight, getStatusBarHeight())
+
     private fun dpToPx(value: Int): Int = (value * context.resources.displayMetrics.density).roundToInt()
 
     // 滑动临时关闭：仅收起并回调给上层记录临时隐藏状态
@@ -391,7 +394,9 @@ class MiniPlayerViewManager(
         // 迷你播放器条高度：紧凑容纳两行文本与 48dp 触控热区
         private const val BAR_HEIGHT_DP = 48
         // 横屏时的最大宽度，超出则水平居中，避免全宽拉伸
-        private const val MAX_WIDTH_DP = 560
+        private const val MAX_WIDTH_DP = 400
+        // 横屏时顶部保留的间距
+        private const val LANDSCAPE_TOP_GAP_DP = 1
         private const val PLAYLIST_HEADER_DP = 36
         private const val PLAYLIST_ROW_DP = 44
         const val MAX_VISIBLE_ROWS = 5
@@ -412,20 +417,9 @@ private fun MiniPlayerOverlay(
     val context = LocalContext.current
     val barHeight = with(density) { barHeightPx.toDp() }
 
-    // 跟随应用主题设置
-    val settings by context.settingsFlow().collectAsStateWithLifecycle(initialValue = null)
-    val isSystemDark = isSystemInDarkTheme()
-    val isDarkTheme = when (settings?.themeMode) {
-        ThemeMode.DARK -> true
-        ThemeMode.LIGHT -> false
-        else -> isSystemDark
-    }
-    val colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme
-    val cardBackground = if (isDarkTheme) {
-        Color(0xFF161B22).copy(alpha = 0.72f)
-    } else {
-        Color(0xFFF5F5F7).copy(alpha = 0.82f)
-    }
+    // 迷你播放器固定浅色外观，不随系统主题变化
+    val colorScheme = LightColorScheme
+    val cardBackground = Color(0xFFF5F5F7).copy(alpha = 0.82f)
 
     // 歌曲切换 / 播放列表数量变化时，重新计算窗口高度
     LaunchedEffect(playlistExpanded, playbackState.playlist.size) {
@@ -442,7 +436,8 @@ private fun MiniPlayerOverlay(
     MaterialTheme(colorScheme = colorScheme) {
         Column(
             modifier = Modifier
-                .background(cardBackground, RoundedCornerShape(20.dp))
+                // 胶囊圆角：半径取条高（48dp）一半，呈椭圆轮廓
+                .background(cardBackground, RoundedCornerShape(24.dp))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -481,11 +476,6 @@ private fun MiniPlayerBar(
     val context = LocalContext.current
     val current = playbackState.currentTrack
     val coverDesc = stringResource(R.string.mini_player_cover)
-    val trackInfoDesc = stringResource(R.string.mini_player_track_info)
-    // 主标题 = 歌曲名称 + 艺术家
-    val mainTitle = current?.let { track ->
-        if (track.artist.isBlank()) track.title else "${track.title} - ${track.artist}"
-    } ?: stringResource(R.string.music_panel_empty)
 
     // 左右滑动关闭迷你播放器（播放列表展开时不响应滑动）
     var totalDx by remember { mutableStateOf(0f) }
@@ -509,13 +499,14 @@ private fun MiniPlayerBar(
                     totalDx += drag
                 }
             }
-            .padding(horizontal = 10.dp)
+            .padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally)
     ) {
-        // 专辑封面：旋转 + 光碟质感
+        // 专辑封面：旋转 + 黑胶质感
         Box(
             modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .size(44.dp)
+                .size(40.dp)
                 .clip(CircleShape)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
@@ -531,96 +522,63 @@ private fun MiniPlayerBar(
             )
         }
 
-        Column(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .weight(1f)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onExpandPanel
+        // 循环模式
+        MiniControlButton(
+            icon = when (playbackState.playMode) {
+                PlayMode.RepeatAll -> Icons.Default.Repeat
+                PlayMode.RepeatOne -> Icons.Default.RepeatOne
+                PlayMode.Shuffle -> Icons.Default.Shuffle
+            },
+            contentDescription = stringResource(R.string.music_panel_play_mode),
+            onClick = {
+                playbackState.setPlayMode(
+                    when (playbackState.playMode) {
+                        PlayMode.RepeatAll -> PlayMode.RepeatOne
+                        PlayMode.RepeatOne -> PlayMode.Shuffle
+                        PlayMode.Shuffle -> PlayMode.RepeatAll
+                    }
                 )
-                .padding(horizontal = 10.dp)
-                .semantics { contentDescription = trackInfoDesc },
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(
-                text = mainTitle,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            MiniLyricLine(playbackState = playbackState)
-        }
-
-        // 控制按钮组
-        Row(
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .padding(start = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            MiniControlButton(
-                icon = Icons.Default.SkipPrevious,
-                contentDescription = stringResource(R.string.mini_player_previous),
-                enabled = playbackState.playlist.isNotEmpty(),
-                onClick = {
-                    val prev = playbackState.previousIndex()
-                    if (prev >= 0) scope.launch { playTrackAt(context, playbackState, prev) }
+                playbackState.mediaController?.let { controller ->
+                    applyPlaybackMode(controller, playbackState.playMode)
                 }
-            )
-            MiniControlButton(
-                icon = if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                contentDescription = stringResource(
-                    if (playbackState.isPlaying) R.string.music_panel_pause else R.string.music_panel_play
-                ),
-                emphasized = true,
-                onClick = { togglePlayPause(playbackState) }
-            )
-            MiniControlButton(
-                icon = Icons.Default.SkipNext,
-                contentDescription = stringResource(R.string.mini_player_next),
-                enabled = playbackState.playlist.isNotEmpty(),
-                onClick = {
-                    val next = playbackState.nextIndex()
-                    if (next >= 0) scope.launch { playTrackAt(context, playbackState, next) }
-                }
-            )
-            MiniControlButton(
-                icon = Icons.AutoMirrored.Outlined.QueueMusic,
-                contentDescription = stringResource(R.string.mini_player_playlist),
-                onClick = { onPlaylistExpandedChange(!playlistExpanded) }
-            )
-        }
+                playbackState.persistState()
+            }
+        )
+        // 上一曲
+        MiniControlButton(
+            icon = Icons.Default.SkipPrevious,
+            contentDescription = stringResource(R.string.mini_player_previous),
+            enabled = playbackState.playlist.isNotEmpty(),
+            onClick = {
+                val prev = playbackState.previousIndex()
+                if (prev >= 0) scope.launch { playTrackAt(context, playbackState, prev) }
+            }
+        )
+        // 暂停 / 播放（无背景色）
+        MiniControlButton(
+            icon = if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+            contentDescription = stringResource(
+                if (playbackState.isPlaying) R.string.music_panel_pause else R.string.music_panel_play
+            ),
+            onClick = { togglePlayPause(playbackState) }
+        )
+        // 下一曲
+        MiniControlButton(
+            icon = Icons.Default.SkipNext,
+            contentDescription = stringResource(R.string.mini_player_next),
+            enabled = playbackState.playlist.isNotEmpty(),
+            onClick = {
+                val next = playbackState.nextIndex()
+                if (next >= 0) scope.launch { playTrackAt(context, playbackState, next) }
+            }
+        )
+        // 播放列表
+        MiniControlButton(
+            icon = Icons.AutoMirrored.Outlined.QueueMusic,
+            contentDescription = stringResource(R.string.mini_player_playlist),
+            onClick = { onPlaylistExpandedChange(!playlistExpanded) }
+        )
     }
-}
-
-@Composable
-private fun MiniLyricLine(playbackState: MusicPlaybackState) {
-    var lyricPosition by remember { mutableLongStateOf(playbackState.currentPosition) }
-    LaunchedEffect(playbackState.isPlaying, playbackState.currentTrack?.id) {
-        while (isActive) {
-            lyricPosition = playbackState.mediaController?.currentPosition
-                ?.takeIf { it >= 0L }
-                ?: playbackState.currentPosition
-            delay(if (playbackState.isPlaying) 200L else 500L)
-        }
-    }
-    val lines = playbackState.currentTrack?.lyricLines.orEmpty()
-    val activeIndex = lines.indexOfLast { it.timeMs <= lyricPosition }
-    val subtitle = if (lines.isEmpty()) stringResource(R.string.mini_player_no_lyrics)
-    else lines.getOrNull(activeIndex.coerceAtLeast(0))?.text.orEmpty()
-
-    Text(
-        text = subtitle,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontSize = 11.sp,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis
-    )
 }
 
 @Composable
@@ -680,18 +638,28 @@ private fun MiniDiscArt(
                 ring(r * 0.32f, r * 0.18f, Color.White.copy(alpha = 0.16f))
                 drawCircle(Color(0xFF141414), r * 0.18f, center)
 
-                // 碟面高光：左上角径向光泽，模拟光碟反光
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.18f),
-                            Color.White.copy(alpha = 0.05f),
-                            Color.Transparent
-                        ),
-                        center = Offset(center.x - r * 0.35f, center.y - r * 0.35f),
-                        radius = r * 1.3f
+                // 碟面高光：左上角径向光泽，模拟光碟反光（仅作用于塑料边缘，避免浅色遮罩影响封面）
+                val highlightPath = Path().apply {
+                    // 外圈塑料边缘
+                    addOval(Rect(center = center, radius = r))
+                    addOval(Rect(center = center, radius = r * 0.85f), Path.Direction.CounterClockwise)
+                    // 内圈塑料白环
+                    addOval(Rect(center = center, radius = r * 0.32f))
+                    addOval(Rect(center = center, radius = r * 0.18f), Path.Direction.CounterClockwise)
+                }
+                clipPath(highlightPath) {
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            colors = listOf(
+                                Color.White.copy(alpha = 0.18f),
+                                Color.White.copy(alpha = 0.05f),
+                                Color.Transparent
+                            ),
+                            center = Offset(center.x - r * 0.35f, center.y - r * 0.35f),
+                            radius = r * 1.3f
+                        )
                     )
-                )
+                }
             }
         }
     }
@@ -703,30 +671,21 @@ private fun MiniControlButton(
     contentDescription: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
-    emphasized: Boolean = false,
 ) {
     IconButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.size(48.dp)
+        modifier = Modifier.size(40.dp)
     ) {
-        // 视觉圆环小于 48dp 触控热区，避免在紧凑高度下贴满上下边缘
+        // 视觉圆环小于触控热区，避免在紧凑高度下贴满上下边缘
         Box(
-            modifier = Modifier
-                .size(if (emphasized) 40.dp else 36.dp)
-                .then(
-                    if (emphasized) Modifier.background(
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f),
-                        CircleShape
-                    )
-                    else Modifier
-                ),
+            modifier = Modifier.size(32.dp),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = contentDescription,
-                modifier = Modifier.size(if (emphasized) 22.dp else 20.dp),
+                modifier = Modifier.size(20.dp),
                 tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant
                 else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
             )
