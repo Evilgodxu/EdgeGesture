@@ -1,25 +1,19 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MusicNote
@@ -28,17 +22,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import kotlinx.coroutines.isActive
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -62,21 +52,7 @@ internal fun CurrentCover(
     onLocalCover: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val rotation = remember { Animatable(0f) }
     var showMenu by remember { mutableStateOf(false) }
-    LaunchedEffect(isPlaying) {
-        if (isPlaying) {
-            while (isActive) {
-                rotation.animateTo(
-                    targetValue = rotation.value + 360f,
-                    animationSpec = tween(
-                        durationMillis = 12_000,
-                        easing = LinearEasing
-                    )
-                )
-            }
-        }
-    }
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -87,14 +63,12 @@ internal fun CurrentCover(
             ),
         contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .size(64.dp)
-                .graphicsLayer { rotationZ = rotation.value }
-                .clip(CircleShape)
-        ) {
-            AlbumArt(track = track, modifier = Modifier.fillMaxSize())
-        }
+        // 复用光碟效果：旋转 + 黑胶质感 + 中心打洞，与迷你播放器一致
+        DiscArt(
+            track = track,
+            isPlaying = isPlaying,
+            modifier = Modifier.size(64.dp)
+        )
         CoverContextMenu(
             visible = showMenu,
             onOnlineCover = {

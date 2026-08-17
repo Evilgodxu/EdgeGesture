@@ -69,8 +69,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
@@ -592,7 +594,7 @@ private fun MiniPlayerBar(
                 )
                 .semantics { contentDescription = coverDesc }
         ) {
-            MiniDiscArt(
+            DiscArt(
                 track = current,
                 isPlaying = playbackState.isPlaying,
                 modifier = Modifier.fillMaxSize()
@@ -699,7 +701,7 @@ private fun MiniPlayerBar(
 }
 
 @Composable
-private fun MiniDiscArt(
+internal fun DiscArt(
     track: MusicTrack?,
     isPlaying: Boolean,
     modifier: Modifier = Modifier,
@@ -719,64 +721,75 @@ private fun MiniDiscArt(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .graphicsLayer { rotationZ = rotation.value }
-                .clip(CircleShape)
+                // 离屏合成：使下方 BlendMode.Clear 打洞能真正擦除封面像素
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
         ) {
-            // 专辑封面仅覆盖中间区域，外圈边缘与中心留出透明材质
-            AlbumArt(
-                track = track,
+            Box(
                 modifier = Modifier
-                    .align(Alignment.Center)
-                    .fillMaxSize(0.85f)
+                    .fillMaxSize()
+                    .graphicsLayer { rotationZ = rotation.value }
                     .clip(CircleShape)
-            )
+            ) {
+                // 专辑封面仅覆盖中间区域，外圈边缘与中心留出透明材质
+                AlbumArt(
+                    track = track,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .fillMaxSize(0.85f)
+                        .clip(CircleShape)
+                )
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    val r = size.minDimension / 2f
+                    val center = this.center
+                    // 绘制环形区域（外圆减内圆）
+                    val ring: (Float, Float, Color) -> Unit = { outer, inner, color ->
+                        val path = Path().apply {
+                            addOval(Rect(center = center, radius = outer))
+                            addOval(Rect(center = center, radius = inner), Path.Direction.CounterClockwise)
+                        }
+                        drawPath(path, color)
+                    }
+
+                    // 外圈透明边缘
+                    ring(r, r * 0.85f, Color.White.copy(alpha = 0.16f))
+                    drawCircle(
+                        color = Color.Black.copy(alpha = 0.15f),
+                        radius = r,
+                        center = center,
+                        style = Stroke(width = 0.8f)
+                    )
+
+                    // 中心空洞 + 一圈透明材质（不绘制实心轴心，由下方打洞露出下层）
+                    ring(r * 0.32f, r * 0.18f, Color.White.copy(alpha = 0.16f))
+
+                    // 碟面高光：左上角径向光泽，模拟光碟反光（仅作用于塑料边缘，避免浅色遮罩影响封面）
+                    val highlightPath = Path().apply {
+                        // 外圈塑料边缘
+                        addOval(Rect(center = center, radius = r))
+                        addOval(Rect(center = center, radius = r * 0.85f), Path.Direction.CounterClockwise)
+                        // 内圈塑料白环
+                        addOval(Rect(center = center, radius = r * 0.32f))
+                        addOval(Rect(center = center, radius = r * 0.18f), Path.Direction.CounterClockwise)
+                    }
+                    clipPath(highlightPath) {
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(
+                                    Color.White.copy(alpha = 0.18f),
+                                    Color.White.copy(alpha = 0.05f),
+                                    Color.Transparent
+                                ),
+                                center = Offset(center.x - r * 0.35f, center.y - r * 0.35f),
+                                radius = r * 1.3f
+                            )
+                        )
+                    }
+                }
+            }
+            // 中心打洞：擦除封面像素形成空心，露出播放器卡片与下层应用
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val r = size.minDimension / 2f
-                val center = this.center
-                // 绘制环形区域（外圆减内圆）
-                val ring: (Float, Float, Color) -> Unit = { outer, inner, color ->
-                    val path = Path().apply {
-                        addOval(Rect(center = center, radius = outer))
-                        addOval(Rect(center = center, radius = inner), Path.Direction.CounterClockwise)
-                    }
-                    drawPath(path, color)
-                }
-
-                // 外圈透明边缘
-                ring(r, r * 0.85f, Color.White.copy(alpha = 0.16f))
-                drawCircle(
-                    color = Color.Black.copy(alpha = 0.15f),
-                    radius = r,
-                    center = center,
-                    style = Stroke(width = 0.8f)
-                )
-
-                // 中心空洞 + 一圈透明材质
-                ring(r * 0.32f, r * 0.18f, Color.White.copy(alpha = 0.16f))
-                drawCircle(Color(0xFF141414), r * 0.18f, center)
-
-                // 碟面高光：左上角径向光泽，模拟光碟反光（仅作用于塑料边缘，避免浅色遮罩影响封面）
-                val highlightPath = Path().apply {
-                    // 外圈塑料边缘
-                    addOval(Rect(center = center, radius = r))
-                    addOval(Rect(center = center, radius = r * 0.85f), Path.Direction.CounterClockwise)
-                    // 内圈塑料白环
-                    addOval(Rect(center = center, radius = r * 0.32f))
-                    addOval(Rect(center = center, radius = r * 0.18f), Path.Direction.CounterClockwise)
-                }
-                clipPath(highlightPath) {
-                    drawCircle(
-                        brush = Brush.radialGradient(
-                            colors = listOf(
-                                Color.White.copy(alpha = 0.18f),
-                                Color.White.copy(alpha = 0.05f),
-                                Color.Transparent
-                            ),
-                            center = Offset(center.x - r * 0.35f, center.y - r * 0.35f),
-                            radius = r * 1.3f
-                        )
-                    )
-                }
+                drawCircle(Color.Transparent, r * 0.18f, this.center, blendMode = BlendMode.Clear)
             }
         }
     }
