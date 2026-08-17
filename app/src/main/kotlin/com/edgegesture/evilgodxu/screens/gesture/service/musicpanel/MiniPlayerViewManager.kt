@@ -418,11 +418,11 @@ private fun MiniPlayerOverlay(
         else -> isSystemDark
     }
     val colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme
-    // 卡片背景半透明，深色/浅色分别配色，透明度更低以更好透出下层内容
-    val cardBackground = if (isDarkTheme) {
-        Color(0xFF161B22).copy(alpha = 0.55f)
+    // 卡片背景：收起时高透明透出下层内容，展开播放列表时降低透明度保证列表可读性
+    val cardBackground = if (playlistExpanded) {
+        Color(if (isDarkTheme) 0xFF161B22 else 0xFFF5F5F7).copy(alpha = 0.92f)
     } else {
-        Color(0xFFF5F5F7).copy(alpha = 0.60f)
+        Color(if (isDarkTheme) 0xFF161B22 else 0xFFF5F5F7).copy(alpha = if (isDarkTheme) 0.55f else 0.60f)
     }
 
     // 屏幕旋转时自动收起播放列表并重新布局
@@ -676,15 +676,19 @@ private fun MiniPlayerBar(
                     text = current?.title.orEmpty(),
                     color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 12.sp,
+                    lineHeight = 15.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     fontWeight = FontWeight.Medium,
                     modifier = if ((current?.title?.length ?: 0) > 12) Modifier.basicMarquee(iterations = Int.MAX_VALUE) else Modifier
                 )
+                // 当前歌词主色加粗高亮，不带背景色
                 Text(
                     text = lyricText,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.primary,
                     fontSize = 10.sp,
+                    lineHeight = 12.sp,
+                    fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = if (lyricText.length > 18) Modifier.basicMarquee(iterations = Int.MAX_VALUE) else Modifier
