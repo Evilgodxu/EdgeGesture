@@ -226,6 +226,7 @@ internal fun PlaylistRow(
                 text = track.title,
                 color = if (isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
+                lineHeight = 15.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontWeight = if (isActive) FontWeight.Medium else FontWeight.Normal,
@@ -235,6 +236,7 @@ internal fun PlaylistRow(
                 text = track.artist,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp,
+                lineHeight = 12.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
