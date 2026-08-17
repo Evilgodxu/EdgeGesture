@@ -6,6 +6,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Configuration
 import android.graphics.PixelFormat
 import android.os.Handler
 import android.os.Looper
@@ -16,11 +17,16 @@ import android.view.WindowManager
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.view.animation.LinearInterpolator
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -29,7 +35,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -38,6 +43,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -64,9 +70,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
@@ -153,7 +163,7 @@ class MiniPlayerViewManager(
     @SuppressLint("ClickableViewAccessibility", "InflateParams")
     fun show() {
         if (composeView != null) return
-        statusBarHeight = getStatusBarHeight()
+        statusBarHeight = currentTopInset()
         playlistExpanded.value = false
 
         val barH = barHeightPx()
@@ -163,13 +173,13 @@ class MiniPlayerViewManager(
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
 
         val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
+            barWidthPx(),
             barH,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             flags,
             PixelFormat.TRANSLUCENT
         ).apply {
-            gravity = Gravity.TOP
+            gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
             y = statusBarHeight
         }
 
@@ -197,7 +207,7 @@ class MiniPlayerViewManager(
         // 实时监听系统状态栏高度变化（刘海屏/分屏/折叠屏等动态调整）
         ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
             val top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-            if (top > 0 && top != statusBarHeight) {
+            if (top != statusBarHeight) {
                 statusBarHeight = top
                 applyWindowLayout()
             }
@@ -274,11 +284,12 @@ class MiniPlayerViewManager(
         setPlaylistExpanded(false)
     }
 
-    // 重新计算并平滑过渡窗口的高度与纵向位置
+    // 重新计算并平滑过渡窗口的宽度、高度与纵向位置
     private fun applyWindowLayout() {
         val view = composeView ?: return
         val params = view.layoutParams as? WindowManager.LayoutParams ?: return
         val barH = barHeightPx()
+        val targetWidth = barWidthPx()
         val targetHeight: Int
         val targetY: Int
         if (playlistExpanded.value) {
@@ -291,6 +302,10 @@ class MiniPlayerViewManager(
         } else {
             targetHeight = barH
             targetY = statusBarHeight
+        }
+        if (targetWidth != params.width) {
+            params.width = targetWidth
+            runCatching { windowManager.updateViewLayout(view, params) }
         }
         if (targetHeight == params.height && targetY == params.y) return
         ValueAnimator.ofFloat(0f, 1f).apply {
@@ -307,7 +322,13 @@ class MiniPlayerViewManager(
         }.start()
     }
 
-    private fun barHeightPx(): Int = max(2 * statusBarHeight, dpToPx(MIN_BAR_DP))
+    private fun barHeightPx(): Int = dpToPx(BAR_HEIGHT_DP)
+
+    // 横屏时限制窗口宽度并水平居中，竖屏保持全宽
+    private fun barWidthPx(): Int {
+        if (!isLandscape()) return WindowManager.LayoutParams.MATCH_PARENT
+        return minOf(context.resources.displayMetrics.widthPixels, dpToPx(MAX_WIDTH_DP))
+    }
 
     @SuppressLint("DiscouragedApi")
     private fun getStatusBarHeight(): Int {
@@ -315,6 +336,16 @@ class MiniPlayerViewManager(
         val id = res.getIdentifier("status_bar_height", "dimen", "android")
         return if (id > 0) res.getDimensionPixelSize(id) else 0
     }
+
+    // 横屏时状态栏位于屏幕侧边，顶部偏移为 0
+    private fun isLandscape(): Boolean =
+        context.resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    // 实时获取当前窗口顶部状态栏 inset（横屏时状态栏位于侧边，顶部为 0）
+    private fun currentTopInset(): Int = runCatching {
+        WindowInsetsCompat.toWindowInsetsCompat(windowManager.currentWindowMetrics.windowInsets)
+            .getInsets(WindowInsetsCompat.Type.statusBars()).top
+    }.getOrElse { if (isLandscape()) 0 else getStatusBarHeight() }
 
     private fun dpToPx(value: Int): Int = (value * context.resources.displayMetrics.density).roundToInt()
 
@@ -357,7 +388,10 @@ class MiniPlayerViewManager(
     }
 
     companion object {
-        private const val MIN_BAR_DP = 56
+        // 迷你播放器条高度：紧凑容纳两行文本与 48dp 触控热区
+        private const val BAR_HEIGHT_DP = 48
+        // 横屏时的最大宽度，超出则水平居中，避免全宽拉伸
+        private const val MAX_WIDTH_DP = 560
         private const val PLAYLIST_HEADER_DP = 36
         private const val PLAYLIST_ROW_DP = 44
         const val MAX_VISIBLE_ROWS = 5
@@ -481,7 +515,7 @@ private fun MiniPlayerBar(
         Box(
             modifier = Modifier
                 .align(Alignment.CenterVertically)
-                .size(52.dp)
+                .size(44.dp)
                 .clip(CircleShape)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
@@ -613,27 +647,52 @@ private fun MiniDiscArt(
                 .graphicsLayer { rotationZ = rotation.value }
                 .clip(CircleShape)
         ) {
-            AlbumArt(track = track, modifier = Modifier.fillMaxSize())
+            // 专辑封面仅覆盖中间区域，外圈边缘与中心留出透明材质
+            AlbumArt(
+                track = track,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxSize(0.85f)
+                    .clip(CircleShape)
+            )
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val r = size.minDimension / 2f
                 val center = this.center
-                for (i in 4 downTo 0) {
-                    val radius = r * (0.35f + i * 0.13f)
-                    drawCircle(
-                        color = Color.Black.copy(alpha = 0.22f),
-                        radius = radius,
-                        center = center,
-                        style = Stroke(width = 1.5f)
-                    )
+                // 绘制环形区域（外圆减内圆）
+                val ring: (Float, Float, Color) -> Unit = { outer, inner, color ->
+                    val path = Path().apply {
+                        addOval(Rect(center = center, radius = outer))
+                        addOval(Rect(center = center, radius = inner), Path.Direction.CounterClockwise)
+                    }
+                    drawPath(path, color)
                 }
+
+                // 外圈透明边缘
+                ring(r, r * 0.85f, Color.White.copy(alpha = 0.16f))
+                drawCircle(
+                    color = Color.Black.copy(alpha = 0.15f),
+                    radius = r,
+                    center = center,
+                    style = Stroke(width = 0.8f)
+                )
+
+                // 中心空洞 + 一圈透明材质
+                ring(r * 0.32f, r * 0.18f, Color.White.copy(alpha = 0.16f))
+                drawCircle(Color(0xFF141414), r * 0.18f, center)
+
+                // 碟面高光：左上角径向光泽，模拟光碟反光
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            Color.White.copy(alpha = 0.18f),
+                            Color.White.copy(alpha = 0.05f),
+                            Color.Transparent
+                        ),
+                        center = Offset(center.x - r * 0.35f, center.y - r * 0.35f),
+                        radius = r * 1.3f
+                    )
+                )
             }
-            // 唱片中心孔
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .size(10.dp)
-                    .background(Color.Black, CircleShape)
-            )
         }
     }
 }
@@ -649,23 +708,29 @@ private fun MiniControlButton(
     IconButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier
-            .size(48.dp)
-            .then(
-                if (emphasized) Modifier.background(
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f),
-                    CircleShape
-                )
-                else Modifier
-            )
+        modifier = Modifier.size(48.dp)
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            modifier = Modifier.size(if (emphasized) 22.dp else 20.dp),
-            tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant
-            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-        )
+        // 视觉圆环小于 48dp 触控热区，避免在紧凑高度下贴满上下边缘
+        Box(
+            modifier = Modifier
+                .size(if (emphasized) 40.dp else 36.dp)
+                .then(
+                    if (emphasized) Modifier.background(
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f),
+                        CircleShape
+                    )
+                    else Modifier
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(if (emphasized) 22.dp else 20.dp),
+                tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant
+                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+            )
+        }
     }
 }
 
@@ -677,6 +742,7 @@ private fun MiniPlaylistPanel(
 ) {
     val scope = rememberCoroutineScope()
     val visibleCount = playbackState.playlist.size.coerceIn(0, MiniPlayerViewManager.MAX_VISIBLE_ROWS)
+    val listState = rememberLazyListState()
 
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -702,12 +768,13 @@ private fun MiniPlaylistPanel(
             )
         }
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxWidth()
                 .height((visibleCount * 44).dp)
         ) {
             itemsIndexed(
-                items = playbackState.playlist.take(MiniPlayerViewManager.MAX_VISIBLE_ROWS),
+                items = playbackState.playlist,
                 key = { _, track -> track.audioUri }
             ) { index, track ->
                 val isActive = index == playbackState.currentIndex
@@ -722,6 +789,14 @@ private fun MiniPlaylistPanel(
                 )
             }
         }
+        // 当前曲目不在可视区域内时，滚动定位到对应位置
+        LaunchedEffect(playbackState.currentIndex) {
+            if (playbackState.currentIndex >= 0 && playbackState.playlist.isNotEmpty()) {
+                listState.animateScrollToItem(
+                    playbackState.currentIndex.coerceIn(0, playbackState.playlist.size - 1)
+                )
+            }
+        }
     }
 }
 
@@ -733,14 +808,17 @@ private fun MiniPlaylistRow(
     onClick: () -> Unit,
     onFavoriteClick: () -> Unit,
 ) {
+    val bg by animateColorAsState(
+        targetValue = if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+        else Color.Transparent,
+        label = "mini_playlist_bg"
+    )
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(44.dp)
-            .background(
-                if (isActive) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f) else Color.Transparent,
-                RoundedCornerShape(8.dp)
-            )
+            .clip(RoundedCornerShape(8.dp))
+            .background(bg)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -750,23 +828,55 @@ private fun MiniPlaylistRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        if (isPlaying) {
-            Text(
-                text = "▶",
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 11.sp
-            )
-        } else {
-            Spacer(modifier = Modifier.width(14.dp))
+        // 与完整面板一致：显示专辑封面，播放中叠加动态指示
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(RoundedCornerShape(6.dp))
+        ) {
+            PlaylistArt(track = track, modifier = Modifier.fillMaxSize())
+            if (isActive && isPlaying) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        repeat(3) { i ->
+                            val height by animateFloatAsState(
+                                targetValue = 0.4f + kotlin.random.Random.nextFloat() * 0.5f,
+                                animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy),
+                                label = "mini_wave_$i"
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .width(2.dp)
+                                    .height((height * 10).dp)
+                                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(1.dp))
+                            )
+                        }
+                    }
+                }
+            }
         }
-        Column(modifier = Modifier.weight(1f)) {
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center
+        ) {
             Text(
                 text = track.title,
                 color = if (isActive) MaterialTheme.colorScheme.onSurface
                 else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 12.sp,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                fontWeight = if (isActive) FontWeight.Medium else FontWeight.Normal,
+                modifier = if (track.title.length > 12) Modifier.basicMarquee(iterations = Int.MAX_VALUE) else Modifier
             )
             Text(
                 text = track.artist,
@@ -776,6 +886,7 @@ private fun MiniPlaylistRow(
                 overflow = TextOverflow.Ellipsis
             )
         }
+
         IconButton(
             onClick = onFavoriteClick,
             modifier = Modifier.size(26.dp)
