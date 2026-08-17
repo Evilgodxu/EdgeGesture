@@ -70,14 +70,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.input.pointer.pointerInput
@@ -761,29 +758,6 @@ internal fun DiscArt(
 
                     // 中心空洞 + 一圈透明材质（不绘制实心轴心，由下方打洞露出下层）
                     ring(r * 0.32f, r * 0.18f, Color.White.copy(alpha = 0.16f))
-
-                    // 碟面高光：左上角径向光泽，模拟光碟反光（仅作用于塑料边缘，避免浅色遮罩影响封面）
-                    val highlightPath = Path().apply {
-                        // 外圈塑料边缘
-                        addOval(Rect(center = center, radius = r))
-                        addOval(Rect(center = center, radius = r * 0.85f), Path.Direction.CounterClockwise)
-                        // 内圈塑料白环
-                        addOval(Rect(center = center, radius = r * 0.32f))
-                        addOval(Rect(center = center, radius = r * 0.18f), Path.Direction.CounterClockwise)
-                    }
-                    clipPath(highlightPath) {
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    Color.White.copy(alpha = 0.18f),
-                                    Color.White.copy(alpha = 0.05f),
-                                    Color.Transparent
-                                ),
-                                center = Offset(center.x - r * 0.35f, center.y - r * 0.35f),
-                                radius = r * 1.3f
-                            )
-                        )
-                    }
                 }
             }
             // 中心打洞：擦除封面像素形成空心，露出播放器卡片与下层应用
