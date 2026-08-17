@@ -112,6 +112,7 @@ import com.edgegesture.evilgodxu.ui.theme.DarkColorScheme
 import com.edgegesture.evilgodxu.ui.theme.LightColorScheme
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
@@ -519,6 +520,32 @@ private fun MiniPlayerBar(
     val current = playbackState.currentTrack
     val coverDesc = stringResource(R.string.mini_player_cover)
 
+    // 控件自动隐藏：3 秒无操作后隐藏控制按钮，改为显示歌曲名与歌词；任意触摸即可还原
+    var controlsVisible by remember { mutableStateOf(true) }
+    var interactionTick by remember { mutableStateOf(0) }
+    fun resetAutoHide() {
+        controlsVisible = true
+        interactionTick++
+    }
+    LaunchedEffect(interactionTick, playlistExpanded) {
+        if (playlistExpanded) {
+            controlsVisible = true
+            return@LaunchedEffect
+        }
+        delay(3000)
+        controlsVisible = false
+    }
+    // 隐藏控件期间跟随播放进度刷新当前歌词
+    var lyricPosition by remember { mutableStateOf(playbackState.currentPosition) }
+    LaunchedEffect(controlsVisible, playbackState.currentTrack?.id) {
+        if (controlsVisible) return@LaunchedEffect
+        while (isActive) {
+            lyricPosition = playbackState.mediaController?.currentPosition
+                ?.takeIf { it >= 0L } ?: playbackState.currentPosition
+            delay(if (playbackState.isPlaying) 50L else 200L)
+        }
+    }
+
     // 左右滑动关闭迷你播放器（播放列表展开时不响应滑动）
     var totalDx by remember { mutableStateOf(0f) }
 
@@ -526,6 +553,14 @@ private fun MiniPlayerBar(
         modifier = Modifier
             .fillMaxWidth()
             .height(barHeight)
+            .pointerInput(Unit) {
+                // 任意触摸都算操作：还原控件并重置自动隐藏计时
+                awaitPointerEventScope {
+                    while (true) {
+                        if (awaitPointerEvent().changes.any { it.pressed }) resetAutoHide()
+                    }
+                }
+            }
             .pointerInput(playlistExpanded) {
                 totalDx = 0f
                 detectHorizontalDragGestures(
@@ -564,62 +599,98 @@ private fun MiniPlayerBar(
             )
         }
 
-        // 循环模式
-        MiniControlButton(
-            icon = when (playbackState.playMode) {
-                PlayMode.RepeatAll -> Icons.Default.Repeat
-                PlayMode.RepeatOne -> Icons.Default.RepeatOne
-                PlayMode.Shuffle -> Icons.Default.Shuffle
-            },
-            contentDescription = stringResource(R.string.music_panel_play_mode),
-            onClick = {
-                playbackState.setPlayMode(
-                    when (playbackState.playMode) {
-                        PlayMode.RepeatAll -> PlayMode.RepeatOne
-                        PlayMode.RepeatOne -> PlayMode.Shuffle
-                        PlayMode.Shuffle -> PlayMode.RepeatAll
+        if (controlsVisible) {
+            // 循环模式
+            MiniControlButton(
+                icon = when (playbackState.playMode) {
+                    PlayMode.RepeatAll -> Icons.Default.Repeat
+                    PlayMode.RepeatOne -> Icons.Default.RepeatOne
+                    PlayMode.Shuffle -> Icons.Default.Shuffle
+                },
+                contentDescription = stringResource(R.string.music_panel_play_mode),
+                onClick = {
+                    playbackState.setPlayMode(
+                        when (playbackState.playMode) {
+                            PlayMode.RepeatAll -> PlayMode.RepeatOne
+                            PlayMode.RepeatOne -> PlayMode.Shuffle
+                            PlayMode.Shuffle -> PlayMode.RepeatAll
+                        }
+                    )
+                    playbackState.mediaController?.let { controller ->
+                        applyPlaybackMode(controller, playbackState.playMode)
                     }
-                )
-                playbackState.mediaController?.let { controller ->
-                    applyPlaybackMode(controller, playbackState.playMode)
+                    playbackState.persistState()
                 }
-                playbackState.persistState()
+            )
+            // 上一曲
+            MiniControlButton(
+                icon = Icons.Default.SkipPrevious,
+                contentDescription = stringResource(R.string.mini_player_previous),
+                enabled = playbackState.playlist.isNotEmpty(),
+                onClick = {
+                    val prev = playbackState.previousIndex()
+                    if (prev >= 0) scope.launch { playTrackAt(context, playbackState, prev) }
+                }
+            )
+            // 暂停 / 播放（无背景色）
+            MiniControlButton(
+                icon = if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = stringResource(
+                    if (playbackState.isPlaying) R.string.music_panel_pause else R.string.music_panel_play
+                ),
+                onClick = { togglePlayPause(playbackState) }
+            )
+            // 下一曲
+            MiniControlButton(
+                icon = Icons.Default.SkipNext,
+                contentDescription = stringResource(R.string.mini_player_next),
+                enabled = playbackState.playlist.isNotEmpty(),
+                onClick = {
+                    val next = playbackState.nextIndex()
+                    if (next >= 0) scope.launch { playTrackAt(context, playbackState, next) }
+                }
+            )
+            // 播放列表
+            MiniControlButton(
+                icon = Icons.AutoMirrored.Outlined.QueueMusic,
+                contentDescription = stringResource(R.string.mini_player_playlist),
+                onClick = { onPlaylistExpandedChange(!playlistExpanded) }
+            )
+        } else {
+            // 隐藏控件：展示歌曲名与当前歌词（无歌词时回退到歌手名）
+            val lyricText = current?.let { track ->
+                if (track.lyricLines.isNotEmpty()) {
+                    val index = track.lyricLines.indexOfLast { it.timeMs <= lyricPosition }.coerceAtLeast(0)
+                    track.lyricLines.getOrNull(index)?.text.orEmpty()
+                } else {
+                    track.artist
+                }
+            }.orEmpty()
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = current?.title.orEmpty(),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 12.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    fontWeight = FontWeight.Medium,
+                    modifier = if ((current?.title?.length ?: 0) > 12) Modifier.basicMarquee(iterations = Int.MAX_VALUE) else Modifier
+                )
+                Text(
+                    text = lyricText,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = if (lyricText.length > 18) Modifier.basicMarquee(iterations = Int.MAX_VALUE) else Modifier
+                )
             }
-        )
-        // 上一曲
-        MiniControlButton(
-            icon = Icons.Default.SkipPrevious,
-            contentDescription = stringResource(R.string.mini_player_previous),
-            enabled = playbackState.playlist.isNotEmpty(),
-            onClick = {
-                val prev = playbackState.previousIndex()
-                if (prev >= 0) scope.launch { playTrackAt(context, playbackState, prev) }
-            }
-        )
-        // 暂停 / 播放（无背景色）
-        MiniControlButton(
-            icon = if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-            contentDescription = stringResource(
-                if (playbackState.isPlaying) R.string.music_panel_pause else R.string.music_panel_play
-            ),
-            onClick = { togglePlayPause(playbackState) }
-        )
-        // 下一曲
-        MiniControlButton(
-            icon = Icons.Default.SkipNext,
-            contentDescription = stringResource(R.string.mini_player_next),
-            enabled = playbackState.playlist.isNotEmpty(),
-            onClick = {
-                val next = playbackState.nextIndex()
-                if (next >= 0) scope.launch { playTrackAt(context, playbackState, next) }
-            }
-        )
-        // 播放列表
-        MiniControlButton(
-            icon = Icons.AutoMirrored.Outlined.QueueMusic,
-            contentDescription = stringResource(R.string.mini_player_playlist),
-            onClick = { onPlaylistExpandedChange(!playlistExpanded) }
-        )
+        }
     }
 }
 
