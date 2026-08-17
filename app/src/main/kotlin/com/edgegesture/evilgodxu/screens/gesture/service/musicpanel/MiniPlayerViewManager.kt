@@ -1,0 +1,792 @@
+package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
+
+import android.animation.ValueAnimator
+import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.graphics.PixelFormat
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
+import android.view.KeyEvent
+import android.view.MotionEvent
+import android.view.WindowManager
+import android.view.animation.AccelerateInterpolator
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.LinearInterpolator
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.automirrored.outlined.QueueMusic
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.geometry.center
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
+import androidx.savedstate.SavedStateRegistry
+import androidx.savedstate.SavedStateRegistryController
+import androidx.savedstate.SavedStateRegistryOwner
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.log.CrashLogManager
+import com.edgegesture.evilgodxu.screens.settings.ThemeMode
+import com.edgegesture.evilgodxu.screens.settings.settingsFlow
+import com.edgegesture.evilgodxu.ui.theme.DarkColorScheme
+import com.edgegesture.evilgodxu.ui.theme.LightColorScheme
+import kotlin.math.max
+import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+
+// 迷你播放器浮动窗管理器：状态栏下方的紧凑播放条，支持展开完整面板与下拉播放列表
+class MiniPlayerViewManager(
+    private val context: Context,
+    private val onExpandPanel: () -> Unit,
+    private val onSwipedDismiss: () -> Unit,
+) {
+    private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+    private var composeView: ComposeView? = null
+    private var isDismissing = false
+    private val playbackState = MusicPanelStateHolder.state
+
+    // 播放列表展开状态（Compose 状态 + 窗口布局共用）
+    private val playlistExpanded = mutableStateOf(false)
+    private var statusBarHeight = getStatusBarHeight()
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    private val screenOffReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_SCREEN_OFF) collapsePlaylist()
+        }
+    }
+
+    val isShowing: Boolean get() = composeView != null
+
+    private val lifecycleOwner = object : LifecycleOwner {
+        private val lifecycleRegistry = LifecycleRegistry(this)
+        override val lifecycle: Lifecycle get() = lifecycleRegistry
+        fun handleLifecycleEvent(event: Lifecycle.Event) = lifecycleRegistry.handleLifecycleEvent(event)
+    }
+
+    private val viewModelStoreOwner = object : ViewModelStoreOwner {
+        private val store = ViewModelStore()
+        override val viewModelStore: ViewModelStore get() = store
+    }
+
+    private val savedStateRegistryOwner = object : SavedStateRegistryOwner {
+        private val controller = SavedStateRegistryController.create(this)
+        override val savedStateRegistry: SavedStateRegistry get() = controller.savedStateRegistry
+        override val lifecycle: Lifecycle get() = lifecycleOwner.lifecycle
+        fun performAttach() = controller.performAttach()
+        fun performRestore() = controller.performRestore(null)
+    }
+
+    @SuppressLint("ClickableViewAccessibility", "InflateParams")
+    fun show() {
+        if (composeView != null) return
+        statusBarHeight = getStatusBarHeight()
+        playlistExpanded.value = false
+
+        val barH = barHeightPx()
+        val flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+
+        val params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.MATCH_PARENT,
+            barH,
+            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
+            flags,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP
+            y = statusBarHeight
+        }
+
+        val view = ComposeView(context).apply {
+            translationY = (-barH).toFloat()
+            setContent {
+                MiniPlayerOverlay(
+                    playbackState = playbackState,
+                    barHeightPx = barH,
+                    playlistExpanded = playlistExpanded.value,
+                    onPlaylistExpandedChange = { expanded -> setPlaylistExpanded(expanded) },
+                    onLayoutChanged = { applyWindowLayout() },
+                    onExpandPanel = onExpandPanel,
+                    onSwipeDismiss = { temporaryDismiss() }
+                )
+            }
+        }
+
+        savedStateRegistryOwner.performAttach()
+        savedStateRegistryOwner.performRestore()
+        view.setViewTreeLifecycleOwner(lifecycleOwner)
+        view.setViewTreeViewModelStoreOwner(viewModelStoreOwner)
+        view.setViewTreeSavedStateRegistryOwner(savedStateRegistryOwner)
+
+        // 实时监听系统状态栏高度变化（刘海屏/分屏/折叠屏等动态调整）
+        ViewCompat.setOnApplyWindowInsetsListener(view) { v, insets ->
+            val top = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            if (top > 0 && top != statusBarHeight) {
+                statusBarHeight = top
+                applyWindowLayout()
+            }
+            ViewCompat.dispatchApplyWindowInsets(v, insets)
+        }
+
+        // 点击迷你播放器窗口以外的区域：收起播放列表
+        view.setOnTouchListener { _, event ->
+            if (event.actionMasked == MotionEvent.ACTION_OUTSIDE) {
+                collapsePlaylist()
+                true
+            } else false
+        }
+        // 系统返回键：收起播放列表
+        view.setOnKeyListener { _, keyCode, event ->
+            if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
+                collapsePlaylist()
+                true
+            } else false
+        }
+        view.isFocusableInTouchMode = true
+
+        composeView = view
+        try {
+            windowManager.addView(view, params)
+        } catch (e: WindowManager.BadTokenException) {
+            CrashLogManager.logException("MiniPlayerViewManager", "添加迷你播放器失败（窗口令牌失效）", e)
+            composeView = null
+            return
+        }
+        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+
+        view.animate()
+            .translationY(0f)
+            .alpha(1f)
+            .setDuration(260)
+            .setInterpolator(DecelerateInterpolator())
+            .start()
+
+        ContextCompat.registerReceiver(
+            context,
+            screenOffReceiver,
+            IntentFilter(Intent.ACTION_SCREEN_OFF),
+            ContextCompat.RECEIVER_NOT_EXPORTED
+        )
+    }
+
+    private fun setPlaylistExpanded(expanded: Boolean) {
+        if (playlistExpanded.value == expanded) return
+        playlistExpanded.value = expanded
+        // 展开播放列表时移除 NOT_FOCUSABLE，使系统返回键可收起列表
+        val view = composeView
+        val params = view?.layoutParams as? WindowManager.LayoutParams
+        if (params != null) {
+            params.flags = if (expanded) {
+                params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
+            } else {
+                params.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            }
+            runCatching { windowManager.updateViewLayout(view!!, params) }
+        }
+        applyWindowLayout()
+        if (expanded) {
+            view?.let {
+                it.isFocusableInTouchMode = true
+                it.requestFocus()
+            }
+        }
+    }
+
+    private fun collapsePlaylist() {
+        if (!playlistExpanded.value) return
+        setPlaylistExpanded(false)
+    }
+
+    // 重新计算并平滑过渡窗口的高度与纵向位置
+    private fun applyWindowLayout() {
+        val view = composeView ?: return
+        val params = view.layoutParams as? WindowManager.LayoutParams ?: return
+        val barH = barHeightPx()
+        val targetHeight: Int
+        val targetY: Int
+        if (playlistExpanded.value) {
+            val rows = playbackState.playlist.size.coerceIn(0, MAX_VISIBLE_ROWS)
+            val contentH = dpToPx(PLAYLIST_HEADER_DP) + rows * dpToPx(PLAYLIST_ROW_DP)
+            val total = barH + contentH
+            val screenH = context.resources.displayMetrics.heightPixels
+            targetHeight = total.coerceAtMost(screenH)
+            targetY = max(0, (screenH - targetHeight) / 2)
+        } else {
+            targetHeight = barH
+            targetY = statusBarHeight
+        }
+        if (targetHeight == params.height && targetY == params.y) return
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 260
+            interpolator = LinearInterpolator()
+            val startH = params.height
+            val startY = params.y
+            addUpdateListener { anim ->
+                val f = anim.animatedValue as Float
+                params.height = (startH + (targetHeight - startH) * f).roundToInt()
+                params.y = (startY + (targetY - startY) * f).roundToInt()
+                runCatching { windowManager.updateViewLayout(view, params) }
+            }
+        }.start()
+    }
+
+    private fun barHeightPx(): Int = max(2 * statusBarHeight, dpToPx(MIN_BAR_DP))
+
+    @SuppressLint("DiscouragedApi")
+    private fun getStatusBarHeight(): Int {
+        val res = context.resources
+        val id = res.getIdentifier("status_bar_height", "dimen", "android")
+        return if (id > 0) res.getDimensionPixelSize(id) else 0
+    }
+
+    private fun dpToPx(value: Int): Int = (value * context.resources.displayMetrics.density).roundToInt()
+
+    // 滑动临时关闭：仅收起并回调给上层记录临时隐藏状态
+    private fun temporaryDismiss() {
+        dismiss(notifySwiped = true)
+    }
+
+    fun dismiss(notifySwiped: Boolean = false) {
+        val view = composeView ?: return
+        if (isDismissing) return
+        isDismissing = true
+
+        lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE)
+        view.animate()
+            .translationY((-view.height).toFloat())
+            .alpha(0f)
+            .setDuration(240)
+            .setInterpolator(AccelerateInterpolator())
+            .withEndAction {
+                lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_STOP)
+                lifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+                try {
+                    if (view.windowToken != null) windowManager.removeView(view)
+                } catch (e: Exception) {
+                    CrashLogManager.logException("MiniPlayerViewManager", "移除迷你播放器失败", e)
+                }
+                mainHandler.post {
+                    try {
+                        context.unregisterReceiver(screenOffReceiver)
+                    } catch (e: Exception) {
+                        CrashLogManager.logException("MiniPlayerViewManager", "注销熄屏监听失败", e)
+                    }
+                }
+                composeView = null
+                isDismissing = false
+                if (notifySwiped) onSwipedDismiss()
+            }
+            .start()
+    }
+
+    companion object {
+        private const val MIN_BAR_DP = 56
+        private const val PLAYLIST_HEADER_DP = 36
+        private const val PLAYLIST_ROW_DP = 44
+        const val MAX_VISIBLE_ROWS = 5
+    }
+}
+
+@Composable
+private fun MiniPlayerOverlay(
+    playbackState: MusicPlaybackState,
+    barHeightPx: Int,
+    playlistExpanded: Boolean,
+    onPlaylistExpandedChange: (Boolean) -> Unit,
+    onLayoutChanged: () -> Unit,
+    onExpandPanel: () -> Unit,
+    onSwipeDismiss: () -> Unit,
+) {
+    val density = LocalDensity.current
+    val context = LocalContext.current
+    val barHeight = with(density) { barHeightPx.toDp() }
+
+    // 跟随应用主题设置
+    val settings by context.settingsFlow().collectAsStateWithLifecycle(initialValue = null)
+    val isSystemDark = isSystemInDarkTheme()
+    val isDarkTheme = when (settings?.themeMode) {
+        ThemeMode.DARK -> true
+        ThemeMode.LIGHT -> false
+        else -> isSystemDark
+    }
+    val colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme
+    val cardBackground = if (isDarkTheme) {
+        Color(0xFF161B22).copy(alpha = 0.72f)
+    } else {
+        Color(0xFFF5F5F7).copy(alpha = 0.82f)
+    }
+
+    // 歌曲切换 / 播放列表数量变化时，重新计算窗口高度
+    LaunchedEffect(playlistExpanded, playbackState.playlist.size) {
+        if (playlistExpanded) onLayoutChanged()
+    }
+
+    // 屏幕旋转时自动收起播放列表并重新布局
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    LaunchedEffect(configuration.orientation) {
+        if (playlistExpanded) onPlaylistExpandedChange(false)
+        onLayoutChanged()
+    }
+
+    MaterialTheme(colorScheme = colorScheme) {
+        Column(
+            modifier = Modifier
+                .background(cardBackground, RoundedCornerShape(20.dp))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = { /* 阻止点击穿透到状态栏区域 */ }
+                )
+        ) {
+            MiniPlayerBar(
+                playbackState = playbackState,
+                barHeight = barHeight,
+                playlistExpanded = playlistExpanded,
+                onPlaylistExpandedChange = onPlaylistExpandedChange,
+                onExpandPanel = onExpandPanel,
+                onSwipeDismiss = onSwipeDismiss
+            )
+            if (playlistExpanded) {
+                MiniPlaylistPanel(
+                    playbackState = playbackState,
+                    context = context,
+                    onClose = { onPlaylistExpandedChange(false) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MiniPlayerBar(
+    playbackState: MusicPlaybackState,
+    barHeight: androidx.compose.ui.unit.Dp,
+    playlistExpanded: Boolean,
+    onPlaylistExpandedChange: (Boolean) -> Unit,
+    onExpandPanel: () -> Unit,
+    onSwipeDismiss: () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val current = playbackState.currentTrack
+    val coverDesc = stringResource(R.string.mini_player_cover)
+    val trackInfoDesc = stringResource(R.string.mini_player_track_info)
+    // 主标题 = 歌曲名称 + 艺术家
+    val mainTitle = current?.let { track ->
+        if (track.artist.isBlank()) track.title else "${track.title} - ${track.artist}"
+    } ?: stringResource(R.string.music_panel_empty)
+
+    // 左右滑动关闭迷你播放器（播放列表展开时不响应滑动）
+    var totalDx by remember { mutableStateOf(0f) }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(barHeight)
+            .pointerInput(playlistExpanded) {
+                totalDx = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { totalDx = 0f },
+                    onDragEnd = {
+                        if (!playlistExpanded && kotlin.math.abs(totalDx) > 60f) {
+                            onSwipeDismiss()
+                        }
+                        totalDx = 0f
+                    }
+                ) { change, drag ->
+                    change.consume()
+                    totalDx += drag
+                }
+            }
+            .padding(horizontal = 10.dp)
+    ) {
+        // 专辑封面：旋转 + 光碟质感
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .size(52.dp)
+                .clip(CircleShape)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onExpandPanel
+                )
+                .semantics { contentDescription = coverDesc }
+        ) {
+            MiniDiscArt(
+                track = current,
+                isPlaying = playbackState.isPlaying,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .weight(1f)
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onExpandPanel
+                )
+                .padding(horizontal = 10.dp)
+                .semantics { contentDescription = trackInfoDesc },
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = mainTitle,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            MiniLyricLine(playbackState = playbackState)
+        }
+
+        // 控制按钮组
+        Row(
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .padding(start = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            MiniControlButton(
+                icon = Icons.Default.SkipPrevious,
+                contentDescription = stringResource(R.string.mini_player_previous),
+                enabled = playbackState.playlist.isNotEmpty(),
+                onClick = {
+                    val prev = playbackState.previousIndex()
+                    if (prev >= 0) scope.launch { playTrackAt(context, playbackState, prev) }
+                }
+            )
+            MiniControlButton(
+                icon = if (playbackState.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                contentDescription = stringResource(
+                    if (playbackState.isPlaying) R.string.music_panel_pause else R.string.music_panel_play
+                ),
+                emphasized = true,
+                onClick = { togglePlayPause(playbackState) }
+            )
+            MiniControlButton(
+                icon = Icons.Default.SkipNext,
+                contentDescription = stringResource(R.string.mini_player_next),
+                enabled = playbackState.playlist.isNotEmpty(),
+                onClick = {
+                    val next = playbackState.nextIndex()
+                    if (next >= 0) scope.launch { playTrackAt(context, playbackState, next) }
+                }
+            )
+            MiniControlButton(
+                icon = Icons.AutoMirrored.Outlined.QueueMusic,
+                contentDescription = stringResource(R.string.mini_player_playlist),
+                onClick = { onPlaylistExpandedChange(!playlistExpanded) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun MiniLyricLine(playbackState: MusicPlaybackState) {
+    var lyricPosition by remember { mutableLongStateOf(playbackState.currentPosition) }
+    LaunchedEffect(playbackState.isPlaying, playbackState.currentTrack?.id) {
+        while (isActive) {
+            lyricPosition = playbackState.mediaController?.currentPosition
+                ?.takeIf { it >= 0L }
+                ?: playbackState.currentPosition
+            delay(if (playbackState.isPlaying) 200L else 500L)
+        }
+    }
+    val lines = playbackState.currentTrack?.lyricLines.orEmpty()
+    val activeIndex = lines.indexOfLast { it.timeMs <= lyricPosition }
+    val subtitle = if (lines.isEmpty()) stringResource(R.string.mini_player_no_lyrics)
+    else lines.getOrNull(activeIndex.coerceAtLeast(0))?.text.orEmpty()
+
+    Text(
+        text = subtitle,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontSize = 11.sp,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+    )
+}
+
+@Composable
+private fun MiniDiscArt(
+    track: MusicTrack?,
+    isPlaying: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val rotation = remember { Animatable(0f) }
+    LaunchedEffect(isPlaying) {
+        if (isPlaying) {
+            while (isActive) {
+                rotation.animateTo(
+                    targetValue = rotation.value + 360f,
+                    animationSpec = tween(durationMillis = 12_000, easing = LinearEasing)
+                )
+            }
+        }
+    }
+    Box(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer { rotationZ = rotation.value }
+                .clip(CircleShape)
+        ) {
+            AlbumArt(track = track, modifier = Modifier.fillMaxSize())
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val r = size.minDimension / 2f
+                val center = this.center
+                for (i in 4 downTo 0) {
+                    val radius = r * (0.35f + i * 0.13f)
+                    drawCircle(
+                        color = Color.Black.copy(alpha = 0.22f),
+                        radius = radius,
+                        center = center,
+                        style = Stroke(width = 1.5f)
+                    )
+                }
+            }
+            // 唱片中心孔
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(10.dp)
+                    .background(Color.Black, CircleShape)
+            )
+        }
+    }
+}
+
+@Composable
+private fun MiniControlButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    emphasized: Boolean = false,
+) {
+    IconButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier
+            .size(48.dp)
+            .then(
+                if (emphasized) Modifier.background(
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.14f),
+                    CircleShape
+                )
+                else Modifier
+            )
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            modifier = Modifier.size(if (emphasized) 22.dp else 20.dp),
+            tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant
+            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+        )
+    }
+}
+
+@Composable
+private fun MiniPlaylistPanel(
+    playbackState: MusicPlaybackState,
+    context: android.content.Context,
+    onClose: () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    val visibleCount = playbackState.playlist.size.coerceIn(0, MiniPlayerViewManager.MAX_VISIBLE_ROWS)
+
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(36.dp)
+                .padding(horizontal = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = stringResource(R.string.mini_player_playlist_title),
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = stringResource(R.string.music_panel_track_count, playbackState.playlist.size),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 10.sp
+            )
+        }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height((visibleCount * 44).dp)
+        ) {
+            itemsIndexed(
+                items = playbackState.playlist.take(MiniPlayerViewManager.MAX_VISIBLE_ROWS),
+                key = { _, track -> track.audioUri }
+            ) { index, track ->
+                val isActive = index == playbackState.currentIndex
+                MiniPlaylistRow(
+                    track = track,
+                    isActive = isActive,
+                    isPlaying = isActive && playbackState.isPlaying,
+                    onClick = {
+                        scope.launch { playTrackAt(context, playbackState, index) }
+                    },
+                    onFavoriteClick = { playbackState.toggleFavorite(track.id) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MiniPlaylistRow(
+    track: MusicTrack,
+    isActive: Boolean,
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+    onFavoriteClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(44.dp)
+            .background(
+                if (isActive) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f) else Color.Transparent,
+                RoundedCornerShape(8.dp)
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick
+            )
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        if (isPlaying) {
+            Text(
+                text = "▶",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 11.sp
+            )
+        } else {
+            Spacer(modifier = Modifier.width(14.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = track.title,
+                color = if (isActive) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 12.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = track.artist,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 10.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        IconButton(
+            onClick = onFavoriteClick,
+            modifier = Modifier.size(26.dp)
+        ) {
+            Icon(
+                imageVector = if (track.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                contentDescription = null,
+                tint = if (track.isFavorite) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}

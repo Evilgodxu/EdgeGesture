@@ -41,6 +41,9 @@ import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanel
 import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelPermissionActivity
 import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelPermissionBridge
 import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelViewManager
+import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MiniPlayerViewManager
+import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelStateHolder
+import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.miniPlayerEnabledFlow
 import com.edgegesture.evilgodxu.screens.gesture.service.taskpanel.TaskPanelApp
 import com.edgegesture.evilgodxu.screens.gesture.service.taskpanel.TaskPanelViewManager
 import com.edgegesture.evilgodxu.screens.gesture.service.translate.TranslationOverlayManager
@@ -73,6 +76,11 @@ class AccessibilityActionExecutor(
     private var expandPanelViewManager: ExpandPanelViewManager? = null
     private var pendingExpandPanelShow = false
     private var musicPanelViewManager: MusicPanelViewManager? = null
+    // 迷你播放器：面板关闭后播放时显示的状态栏下方迷你条
+    private var miniPlayerViewManager: MiniPlayerViewManager? = null
+    // 滑动临时关闭迷你播放器后，遮挡标记，下次满足触发条件时恢复显示
+    private var miniPlayerTemporarilyHidden = false
+    @Volatile private var miniPlayerEnabled = true
     private var taskPanelViewManager: TaskPanelViewManager? = null
     private var pendingTaskPanelShow = false
     private var taskPanelLoadJob: Job? = null
@@ -115,6 +123,13 @@ class AccessibilityActionExecutor(
             (service as Context).gestureDataStore.data
                 .map { prefs -> prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] ?: emptySet() }
                 .collect { blacklistSnapshot = it }
+        }
+
+        executorScope.launch(Dispatchers.Main) {
+            service.miniPlayerEnabledFlow().collect { enabled ->
+                miniPlayerEnabled = enabled
+                if (enabled) maybeShowMiniPlayer() else dismissMiniPlayer()
+            }
         }
     }
 
@@ -283,10 +298,17 @@ class AccessibilityActionExecutor(
             return
         }
 
+        // 显示完整面板时隐藏迷你播放器，并清除滑动临时隐藏状态
+        dismissMiniPlayer()
+        miniPlayerTemporarilyHidden = false
+
         val showPanel = {
             musicPanelViewManager = MusicPanelViewManager(
                 context = service,
-                onDismiss = { musicPanelViewManager = null }
+                onDismiss = {
+                    musicPanelViewManager = null
+                    maybeShowMiniPlayer()
+                }
             ).apply { show() }
         }
 
@@ -324,6 +346,28 @@ class AccessibilityActionExecutor(
     fun dismissMusicPanel() {
         musicPanelViewManager?.dismiss()
         musicPanelViewManager = null
+    }
+
+    // 关闭完整音乐面板后，若满足迷你模式触发条件则显示迷你播放器
+    private fun maybeShowMiniPlayer() {
+        if (!miniPlayerEnabled || miniPlayerTemporarilyHidden) return
+        // 完整面板显示时两者互斥，不显示迷你播放器
+        if (musicPanelViewManager != null) return
+        if (miniPlayerViewManager != null) return
+        if (!MusicPanelStateHolder.state.isPlaying) return
+        miniPlayerViewManager = MiniPlayerViewManager(
+            context = service,
+            onExpandPanel = { showMusicPanel() },
+            onSwipedDismiss = {
+                miniPlayerTemporarilyHidden = true
+                miniPlayerViewManager = null
+            }
+        ).also { it.show() }
+    }
+
+    fun dismissMiniPlayer() {
+        miniPlayerViewManager?.dismiss()
+        miniPlayerViewManager = null
     }
 
     fun dismissTaskPanel() {
@@ -475,6 +519,7 @@ class AccessibilityActionExecutor(
         taskPanelPermissionListener = null
         dismissExpandPanel()
         dismissMusicPanel()
+        dismissMiniPlayer()
         dismissTaskPanel()
         dismissCompassClock()
         dismissTranslation()

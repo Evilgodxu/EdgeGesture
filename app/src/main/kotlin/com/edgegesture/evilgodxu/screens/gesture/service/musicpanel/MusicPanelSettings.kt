@@ -21,7 +21,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -29,8 +31,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -92,8 +96,13 @@ internal fun SettingsOverlay(
                             onBack = { onShowSoundEffectsChange(false) }
                         )
                     } else {
+                        val context = LocalContext.current
+                        val settingsScope = rememberCoroutineScope()
+                        val miniEnabled by context.miniPlayerEnabledFlow().collectAsState(initial = true)
                         Column(
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(rememberScrollState())
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -115,8 +124,17 @@ internal fun SettingsOverlay(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            val context = LocalContext.current
-                            val settingsScope = rememberCoroutineScope()
+                            SettingsSwitchRow(
+                                title = stringResource(R.string.music_panel_mini_mode),
+                                subtitle = stringResource(R.string.music_panel_mini_mode_desc),
+                                checked = miniEnabled,
+                                onCheckedChange = { enabled ->
+                                    settingsScope.launch { context.saveMiniPlayerEnabled(enabled) }
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
                             SettingsSwitchRow(
                                 title = stringResource(R.string.music_panel_usb_exclusive),
                                 subtitle = if (playbackState.isUsbDeviceConnected) {
