@@ -1,6 +1,5 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
-import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -16,7 +15,6 @@ import android.view.MotionEvent
 import android.view.WindowManager
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
-import android.view.animation.LinearInterpolator
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -40,7 +38,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -114,6 +111,12 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+// 迷你条紧凑布局常量（窗口宽度与 Compose 布局共用，调整尺寸时需同步）
+private const val MINI_COVER_DP = 40
+private const val MINI_BUTTON_DP = 40
+private const val MINI_PADDING_H_DP = 2
+private const val MINI_BUTTON_COUNT = 5
+
 // 迷你播放器浮动窗管理器：状态栏下方的紧凑播放条，支持展开完整面板与下拉播放列表
 class MiniPlayerViewManager(
     private val context: Context,
@@ -171,7 +174,7 @@ class MiniPlayerViewManager(
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
 
         val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
+            barWidthPx(),
             barH,
             WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
             flags,
@@ -187,6 +190,7 @@ class MiniPlayerViewManager(
                 MiniPlayerOverlay(
                     playbackState = playbackState,
                     barHeightPx = barH,
+                    barWidthPx = barWidthPx(),
                     playlistExpanded = playlistExpanded.value,
                     onPlaylistExpandedChange = { expanded -> setPlaylistExpanded(expanded) },
                     onLayoutChanged = { applyWindowLayout() },
@@ -282,40 +286,35 @@ class MiniPlayerViewManager(
         setPlaylistExpanded(false)
     }
 
-    // 重新计算并平滑过渡窗口的高度与纵向位置（宽度按内容自适应）
+    // 设置窗口尺寸与位置：展开时铺满屏幕，收起时恢复紧凑条（不做逐帧动画，避免卡顿）
     private fun applyWindowLayout() {
         val view = composeView ?: return
         val params = view.layoutParams as? WindowManager.LayoutParams ?: return
-        val barH = barHeightPx()
+        val targetWidth: Int
         val targetHeight: Int
         val targetY: Int
         if (playlistExpanded.value) {
-            val rows = playbackState.playlist.size.coerceIn(0, MAX_VISIBLE_ROWS)
-            val contentH = dpToPx(PLAYLIST_HEADER_DP) + rows * dpToPx(PLAYLIST_ROW_DP)
-            val total = barH + contentH
-            val screenH = context.resources.displayMetrics.heightPixels
-            targetHeight = total.coerceAtMost(screenH)
-            targetY = max(0, (screenH - targetHeight) / 2)
+            targetWidth = WindowManager.LayoutParams.MATCH_PARENT
+            targetHeight = WindowManager.LayoutParams.MATCH_PARENT
+            targetY = 0
         } else {
-            targetHeight = barH
+            targetWidth = barWidthPx()
+            targetHeight = barHeightPx()
             targetY = topOffsetPx()
         }
-        if (targetHeight == params.height && targetY == params.y) return
-        ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 260
-            interpolator = LinearInterpolator()
-            val startH = params.height
-            val startY = params.y
-            addUpdateListener { anim ->
-                val f = anim.animatedValue as Float
-                params.height = (startH + (targetHeight - startH) * f).roundToInt()
-                params.y = (startY + (targetY - startY) * f).roundToInt()
-                runCatching { windowManager.updateViewLayout(view, params) }
-            }
-        }.start()
+        if (targetWidth != params.width || targetHeight != params.height || targetY != params.y) {
+            params.width = targetWidth
+            params.height = targetHeight
+            params.y = targetY
+            runCatching { windowManager.updateViewLayout(view, params) }
+        }
     }
 
     private fun barHeightPx(): Int = dpToPx(BAR_HEIGHT_DP)
+
+    // 迷你条宽度 = 左右内边距 + 封面 + 全部按钮
+    private fun barWidthPx(): Int =
+        dpToPx(MINI_PADDING_H_DP * 2 + MINI_COVER_DP + MINI_BUTTON_COUNT * MINI_BUTTON_DP)
 
     @SuppressLint("DiscouragedApi")
     private fun getStatusBarHeight(): Int {
@@ -385,8 +384,6 @@ class MiniPlayerViewManager(
         private const val BAR_HEIGHT_DP = 48
         // 横屏时顶部保留的间距
         private const val LANDSCAPE_TOP_GAP_DP = 1
-        private const val PLAYLIST_HEADER_DP = 36
-        private const val PLAYLIST_ROW_DP = 44
         const val MAX_VISIBLE_ROWS = 5
     }
 }
@@ -395,6 +392,7 @@ class MiniPlayerViewManager(
 private fun MiniPlayerOverlay(
     playbackState: MusicPlaybackState,
     barHeightPx: Int,
+    barWidthPx: Int,
     playlistExpanded: Boolean,
     onPlaylistExpandedChange: (Boolean) -> Unit,
     onLayoutChanged: () -> Unit,
@@ -404,15 +402,11 @@ private fun MiniPlayerOverlay(
     val density = LocalDensity.current
     val context = LocalContext.current
     val barHeight = with(density) { barHeightPx.toDp() }
+    val barWidth = with(density) { barWidthPx.toDp() }
 
     // 迷你播放器固定浅色外观，不随系统主题变化
     val colorScheme = LightColorScheme
     val cardBackground = Color(0xFFF5F5F7).copy(alpha = 0.82f)
-
-    // 歌曲切换 / 播放列表数量变化时，重新计算窗口高度
-    LaunchedEffect(playlistExpanded, playbackState.playlist.size) {
-        if (playlistExpanded) onLayoutChanged()
-    }
 
     // 屏幕旋转时自动收起播放列表并重新布局
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
@@ -422,31 +416,73 @@ private fun MiniPlayerOverlay(
     }
 
     MaterialTheme(colorScheme = colorScheme) {
-        Column(
-            modifier = Modifier
-                // 展开播放列表时的最大宽度上限，收起时按内容自适应
-                .widthIn(max = 400.dp)
-                // 胶囊圆角：半径取条高（48dp）一半，呈椭圆轮廓
-                .background(cardBackground, RoundedCornerShape(24.dp))
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = { /* 阻止点击穿透到状态栏区域 */ }
+        if (playlistExpanded) {
+            // 展开时窗口铺满屏幕，卡片以外区域点击即收起
+            val cardScale = remember { Animatable(0.85f) }
+            LaunchedEffect(Unit) {
+                cardScale.animateTo(
+                    targetValue = 1f,
+                    animationSpec = spring(stiffness = Spring.StiffnessMediumLow)
                 )
-        ) {
-            MiniPlayerBar(
-                playbackState = playbackState,
-                barHeight = barHeight,
-                playlistExpanded = playlistExpanded,
-                onPlaylistExpandedChange = onPlaylistExpandedChange,
-                onExpandPanel = onExpandPanel,
-                onSwipeDismiss = onSwipeDismiss
-            )
-            if (playlistExpanded) {
-                MiniPlaylistPanel(
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { onPlaylistExpandedChange(false) }
+                    )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .width(barWidth)
+                        .graphicsLayer {
+                            scaleX = cardScale.value
+                            scaleY = cardScale.value
+                        }
+                        .background(cardBackground, RoundedCornerShape(24.dp))
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { /* 阻止点击穿透到收起区域 */ }
+                        )
+                ) {
+                    MiniPlayerBar(
+                        playbackState = playbackState,
+                        barHeight = barHeight,
+                        playlistExpanded = playlistExpanded,
+                        onPlaylistExpandedChange = onPlaylistExpandedChange,
+                        onExpandPanel = onExpandPanel,
+                        onSwipeDismiss = onSwipeDismiss
+                    )
+                    MiniPlaylistPanel(
+                        playbackState = playbackState,
+                        context = context,
+                        onClose = { onPlaylistExpandedChange(false) }
+                    )
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier
+                    .width(barWidth)
+                    // 胶囊圆角：半径取条高（48dp）一半，呈椭圆轮廓
+                    .background(cardBackground, RoundedCornerShape(24.dp))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { /* 阻止点击穿透到状态栏区域 */ }
+                    )
+            ) {
+                MiniPlayerBar(
                     playbackState = playbackState,
-                    context = context,
-                    onClose = { onPlaylistExpandedChange(false) }
+                    barHeight = barHeight,
+                    playlistExpanded = playlistExpanded,
+                    onPlaylistExpandedChange = onPlaylistExpandedChange,
+                    onExpandPanel = onExpandPanel,
+                    onSwipeDismiss = onSwipeDismiss
                 )
             }
         }
@@ -489,14 +525,14 @@ private fun MiniPlayerBar(
                     totalDx += drag
                 }
             }
-            .padding(horizontal = 2.dp),
+            .padding(horizontal = MINI_PADDING_H_DP.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(0.dp, Alignment.CenterHorizontally)
     ) {
         // 专辑封面：旋转 + 黑胶质感
         Box(
             modifier = Modifier
-                .size(40.dp)
+                .size(MINI_COVER_DP.dp)
                 .clip(CircleShape)
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
@@ -665,7 +701,7 @@ private fun MiniControlButton(
     IconButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.size(40.dp)
+        modifier = Modifier.size(MINI_BUTTON_DP.dp)
     ) {
         // 视觉圆环小于触控热区，避免在紧凑高度下贴满上下边缘
         Box(
@@ -733,6 +769,7 @@ private fun MiniPlaylistPanel(
                     isPlaying = isActive && playbackState.isPlaying,
                     onClick = {
                         scope.launch { playTrackAt(context, playbackState, index) }
+                        onClose()
                     },
                     onFavoriteClick = { playbackState.toggleFavorite(track.id) }
                 )
