@@ -63,7 +63,7 @@ internal fun CurrentCover(
             ),
         contentAlignment = Alignment.Center
     ) {
-        // 复用光碟效果：旋转 + 黑胶质感 + 中心打洞，与迷你播放器一致
+        // 复用光碟效果：旋转 + 黑胶质感，与迷你播放器一致
         DiscArt(
             track = track,
             isPlaying = isPlaying,
