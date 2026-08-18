@@ -114,8 +114,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 // 迷你条紧凑布局常量（窗口宽度与 Compose 布局共用，调整尺寸时需同步）
-private const val MINI_COVER_DP = 40
-private const val MINI_BUTTON_DP = 40
+private const val MINI_COVER_DP = 32
+private const val MINI_BUTTON_DP = 32
 private const val MINI_PADDING_H_DP = 2
 private const val MINI_BUTTON_COUNT = 5
 
@@ -382,8 +382,8 @@ class MiniPlayerViewManager(
     }
 
     companion object {
-        // 迷你播放器条高度：紧凑容纳两行文本与 48dp 触控热区
-        private const val BAR_HEIGHT_DP = 48
+        // 迷你播放器条高度：紧凑容纳两行文本与 32dp 触控热区
+        private const val BAR_HEIGHT_DP = 32
         // 横屏时顶部保留的间距
         private const val LANDSCAPE_TOP_GAP_DP = 1
         const val MAX_VISIBLE_ROWS = 5
@@ -482,8 +482,8 @@ private fun MiniPlayerOverlay(
             Column(
                 modifier = Modifier
                     .width(barWidth)
-                    // 胶囊圆角：半径取条高（48dp）一半，呈椭圆轮廓
-                    .background(cardBackground, RoundedCornerShape(24.dp))
+                    // 胶囊圆角：半径取条高（32dp）一半，呈椭圆轮廓
+                    .background(cardBackground, RoundedCornerShape(16.dp))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -766,7 +766,7 @@ private fun MiniControlButton(
     ) {
         // 视觉圆环小于触控热区，避免在紧凑高度下贴满上下边缘
         Box(
-            modifier = Modifier.size(32.dp),
+            modifier = Modifier.size(28.dp),
             contentAlignment = Alignment.Center
         ) {
             Icon(
