@@ -118,6 +118,8 @@ private const val MINI_COVER_DP = 32
 private const val MINI_BUTTON_DP = 32
 private const val MINI_PADDING_H_DP = 2
 private const val MINI_BUTTON_COUNT = 5
+// 左右滑动关闭时条滑出屏幕的动画时长
+private const val SWIPE_DISMISS_MS = 160
 
 // 迷你播放器浮动窗管理器：状态栏下方的紧凑播放条，支持展开完整面板与下拉播放列表
 class MiniPlayerViewManager(
@@ -406,6 +408,10 @@ private fun MiniPlayerOverlay(
     val barHeight = with(density) { barHeightPx.toDp() }
     val barWidth = with(density) { barWidthPx.toDp() }
 
+    // 左右滑动关闭：拖动时实时跟随手指，超过阈值后滑出屏幕再收起
+    var swipeOffset by remember { mutableStateOf(0f) }
+    var swipeDismissing by remember { mutableStateOf(false) }
+
     // 跟随应用主题：设置项优先，其次系统深色模式
     val settings by context.settingsFlow().collectAsStateWithLifecycle(initialValue = null)
     val isSystemDark = isSystemInDarkTheme()
@@ -469,7 +475,10 @@ private fun MiniPlayerOverlay(
                         playlistExpanded = playlistExpanded,
                         onPlaylistExpandedChange = onPlaylistExpandedChange,
                         onExpandPanel = onExpandPanel,
-                        onSwipeDismiss = onSwipeDismiss
+                        swipeDismissThreshold = barWidthPx / 2f,
+                        onSwipeOffsetChange = { swipeOffset = it },
+                        onSwipeCommit = { swipeDismissing = true },
+                        onSwipeCancel = { swipeOffset = 0f }
                     )
                     MiniPlaylistPanel(
                         playbackState = playbackState,
@@ -479,9 +488,29 @@ private fun MiniPlayerOverlay(
                 }
             }
         } else {
+            // 拖动时跟随手指；确认关闭后向拖动方向滑出整个条宽，动画结束再触发收起
+            val swipeTranslate by animateFloatAsState(
+                targetValue = when {
+                    swipeDismissing -> if (swipeOffset > 0f) barWidthPx.toFloat() else -barWidthPx.toFloat()
+                    else -> swipeOffset
+                },
+                animationSpec = if (swipeDismissing) {
+                    tween(durationMillis = SWIPE_DISMISS_MS, easing = LinearEasing)
+                } else {
+                    spring(stiffness = Spring.StiffnessMediumLow)
+                },
+                label = "mini_player_swipe_offset"
+            )
+            LaunchedEffect(swipeDismissing) {
+                if (swipeDismissing) {
+                    delay(SWIPE_DISMISS_MS.toLong())
+                    onSwipeDismiss()
+                }
+            }
             Column(
                 modifier = Modifier
                     .width(barWidth)
+                    .graphicsLayer { translationX = swipeTranslate }
                     // 胶囊圆角：半径取条高（32dp）一半，呈椭圆轮廓
                     .background(cardBackground, RoundedCornerShape(16.dp))
                     .clickable(
@@ -496,7 +525,10 @@ private fun MiniPlayerOverlay(
                     playlistExpanded = playlistExpanded,
                     onPlaylistExpandedChange = onPlaylistExpandedChange,
                     onExpandPanel = onExpandPanel,
-                    onSwipeDismiss = onSwipeDismiss
+                    swipeDismissThreshold = barWidthPx / 2f,
+                    onSwipeOffsetChange = { swipeOffset = it },
+                    onSwipeCommit = { swipeDismissing = true },
+                    onSwipeCancel = { swipeOffset = 0f }
                 )
             }
         }
@@ -510,7 +542,10 @@ private fun MiniPlayerBar(
     playlistExpanded: Boolean,
     onPlaylistExpandedChange: (Boolean) -> Unit,
     onExpandPanel: () -> Unit,
-    onSwipeDismiss: () -> Unit,
+    swipeDismissThreshold: Float,
+    onSwipeOffsetChange: (Float) -> Unit,
+    onSwipeCommit: () -> Unit,
+    onSwipeCancel: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -543,7 +578,7 @@ private fun MiniPlayerBar(
         }
     }
 
-    // 左右滑动关闭迷你播放器（播放列表展开时不响应滑动）
+    // 左右滑动关闭：拖动时跟随手指，超过阈值后滑出（播放列表展开时不响应滑动）
     var totalDx by remember { mutableStateOf(0f) }
 
     Row(
@@ -563,14 +598,21 @@ private fun MiniPlayerBar(
                 detectHorizontalDragGestures(
                     onDragStart = { totalDx = 0f },
                     onDragEnd = {
-                        if (!playlistExpanded && kotlin.math.abs(totalDx) > 60f) {
-                            onSwipeDismiss()
+                        if (!playlistExpanded && kotlin.math.abs(totalDx) >= swipeDismissThreshold) {
+                            onSwipeCommit()
+                        } else {
+                            onSwipeCancel()
                         }
+                        totalDx = 0f
+                    },
+                    onDragCancel = {
+                        onSwipeCancel()
                         totalDx = 0f
                     }
                 ) { change, drag ->
                     change.consume()
                     totalDx += drag
+                    onSwipeOffsetChange(totalDx)
                 }
             }
             .padding(horizontal = MINI_PADDING_H_DP.dp),
