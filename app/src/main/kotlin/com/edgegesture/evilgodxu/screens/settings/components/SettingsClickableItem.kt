@@ -12,11 +12,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -29,17 +35,25 @@ fun SettingsClickableItem(
     onClick: () -> Unit,
     onClickWithPosition: ((Offset) -> Unit)? = null,
 ) {
-    val modifier = if (onClickWithPosition != null) {
-        Modifier
-            .fillMaxWidth()
-            .pointerInput(onClickWithPosition) {
-                detectTapGestures { offset -> onClickWithPosition(offset) }
+    // 记录组件根坐标，用于将局部点击位置转换为根坐标
+    var currentCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val modifier = Modifier
+        .fillMaxWidth()
+        .then(
+            if (onClickWithPosition != null) {
+                Modifier
+                    .onGloballyPositioned { currentCoordinates = it }
+                    .pointerInput(onClickWithPosition) {
+                        detectTapGestures { offset ->
+                            val rootOffset = currentCoordinates?.localToRoot(offset) ?: offset
+                            onClickWithPosition(rootOffset)
+                            onClick()
+                        }
+                    }
+            } else {
+                Modifier.clickable(onClick = onClick)
             }
-    } else {
-        Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-    }
+        )
     Row(
         modifier = modifier
             .padding(horizontal = 16.dp, vertical = 12.dp),
