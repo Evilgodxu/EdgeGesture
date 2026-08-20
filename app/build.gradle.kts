@@ -52,8 +52,8 @@ android {
         }
     }
     androidResources {
-        // 禁用按语言分包，支持应用内语言切换
-        localeFilters += listOf("zh")
+        // 保留打包语言，支持应用内语言切换
+        localeFilters += listOf("zh", "en")
     }
 
     packaging {
