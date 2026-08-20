@@ -20,17 +20,20 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
     private val _showUpdateDialog = MutableStateFlow(false)
     val showUpdateDialog: StateFlow<Boolean> = _showUpdateDialog.asStateFlow()
 
-    private val _showUpToDate = MutableStateFlow(false)
-    val showUpToDate: StateFlow<Boolean> = _showUpToDate.asStateFlow()
-
-    private val _showUpdateError = MutableStateFlow(false)
-    val showUpdateError: StateFlow<Boolean> = _showUpdateError.asStateFlow()
-
     private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
     val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
 
-    // 检查更新：有新版本时弹出更新对话框，否则区分"已是最新"与"检查失败"
+    // 手动检查后的结果提示（已是最新 / 检查失败），自动检查不提示避免每次回前台误弹
+    private val _checkFeedback = MutableStateFlow<CheckFeedback?>(null)
+    val checkFeedback: StateFlow<CheckFeedback?> = _checkFeedback.asStateFlow()
+
+    /** 手动检查结果的提示类型 */
+    enum class CheckFeedback { UP_TO_DATE, ERROR }
+
+    // 检查更新：有新版本时弹出更新对话框，否则手动检查时给出"已是最新"或"失败"提示
     fun checkForUpdate(force: Boolean = false) {
+        // 手动强制检查时清空上次提示，避免旧结果误弹
+        _checkFeedback.value = null
         viewModelScope.launch {
             var checkFailed = false
             val result = UpdateManager.checkForUpdate(
@@ -41,10 +44,8 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
             if (result != null) {
                 _updateInfo.value = result
                 _showUpdateDialog.value = true
-            } else if (checkFailed) {
-                _showUpdateError.value = true
-            } else {
-                _showUpToDate.value = true
+            } else if (force) {
+                _checkFeedback.value = if (checkFailed) CheckFeedback.ERROR else CheckFeedback.UP_TO_DATE
             }
         }
     }
@@ -77,11 +78,8 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
         UpdateManager.clearPendingUpdate(context)
     }
 
-    fun clearUpToDate() {
-        _showUpToDate.value = false
-    }
-
-    fun clearUpdateError() {
-        _showUpdateError.value = false
+    // 清除手动检查结果提示
+    fun clearCheckFeedback() {
+        _checkFeedback.value = null
     }
 }

@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App general -->
+    <string name="app_name">Edge Gesture</string>
+    <string name="task_panel_empty">No recent apps</string>
+    <string name="task_panel_single_tap_hint">Tap to open</string>
+    <string name="task_panel_double_tap_hint">Double tap for freeform window</string>
+
+    <!-- Settings -->
+    <!-- Common -->
+    <string name="settings_title">More settings</string>
+
+    <!-- Appearance -->
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_theme_title">Theme mode</string>
+    <string name="settings_theme_system">Follow system</string>
+    <string name="settings_theme_dark">Always dark</string>
+    <string name="settings_theme_light">Always light</string>
+    <string name="settings_theme_dialog_title">Choose theme</string>
+
+    <!-- Language -->
+    <string name="settings_section_language">Language</string>
+    <string name="settings_language_title">App language</string>
+    <string name="settings_language_system">Follow system</string>
+    <string name="settings_language_dialog_title">Choose language</string>
+    <string name="settings_language_chinese">简体中文</string>
+    <string name="settings_language_english">English</string>
+
+    <!-- Donation -->
+    <string name="settings_donate">Donate</string>
+    <string name="settings_donate_desc">Support the developer</string>
+    <string name="settings_donate_alipay">Alipay</string>
+    <string name="settings_donate_thanks">Thank you for your support!</string>
+
+    <!-- Vibration -->
+    <string name="settings_vibration_title">Vibration feedback</string>
+    <string name="settings_vibration_desc">Vibrate on swipe gestures</string>
+
+    <!-- Double swipe -->
+    <string name="gesture_double_swipe_title">Double swipe</string>
+    <string name="gesture_double_swipe_desc">Requires two consecutive swipes on full-screen or landscape screens</string>
+
+    <!-- Overlay visibility -->
+    <string name="gesture_hide_overlay_title">Hide overlay</string>
+    <string name="gesture_hide_overlay_desc">Hide the gesture trigger area</string>
+
+    <!-- Recents hiding -->
+    <string name="gesture_hide_recents_title">Hide from recents</string>
+    <string name="gesture_hide_recents_desc">Hide this app in the recents list</string>
+
+    <!-- Avoid keyboard overlap -->
+    <string name="gesture_avoid_keyboard_overlap_title">Avoid overlap</string>
+    <string name="gesture_avoid_keyboard_overlap_desc">Disable the trigger area when the keyboard is shown</string>
+
+    <!-- Gesture swipe types -->
+    <string name="gesture_swipe_right">Swipe right</string>
+    <string name="gesture_swipe_right_long">Long-press swipe right</string>
+    <string name="gesture_swipe_left">Swipe left</string>
+    <string name="gesture_swipe_left_long">Long-press swipe left</string>
+    <string name="gesture_swipe_up">Swipe up</string>
+    <string name="gesture_swipe_up_long">Long-press swipe up</string>
+    <string name="gesture_swipe_down">Swipe down</string>
+    <string name="gesture_swipe_down_long">Long-press swipe down</string>
+
+    <!-- Gesture actions -->
+    <string name="gesture_action_none">None</string>
+    <string name="gesture_action_home">Home</string>
+    <string name="gesture_action_recent">Recents</string>
+    <string name="gesture_action_back">Back</string>
+    <string name="gesture_action_last_app">Previous app</string>
+    <string name="gesture_action_previous_track">Previous track</string>
+    <string name="gesture_action_next_track">Next track</string>
+    <string name="gesture_action_flashlight">Flashlight</string>
+    <string name="gesture_action_voice_assistant">Voice assistant</string>
+    <string name="gesture_action_power_menu">Power menu</string>
+    <string name="gesture_action_lock_screen">Lock screen</string>
+    <string name="gesture_action_screenshot">Screenshot</string>
+    <string name="gesture_action_freeform_mode">Freeform window</string>
+    <string name="gesture_action_expand_panel">Expand panel</string>
+    <string name="gesture_action_music_panel">Music panel</string>
+    <string name="gesture_action_task_panel">Task panel</string>
+    <string name="gesture_action_compass_clock">Compass clock</string>
+    <string name="gesture_action_translate">Screen translate</string>
+
+    <!-- Screen translate -->
+    <string name="translate_started">Translating current screen…</string>
+    <string name="translate_failed">Translation failed, try again</string>
+    <string name="translate_no_text">No translatable text on this screen</string>
+
+    <!-- Music panel -->
+    <string name="music_panel_empty">No local music</string>
+    <string name="music_panel_scanning">Scanning music…</string>
+    <string name="music_panel_playlist_title">Playlist</string>
+    <string name="music_panel_timer_title">Sleep timer</string>
+    <string name="music_panel_timer_minutes">minutes</string>
+    <string name="music_panel_timer_confirm">OK</string>
+    <string name="music_panel_timer_cancel">Cancel</string>
+    <string name="music_panel_search_placeholder">Search songs</string>
+    <string name="music_panel_search_title">Search online</string>
+    <string name="music_panel_delete_title">Delete this song?</string>
+    <string name="music_panel_delete_cancel">Cancel</string>
+    <string name="music_panel_delete_confirm">Delete</string>
+    <string name="music_panel_no_lyrics">No lyrics</string>
+    <string name="music_panel_track_count">%d tracks</string>
+    <string name="music_panel_search_history">Search history</string>
+    <string name="music_panel_search_history_clear">Clear history</string>
+    <string name="music_panel_search_history_delete">Delete history</string>
+    <string name="music_panel_search_no_results">No matching songs</string>
+    <string name="music_panel_search_source">Netease</string>
+    <string name="music_panel_search_source_jamendo">Jamendo</string>
+    <string name="music_panel_search_source_qq">QQ Music</string>
+    <string name="music_panel_search_source_kugou">Kugou</string>
+    <string name="music_panel_playback_settings">Playback settings</string>
+    <string name="music_panel_usb_exclusive">USB audio exclusive</string>
+    <string name="music_panel_usb_enabled">Enabled: %s</string>
+    <string name="music_panel_usb_connected_not_enabled">Connected but exclusive not enabled</string>
+    <string name="music_panel_usb_not_detected">No USB audio device detected</string>
+    <string name="music_panel_sound_effects_title">Sound effects</string>
+    <string name="music_panel_sound_effects_enter">Open</string>
+    <string name="music_panel_sound_effects_not_implemented">Not implemented yet</string>
+    <string name="music_panel_play_error">This song cannot be played (possibly VIP only)</string>
+    <string name="music_panel_play_failed">Playback failed</string>
+    <string name="music_panel_copy">Copy</string>
+    <string name="music_panel_rename">Rename</string>
+    <string name="music_panel_refresh_cover">Refresh cover</string>
+    <string name="music_panel_online_cover">Online cover</string>
+    <string name="music_panel_local_cover">Local cover</string>
+    <string name="music_panel_refresh_lyrics">Refresh lyrics</string>
+    <string name="music_panel_lyrics_no_candidates">No matching lyrics</string>
+    <string name="music_panel_lyrics_refresh_failed">Lyrics refresh failed, try again</string>
+    <string name="music_panel_cover_no_candidates">No cover available</string>
+    <string name="music_panel_cover_replace_title">Replace with new cover?</string>
+    <string name="music_panel_cover_save_failed">Cover save failed, try again</string>
+    <string name="music_panel_rename_title">Rename song title</string>
+    <string name="music_panel_rename_artist">Rename artist</string>
+    <string name="music_panel_rename_confirm">OK</string>
+    <string name="music_panel_rename_cancel">Cancel</string>
+
+    <!-- Music scanner -->
+    <string name="music_scanner_external_music">External music</string>
+    <string name="music_scanner_unknown_artist">Unknown artist</string>
+    <string name="music_scanner_unknown_song">Unknown song</string>
+
+    <!-- USB device fallback name -->
+    <string name="usb_audio_default_name">USB audio device</string>
+
+    <!-- Audio signal path -->
+    <string name="signal_path_title">Audio path</string>
+    <string name="signal_path_format">Audio format</string>
+    <string name="signal_path_sample_rate">Source rate</string>
+    <string name="signal_path_output_rate">Output rate</string>
+    <string name="signal_path_bit_depth">Bit depth</string>
+    <string name="signal_path_channels">Channels</string>
+    <string name="signal_path_output_strategy">Output strategy</string>
+    <string name="signal_path_output_device">Output device</string>
+    <string name="signal_path_route">Audio route</string>
+    <string name="signal_path_dsd_mode">DSD mode</string>
+    <string name="signal_path_direct">Direct</string>
+    <string name="signal_path_mixer">Mixer</string>
+    <string name="signal_path_system">System</string>
+    <string name="signal_path_mono">Mono</string>
+    <string name="signal_path_stereo">Stereo</string>
+    <string name="signal_path_channels_value">%d channels</string>
+    <string name="signal_path_bit_value">%d-bit</string>
+    <string name="signal_path_khz">%.1f kHz</string>
+    <string name="signal_path_hz">%d Hz</string>
+    <string name="signal_path_speaker">Speaker</string>
+    <string name="signal_path_bluetooth">Bluetooth</string>
+    <string name="signal_path_dash">-</string>
+
+    <!-- QR scan -->
+    <string name="gesture_action_alipay_scan">Alipay scan</string>
+    <string name="gesture_action_wechat_scan">WeChat scan</string>
+
+    <!-- Delay reminders -->
+    <string name="gesture_action_remind_1m">Remind in 1 minute</string>
+    <string name="gesture_action_remind_3m">Remind in 3 minutes</string>
+    <string name="gesture_action_remind_5m">Remind in 5 minutes</string>
+    <string name="gesture_action_remind_10m">Remind in 10 minutes</string>
+    <string name="gesture_action_remind_15m">Remind in 15 minutes</string>
+    <string name="gesture_remind_feedback">Reminder set in %d minutes</string>
+    <string name="gesture_remind_cancelled">Reminder cancelled (%d minutes)</string>
+    <string name="gesture_remind_channel_name">Gesture reminders</string>
+    <string name="gesture_remind_notify_title">Gesture reminder</string>
+    <string name="gesture_remind_notify_body">Your %d-minute reminder is up</string>
+
+    <!-- Gesture action selection dialog -->
+    <string name="gesture_select_action_title">Choose an action</string>
+
+    <!-- Service status card -->
+    <string name="gesture_service_running">Running</string>
+    <string name="gesture_service_stopped">Stopped</string>
+    <string name="gesture_service_subtitle">Accessibility service · Edge gesture</string>
+    <string name="gesture_service_start">Start service</string>
+    <string name="gesture_service_stop">Stop service</string>
+    <string name="gesture_service_title">Service status</string>
+    <string name="gesture_count_label">Gestures</string>
+
+    <!-- Permissions -->
+    <string name="permission_accessibility_title">Accessibility service</string>
+    <string name="permission_accessibility_desc">Enables system-level gesture control</string>
+
+    <!-- Gesture preview -->
+    <string name="gesture_preview_title">Trigger area preview</string>
+
+    <!-- Trigger area settings -->
+    <string name="trigger_area_settings_title">Trigger area settings</string>
+
+    <string name="stats_gesture_count">Count</string>
+    <string name="stats_block_count">Blocked</string>
+
+    <!-- Stats period -->
+    <string name="stats_period_title">Stats period</string>
+    <string name="stats_period_1d">Last 1 day</string>
+    <string name="stats_period_7d">Last 7 days</string>
+    <string name="stats_period_30d">Last 30 days</string>
+    <string name="stats_period_hint">Period:</string>
+
+    <!-- More features -->
+    <string name="more_section_title">More features</string>
+    <string name="more_expand_panel">Expand panel</string>
+    <string name="more_blacklist">App switch blacklist</string>
+    <string name="more_launch_block">Launch blocker</string>
+    <string name="more_settings">More settings</string>
+
+    <!-- Gesture config summary -->
+    <string name="gesture_config_section_title">Gesture config</string>
+    <string name="gesture_operation_section_title">Gesture actions</string>
+    <string name="gesture_config_left">Left gestures</string>
+    <string name="gesture_config_right">Right gestures</string>
+    <string name="gesture_config_bottom">Bottom gestures</string>
+
+    <!-- Advanced gestures -->
+    <string name="advanced_gesture_section_title">Advanced gestures</string>
+    <string name="advanced_gesture_back_tap_title">Back double tap</string>
+    <string name="advanced_gesture_back_tap_disabled">Disabled</string>
+    <string name="advanced_gesture_back_tap_enabled">Enabled</string>
+
+    <!-- About -->
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %s</string>
+    <string name="nav_back">Back</string>
+    <string name="settings_blacklist_title">App switch blacklist</string>
+    <string name="settings_blacklist_search_hint">Search apps</string>
+    <string name="settings_blacklist_system_tag">System</string>
+    <string name="settings_blacklist_loading">Loading…</string>
+    <string name="settings_blacklist_empty">No app data</string>
+    <string name="settings_blacklist_no_permission">Missing query apps permission</string>
+    <string name="settings_blacklist_go_settings">Open settings</string>
+    <string name="settings_blacklist_refresh">Refresh list</string>
+    <string name="settings_blacklist_no_results">No apps matching "%s"</string>
+
+    <!-- Edge size settings -->
+    <string name="edge_width">Width</string>
+    <string name="edge_height">Height</string>
+    <string name="edge_height_percent">Height percent</string>
+    <string name="edge_width_percent">Width percent</string>
+    <string name="edge_position_percent">Position percent</string>
+    <string name="edge_segment_count">Segments</string>
+    <string name="edge_segment_unit">segments</string>
+    <string name="gesture_segment_label">Segment %d</string>
+    <string name="gesture_disabled">Disabled</string>
+
+    <!-- Permissions status -->
+    <string name="permission_status_title">Permission status</string>
+    <string name="permission_granted">Granted</string>
+    <string name="permission_request_button">Grant</string>
+    <string name="permission_overlay_title">Display over other apps</string>
+    <string name="permission_overlay_desc">Required for the gesture trigger area and expand panel</string>
+    <string name="permission_notification_title">Notification permission</string>
+    <string name="permission_notification_desc">Required to keep the gesture service running in the background</string>
+    <string name="permission_battery_title">Battery optimization</string>
+    <string name="permission_battery_desc">Required to prevent the system from stopping the gesture service</string>
+    <string name="permission_query_packages_title">Query installed apps</string>
+    <string name="permission_query_packages_desc">Required for the app switch blacklist</string>
+
+    <!-- Accessibility service -->
+    <string name="accessibility_service_description">Edge Gesture needs accessibility access to perform system-level gesture actions</string>
+
+    <string name="expand_panel_freeform_label">Mini</string>
+
+    <!-- Expand panel -->
+    <string name="expand_panel_brightness">Screen brightness</string>
+    <string name="expand_panel_alarm_volume">Alarm volume</string>
+    <string name="expand_panel_ring_volume">Ring volume</string>
+    <string name="expand_panel_media_volume">Media volume</string>
+    <string name="expand_panel_shortcuts_title">Shortcuts</string>
+    <string name="expand_panel_controls_title">System controls</string>
+    <string name="expand_panel_add_shortcut_desc">Add shortcut</string>
+    <string name="expand_panel_app_picker_title">Choose an app</string>
+    <string name="expand_panel_cancel">Cancel</string>
+    <string name="expand_panel_search_hint">Search app name or package</string>
+    <string name="expand_panel_loading_apps">Loading app list…</string>
+
+    <!-- Launch block -->
+    <string name="settings_launch_block_title">Launch blocker</string>
+    <string name="settings_launch_block_desc">Block the launch of selected apps</string>
+    <string name="launch_block_shizuku_not_installed_short">Install Shizuku</string>
+    <string name="launch_block_shizuku_not_running_short">Start Shizuku</string>
+    <string name="launch_block_shizuku_denied_short">Authorize Shizuku</string>
+    <string name="launch_block_add_title">Add block rule</string>
+    <string name="launch_block_edit_title">Edit block rule</string>
+    <string name="launch_block_launcher_label">Launcher (optional)</string>
+    <string name="launch_block_launcher_hint">Enter app package, e.g. com.example.app</string>
+    <string name="launch_block_launcher_supporting">Leave empty to block the target directly</string>
+    <string name="launch_block_target_label">Target (required)</string>
+    <string name="launch_block_target_hint">Enter app package, e.g. com.example.app</string>
+    <string name="launch_block_target_supporting">Blocking triggers when this app is launched</string>
+    <string name="launch_block_target_required">Enter the target app</string>
+    <string name="launch_block_kill_switch_title">Kill launcher</string>
+    <string name="launch_block_kill_switch_desc">Kill the launcher process on each block (max 5 consecutive, then 15s cooldown)</string>
+    <string name="launch_block_kill_switch_disabled_hint">Enter a launcher first to enable</string>
+    <string name="launch_block_kill_target_title">Kill target</string>
+    <string name="launch_block_kill_target_desc">Kill the target app process after blocking</string>
+    <string name="launch_block_allow_kill_system_title">Allow killing system apps</string>
+    <string name="launch_block_allow_kill_system_desc">Warning: killing system apps may cause instability</string>
+    <string name="launch_block_rules_title">Block rules</string>
+    <string name="launch_block_rules_count">%d rules</string>
+    <string name="launch_block_add_rule">Add rule</string>
+    <string name="launch_block_edit_rule">Edit</string>
+    <string name="launch_block_delete_rule">Delete</string>
+    <string name="launch_block_no_rules">No rules yet. Tap + to add</string>
+    <string name="launch_block_rule_launcher">Launcher: %s</string>
+    <string name="launch_block_rule_target">Target: %s</string>
+    <string name="launch_block_rule_kill_enabled">Process kill enabled</string>
+    <string name="launch_block_rule_enabled_title">Enable rule</string>
+    <string name="launch_block_rule_enabled_desc">Blocks the target app when enabled</string>
+    <string name="launch_block_rule_disabled">Disabled</string>
+    <string name="launch_block_delay_title">Block timing</string>
+    <string name="launch_block_delay_desc">When to trigger the block</string>
+    <string name="launch_block_delay_immediate">Immediate</string>
+    <string name="launch_block_delay_500ms">Slight delay</string>
+    <string name="launch_block_delay_1000ms">Delayed</string>
+
+    <!-- Common dialog buttons -->
+    <string name="dialog_confirm">OK</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_delete">Delete</string>
+
+    <!-- Back tap -->
+    <string name="back_tap_title">Back double tap</string>
+    <string name="back_tap_summary_no_action" formatted="false">Sensitivity %1$d · Range %2$d</string>
+    <string name="back_tap_summary_with_action" formatted="false">Sensitivity %1$d · Range %2$d · %3$s</string>
+    <string name="back_tap_enable_title">Back double tap</string>
+    <string name="back_tap_enable_desc">Double tap the back of the phone to trigger an action</string>
+    <string name="back_tap_sensitivity">Sensitivity</string>
+    <string name="back_tap_range">Detection range</string>
+    <string name="back_tap_action">Back double tap action</string>
+    <string name="back_tap_mode">Working mode</string>
+    <string name="back_tap_mode_always">Always active</string>
+    <string name="back_tap_mode_screen_off">Active when screen off</string>
+    <string name="back_tap_mode_screen_on">Active when screen on</string>
+    <string name="back_tap_pause_on_charging_title">Pause while charging</string>
+    <string name="back_tap_pause_on_charging_desc">Pause detection while charging to avoid accidental triggers</string>
+    <string name="back_tap_config_title">Back double tap settings</string>
+
+    <!-- Gesture config dialog -->
+    <string name="gesture_config_title">Gesture config</string>
+    <string name="gesture_config_desc">Import or export gesture configuration.</string>
+    <string name="gesture_config_import">Import</string>
+    <string name="gesture_config_export">Export</string>
+    <string name="gesture_config_import_confirm_title">Overwrite gesture config</string>
+    <string name="gesture_config_import_confirm_desc">Importing will completely overwrite current gesture and launch block settings.</string>
+    <string name="gesture_config_import_confirm_continue">Continue</string>
+    <string name="gesture_config_export_failed">Cannot write file</string>
+    <string name="gesture_config_export_error">Export failed: %s</string>
+    <string name="gesture_config_export_success">Config exported</string>
+    <string name="gesture_config_import_failed_read">Cannot read file</string>
+    <string name="gesture_config_import_error">Import failed: %s</string>
+    <string name="gesture_config_import_success">Config imported</string>
+    <string name="gesture_config_empty">Config is empty</string>
+
+    <!-- App update -->
+    <string name="update_channel_name">App updates</string>
+    <string name="update_channel_desc">New version notifications</string>
+    <string name="update_notification_title">New version available</string>
+    <string name="update_notification_text">Edge Gesture %s is available</string>
+    <string name="update_dialog_title">New version %s</string>
+    <string name="update_dialog_description_alt">Download and install the new version?</string>
+    <string name="update_dialog_downloading">Downloading...</string>
+    <string name="update_dialog_download_failed">Download failed, try opening it in the browser</string>
+    <string name="update_dialog_up_to_date">You are up to date</string>
+    <string name="update_dialog_changelog_title">Changelog:</string>
+    <string name="update_dialog_download">Download</string>
+    <string name="update_dialog_later">Later</string>
+    <string name="update_dialog_open_browser">Open in browser</string>
+    <string name="update_dialog_error_title">Check failed</string>
+    <string name="update_dialog_error_description">Network timed out or the update service is temporarily unreachable. Visit the GitHub repository for the latest version.</string>
+    <string name="update_dialog_open_github">Open GitHub</string>
+
+    <!-- Data config (cache management) -->
+    <string name="data_config_title">Music cache</string>
+    <string name="data_config_desc">Manage music cover and lyrics cache</string>
+    <string name="data_config_section_cache">Cache data</string>
+    <string name="data_config_clear_selected">Clear selected</string>
+    <string name="data_config_clear">Clear</string>
+    <string name="data_config_confirm_title">Confirm clear</string>
+    <string name="data_config_confirm_message">Clear the selected data?</string>
+    <string name="data_config_selected">Selected</string>
+    <string name="data_config_cover_cache">Music cover cache</string>
+    <string name="data_config_lyrics_cache">Music lyrics cache</string>
+
+    <!-- Music panel short buttons -->
+    <string name="music_panel_lyrics_short">Lyrics</string>
+    <string name="music_panel_play_mode">Play mode</string>
+    <string name="music_panel_previous_track">Previous</string>
+    <string name="music_panel_next_track">Next</string>
+    <string name="music_panel_playlist">Playlist</string>
+    <string name="music_panel_play">Play</string>
+    <string name="music_panel_pause">Pause</string>
+    <string name="music_panel_mini_mode">Mini mode</string>
+    <string name="music_panel_mini_mode_desc">Show the mini player after closing the music panel</string>
+    <string name="music_panel_favorite">Favorite</string>
+    <string name="music_panel_bluetooth_device">Bluetooth device</string>
+    <string name="music_panel_usb_device">USB device</string>
+
+    <!-- Task panel clear button -->
+    <string name="task_panel_clear">✕</string>
+
+    <!-- Mini player -->
+    <string name="mini_player_expand_panel">Expand music panel</string>
+    <string name="mini_player_cover">Album cover</string>
+    <string name="mini_player_track_info">Song title + artist, current lyrics</string>
+    <string name="mini_player_previous">Previous</string>
+    <string name="mini_player_next">Next</string>
+    <string name="mini_player_playlist">Playlist</string>
+    <string name="mini_player_no_lyrics">No lyrics</string>
+    <string name="mini_player_playlist_title">Playlist</string>
+</resources>

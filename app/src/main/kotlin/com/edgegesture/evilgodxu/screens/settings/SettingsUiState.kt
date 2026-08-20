@@ -4,4 +4,5 @@ package com.edgegesture.evilgodxu.screens.settings
 data class SettingsUiState(
     val isLoading: Boolean = true,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val language: AppLanguage = AppLanguage.SYSTEM,
 )

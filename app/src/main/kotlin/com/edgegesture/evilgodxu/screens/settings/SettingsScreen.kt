@@ -1,11 +1,9 @@
 package com.edgegesture.evilgodxu.screens.settings
 
-import android.app.LocaleManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.content.pm.PackageManager
-import android.os.LocaleList
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,10 +50,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -81,6 +79,7 @@ import com.edgegesture.evilgodxu.screens.settings.components.LanguageSelectionDi
 import com.edgegesture.evilgodxu.screens.settings.components.SettingsClickableItem
 import com.edgegesture.evilgodxu.screens.settings.components.SettingsSection
 import com.edgegesture.evilgodxu.screens.settings.components.ThemeSelectionDialog
+import com.edgegesture.evilgodxu.ui.theme.LocalThemeTransitionController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -96,6 +95,8 @@ val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(na
 // 设置存储键名定义
 object SettingsKeys {
     val THEME_MODE = stringPreferencesKey("theme_mode")
+    // 语言统一落 DataStore，由 Compose 层驱动热切换
+    val LANGUAGE = stringPreferencesKey("language")
 }
 
 // 应用主题模式
@@ -109,34 +110,11 @@ enum class ThemeMode(val value: String) {
     }
 }
 
-// 应用语言设置，通过 LocaleManager 管理应用内语言偏好
+// 应用语言：中文/英文/跟随系统，持久化到 DataStore 由 Compose 层驱动切换
 enum class AppLanguage(val languageTag: String?) {
     SYSTEM(null),
-    CHINESE("zh");
-
-    companion object {
-        fun fromLocaleList(localeList: LocaleList): AppLanguage {
-            if (localeList.isEmpty) return SYSTEM
-            val tag = localeList[0].toLanguageTag()
-            return entries.find { it.languageTag == tag } ?: SYSTEM
-        }
-    }
-}
-
-// 读取当前应用语言
-fun Context.getAppLanguage(): AppLanguage {
-    val locales = getSystemService(LocaleManager::class.java).applicationLocales
-    return AppLanguage.fromLocaleList(locales)
-}
-
-// 设置应用语言，系统自动持久化并触发配置变更
-fun Context.setAppLanguage(language: AppLanguage) {
-    val localeManager = getSystemService(LocaleManager::class.java)
-    localeManager.applicationLocales = if (language.languageTag != null) {
-        LocaleList.forLanguageTags(language.languageTag)
-    } else {
-        LocaleList.getEmptyLocaleList()
-    }
+    CHINESE("zh"),
+    ENGLISH("en");
 }
 
 // 设置状态数据类
@@ -163,6 +141,18 @@ suspend fun Context.saveThemeMode(mode: ThemeMode) = withContext(Dispatchers.IO)
     }
 }
 
+// 获取应用语言流
+fun Context.appLanguageFlow(): Flow<AppLanguage> = settingsDataStore.data.map { preferences ->
+    AppLanguage.entries.find { it.languageTag == preferences[SettingsKeys.LANGUAGE] } ?: AppLanguage.SYSTEM
+}
+
+// 保存应用语言设置
+suspend fun Context.saveAppLanguage(language: AppLanguage) = withContext(Dispatchers.IO) {
+    settingsDataStore.edit { preferences ->
+        preferences[SettingsKeys.LANGUAGE] = language.languageTag.orEmpty()
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
@@ -171,8 +161,6 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    val currentLanguage = remember(configuration) { context.getAppLanguage() }
     // 在组合阶段解析字符串资源，LaunchedEffect 内无法调用 stringResource
     val upToDateMessage = stringResource(R.string.update_dialog_up_to_date)
     val versionName = remember {
@@ -203,13 +191,14 @@ fun SettingsScreen(
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showDonateDialog by remember { mutableStateOf(false) }
     var showGestureConfigDialog by remember { mutableStateOf(false) }
+    // 主题项点击位置，用于触发圆形揭示过渡动画
+    var pendingThemeClickPosition by remember { mutableStateOf(Offset.Zero) }
 
     // 更新检测状态由 UpdateViewModel 统一管理，与主界面共享
     val updateViewModel: UpdateViewModel = koinViewModel()
     val updateInfo by updateViewModel.updateInfo.collectAsStateWithLifecycle()
     val showUpdateDialog by updateViewModel.showUpdateDialog.collectAsStateWithLifecycle()
-    val showUpToDate by updateViewModel.showUpToDate.collectAsStateWithLifecycle()
-    val showUpdateError by updateViewModel.showUpdateError.collectAsStateWithLifecycle()
+    val checkFeedback by updateViewModel.checkFeedback.collectAsStateWithLifecycle()
     val downloadState by updateViewModel.downloadState.collectAsStateWithLifecycle()
 
     DisposableEffect(Unit) {
@@ -278,7 +267,8 @@ fun SettingsScreen(
                                 ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
                                 ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
                             },
-                            onClick = { showThemeDialog = true }
+                            onClick = { showThemeDialog = true },
+                            onClickWithPosition = { position -> pendingThemeClickPosition = position }
                         )
                     }
 
@@ -287,9 +277,10 @@ fun SettingsScreen(
                         SettingsClickableItem(
                             icon = Icons.Default.Language,
                             title = stringResource(R.string.settings_language_title),
-                            subtitle = when (currentLanguage) {
+                            subtitle = when (uiState.language) {
                                 AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
                                 AppLanguage.CHINESE -> stringResource(R.string.settings_language_chinese)
+                                AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
                             },
                             onClick = { showLanguageDialog = true }
                         )
@@ -394,7 +385,8 @@ fun SettingsScreen(
                             ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
                             ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
                         },
-                        onClick = { showThemeDialog = true }
+                        onClick = { showThemeDialog = true },
+                        onClickWithPosition = { position -> pendingThemeClickPosition = position }
                     )
                 }
 
@@ -403,9 +395,10 @@ fun SettingsScreen(
                     SettingsClickableItem(
                         icon = Icons.Default.Language,
                         title = stringResource(R.string.settings_language_title),
-                        subtitle = when (currentLanguage) {
+                        subtitle = when (uiState.language) {
                             AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
                             AppLanguage.CHINESE -> stringResource(R.string.settings_language_chinese)
+                            AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
                         },
                         onClick = { showLanguageDialog = true }
                     )
@@ -496,12 +489,14 @@ fun SettingsScreen(
     }
 
     // 主题选择对话框
+    val themeTransitionController = LocalThemeTransitionController.current
     if (showThemeDialog) {
         ThemeSelectionDialog(
             currentTheme = uiState.themeMode,
             onDismiss = { showThemeDialog = false },
             onThemeSelected = { themeMode ->
                 viewModel.setThemeMode(themeMode)
+                themeTransitionController.revealAt(pendingThemeClickPosition)
                 showThemeDialog = false
             }
         )
@@ -510,11 +505,11 @@ fun SettingsScreen(
     // 语言选择对话框
     if (showLanguageDialog) {
         LanguageSelectionDialog(
-            currentLanguage = currentLanguage,
+            currentLanguage = uiState.language,
             onDismiss = { showLanguageDialog = false },
             onLanguageSelected = { language ->
                 showLanguageDialog = false
-                context.setAppLanguage(language)
+                viewModel.setLanguage(language)
             }
         )
     }
@@ -553,38 +548,45 @@ fun SettingsScreen(
         }
     }
 
-    // 手动检查更新失败提示
-    if (showUpdateError) {
+    // 手动检查更新结果提示：失败弹对话框，已是最新弹 Toast
+    var showCheckError by remember { mutableStateOf(false) }
+    LaunchedEffect(checkFeedback) {
+        when (checkFeedback) {
+            UpdateViewModel.CheckFeedback.UP_TO_DATE -> {
+                android.widget.Toast.makeText(
+                    context,
+                    upToDateMessage,
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+                updateViewModel.clearCheckFeedback()
+            }
+            UpdateViewModel.CheckFeedback.ERROR -> {
+                showCheckError = true
+                updateViewModel.clearCheckFeedback()
+            }
+            null -> {}
+        }
+    }
+
+    if (showCheckError) {
         AlertDialog(
-            onDismissRequest = { updateViewModel.clearUpdateError() },
+            onDismissRequest = { showCheckError = false },
             title = { Text(stringResource(R.string.update_dialog_error_title)) },
             text = { Text(stringResource(R.string.update_dialog_error_description)) },
             confirmButton = {
                 TextButton(onClick = {
-                    updateViewModel.clearUpdateError()
+                    showCheckError = false
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(UpdateManager.GITHUB_REPOSITORY_URL)))
                 }) {
                     Text(stringResource(R.string.update_dialog_open_github))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { updateViewModel.clearUpdateError() }) {
+                TextButton(onClick = { showCheckError = false }) {
                     Text(stringResource(R.string.update_dialog_later))
                 }
             }
         )
-    }
-
-    // 已是最新版本提示：副作用移入 LaunchedEffect，避免在组合阶段弹 Toast
-    LaunchedEffect(showUpToDate) {
-        if (showUpToDate) {
-            android.widget.Toast.makeText(
-                context,
-                upToDateMessage,
-                android.widget.Toast.LENGTH_SHORT
-            ).show()
-            updateViewModel.clearUpToDate()
-        }
     }
 }
 

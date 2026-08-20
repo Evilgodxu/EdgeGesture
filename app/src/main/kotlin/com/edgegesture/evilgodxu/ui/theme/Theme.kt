@@ -1,19 +1,37 @@
 package com.edgegesture.evilgodxu.ui.theme
 
 import android.app.Activity
+import android.graphics.Bitmap
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.ClipOp
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.core.view.drawToBitmap
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.edgegesture.evilgodxu.screens.settings.ThemeMode
 import com.edgegesture.evilgodxu.screens.settings.settingsFlow
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 val DarkColorScheme = darkColorScheme(
     primary = md_theme_dark_primary,
@@ -93,6 +111,18 @@ val LightColorScheme = lightColorScheme(
     surfaceContainerHighest = md_theme_light_surfaceContainerHighest
 )
 
+class ThemeTransitionController {
+    var request: ((Offset) -> Unit)? = null
+
+    fun revealAt(origin: Offset) {
+        request?.invoke(origin)
+    }
+}
+
+val LocalThemeTransitionController = androidx.compose.runtime.staticCompositionLocalOf<ThemeTransitionController> {
+    error("ThemeTransitionController is not provided")
+}
+
 @Composable
 fun MyApplicationTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -110,19 +140,86 @@ fun MyApplicationTheme(
 
     val colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme
 
-    // 同步状态栏图标颜色与主题
+    // 圆形揭示过渡：切换主题时先截取旧界面，随揭示圆扩张淡出旧主题
+    val transitionController = remember { ThemeTransitionController() }
+    var previousBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var revealOrigin by remember { mutableStateOf(Offset.Zero) }
+    val revealProgress = remember { Animatable(1f) }
     val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            // context 不一定是 Activity（如工具提示等场景），判空后跳过避免强转崩溃
-            val window = (view.context as? Activity)?.window ?: return@SideEffect
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !isDarkTheme
+
+    transitionController.request = { origin ->
+        if (view.width > 0 && view.height > 0) {
+            previousBitmap = view.drawToBitmap()
+            revealOrigin = origin
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
+    LaunchedEffect(isDarkTheme, previousBitmap) {
+        if (previousBitmap != null) {
+            revealProgress.snapTo(0f)
+            revealProgress.animateTo(1f, tween(800))
+            previousBitmap = null
+        }
+    }
+
+    // 同步状态栏与导航栏图标颜色与主题
+    if (!view.isInEditMode) {
+        SideEffect {
+            // view.context 可能非 Activity，判空避免崩溃
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !isDarkTheme
+                isAppearanceLightNavigationBars = !isDarkTheme
+            }
+        }
+    }
+
+    CompositionLocalProvider(LocalThemeTransitionController provides transitionController) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+        ) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .drawWithContent {
+                        drawContent()
+                        val bitmap = previousBitmap ?: return@drawWithContent
+                        drawOldThemeOutsideReveal(bitmap, revealOrigin, revealProgress.value)
+                    },
+            ) {
+                content()
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawOldThemeOutsideReveal(
+    bitmap: Bitmap,
+    origin: Offset,
+    progress: Float,
+) {
+    val radius = maxRevealRadius(origin, size.width, size.height) * progress
+    val path = Path().apply {
+        addOval(
+            androidx.compose.ui.geometry.Rect(
+                left = origin.x - radius,
+                top = origin.y - radius,
+                right = origin.x + radius,
+                bottom = origin.y + radius,
+            ),
+        )
+    }
+    clipPath(path, ClipOp.Difference) {
+        drawImage(bitmap.asImageBitmap())
+    }
+}
+
+private fun maxRevealRadius(origin: Offset, width: Float, height: Float): Float {
+    return maxOf(
+        origin.getDistance(),
+        Offset(width, 0f).minus(origin).getDistance(),
+        Offset(0f, height).minus(origin).getDistance(),
+        Offset(width, height).minus(origin).getDistance(),
     )
 }
