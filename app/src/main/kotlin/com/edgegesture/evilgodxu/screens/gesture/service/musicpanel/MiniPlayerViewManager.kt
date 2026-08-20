@@ -462,7 +462,7 @@ private fun MiniPlayerOverlay(
                             scaleX = cardScale.value
                             scaleY = cardScale.value
                         }
-                        .background(cardBackground, RoundedCornerShape(24.dp))
+                        .background(cardBackground, RoundedCornerShape(12.dp))
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,

@@ -34,7 +34,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,9 +51,16 @@ internal fun LyricsPanel(
     var lyricPosition by remember { mutableLongStateOf(playbackState.currentPosition) }
     LaunchedEffect(playbackState.isPlaying, playbackState.currentTrack?.id) {
         while (isActive) {
-            lyricPosition = playbackState.mediaController?.currentPosition
+            val candidate = playbackState.mediaController?.currentPosition
                 ?.takeIf { it >= 0L }
                 ?: playbackState.currentPosition
+            // 播放中保持单调前进，避免控制器位置抖动导致高亮回退；大幅回退视为手动拖动
+            lyricPosition = when {
+                !playbackState.isPlaying -> candidate
+                candidate >= lyricPosition -> candidate
+                lyricPosition - candidate > LYRIC_SEEK_TOLERANCE_MS -> candidate
+                else -> lyricPosition
+            }
             delay(if (playbackState.isPlaying) 50L else 200L)
         }
     }
@@ -154,40 +160,66 @@ internal fun LyricText(
     val pendingColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
     val activeColor = MaterialTheme.colorScheme.primary
     val duration = (nextTimeMs - line.timeMs).coerceAtLeast(1L)
-    val progress = when {
-        !isCurrent || positionMs <= line.timeMs -> 0f
-        positionMs >= nextTimeMs -> 1f
-        else -> ((positionMs - line.timeMs).toFloat() / duration).coerceIn(0f, 1f)
-    }
-    val lyricBrush = when {
-        progress <= 0f -> Brush.horizontalGradient(listOf(pendingColor, pendingColor))
-        progress >= 1f -> Brush.horizontalGradient(listOf(activeColor, activeColor))
-        else -> Brush.horizontalGradient(
-            colorStops = arrayOf(
-                0f to activeColor,
-                progress to activeColor,
-                progress to pendingColor,
-                1f to pendingColor
-            )
-        )
-    }
+    val totalLen = line.text.length.coerceAtLeast(1)
+    // 手动换行后的各行，时间按字符数占比分配，后一行在前一行渲染完成后才高亮
+    val segments = wrapLyricText(line.text).split('\n')
 
-    Text(
-        text = line.text,
-        style = TextStyle(
-            brush = lyricBrush,
-            shadow = if (progress > 0f) Shadow(
-                activeColor.copy(alpha = 0.65f),
-                blurRadius = 7f
-            ) else null
-        ),
-        fontSize = fontSize,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        textAlign = TextAlign.Center,
-        fontWeight = fontWeight,
-        modifier = modifier
-    )
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        var acc = 0
+        segments.forEach { segment ->
+            val startMs = line.timeMs + duration * acc / totalLen
+            val endMs = line.timeMs + duration * (acc + segment.length) / totalLen
+            acc += segment.length
+            val progress = when {
+                !isCurrent || positionMs <= startMs -> 0f
+                positionMs >= endMs -> 1f
+                else -> ((positionMs - startMs).toFloat() / (endMs - startMs)).coerceIn(0f, 1f)
+            }
+            val lyricBrush = when {
+                progress <= 0f -> Brush.horizontalGradient(listOf(pendingColor, pendingColor))
+                progress >= 1f -> Brush.horizontalGradient(listOf(activeColor, activeColor))
+                else -> Brush.horizontalGradient(
+                    colorStops = arrayOf(
+                        0f to activeColor,
+                        progress to activeColor,
+                        progress to pendingColor,
+                        1f to pendingColor
+                    )
+                )
+            }
+            Text(
+                text = segment,
+                style = TextStyle(
+                    brush = lyricBrush,
+                    shadow = if (progress > 0f) Shadow(
+                        activeColor.copy(alpha = 0.65f),
+                        blurRadius = 7f
+                    ) else null
+                ),
+                fontSize = fontSize,
+                softWrap = false,
+                textAlign = TextAlign.Center,
+                fontWeight = fontWeight,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+// 超过上限字符的歌词手动插入换行符强制断行，避免横屏宽幅下不触发软换行
+private fun wrapLyricText(text: String): String {
+    if (text.length <= MAX_LYRIC_CHARS) return text
+    return buildString {
+        var i = 0
+        while (i < text.length) {
+            if (i > 0) append('\n')
+            append(text, i, minOf(i + MAX_LYRIC_CHARS, text.length))
+            i += MAX_LYRIC_CHARS
+        }
+    }
 }
 
 internal fun splitLyricText(text: String): List<String> {
@@ -208,3 +240,9 @@ internal fun splitLyricText(text: String): List<String> {
     }
     return result
 }
+
+// 单行歌词超过该字符数则手动换行
+private const val MAX_LYRIC_CHARS = 30
+
+// 播放中位置回退容差：小于该值视为控制器位置抖动，大于视为手动拖动进度条
+private const val LYRIC_SEEK_TOLERANCE_MS = 1500L
