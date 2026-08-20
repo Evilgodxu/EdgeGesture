@@ -565,11 +565,11 @@ class AccessibilityActionExecutor(
         freeformAppLauncher.launch(packageName, useFreeform = true)
     }
 
-    private fun switchToLastApp() {
-        val target = previousApp ?: return
-        if (launchApp(target)) {
+    fun switchToLastApp(target: String? = null) {
+        val pkg = target ?: previousApp ?: return
+        if (launchApp(pkg)) {
             previousApp = currentApp
-            currentApp = target
+            currentApp = pkg
         }
     }
 

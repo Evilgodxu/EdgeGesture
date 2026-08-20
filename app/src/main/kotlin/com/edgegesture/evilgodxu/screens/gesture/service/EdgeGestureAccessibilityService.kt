@@ -377,17 +377,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
     private fun blockLaunch(rule: LaunchBlockRule, launcherPackage: String?, targetPackage: String) {
         GestureStatsManager.incrementBlockCount(this)
-        // 检查启动者是否为系统应用
-        val isLauncherSystemApp = launcherPackage?.let { pkg ->
-            try {
-                val appInfo = packageManager.getApplicationInfo(pkg, 0)
-                (appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
-            } catch (e: Exception) {
-                CrashLogManager.logException("EdgeGestureAccessibilityService", "获取启动者应用信息失败", e)
-                false
-            }
-        } ?: false
-
         // 检查被启动者是否为系统应用
         val isTargetSystemApp = targetPackage.let { pkg ->
             try {
@@ -408,14 +397,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
             val blockAction = Runnable {
                 pendingBlockAction = null
                 if (!isAvailable() || currentPackage != targetPackage) return@Runnable
-                // 执行拦截：返回当前应用（直接切回启动者应用）或返回桌面
-                if (isLauncherSystemApp) {
-                    performGlobalAction(GLOBAL_ACTION_HOME)
-                } else if (launcherPackage != null && launcherPackage != packageName) {
-                    actionExecutor.launchApp(launcherPackage)
-                } else {
-                    performGlobalAction(GLOBAL_ACTION_HOME)
-                }
+                // 触发上一个应用操作，切回启动者应用
+                actionExecutor.switchToLastApp(launcherPackage)
             }
             pendingBlockAction = blockAction
             if (rule.blockDelay > 0) {
