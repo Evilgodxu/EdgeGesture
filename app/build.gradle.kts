@@ -23,8 +23,8 @@ android {
         applicationId = "com.edgegesture.evilgodxu"
         minSdk = 34
         targetSdk = 37
-        versionCode = 16
-        versionName = "5.0.5"
+        versionCode = 17
+        versionName = "5.1.0"
 
         ndk {
             abiFilters += listOf("arm64-v8a")

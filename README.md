@@ -2,157 +2,230 @@
 
 <div align="center">
 
-**一款基于 Android 无障碍服务的边缘手势应用**
+<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" width="96" alt="EdgeGesture" />
 
-用更自然的方式操作手机，让常用功能触手可及。
+**An edge-gesture app for Android, built on the accessibility service — plus back-tap, a global music panel and more.**
 
-[![Release](https://img.shields.io/github/v/release/Evilgodxu/EdgeGesture?style=flat-square&color=4f46e5)](https://github.com/Evilgodxu/EdgeGesture/releases)
-[![License](https://img.shields.io/badge/license-AGPL--3.0-22c55e?style=flat-square)](LICENSE)
-[![Android](https://img.shields.io/badge/Android-14%2B-3ddc84?style=flat-square&logo=android&logoColor=white)](#运行环境)
+**English** | [简体中文](README.zh-CN.md)
+
+![Release](https://img.shields.io/github/v/release/Evilgodxu/EdgeGesture?style=flat-square&color=4f46e5)
+![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
+![Platform](https://img.shields.io/badge/platform-Android-brightgreen)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.4.10-purple)
+![AGP](https://img.shields.io/badge/AGP-9.3.1-blue)
+![Gradle](https://img.shields.io/badge/Gradle-9.7.0-blue)
+![Compose BOM](https://img.shields.io/badge/Compose%20BOM-2026.08.00-blue)
+![minSdk](https://img.shields.io/badge/minSdk-34-orange)
+![targetSdk](https://img.shields.io/badge/targetSdk-37-orange)
 
 </div>
 
----
+**EdgeGesture (边缘手势)** lets you control your phone in a more natural way. Trigger actions with edge swipes or double-taps on the back of the device, launch shortcuts from an expansion panel, and pop up a **floating music panel** or **task panel** on top of any app — so common features are always one gesture away.
 
-## 目录
+## Features
 
-- [功能概览](#功能概览)
-  - [边缘手势](#边缘手势)
-  - [背面双击](#背面双击)
-  - [快捷操作](#快捷操作)
-  - [扩展面板](#扩展面板)
-  - [应用黑名单](#应用黑名单)
-  - [启动拦截](#启动拦截)
-  - [应用设置](#应用设置)
-  - [权限管理](#权限管理)
-- [技术栈](#技术栈)
-- [运行环境](#运行环境)
-- [开始使用](#开始使用)
-- [签名配置](#签名配置)
-- [许可证](#许可证)
+### Edge gestures
 
-## 功能概览
+- **Three sides** — separate trigger areas for the left, right and bottom edges
+- **Multiple directions** — each side supports 6 swipe gestures (short / long-press × 3 directions)
+- **Flexible zones** — up to 3 segments per side, each with its own action
+- **Custom trigger area** — tune edge width, height / position percent and segment count with a live preview
+- **Double swipe** — on full-screen or landscape screens, two consecutive swipes are required to trigger
+- **Feedback** — haptic vibration on swipe
+- **Statistics** — tracks gesture triggers and launch-block counts over 1 / 7 / 30-day periods
 
-### 边缘手势
+### Back double tap
 
-- **三侧触发**：支持左侧、右侧和底部边缘手势。
-- **多种方向**：每侧支持 6 种滑动手势（短滑/长滑 × 3 个方向）。
-- **灵活分区**：每侧最多支持 3 段分区，可分别配置操作。
-- **自定义触发区域**：调整边缘宽度、高度百分比、位置百分比和分段数量，并实时预览。
-- **手势反馈**：支持震动反馈。
-- **手势统计**：记录手势触发次数和启动拦截次数，支持 1 日、7 日和 30 日统计周期。
+Detects double taps on the back of the device via the accelerometer, using a heuristic signal-processing algorithm.
 
-### 背面双击
+- **Sensitivity** (1–10) and **detection range** (1–10) tuning
+- **Working modes** — always active, screen off, screen on
+- **Pause while charging** to avoid accidental triggers
+- Supports the same set of actions as edge gestures
 
-通过加速度计传感器检测手机背面双击动作，采用启发式信号处理算法识别敲击。
+### Actions
 
-- **灵敏度调节**：1–10 级灵敏度，控制敲击识别的噪声容忍阈值。
-- **检测范围调节**：1–10 级检测范围，控制峰值检测窗口和双击时间间隔。
-- **工作模式**：始终激活、熄屏激活、亮屏激活。
-- **充电暂停**：充电时自动暂停检测，减少误触。
-- **操作自定义**：支持与边缘手势相同的全部快捷操作。
-
-### 快捷操作
-
-| 分类 | 支持操作 |
+| Category | Actions |
 | --- | --- |
-| 系统导航 | 返回上一级、返回桌面、最近任务、上一个应用 |
-| 媒体控制 | 上一曲、下一曲 |
-| 系统功能 | 手电筒、语音助手、电源菜单、锁屏、截屏 |
-| 快捷入口 | 扩展面板、扫一扫 |
-| 其他 | 延时提醒（1/3/5/10/15 分钟）、无操作 |
+| System navigation | Back, Home, Recents, Previous app |
+| Media | Previous track, Next track |
+| System | Flashlight, Voice assistant, Power menu, Lock screen, Screenshot |
+| Windows | Freeform window |
+| Panel | Expand panel, Music panel, Task panel, Compass clock |
+| Translate | Screen translate |
+| Shortcut | Alipay scan, WeChat scan |
+| Other | Delay reminders (1 / 3 / 5 / 10 / 15 min), None |
 
-### 扩展面板
+### Expand panel
 
-- **系统控制**：提供亮度和音量调节滑块。
-- **应用快捷方式**：支持配置 8 个常用应用，点击即可快速启动。
-- **小窗启动**：每个应用可单独设置是否以小窗（自由窗口）模式启动。
-- **图标缓存**：扫描应用时自动缓存图标，提升加载性能。
+- **System controls** — brightness, alarm / ring / media volume sliders
+- **App shortcuts** — up to 8 favorite apps, tap to launch instantly
+- **Freeform launch** — each app can be configured to open in a freeform (mini) window
+- **Icon caching** — app icons are cached during scanning for faster loading
 
-### 应用黑名单
+### Task panel
 
-- **应用切换过滤**：过滤切换到上一个应用时不需要显示的应用。
-- **自动初始化**：首次启动时自动将系统应用加入黑名单。
-- **权限感知**：授予“查询所有应用”权限后可包含全部系统应用；无权限时通过 `PackageManager` 与 `<queries>` 兜底。
-- **安装/卸载监听**：实时监听应用变更并自动更新黑名单。
+- Shows recent apps in an overlay panel; **tap to open**, **double-tap for a freeform window**
 
-### 启动拦截
+### Screen translate
 
-基于无障碍服务与 Shizuku 权限拦截指定应用的启动行为，并支持灵活配置启动者和被拦截目标应用。
+- Reads the on-screen text via the accessibility service and translates it in place
+- Falls back across **Microsoft Edge**, **Google** and a **free model** endpoints when one is unreachable, and remembers the last working provider
 
-- **拦截时机**：立即、稍缓、延迟。
-- **终止启动者**：触发规则时直接终止启动者进程。启用 Shizuku 后提供防呆保护：连续最多终止 5 次，随后冷却 15 秒。
-- **终止被启动者**：拦截后可选择终止被启动应用进程（需 Shizuku）。
-- **系统应用保护**：可选择是否允许终止系统应用（需 Shizuku）。
+### Music panel
 
-### 应用设置
+- Full-featured playback panel as a floating overlay (**SYSTEM_ALERT_WINDOW**), usable above any app
+- **Mini player** — a compact floating bar shown in the background during playback; tap it to expand back into the full panel
+- **Local library** — scans device storage via MediaStore and imports audio through `VIEW` / `SEND` intents
+- **Multi-platform online search** — aggregated search across Netease (网易云), QQ Music, Kugou (酷狗) and Jamendo, with search history and direct online playback
+- **Synced lyrics** — scrolling lyrics with online match / refresh
+- **Cover management** — embedded art, local candidates and online search; covers and metadata can be written back to the file (Jaudiotagger)
+- **USB audio exclusive** — automatic USB DAC / sound card detection with exclusive-mode routing, plus a real-time audio signal path view (format, source / output sample rates, bit depth, channels, DSD mode, route, output strategy & device)
+- **Bluetooth headset** — connection detection with per-session volume initialization
+- **Sleep timer**, play modes and favorites
 
-- **主题切换**：浅色、深色或跟随系统。
-- **语言切换**：简体中文、English 或跟随系统。通过 LocaleManager API 实现，无需重启应用。
-- **自适应布局**：宽屏设备自动切换为双列布局。
-- **隐藏显示**：隐藏手势触发区域。
-- **隐藏后台**：在最近任务列表中隐藏本应用。
-- **避免遮挡**：输入法弹出时自动禁用手势触发区。
-- **震动反馈**：滑动操作时触发震动效果。
+### Launch blocker
 
-### 权限管理
+Based on the accessibility service, optionally enhanced by **Shizuku** to intercept the launch of selected apps.
 
-通过独立卡片引导权限授予，授权完成后自动隐藏对应卡片，并在返回应用后自动检测权限状态。
+- Configurable **launcher** (optional) and **target** app
+- **Block timing** — immediate, slight delay or delayed
+- **Kill launcher** when triggered (with fumble protection under Shizuku: max 5 consecutive kills, then a 15 s cooldown)
+- Optionally **kill the target** process and control whether system apps may be terminated (both need Shizuku)
 
-- **无障碍权限**：直接跳转系统设置页。
-- **悬浮窗权限**：一键跳转授予。
-- **通知权限**：通过系统对话框申请。
-- **电池优化**：申请忽略电池优化，保持后台存活。
-- **使用情况统计**：用于应用切换功能。
-- **查询所有应用**：用于完整扫描应用列表。
+### App switch blacklist
 
-## 技术栈
+- Filters apps that should not appear when switching to the previous app
+- Auto-initializes with system apps on first launch; permission-aware with a `PackageManager` + `<queries>` fallback
+- Listens for app install / uninstall and updates automatically
 
-| 类别 | 技术 |
+### Settings
+
+- **Theme** — Light, Dark or Follow System
+- **Language** — 简体中文, English or Follow System; hot-switched in-app via the `LocaleManager` API without recreating the activity
+- **Adaptive layout** — switches to a two-column layout on wide screens
+- **Hide overlay**, **hide from recents**, **avoid keyboard overlap** during gesture triggering
+- **Vibration** on swipe
+- **Screen translation** target language / provider handling
+- **Gesture config** — import / export the full gesture and launch-block configuration
+- **Music cache** — manage cover and lyrics cache
+
+### Permissions
+
+Permission cards guide the grant flow; a granted card hides itself and permission state is re-checked automatically when the app resumes.
+
+- **Accessibility service** — core system-level gesture handling
+- **Display over other apps** — trigger area, expand panel and floating panels
+- **Notification** — keeps the gesture service running in the background
+- **Battery optimization** — ignores battery optimizations to stay alive
+- **Query installed apps** — full app list scanning
+- **Media / images** — local music library and artwork
+- **All files access** (optional) — write back audio metadata
+
+### In-app updates
+
+A WorkManager job checks GitHub Releases periodically (24 h internal cooldown) and offers an in-app download dialog with a changelog.
+
+## Tech Stack
+
+| Layer | Technology |
 | --- | --- |
-| 语言 | Kotlin 2.4.10 |
-| UI 框架 | Jetpack Compose（BOM 2026.06.01）+ Material3 |
-| 自适应布局 | Material3 Adaptive 1.2.0 |
-| 依赖注入 | Koin 4.2.2 |
-| 导航框架 | Navigation Compose 2.9.8（type-safe routes） |
-| 状态管理 | DataStore + StateFlow + MutableStateFlow |
-| 后台任务 | WorkManager 2.11.2 |
-| 权限框架 | Shizuku 13.1.5 + 自定义 UserService |
-| 序列化 | Kotlin Serialization 1.11.0 |
-| Hidden API 绕过 | hidden-api-bypass 6.1 |
-| 图标库 | Material Icons Extended（AndroidX Compose） |
-| 构建工具 | AGP 9.2.1、refreshVersions 0.60.6 |
+| Language | Kotlin 2.4.10 |
+| UI | Jetpack Compose (BOM 2026.08.00) + Material 3 |
+| Adaptive layout | Material3 Adaptive 1.3.0 |
+| DI | Koin 4.2.2 |
+| Navigation | Navigation Compose 2.9.8 (type-safe routes) |
+| State | DataStore + StateFlow + MutableStateFlow |
+| Background | WorkManager 2.11.2 |
+| Permissions | Shizuku 13.1.5 + custom UserService |
+| Audio | Media3 ExoPlayer 1.11.0 + MediaSessionService |
+| Image loading | Coil 3.5.0 |
+| Network | OkHttp 5.4.0 |
+| Serialization | kotlinx.serialization 1.11.0 |
+| Hidden API bypass | hidden-api-bypass 6.1 |
+| Build | AGP 9.3.1, Gradle 9.7.0, refreshVersions, Jaudiotagger |
 
-## 运行环境
+## Project Structure
 
-| 属性 | 值 |
-| --- | --- |
-| applicationId | `com.edgegesture.evilgodxu` |
-| compileSdk | `37`（Android 17） |
-| minSdk | `34`（Android 14） |
-| targetSdk | `37` |
-| NDK | arm64-v8a |
-| Java | 21 |
+```
+.
+├── app/
+│   └── src/main/
+│       ├── kotlin/com/edgegesture/evilgodxu/
+│       │   ├── data/                    # Data layer (settings, app repo, Shizuku, translate)
+│       │   ├── di/                      # Koin modules
+│       │   ├── log/                     # CrashLogManager
+│       │   ├── navigation/              # Navigation Compose type-safe routes
+│       │   ├── screens/                 # Screens
+│       │   │   ├── gesture/             #   Gesture settings + edge config
+│       │   │   │   └── service/         #   Accessibility service + overlay UIs (music / expand / task / translate / compass clock)
+│       │   │   ├── backtap/             #   Back double tap
+│       │   │   ├── expandpanel/         #   Expand panel settings
+│       │   │   ├── blacklist/           #   App switch blacklist
+│       │   │   ├── launchblock/         #   Launch blocker
+│       │   │   └── settings/            #   App settings + data config
+│       │   ├── service/                 # Shizuku CommandUserService
+│       │   ├── ui/                      # Material 3 theme + adaptive window size
+│       │   ├── update/                  # In-app update
+│       │   ├── utils/localization/      # In-app localization manager
+│       │   ├── MainActivity.kt
+│       │   └── MyApplication.kt
+│       └── res/                         # Resources (values / values-en)
+├── gradle/
+│   ├── libs.versions.toml               # Version catalog (dependencies)
+│   └── wrapper/
+├── LICENSE
+├── NOTICE
+├── build.gradle.kts
+├── settings.gradle.kts
+└── gradle.properties
+```
 
-## 开始使用
+## Architecture
 
-1. **首次启动**：按照权限引导依次授予无障碍服务、悬浮窗等必要权限。
-2. **启动手势服务**：进入手势设置页，点击启动按钮开启服务。
-3. **配置手势操作**：进入左侧、右侧或底部边缘卡片，为各边缘和分段设置快捷操作。
-4. **调整触发区域**：在边缘配置页调整宽度、高度、位置和分段数量，实时查看预览。
-5. **启用背面双击**：进入“背面双击”配置页，启用功能并调整灵敏度、检测范围和工作模式。
-6. **配置扩展面板**：设置 8 个常用应用快捷方式，并按需启用小窗启动。
-7. **设置应用黑名单**：过滤应用切换时不需要显示的应用。
-8. **配置启动拦截**：安装并启动 Shizuku 后配置拦截规则。Shizuku 仅用于进程终止，不影响基本拦截机制。
+The app follows **MVVM with unidirectional data flow**: state flows down from `ViewModel` → `UiState` → UI, while events flow up from the UI to the `ViewModel`. Shared data logic lives in the `data/` layer behind repositories (settings, app list, launch-block rules, translation), and everything is wired together by Koin.
 
-## 签名配置
+All gesture and overlay capabilities sit in `screens/gesture/service/`. The `EdgeGestureAccessibilityService` detects swipes and background taps and dispatches actions through an `AccessibilityActionExecutor`. Overlay UIs (edge trigger view, expand panel, music panel, task panel, translation, compass clock) are rendered as system windows through their own window managers, coordinated from the accessibility service. Settings persist via DataStore, and optional root-level operations (process kill, freeform windowing) go through Shizuku's `CommandUserService`.
 
-在项目根目录的 `local.properties` 文件中配置签名信息：
+## Getting Started
+
+### Prerequisites
+
+- JDK 21
+- Android Studio (latest stable recommended)
+- Android SDK with API 37 (`compileSdk`)
+
+### Build
+
+```bash
+git clone https://github.com/Evilgodxu/EdgeGesture.git
+cd EdgeGesture
+
+# Debug APK
+./gradlew assembleDebug
+
+# Release APK (requires signing config, see below)
+./gradlew assembleRelease
+```
+
+APKs are emitted as `EdgeGesture-<versionName>-arm64.apk` under `app/build/outputs/apk/`. Only the `arm64-v8a` ABI is built.
+
+### Release Signing
+
+The release build reads signing credentials from `local.properties` in the project root:
 
 ```properties
-KEYSTORE_PASSWORD=your_keystore_password
+KEYSTORE_PASSWORD=your_store_password
 KEY_ALIAS=your_key_alias
 KEY_PASSWORD=your_key_password
 ```
 
----
+The keystore file is expected at `jh.keystore` in the project root (adjust `storeFile` in `app/build.gradle.kts` if needed). Both files are git-ignored — never commit them.
+
+## Disclaimer
+
+The online music search and screen translation rely on third-party public web endpoints (Netease / QQ Music / Kugou / Jamendo / translation services), whose availability and policy may vary by region and content. The app and document are for learning and communication only — please support the copyright holders.
+
+## License
+
+[AGPL-3.0](LICENSE) © 2026 Evilgodxu
