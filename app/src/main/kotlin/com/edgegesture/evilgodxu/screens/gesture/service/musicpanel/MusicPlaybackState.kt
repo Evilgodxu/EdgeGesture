@@ -151,6 +151,9 @@ class MusicPlaybackState {
     var errorMsg by mutableStateOf<String?>(null)
     var isScanning by mutableStateOf(false)
     var isLyricsVisible by mutableStateOf(false)
+    /** 封面重写计数器：本地封面写入音频文件后递增，驱动显示端丢弃旧略缩图重新取图 */
+    var coverRevision by mutableIntStateOf(0)
+        private set
 
     // 本地歌曲搜索相关状态
     var isSearchMode by mutableStateOf(false)
@@ -353,12 +356,7 @@ class MusicPlaybackState {
             val array = JSONArray(json)
             List(array.length()) { index ->
                 val item = array.getJSONObject(index)
-                val savedLyricPath = item.optString("lyricCachePath", "")
-                val lyricLines = if (MusicMetadataCache.isValid(savedLyricPath)) {
-                    MusicMetadataCache.loadLyrics(savedLyricPath)
-                } else {
-                    emptyList()
-                }
+                // 歌词不落盘，冷启动后由 enrichMissingLyrics 重新从音频内嵌歌词 / 本地 .lrc 补全
                 MusicTrack(
                     id = item.getLong("id"),
                     path = item.getString("path"),
@@ -367,11 +365,7 @@ class MusicPlaybackState {
                     artist = item.getString("artist"),
                     duration = item.getLong("duration"),
                     albumId = item.getLong("albumId"),
-                    coverCachePath = item.optString("coverCachePath", ""),
-                    isFavorite = item.optBoolean("isFavorite", false),
-                    lyricResolved = item.optBoolean("lyricResolved", false),
-                    lyricCachePath = savedLyricPath.takeIf { lyricLines.isNotEmpty() }.orEmpty(),
-                    lyricLines = lyricLines
+                    isFavorite = item.optBoolean("isFavorite", false)
                 )
             }
         } catch (e: Exception) {
@@ -391,9 +385,6 @@ class MusicPlaybackState {
                 put("artist", track.artist)
                 put("duration", track.duration)
                 put("albumId", track.albumId)
-                put("coverCachePath", track.coverCachePath)
-                put("lyricCachePath", track.lyricCachePath)
-                put("lyricResolved", track.lyricResolved)
                 put("isFavorite", track.isFavorite)
             })
         }
@@ -619,4 +610,6 @@ class MusicPlaybackState {
     fun setTimerAutoStopped(stopped: Boolean) { timerAutoStopped = stopped }
     @JvmName("updateCurrentPosition")
     fun setCurrentPosition(position: Long) { currentPosition = position }
+    // 本地封面写入音频文件后调用：通知显示端丢弃旧略缩图重新取图
+    fun bumpCoverRevision() { coverRevision++ }
 }

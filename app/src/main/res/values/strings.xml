@@ -371,18 +371,6 @@
     <string name="update_toast_up_to_date">已是最新版本</string>
     <string name="update_toast_error">检查更新失败，请稍后重试</string>
 
-    <!-- 数据配置（缓存管理）页面 -->
-    <string name="data_config_title">音乐缓存</string>
-    <string name="data_config_desc">管理音乐封面和歌词缓存</string>
-    <string name="data_config_section_cache">缓存数据</string>
-    <string name="data_config_clear_selected">清理所选数据</string>
-    <string name="data_config_clear">清理</string>
-    <string name="data_config_confirm_title">确认清理</string>
-    <string name="data_config_confirm_message">确定要清理所选数据吗？</string>
-    <string name="data_config_selected">已选中</string>
-    <string name="data_config_cover_cache">音乐封面缓存</string>
-    <string name="data_config_lyrics_cache">音乐歌词缓存</string>
-
     <!-- 音乐面板短按钮文案 -->
     <string name="music_panel_lyrics_short">词</string>
     <string name="music_panel_play_mode">播放模式</string>

@@ -448,7 +448,7 @@ fun MusicPanelOverlay(
                                 lyricImporting = true
                                 lyricImportFailed = false
                                 scope.launch {
-                                    if (importLocalLyrics(context, playbackState, track, lyric)) {
+                                    if (importLocalLyrics(playbackState, track, lyric)) {
                                         showLyricsImport = false
                                         selectedLocalLyric = null
                                         playbackState.setLocalLyricCandidates(emptyList())

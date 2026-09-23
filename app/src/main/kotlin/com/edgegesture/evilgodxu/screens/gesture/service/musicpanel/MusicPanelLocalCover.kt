@@ -69,13 +69,13 @@ internal suspend fun applyLocalCover(
 ): Boolean = withContext(Dispatchers.IO) {
     try {
         val bytes = context.contentResolver.openInputStream(cover.uri)?.use { it.readBytes() } ?: return@withContext false
-        val writeSuccess = MusicMetadataWriter.writeCover(context, track, bytes)
-        if (!writeSuccess) return@withContext false
-        val path = MusicMetadataCache.saveCover(context, track.id, bytes) ?: return@withContext false
-        val oldPath = track.coverCachePath
-        if (oldPath.isNotBlank() && oldPath != path) MusicMetadataCache.deleteCoverFile(oldPath)
+        if (!MusicMetadataWriter.writeCover(context, track, bytes)) return@withContext false
+        // 立即用新封面回填内存缓存，避免系统略缩图重建完成前显示旧图
+        MusicScanner.decodeSampledBitmap(bytes, COVER_SIZE_PX)?.let { bitmap ->
+            SystemThumbnailCache.put(track.audioUri, COVER_SIZE_PX, bitmap)
+        }
         withContext(Dispatchers.Main) {
-            playbackState.updateTrack(track.copy(coverCachePath = path))
+            playbackState.bumpCoverRevision()
             playbackState.setLocalCoverCandidates(emptyList())
         }
         true

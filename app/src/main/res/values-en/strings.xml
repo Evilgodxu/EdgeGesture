@@ -371,18 +371,6 @@
     <string name="update_toast_up_to_date">You are up to date</string>
     <string name="update_toast_error">Update check failed, please try again later</string>
 
-    <!-- Data config (cache management) -->
-    <string name="data_config_title">Music cache</string>
-    <string name="data_config_desc">Manage music cover and lyrics cache</string>
-    <string name="data_config_section_cache">Cache data</string>
-    <string name="data_config_clear_selected">Clear selected</string>
-    <string name="data_config_clear">Clear</string>
-    <string name="data_config_confirm_title">Confirm clear</string>
-    <string name="data_config_confirm_message">Clear the selected data?</string>
-    <string name="data_config_selected">Selected</string>
-    <string name="data_config_cover_cache">Music cover cache</string>
-    <string name="data_config_lyrics_cache">Music lyrics cache</string>
-
     <!-- Music panel short buttons -->
     <string name="music_panel_lyrics_short">Lyrics</string>
     <string name="music_panel_play_mode">Play mode</string>

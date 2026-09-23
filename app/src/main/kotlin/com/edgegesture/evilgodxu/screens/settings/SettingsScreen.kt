@@ -164,7 +164,6 @@ suspend fun Context.saveAppLanguage(language: AppLanguage) = withContext(Dispatc
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToDataConfig: () -> Unit = {},
     viewModel: SettingsViewModel = viewModel(factory = settingsViewModelFactory),
 ) {
     val context = LocalContext.current
@@ -296,13 +295,6 @@ fun SettingsScreen(
                     SettingsSection(title = stringResource(R.string.settings_about)) {
                         SettingsClickableItem(
                             icon = Icons.Default.Folder,
-                            title = stringResource(R.string.data_config_title),
-                            subtitle = stringResource(R.string.data_config_desc),
-                            onClick = onNavigateToDataConfig
-                        )
-                        HorizontalDivider()
-                        SettingsClickableItem(
-                            icon = Icons.Default.Folder,
                             title = stringResource(R.string.gesture_config_title),
                             subtitle = stringResource(R.string.gesture_config_desc),
                             onClick = { showGestureConfigDialog = true }
@@ -407,13 +399,6 @@ fun SettingsScreen(
 
                 // 更多设置项
                 SettingsSection(title = stringResource(R.string.settings_about)) {
-                    SettingsClickableItem(
-                        icon = Icons.Default.Folder,
-                        title = stringResource(R.string.data_config_title),
-                        subtitle = stringResource(R.string.data_config_desc),
-                        onClick = onNavigateToDataConfig
-                    )
-                    HorizontalDivider()
                     SettingsClickableItem(
                         icon = Icons.Default.Folder,
                         title = stringResource(R.string.gesture_config_title),

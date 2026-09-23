@@ -28,7 +28,6 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 
 import com.edgegesture.evilgodxu.log.CrashLogManager
-import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -58,14 +57,13 @@ class MusicPanelViewManager(
     private val playbackState = MusicPanelStateHolder.state
     private var pendingExternalUri: android.net.Uri? = null
 
-    // 封面后台提取的并发上限：限制同时进行的位图解码数量，
-    // 避免大歌单首次启动时内存与 CPU 尖峰导致面板卡顿
+    // 后台元数据补全的并发上限：限制同时进行的歌词读取数量，避免大歌单首次启动时 IO 尖峰
     private val metadataDispatcher = Dispatchers.IO.limitedParallelism(4)
 
     private val externalTrackMutex = Mutex()
     private val scanMutex = Mutex()
-    // 封面后台提取的互斥锁：show / 刷新扫描 / 媒体变更三个入口都会并发触发 enrich，
-    // 不加锁会导致并发提取互相覆盖缓存文件
+    // 歌词补全的互斥锁：show / 刷新扫描 / 媒体变更三个入口都会并发触发，
+    // 不加锁会导致重复扫描本地歌词文件
     private val enrichMutex = Mutex()
     private var initialization: Deferred<Unit>? = null
     private var mediaObserverRegistered = false
@@ -201,8 +199,8 @@ class MusicPanelViewManager(
                 withContext(Dispatchers.Main) {
                     restoreCurrentTrack()
                 }
-                // 封面后台加载，不阻塞初始化
-                managerScope.launch { enrichAndCleanupMetadata() }
+                // 歌词后台补全，不阻塞初始化
+                managerScope.launch { enrichMissingLyrics() }
             }
             withContext(Dispatchers.Main) {
                 playbackState.syncPlaybackState()
@@ -280,8 +278,8 @@ class MusicPanelViewManager(
                 playbackState.setSortedPlaylist(mergedTracks)
                 playbackState.persistPlaylist()
             }
-            // 刷新后后台加载封面与歌词，完成合并后再清理孤立缓存
-            managerScope.launch { enrichAndCleanupMetadata() }
+            // 刷新后后台补全歌词
+            managerScope.launch { enrichMissingLyrics() }
         } finally {
             withContext(Dispatchers.Main + kotlinx.coroutines.NonCancellable) {
                 playbackState.isScanning = false
@@ -294,8 +292,6 @@ class MusicPanelViewManager(
         return tracks.map { track ->
             val cached = previous[normalizedAudioUri(track.audioUri)] ?: return@map track
             track.copy(
-                coverCachePath = cached.coverCachePath,
-                lyricCachePath = cached.lyricCachePath,
                 lyricLines = cached.lyricLines,
                 lyricResolved = cached.lyricResolved
             )
@@ -359,8 +355,8 @@ class MusicPanelViewManager(
                 playbackState.persistPlaylist()
                 restoreCurrentTrack()
             }
-            // 封面后台加载，不阻塞 isScanning 重置
-            managerScope.launch { enrichAndCleanupMetadata() }
+            // 歌词后台补全，不阻塞 isScanning 重置
+            managerScope.launch { enrichMissingLyrics() }
         } finally {
             // 使用非取消式上下文确保 isScanning 一定被重置（防止竟态导致卡死）
             withContext(Dispatchers.Main + kotlinx.coroutines.NonCancellable) {
@@ -369,85 +365,17 @@ class MusicPanelViewManager(
         }
     }
 
-    /** 后台加载本地歌曲封面（从 MediaStore 提取），不阻塞主流程 */
-    private suspend fun enrichLocalCovers() {
-        val tracks = withContext(Dispatchers.Main) { playbackState.playlist.toList() }
-        // 本地音频若封面缓存缺失或归属错误需重新提取，修复封面文件缺失/损坏导致的空封面；
-        // 纯外部歌曲（无本地文件）无内嵌封面可提取，跳过
-        val needCover = tracks.filter { track ->
-            val path = track.coverCachePath
-            val fileId = File(path).nameWithoutExtension.toLongOrNull()
-            // 封面缓存按歌曲身份归属（文件名为 track.id）才视为有效并跳过；
-            // 旧版本按专辑共享缓存，同一专辑内不同歌曲的封面会互相覆盖，这类共享文件需重新提取为歌曲独立封面
-            val coverOwned = fileId != null &&
-                MusicMetadataCache.isCurrentCoverPath(path) &&
-                fileId == track.id
-            !coverOwned && track.path.isNotBlank()
-        }
-        if (needCover.isEmpty()) return
-        val updates = coroutineScope {
-            needCover.map { track ->
-                async<MusicTrack?>(metadataDispatcher) {
-                    try {
-                        val result = MusicScanner.loadAlbumArt(
-                            context, context.contentResolver,
-                            Uri.parse(track.audioUri), track.albumId, track.path
-                        ) ?: return@async null
-                        val cover = result.bitmap
-                        try {
-                            val oldPath = track.coverCachePath
-                            // 封面一律按歌曲身份缓存：内嵌封面/缩略图/专辑封面统一归属单曲，
-                            // 避免按专辑共享缓存文件导致同一专辑内歌曲封面互相覆盖
-                            val coverPath = MusicMetadataCache.saveCover(context, track.id, cover).orEmpty()
-                            // 清理旧封面文件（如旧版专辑共享缓存、covers_original 中的回退文件）
-                            if (oldPath.isNotBlank() && oldPath != coverPath) {
-                                MusicMetadataCache.deleteCoverFile(oldPath)
-                            }
-                            track.copy(coverCachePath = coverPath)
-                        } finally {
-                            cover.recycle()
-                        }
-                    } catch (e: Exception) {
-                        CrashLogManager.logException("MusicPanelViewManager", "提取本地封面失败", e)
-                        null
-                    }
-                }
-            }.awaitAll().filterNotNull()
-        }
-        if (updates.isEmpty()) return
-        withContext(Dispatchers.Main) {
-            playbackState.batchUpdateTracks(updates)
-        }
-    }
-
-    private suspend fun enrichAndCleanupMetadata() = enrichMutex.withLock {
-        enrichPlaylistMetadata()
-        val referenced = withContext(Dispatchers.Main) {
-            playbackState.playlist.flatMap { listOf(it.coverCachePath, it.lyricCachePath) }.toSet()
-        }
-        withContext(Dispatchers.IO) {
-            MusicMetadataCache.cleanupOrphanedMetadata(context, referenced)
-        }
-    }
-
-    private suspend fun enrichPlaylistMetadata() {
-        // 封面仅从本地提取（内嵌封面 / 系统缩略图 / 专辑封面），不再联网补全
-        enrichLocalCovers()
-        // 歌词仅从本地补全：优先音频内嵌歌词，其次按文件名匹配本地 .lrc
-        enrichMissingLyrics()
-    }
-
     /** 为尚无歌词的曲目做一次本地补全；已尝试过的曲目不再重复扫描 */
-    private suspend fun enrichMissingLyrics() {
+    private suspend fun enrichMissingLyrics() = enrichMutex.withLock {
         val tracks = withContext(Dispatchers.Main) { playbackState.playlist.toList() }
         val targets = tracks.filter { track ->
-            !track.lyricResolved && track.lyricLines.isEmpty() && !MusicMetadataCache.isValid(track.lyricCachePath)
+            !track.lyricResolved && track.lyricLines.isEmpty()
         }
-        if (targets.isEmpty()) return
+        if (targets.isEmpty()) return@withLock
         val lrcCandidates = scanAllLrcFiles()
         val updates = coroutineScope {
             targets.map { track ->
-                async(metadataDispatcher) { resolveTrackLyrics(context, track, lrcCandidates) }
+                async(metadataDispatcher) { resolveTrackLyrics(track, lrcCandidates) }
             }.awaitAll()
         }
         withContext(Dispatchers.Main) {

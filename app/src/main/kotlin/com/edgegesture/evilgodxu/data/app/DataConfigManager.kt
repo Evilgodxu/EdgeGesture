@@ -15,40 +15,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
-
-enum class ManagedDataType {
-    MUSIC_COVERS, MUSIC_LYRICS
-}
-
-data class ManagedDataItem(val type: ManagedDataType, val size: Long)
 
 object DataConfigManager {
-
-    suspend fun listData(context: Context): List<ManagedDataItem> = withContext(Dispatchers.IO) {
-        listOf(
-            ManagedDataItem(ManagedDataType.MUSIC_COVERS, directorySize(File(context.filesDir, "music_metadata/covers_v2")) + directorySize(File(context.filesDir, "music_metadata/covers_original"))),
-            ManagedDataItem(ManagedDataType.MUSIC_LYRICS, directorySize(File(context.filesDir, "music_metadata/lyrics")))
-        )
-    }
-
-    suspend fun clear(context: Context, selected: Set<ManagedDataType>, stopMusic: suspend () -> Unit) = withContext(Dispatchers.IO) {
-        if (selected.any { it in setOf(ManagedDataType.MUSIC_COVERS, ManagedDataType.MUSIC_LYRICS) }) {
-            stopMusic()
-        }
-        if (ManagedDataType.MUSIC_COVERS in selected) {
-            File(context.filesDir, "music_metadata/covers_v2").deleteRecursively()
-            File(context.filesDir, "music_metadata/covers_original").deleteRecursively()
-        }
-        if (ManagedDataType.MUSIC_LYRICS in selected) {
-            File(context.filesDir, "music_metadata/lyrics").deleteRecursively()
-        }
-        if (selected.any { it in setOf(ManagedDataType.MUSIC_COVERS, ManagedDataType.MUSIC_LYRICS) }) {
-            File(context.filesDir, "music_metadata").mkdirs()
-        }
-    }
-
-    private fun directorySize(file: File?): Long = file?.takeIf { it.exists() }?.walkTopDown()?.filter { it.isFile }?.sumOf { it.length() } ?: 0L
 
     // 配置导出范围：边缘手势、背面双击、触发区设置、启动拦截
     private const val FORMAT_VERSION = 1

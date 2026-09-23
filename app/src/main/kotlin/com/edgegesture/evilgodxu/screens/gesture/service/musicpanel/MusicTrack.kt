@@ -9,10 +9,8 @@ package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
     val artist: String,
     val duration: Long,
     val albumId: Long,
-    val coverCachePath: String = "",
-    val lyricCachePath: String = "",
     internal val lyricLines: List<LyricLine> = emptyList(),
-    /** 是否已尝试过自动补全歌词（无论是否找到），用于避免重复扫描 */
+    /** 是否已尝试过自动补全歌词（无论是否找到），用于避免本次会话内重复扫描 */
     val lyricResolved: Boolean = false,
     val isFavorite: Boolean = false,
 )

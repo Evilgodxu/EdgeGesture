@@ -1,6 +1,7 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.combinedClickable
@@ -39,9 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import coil3.compose.AsyncImage
 import com.edgegesture.evilgodxu.R
-import java.io.File
 
 @Composable
 internal fun CurrentCover(
@@ -81,14 +80,11 @@ internal fun CurrentCover(
 
 @Composable
 internal fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
-    // 封面缓存为绝对路径字符串，包装成 File 才能被 Coil 识别（直接传路径会丢失 scheme）
-    val coverFile = track?.coverCachePath
-        ?.takeIf { MusicMetadataCache.isValid(it) }
-        ?.let { File(it) }
-    if (coverFile != null) {
-        AsyncImage(
-            model = coverFile,
-            contentDescription = track.title,
+    val cover = rememberTrackCover(track, COVER_SIZE_PX)
+    if (cover != null) {
+        Image(
+            bitmap = cover,
+            contentDescription = track?.title,
             contentScale = ContentScale.Crop,
             modifier = modifier.background(Color.Black),
         )
@@ -110,14 +106,12 @@ internal fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
 
 @Composable
 internal fun PlaylistArt(track: MusicTrack?, modifier: Modifier = Modifier) {
-    // 列表行小图：优先使用磁盘缓存文件，避免加载全尺寸封面
-    val coverFile = track?.coverCachePath
-        ?.takeIf { MusicMetadataCache.isValid(it) }
-        ?.let { File(it) }
-    if (coverFile != null) {
-        AsyncImage(
-            model = coverFile,
-            contentDescription = track.title,
+    // 列表行小图与面板共用系统略缩图，取不到时回退占位符
+    val cover = rememberTrackCover(track, COVER_SIZE_PX)
+    if (cover != null) {
+        Image(
+            bitmap = cover,
+            contentDescription = track?.title,
             contentScale = ContentScale.Crop,
             modifier = modifier.background(Color.Black),
         )

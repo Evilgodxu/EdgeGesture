@@ -1,6 +1,5 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
-import android.content.Context
 import android.os.Environment
 import com.edgegesture.evilgodxu.log.CrashLogManager
 import kotlinx.coroutines.Dispatchers
@@ -82,9 +81,8 @@ private fun scoreLyric(fileName: String, titleKey: String, artistKey: String): I
 }
 
 // 自动补全歌词：优先读取音频内嵌歌词，其次按文件名自动匹配本地 .lrc。
-// 无论是否找到均标记 lyricResolved，避免后续重复扫描。
+// 无论是否找到均标记 lyricResolved，避免本次会话内重复扫描。
 internal suspend fun resolveTrackLyrics(
-    context: Context,
     track: MusicTrack,
     lrcCandidates: List<LocalLyric>,
 ): MusicTrack = withContext(Dispatchers.IO) {
@@ -97,8 +95,7 @@ internal suspend fun resolveTrackLyrics(
     if (lines.isNullOrEmpty()) {
         track.copy(lyricResolved = true)
     } else {
-        val path = MusicMetadataCache.saveLyrics(context, track.id, lines).orEmpty()
-        track.copy(lyricResolved = true, lyricCachePath = path, lyricLines = lines)
+        track.copy(lyricResolved = true, lyricLines = lines)
     }
 }
 
@@ -134,9 +131,8 @@ internal fun textToLyricLines(raw: String, durationMs: Long): List<LyricLine> {
     return lines.mapIndexed { index, text -> LyricLine(timeMs = index * step, text = text) }
 }
 
-// 读取本地 .lrc 文件并作为当前歌曲歌词，成功后写入缓存与播放状态
+// 读取本地 .lrc 文件并作为当前歌曲歌词，成功后写入播放状态
 internal suspend fun importLocalLyrics(
-    context: Context,
     playbackState: MusicPlaybackState,
     track: MusicTrack,
     lyric: LocalLyric,
@@ -144,8 +140,7 @@ internal suspend fun importLocalLyrics(
     try {
         val lines = parseLrcText(File(lyric.path).readText())
         if (lines.isEmpty()) return@withContext false
-        val path = MusicMetadataCache.saveLyrics(context, track.id, lines) ?: return@withContext false
-        val updated = track.copy(lyricCachePath = path, lyricLines = lines, lyricResolved = true)
+        val updated = track.copy(lyricLines = lines, lyricResolved = true)
         withContext(Dispatchers.Main) {
             playbackState.updateTrack(updated)
         }

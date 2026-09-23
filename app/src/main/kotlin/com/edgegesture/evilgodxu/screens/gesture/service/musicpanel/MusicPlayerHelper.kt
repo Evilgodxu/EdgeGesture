@@ -46,7 +46,7 @@ suspend fun playTrackAt(
         val track = state.playlist.getOrNull(index) ?: return
         val controller = getController(context, state)
         val items = state.cachedMediaItems ?: withContext(Dispatchers.IO) {
-            state.playlist.map { trackItem -> toMediaItem(context, trackItem) }.also {
+            state.playlist.map { trackItem -> toMediaItem(trackItem) }.also {
                 state.cachedMediaItems = it
             }
         }
@@ -89,19 +89,28 @@ suspend fun playTrackAt(
     }
 }
 
-private fun toMediaItem(context: Context, track: MusicTrack): MediaItem {
+private fun toMediaItem(track: MusicTrack): MediaItem {
     val metadata = androidx.media3.common.MediaMetadata.Builder()
         .setTitle(track.title)
         .setArtist(track.artist)
-    // 使用 content:// URI 指向本地缓存封面，避免在 MediaItem 中嵌入 byte 数组
-    // Media3 的 MediaSession 会自动为 content:// URI 授予控制器读取权限
-    MusicCoverProvider.buildUri(context.packageName, track.coverCachePath)?.let { uri ->
-        metadata.setArtworkUri(uri)
-    }
+    // 系统面板封面直接取 MediaProvider 的条目级专辑封面，应用不再为系统面板另存封面文件
+    artworkUri(track)?.let { metadata.setArtworkUri(it) }
     return MediaItem.Builder()
         .setMediaId(track.id.toString())
         .setUri(Uri.parse(track.audioUri))
         .setMediaMetadata(metadata.build())
+        .build()
+}
+
+// 系统封面 URI：索引曲目在音频条目 URI 上追加 albumart 段，MediaProvider 以
+// audio/media/#/albumart 匹配；非索引曲目（外部应用传入）无系统封面，返回 null
+private fun artworkUri(track: MusicTrack): Uri? {
+    if (!track.audioUri.startsWith("content://media/")) return null
+    return Uri.parse(track.audioUri)
+        .buildUpon()
+        .clearQuery()
+        .fragment(null)
+        .appendPath("albumart")
         .build()
 }
 

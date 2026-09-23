@@ -14,7 +14,6 @@ import com.edgegesture.evilgodxu.screens.gesture.EdgeGestureConfigScreen
 import com.edgegesture.evilgodxu.screens.gesture.EdgeType
 import com.edgegesture.evilgodxu.screens.gesture.GestureSettingsScreen
 import com.edgegesture.evilgodxu.screens.launchblock.LaunchBlockScreen
-import com.edgegesture.evilgodxu.screens.settings.DataConfigScreen
 import com.edgegesture.evilgodxu.screens.settings.SettingsScreen
 import kotlinx.serialization.Serializable
 
@@ -23,9 +22,6 @@ data object GestureRoute : NavKey
 
 @Serializable
 data object SettingsRoute : NavKey
-
-@Serializable
-data object DataConfigRoute : NavKey
 
 @Serializable
 data object BlacklistRoute : NavKey
@@ -86,13 +82,6 @@ fun NavGraph(
 
             entry<SettingsRoute> {
                 SettingsScreen(
-                    onNavigateBack = { navigator.goBack() },
-                    onNavigateToDataConfig = { navigator.navigate(DataConfigRoute) }
-                )
-            }
-
-            entry<DataConfigRoute> {
-                DataConfigScreen(
                     onNavigateBack = { navigator.goBack() }
                 )
             }
