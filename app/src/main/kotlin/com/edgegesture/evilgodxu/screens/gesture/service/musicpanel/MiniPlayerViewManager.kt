@@ -73,12 +73,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.center
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
@@ -860,9 +858,11 @@ internal fun DiscArt(
     track: MusicTrack?,
     isPlaying: Boolean,
     modifier: Modifier = Modifier,
+    coverArt: @Composable (MusicTrack?) -> Unit = { AlbumArt(it, Modifier.fillMaxSize()) },
 ) {
-    val rotation = remember { Animatable(0f) }
-    LaunchedEffect(isPlaying) {
+    // 以曲目 id 为 key：切歌时旋转角归零并从新曲目重新旋转
+    val rotation = remember(track?.id) { Animatable(0f) }
+    LaunchedEffect(isPlaying, track?.id) {
         if (isPlaying) {
             while (isActive) {
                 rotation.animateTo(
@@ -880,32 +880,24 @@ internal fun DiscArt(
                 .clip(CircleShape)
         ) {
             // 专辑封面仅覆盖中间区域，外圈边缘留出透明材质
-            AlbumArt(
-                track = track,
+            Box(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .fillMaxSize(0.85f)
                     .clip(CircleShape)
-            )
+            ) {
+                coverArt(track)
+            }
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val r = size.minDimension / 2f
                 val center = this.center
-                // 绘制环形区域（外圆减内圆）
-                val ring: (Float, Float, Color) -> Unit = { outer, inner, color ->
-                    val path = Path().apply {
-                        addOval(Rect(center = center, radius = outer))
-                        addOval(Rect(center = center, radius = inner), Path.Direction.CounterClockwise)
-                    }
-                    drawPath(path, color)
-                }
-
-                // 外圈透明边缘
-                ring(r, r * 0.85f, Color.White.copy(alpha = 0.16f))
+                // 浅色外环：紧贴封面外缘，无间距，宽度为半径的 9%
+                val ringWidth = r * 0.09f
                 drawCircle(
-                    color = Color.Black.copy(alpha = 0.15f),
-                    radius = r,
+                    color = Color.White.copy(alpha = 0.22f),
+                    radius = r * 0.85f + ringWidth / 2f,
                     center = center,
-                    style = Stroke(width = 0.8f)
+                    style = Stroke(width = ringWidth)
                 )
             }
         }
