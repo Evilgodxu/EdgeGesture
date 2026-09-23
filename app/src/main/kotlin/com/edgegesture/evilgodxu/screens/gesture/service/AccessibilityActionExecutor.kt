@@ -564,12 +564,16 @@ class AccessibilityActionExecutor(
         freeformAppLauncher.launch(packageName, useFreeform = true)
     }
 
-    fun switchToLastApp(target: String? = null) {
-        val pkg = target ?: previousApp ?: return
-        if (launchApp(pkg)) {
-            previousApp = currentApp
-            currentApp = pkg
-        }
+    // 切回上一个应用；显式目标命中应用切换黑名单时不作为切换目标，
+    // 改用黑名单过滤后的上一个应用，避免落到桌面、系统弹窗等临时窗口。
+    // 返回值表示是否成功切换，供调用方决定是否需要兜底
+    fun switchToLastApp(target: String? = null): Boolean {
+        val preferred = target?.takeIf { it.isNotBlank() && it !in blacklistSnapshot }
+        val pkg = preferred ?: previousApp ?: return false
+        if (!launchApp(pkg)) return false
+        previousApp = currentApp
+        currentApp = pkg
+        return true
     }
 
     fun invalidateBlacklistCache() {

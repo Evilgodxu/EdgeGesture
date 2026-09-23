@@ -398,12 +398,13 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         pendingKillAction?.let(launchBlockHandler::removeCallbacks)
         pendingBlockAction = null
         pendingKillAction = null
-        if (rule.enabled) {
+        // 终止被启动者会移除其任务，系统随即露出上一个应用，无需再额外触发切换
+        val willKillTarget = rule.enableKillTarget && (!isTargetSystemApp || rule.allowKillSystemApp)
+        if (rule.enabled && !willKillTarget) {
             val blockAction = Runnable {
                 pendingBlockAction = null
                 if (!isAvailable() || currentPackage != targetPackage) return@Runnable
-                // 触发上一个应用操作，切回启动者应用
-                actionExecutor.switchToLastApp(launcherPackage)
+                returnFromBlockedApp(launcherPackage)
             }
             pendingBlockAction = blockAction
             if (rule.blockDelay > 0) {
@@ -414,12 +415,13 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
 
         // 终止被启动者进程（由 enableKillTarget 开关控制）
-        if (rule.enableKillTarget) {
+        if (willKillTarget) {
             val killAction = Runnable {
                 pendingKillAction = null
                 if (!isAvailable() || currentPackage != targetPackage) return@Runnable
-                if (!isTargetSystemApp || rule.allowKillSystemApp) {
-                    killAppProcess(targetPackage)
+                // 终止失败时无任务可移除，兜底切换以离开被拦截应用
+                if (!killAppProcess(targetPackage) && rule.enabled) {
+                    returnFromBlockedApp(launcherPackage)
                 }
             }
             pendingKillAction = killAction
@@ -442,6 +444,13 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                 lastLaunchTime = System.currentTimeMillis()
             )
             updateLaunchBlockRule(updatedRule)
+        }
+    }
+
+    // 拦截后切回上一个应用；无可用目标时退回桌面，避免被拦截应用停留在前台
+    private fun returnFromBlockedApp(launcherPackage: String?) {
+        if (!actionExecutor.switchToLastApp(launcherPackage)) {
+            performGlobalAction(GLOBAL_ACTION_HOME)
         }
     }
 
@@ -477,15 +486,17 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         launcherKillCount[launcherPackage] = count + 1
     }
 
-    // 与系统最近任务滑掉一致：通过 Shizuku 移除该应用的任务，失败记录日志
-    private fun killAppProcess(packageName: String) {
-        if (ShizukuManager.isAvailable()) {
-            if (!ShizukuManager.removePackageTasks(packageName)) {
-                CrashLogManager.logException("EdgeGestureAccessibilityService", "移除系统最近任务失败: $packageName")
-            }
-        } else {
+    // 与系统最近任务滑掉一致：通过 Shizuku 移除该应用的任务，失败记录日志并返回 false
+    private fun killAppProcess(packageName: String): Boolean {
+        if (!ShizukuManager.isAvailable()) {
             CrashLogManager.logException("EdgeGestureAccessibilityService", "Shizuku 不可用，无法移除系统最近任务: $packageName")
+            return false
         }
+        if (!ShizukuManager.removePackageTasks(packageName)) {
+            CrashLogManager.logException("EdgeGestureAccessibilityService", "移除系统最近任务失败: $packageName")
+            return false
+        }
+        return true
     }
 
     // 检测输入法是否弹出
