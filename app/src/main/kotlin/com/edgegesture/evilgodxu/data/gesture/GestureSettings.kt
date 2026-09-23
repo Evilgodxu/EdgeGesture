@@ -122,6 +122,32 @@ object GestureSettingsKeys {
     val BLACKLIST_INITIALIZED = booleanPreferencesKey("blacklist_initialized")
     val VIBRATION_ENABLED = booleanPreferencesKey("vibration_enabled")
     val DOUBLE_SWIPE_ENABLED = booleanPreferencesKey("double_swipe_enabled")
+
+    // 启动应用动作的目标包名存储键后缀，实际键名为「动作键名 + 后缀」
+    const val LAUNCH_APP_TARGET_SUFFIX = "__launch_app_target"
+
+    // 手势动作存储键的唯一来源：按「边缘 + 分段(0..2) + 槽位(0..5)」解析
+    // 槽位顺序与配置页列表一致：左/右边缘为 主方向短滑/长按、次方向短滑/长按、第三方向短滑/长按；底部边缘为上滑、左滑、右滑
+    private val EDGE_KEYS: Map<EdgePosition, List<List<Preferences.Key<String>>>> = mapOf(
+        EdgePosition.LEFT to listOf(
+            listOf(LEFT_SWIPE_RIGHT, LEFT_SWIPE_RIGHT_LONG, LEFT_SWIPE_UP, LEFT_SWIPE_UP_LONG, LEFT_SWIPE_DOWN, LEFT_SWIPE_DOWN_LONG),
+            listOf(LEFT_2_SWIPE_RIGHT, LEFT_2_SWIPE_RIGHT_LONG, LEFT_2_SWIPE_UP, LEFT_2_SWIPE_UP_LONG, LEFT_2_SWIPE_DOWN, LEFT_2_SWIPE_DOWN_LONG),
+            listOf(LEFT_3_SWIPE_RIGHT, LEFT_3_SWIPE_RIGHT_LONG, LEFT_3_SWIPE_UP, LEFT_3_SWIPE_UP_LONG, LEFT_3_SWIPE_DOWN, LEFT_3_SWIPE_DOWN_LONG)
+        ),
+        EdgePosition.RIGHT to listOf(
+            listOf(RIGHT_SWIPE_LEFT, RIGHT_SWIPE_LEFT_LONG, RIGHT_SWIPE_UP, RIGHT_SWIPE_UP_LONG, RIGHT_SWIPE_DOWN, RIGHT_SWIPE_DOWN_LONG),
+            listOf(RIGHT_2_SWIPE_LEFT, RIGHT_2_SWIPE_LEFT_LONG, RIGHT_2_SWIPE_UP, RIGHT_2_SWIPE_UP_LONG, RIGHT_2_SWIPE_DOWN, RIGHT_2_SWIPE_DOWN_LONG),
+            listOf(RIGHT_3_SWIPE_LEFT, RIGHT_3_SWIPE_LEFT_LONG, RIGHT_3_SWIPE_UP, RIGHT_3_SWIPE_UP_LONG, RIGHT_3_SWIPE_DOWN, RIGHT_3_SWIPE_DOWN_LONG)
+        ),
+        EdgePosition.BOTTOM to listOf(
+            listOf(BOTTOM_SWIPE_UP, BOTTOM_SWIPE_UP_LONG, BOTTOM_SWIPE_LEFT, BOTTOM_SWIPE_LEFT_LONG, BOTTOM_SWIPE_RIGHT, BOTTOM_SWIPE_RIGHT_LONG),
+            listOf(BOTTOM_2_SWIPE_UP, BOTTOM_2_SWIPE_UP_LONG, BOTTOM_2_SWIPE_LEFT, BOTTOM_2_SWIPE_LEFT_LONG, BOTTOM_2_SWIPE_RIGHT, BOTTOM_2_SWIPE_RIGHT_LONG),
+            listOf(BOTTOM_3_SWIPE_UP, BOTTOM_3_SWIPE_UP_LONG, BOTTOM_3_SWIPE_LEFT, BOTTOM_3_SWIPE_LEFT_LONG, BOTTOM_3_SWIPE_RIGHT, BOTTOM_3_SWIPE_RIGHT_LONG)
+        )
+    )
+
+    fun keyFor(position: EdgePosition, segmentIndex: Int, slot: Int): Preferences.Key<String> =
+        EDGE_KEYS.getValue(position)[segmentIndex.coerceIn(0, 2)][slot.coerceIn(0, 5)]
 }
 
 // 手势动作枚举，显示名称通过 [getActionDisplayName] 函数从字符串资源获取，支持多语言
@@ -156,7 +182,9 @@ enum class GestureAction(val value: String) {
     REMIND_3M("remind_3m"),
     REMIND_5M("remind_5m"),
     REMIND_10M("remind_10m"),
-    REMIND_15M("remind_15m");
+    REMIND_15M("remind_15m"),
+    // 启动指定应用，目标包名单独存储
+    LAUNCH_APP("launch_app");
 
     companion object {
         fun fromValue(value: String): GestureAction = entries.find { it.value == value } ?: NONE
@@ -290,12 +318,23 @@ data class GestureSettingsState(
         swipeLeftLong = GestureAction.NONE,
         swipeRight = GestureAction.NONE,
         swipeRightLong = GestureAction.NONE
-    )
+    ),
+    // 启动应用动作绑定的目标包名，key 为动作存储键名
+    val launchAppTargets: Map<String, String> = emptyMap()
 )
 
 // 从 Preferences 读取手势动作，统一默认值处理
 private fun Preferences.readAction(key: Preferences.Key<String>, default: GestureAction): GestureAction =
     GestureAction.fromValue(this[key] ?: default.value)
+
+// 扫描带目标包名后缀的存储键，构建「动作键名 → 包名」映射
+private fun Preferences.readLaunchAppTargets(): Map<String, String> =
+    asMap().entries.mapNotNull { (key, value) ->
+        val name = key.name
+        if (!name.endsWith(GestureSettingsKeys.LAUNCH_APP_TARGET_SUFFIX)) return@mapNotNull null
+        (value as? String)?.takeIf { it.isNotBlank() }
+            ?.let { name.removeSuffix(GestureSettingsKeys.LAUNCH_APP_TARGET_SUFFIX) to it }
+    }.toMap()
 
 // 从 Preferences 构建 GestureSettingsState，统一默认值处理
 fun Preferences.toGestureSettingsState(): GestureSettingsState {
@@ -401,7 +440,8 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
             swipeLeftLong = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT_LONG, GestureAction.NONE),
             swipeRight = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT, GestureAction.NONE),
             swipeRightLong = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT_LONG, GestureAction.NONE)
-        )
+        ),
+        launchAppTargets = readLaunchAppTargets()
     )
 }
 
@@ -506,6 +546,18 @@ suspend fun Context.saveBottomSegmentCount(count: Int) = withContext(Dispatchers
 suspend fun Context.saveEdgeGesture(key: Preferences.Key<String>, action: GestureAction) = withContext(Dispatchers.IO) {
     gestureDataStore.edit { prefs ->
         prefs[key] = action.value
+    }
+}
+
+// 保存启动应用动作绑定的目标包名，传 null 或空白清除绑定
+suspend fun Context.saveLaunchAppTarget(actionKey: Preferences.Key<String>, packageName: String?) = withContext(Dispatchers.IO) {
+    val targetKey = stringPreferencesKey(actionKey.name + GestureSettingsKeys.LAUNCH_APP_TARGET_SUFFIX)
+    gestureDataStore.edit { prefs ->
+        if (packageName.isNullOrBlank()) {
+            prefs.minusAssign(targetKey)
+        } else {
+            prefs[targetKey] = packageName
+        }
     }
 }
 

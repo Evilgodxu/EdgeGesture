@@ -55,12 +55,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.edgegesture.evilgodxu.R
 
+import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.gesture.BackTapMode
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
+import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
+import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
 import com.edgegesture.evilgodxu.screens.gesture.components.ActionSelectionDialog
+import com.edgegesture.evilgodxu.screens.gesture.components.AppPickerDialog
 import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
 import kotlin.math.roundToInt
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,6 +77,12 @@ fun BackTapScreen(
     val settings = gestureSettings
 
     var showActionDialog by remember { mutableStateOf(false) }
+    var showAppPicker by remember { mutableStateOf(false) }
+
+    // 应用名映射，用于「启动应用」动作显示绑定的目标应用
+    val appRepository: AppRepository = koinInject()
+    val apps by appRepository.appsFlow.collectAsStateWithLifecycle()
+    val appNameByPackage = remember(apps) { apps.associate { it.packageName to it.appName } }
 
     // 滑块本地状态，拖动预览用，松手时才持久化
     var localSensitivity by remember(settings?.backTapSensitivity) {
@@ -254,8 +265,9 @@ fun BackTapScreen(
                     }
 
                     Text(
-                        text = if (settings != null) getActionDisplayName(settings.backTapAction)
-                               else "",
+                        text = if (settings != null) {
+                            resolveBackTapActionName(settings, appNameByPackage)
+                        } else "",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
@@ -280,12 +292,44 @@ fun BackTapScreen(
             currentAction = settings.backTapAction,
             onDismiss = { showActionDialog = false },
             onActionSelected = { action ->
-                viewModel.setBackTapAction(action)
-                showActionDialog = false
+                if (action == GestureAction.LAUNCH_APP) {
+                    // 启动应用需先选定目标应用，交由应用选择对话框完成保存
+                    showActionDialog = false
+                    showAppPicker = true
+                } else {
+                    viewModel.setBackTapAction(action)
+                    showActionDialog = false
+                }
             },
             getActionDisplayName = { getActionDisplayName(it) }
         )
     }
+
+    // 应用选择对话框
+    if (showAppPicker) {
+        AppPickerDialog(
+            onDismiss = { showAppPicker = false },
+            onAppSelected = { packageName ->
+                viewModel.setBackTapAction(GestureAction.LAUNCH_APP)
+                viewModel.setLaunchAppTarget(packageName)
+                showAppPicker = false
+            }
+        )
+    }
+}
+
+// 解析背面双击动作显示名：启动应用动作优先显示绑定的应用名，未绑定时回退动作名
+@Composable
+private fun resolveBackTapActionName(
+    settings: GestureSettingsState,
+    appNameByPackage: Map<String, String>
+): String {
+    val appName = if (settings.backTapAction == GestureAction.LAUNCH_APP) {
+        settings.launchAppTargets[GestureSettingsKeys.BACK_TAP_ACTION.name]?.let { appNameByPackage[it] }
+    } else {
+        null
+    }
+    return appName ?: getActionDisplayName(settings.backTapAction)
 }
 
 @Composable

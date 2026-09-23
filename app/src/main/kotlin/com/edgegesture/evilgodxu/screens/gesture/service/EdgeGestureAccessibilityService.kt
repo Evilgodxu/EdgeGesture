@@ -19,6 +19,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityWindowInfo
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
+import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
 import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
 import com.edgegesture.evilgodxu.data.gesture.gestureDataStore
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
@@ -309,7 +310,11 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     private fun startBackTapDetector(s: GestureSettingsState) {
         backTapDetector?.stop()
         backTapDetector = BackTapDetector(this) {
-            actionExecutor.performAction(s.backTapAction, settings)
+            actionExecutor.performAction(
+                s.backTapAction,
+                settings,
+                s.launchAppTargets[GestureSettingsKeys.BACK_TAP_ACTION.name]
+            )
         }.also {
             it.setMode(s.backTapMode)
             it.setScreenOn(isScreenOn())
@@ -619,8 +624,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         return pm.isInteractive
     }
 
-    override fun onSwipeAction(action: GestureAction) {
-        actionExecutor.performAction(action, settings)
+    override fun onSwipeAction(action: GestureAction, launchAppTarget: String?) {
+        actionExecutor.performAction(action, settings, launchAppTarget)
     }
 
     // 系统返回键（含手势导航返回）触发时关闭屏幕翻译；

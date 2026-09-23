@@ -81,6 +81,7 @@
     <string name="gesture_action_task_panel">Task panel</string>
     <string name="gesture_action_compass_clock">Compass clock</string>
     <string name="gesture_action_translate">Screen translate</string>
+    <string name="gesture_action_launch_app">Launch app</string>
 
     <!-- Screen translate -->
     <string name="translate_started">Translating current screen…</string>

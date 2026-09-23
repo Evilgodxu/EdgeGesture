@@ -8,6 +8,7 @@ import android.view.MotionEvent
 import android.view.View
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
+import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
 import com.edgegesture.evilgodxu.data.gesture.EdgePosition
 import kotlin.math.abs
 
@@ -16,8 +17,11 @@ class AccessibilityGestureDetector(
 ) {
 
     interface GestureCallback {
-        fun onSwipeAction(action: GestureAction)
+        fun onSwipeAction(action: GestureAction, launchAppTarget: String?)
     }
+
+    // 手势解析结果：动作 + 启动应用动作绑定的目标包名
+    private data class ResolvedGesture(val action: GestureAction, val launchAppTarget: String?)
 
     enum class SwipeDirection {
         UP, DOWN, LEFT, RIGHT
@@ -62,9 +66,9 @@ class AccessibilityGestureDetector(
                             // 二次滑动模式：只有待确认方向匹配时才触发长按操作
                             swipeDirection?.let { direction ->
                                 if (pendingDirection == direction) {
-                                    val action = resolveAction(position, segmentIndex, direction, true, settings)
-                                    if (action != GestureAction.NONE) {
-                                        callback.onSwipeAction(action)
+                                    val gesture = resolveGesture(position, segmentIndex, direction, true, settings)
+                                    if (gesture.action != GestureAction.NONE) {
+                                        callback.onSwipeAction(gesture.action, gesture.launchAppTarget)
                                     }
                                     pendingDirection = null
                                 }
@@ -72,9 +76,9 @@ class AccessibilityGestureDetector(
                             }
                         } else {
                             swipeDirection?.let { direction ->
-                                val action = resolveAction(position, segmentIndex, direction, true, settings)
-                                if (action != GestureAction.NONE) {
-                                    callback.onSwipeAction(action)
+                                val gesture = resolveGesture(position, segmentIndex, direction, true, settings)
+                                if (gesture.action != GestureAction.NONE) {
+                                    callback.onSwipeAction(gesture.action, gesture.launchAppTarget)
                                 }
                             }
                         }
@@ -121,9 +125,9 @@ class AccessibilityGestureDetector(
                         if (settings.doubleSwipeEnabled) {
                             if (pendingDirection == direction) {
                                 // 第二次滑动相同方向：触发操作并清除待确认状态
-                                val action = resolveAction(position, segmentIndex, direction, false, settings)
-                                if (action != GestureAction.NONE) {
-                                    callback.onSwipeAction(action)
+                                val gesture = resolveGesture(position, segmentIndex, direction, false, settings)
+                                if (gesture.action != GestureAction.NONE) {
+                                    callback.onSwipeAction(gesture.action, gesture.launchAppTarget)
                                 }
                                 pendingDirection = null
                             } else {
@@ -131,9 +135,9 @@ class AccessibilityGestureDetector(
                                 pendingDirection = direction
                             }
                         } else {
-                            val action = resolveAction(position, segmentIndex, direction, false, settings)
-                            if (action != GestureAction.NONE) {
-                                callback.onSwipeAction(action)
+                            val gesture = resolveGesture(position, segmentIndex, direction, false, settings)
+                            if (gesture.action != GestureAction.NONE) {
+                                callback.onSwipeAction(gesture.action, gesture.launchAppTarget)
                             }
                         }
                         true
@@ -172,6 +176,50 @@ class AccessibilityGestureDetector(
             EdgePosition.RIGHT -> resolveRightEdgeAction(segmentIndex, direction, isLongPress, settings)
             EdgePosition.BOTTOM -> resolveBottomEdgeAction(segmentIndex, direction, isLongPress, settings)
         }
+    }
+
+    // 解析手势对应的动作及其启动应用目标
+    private fun resolveGesture(
+        position: EdgePosition,
+        segmentIndex: Int,
+        direction: SwipeDirection,
+        isLongPress: Boolean,
+        settings: GestureSettingsState
+    ): ResolvedGesture {
+        val action = resolveAction(position, segmentIndex, direction, isLongPress, settings)
+        val target = if (action == GestureAction.LAUNCH_APP) {
+            slotOf(position, direction, isLongPress)?.let { slot ->
+                settings.launchAppTargets[GestureSettingsKeys.keyFor(position, segmentIndex, slot).name]
+            }
+        } else {
+            null
+        }
+        return ResolvedGesture(action, target)
+    }
+
+    // 方向与长按标识映射到配置页的槽位序号（0/1 主方向、2/3 次方向、4/5 第三方向），方向不属于该边缘时返回 null
+    private fun slotOf(position: EdgePosition, direction: SwipeDirection, isLongPress: Boolean): Int? {
+        val base = when (position) {
+            EdgePosition.LEFT -> when (direction) {
+                SwipeDirection.RIGHT -> 0
+                SwipeDirection.UP -> 2
+                SwipeDirection.DOWN -> 4
+                else -> null
+            }
+            EdgePosition.RIGHT -> when (direction) {
+                SwipeDirection.LEFT -> 0
+                SwipeDirection.UP -> 2
+                SwipeDirection.DOWN -> 4
+                else -> null
+            }
+            EdgePosition.BOTTOM -> when (direction) {
+                SwipeDirection.UP -> 0
+                SwipeDirection.LEFT -> 2
+                SwipeDirection.RIGHT -> 4
+                else -> null
+            }
+        }
+        return base?.let { it + if (isLongPress) 1 else 0 }
     }
 
     private fun resolveLeftEdgeAction(

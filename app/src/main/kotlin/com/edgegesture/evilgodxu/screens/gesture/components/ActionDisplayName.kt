@@ -34,5 +34,6 @@ fun getActionDisplayName(action: GestureAction): String {
         GestureAction.REMIND_5M -> stringResource(R.string.gesture_action_remind_5m)
         GestureAction.REMIND_10M -> stringResource(R.string.gesture_action_remind_10m)
         GestureAction.REMIND_15M -> stringResource(R.string.gesture_action_remind_15m)
+        GestureAction.LAUNCH_APP -> stringResource(R.string.gesture_action_launch_app)
     }
 }

@@ -6,7 +6,10 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.edgegesture.evilgodxu.data.gesture.clearExpandPanelShortcut
 import com.edgegesture.evilgodxu.data.gesture.initBlacklistIfNeeded
 import com.edgegesture.evilgodxu.data.gesture.removeFromAppSwitchBlacklist
@@ -212,4 +215,16 @@ class AppRepository private constructor(private val context: Context) {
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
     }
+}
+
+// 加载应用图标：优先读取扫描时缓存的图标文件，失败则回退到 PackageManager 实时查询
+internal fun loadAppIconBitmap(context: Context, app: AppInfo): Bitmap? {
+    if (app.iconPath.isNotBlank()) {
+        runCatching {
+            BitmapFactory.decodeFile(app.iconPath)
+        }.getOrNull()?.let { return it }
+    }
+    return runCatching {
+        context.packageManager.getApplicationIcon(app.packageName).toBitmap()
+    }.getOrNull()
 }

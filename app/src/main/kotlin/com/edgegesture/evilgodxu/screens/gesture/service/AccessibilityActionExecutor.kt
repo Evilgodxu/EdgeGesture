@@ -133,7 +133,7 @@ class AccessibilityActionExecutor(
         }
     }
 
-    fun performAction(action: GestureAction, settings: GestureSettingsState) {
+    fun performAction(action: GestureAction, settings: GestureSettingsState, launchAppTarget: String? = null) {
         if (action == GestureAction.NONE) return
         vibrate(settings)
         GestureStatsManager.incrementGestureCount(service)
@@ -172,6 +172,7 @@ class AccessibilityActionExecutor(
             GestureAction.REMIND_5M -> scheduleReminder(5)
             GestureAction.REMIND_10M -> scheduleReminder(10)
             GestureAction.REMIND_15M -> scheduleReminder(15)
+            GestureAction.LAUNCH_APP -> launchAppTarget?.let { launchApp(it) }
             GestureAction.NONE -> {}
         }
     }

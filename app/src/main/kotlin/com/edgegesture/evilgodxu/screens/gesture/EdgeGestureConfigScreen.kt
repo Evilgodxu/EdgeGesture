@@ -60,12 +60,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.data.app.AppRepository
+import com.edgegesture.evilgodxu.data.gesture.EdgePosition
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
 import com.edgegesture.evilgodxu.screens.gesture.components.ActionSelectionDialog
+import com.edgegesture.evilgodxu.screens.gesture.components.AppPickerDialog
 import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
 import kotlin.math.roundToInt
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 enum class EdgeType { LEFT, RIGHT, BOTTOM }
 
@@ -81,7 +85,13 @@ fun EdgeGestureConfigScreen(
 
     var selectedSegment by remember { mutableIntStateOf(1) }
     var showActionDialog by remember { mutableStateOf(false) }
+    var showAppPicker by remember { mutableStateOf(false) }
     var currentActionKey by remember { mutableStateOf<androidx.datastore.preferences.core.Preferences.Key<String>?>(null) }
+
+    // 应用名映射，用于「启动应用」动作显示绑定的目标应用
+    val appRepository: AppRepository = koinInject()
+    val apps by appRepository.appsFlow.collectAsStateWithLifecycle()
+    val appNameByPackage = remember(apps) { apps.associate { it.packageName to it.appName } }
 
     val title = when (edgeType) {
         EdgeType.LEFT -> stringResource(R.string.gesture_config_left)
@@ -279,7 +289,7 @@ fun EdgeGestureConfigScreen(
                     gestures.forEachIndexed { index, (action, key) ->
                         GestureActionRow(
                             label = gestureLabels[index],
-                            actionName = getActionDisplayName(action),
+                            actionName = resolveActionDisplayName(action, key, currentSettings, appNameByPackage),
                             isLongPress = index % 2 == 1,
                             iconRotation = gestureIconRotation(edgeType, index),
                             onClick = {
@@ -299,19 +309,56 @@ fun EdgeGestureConfigScreen(
     }
 
     // 动作选择对话框
-    if (showActionDialog && currentActionKey != null && currentSettings != null) {
-        // 提前解包为非空局部变量，避免委托属性无法智能转换
-        val key = currentActionKey ?: return
+    val pendingKey = currentActionKey
+    if (showActionDialog && pendingKey != null && currentSettings != null) {
         ActionSelectionDialog(
-            currentAction = getCurrentActionForDialog(edgeType, selectedSegment, currentSettings, key),
+            currentAction = getCurrentActionForDialog(edgeType, selectedSegment, currentSettings, pendingKey),
             onDismiss = { showActionDialog = false },
             onActionSelected = { action ->
-                viewModel.saveGestureAction(key, action)
-                showActionDialog = false
+                if (action == GestureAction.LAUNCH_APP) {
+                    // 启动应用需先选定目标应用，交由应用选择对话框完成保存
+                    showActionDialog = false
+                    showAppPicker = true
+                } else {
+                    viewModel.saveGestureAction(pendingKey, action)
+                    showActionDialog = false
+                }
             },
             getActionDisplayName = { getActionDisplayName(it) }
         )
     }
+
+    // 应用选择对话框
+    if (showAppPicker && pendingKey != null) {
+        AppPickerDialog(
+            onDismiss = {
+                showAppPicker = false
+                currentActionKey = null
+            },
+            onAppSelected = { packageName ->
+                viewModel.saveGestureAction(pendingKey, GestureAction.LAUNCH_APP)
+                viewModel.saveLaunchAppTarget(pendingKey, packageName)
+                showAppPicker = false
+                currentActionKey = null
+            }
+        )
+    }
+}
+
+// 解析动作显示名：启动应用动作优先显示绑定的应用名，未绑定时回退动作名
+@Composable
+private fun resolveActionDisplayName(
+    action: GestureAction,
+    key: androidx.datastore.preferences.core.Preferences.Key<String>,
+    settings: com.edgegesture.evilgodxu.data.gesture.GestureSettingsState?,
+    appNameByPackage: Map<String, String>
+): String {
+    val appName = if (action == GestureAction.LAUNCH_APP) {
+        settings?.launchAppTargets?.get(key.name)?.let { appNameByPackage[it] }
+    } else {
+        null
+    }
+    return appName ?: getActionDisplayName(action)
 }
 
 // 根据边缘类型与行序号确定方向图标旋转角度，与显示文案解耦
@@ -857,32 +904,7 @@ private fun getGestureActions(
                 3 -> settings.leftEdgeSegment3
                 else -> settings.leftEdge
             }
-            val keys = when (segment) {
-                2 -> listOf(
-                    GestureSettingsKeys.LEFT_2_SWIPE_RIGHT,
-                    GestureSettingsKeys.LEFT_2_SWIPE_RIGHT_LONG,
-                    GestureSettingsKeys.LEFT_2_SWIPE_UP,
-                    GestureSettingsKeys.LEFT_2_SWIPE_UP_LONG,
-                    GestureSettingsKeys.LEFT_2_SWIPE_DOWN,
-                    GestureSettingsKeys.LEFT_2_SWIPE_DOWN_LONG
-                )
-                3 -> listOf(
-                    GestureSettingsKeys.LEFT_3_SWIPE_RIGHT,
-                    GestureSettingsKeys.LEFT_3_SWIPE_RIGHT_LONG,
-                    GestureSettingsKeys.LEFT_3_SWIPE_UP,
-                    GestureSettingsKeys.LEFT_3_SWIPE_UP_LONG,
-                    GestureSettingsKeys.LEFT_3_SWIPE_DOWN,
-                    GestureSettingsKeys.LEFT_3_SWIPE_DOWN_LONG
-                )
-                else -> listOf(
-                    GestureSettingsKeys.LEFT_SWIPE_RIGHT,
-                    GestureSettingsKeys.LEFT_SWIPE_RIGHT_LONG,
-                    GestureSettingsKeys.LEFT_SWIPE_UP,
-                    GestureSettingsKeys.LEFT_SWIPE_UP_LONG,
-                    GestureSettingsKeys.LEFT_SWIPE_DOWN,
-                    GestureSettingsKeys.LEFT_SWIPE_DOWN_LONG
-                )
-            }
+            val keys = gestureKeys(EdgePosition.LEFT, segment)
             listOf(
                 edge.swipeRight to keys[0],
                 edge.swipeRightLong to keys[1],
@@ -898,32 +920,7 @@ private fun getGestureActions(
                 3 -> settings.rightEdgeSegment3
                 else -> settings.rightEdge
             }
-            val keys = when (segment) {
-                2 -> listOf(
-                    GestureSettingsKeys.RIGHT_2_SWIPE_LEFT,
-                    GestureSettingsKeys.RIGHT_2_SWIPE_LEFT_LONG,
-                    GestureSettingsKeys.RIGHT_2_SWIPE_UP,
-                    GestureSettingsKeys.RIGHT_2_SWIPE_UP_LONG,
-                    GestureSettingsKeys.RIGHT_2_SWIPE_DOWN,
-                    GestureSettingsKeys.RIGHT_2_SWIPE_DOWN_LONG
-                )
-                3 -> listOf(
-                    GestureSettingsKeys.RIGHT_3_SWIPE_LEFT,
-                    GestureSettingsKeys.RIGHT_3_SWIPE_LEFT_LONG,
-                    GestureSettingsKeys.RIGHT_3_SWIPE_UP,
-                    GestureSettingsKeys.RIGHT_3_SWIPE_UP_LONG,
-                    GestureSettingsKeys.RIGHT_3_SWIPE_DOWN,
-                    GestureSettingsKeys.RIGHT_3_SWIPE_DOWN_LONG
-                )
-                else -> listOf(
-                    GestureSettingsKeys.RIGHT_SWIPE_LEFT,
-                    GestureSettingsKeys.RIGHT_SWIPE_LEFT_LONG,
-                    GestureSettingsKeys.RIGHT_SWIPE_UP,
-                    GestureSettingsKeys.RIGHT_SWIPE_UP_LONG,
-                    GestureSettingsKeys.RIGHT_SWIPE_DOWN,
-                    GestureSettingsKeys.RIGHT_SWIPE_DOWN_LONG
-                )
-            }
+            val keys = gestureKeys(EdgePosition.RIGHT, segment)
             listOf(
                 edge.swipeLeft to keys[0],
                 edge.swipeLeftLong to keys[1],
@@ -939,32 +936,7 @@ private fun getGestureActions(
                 3 -> settings.bottomEdgeSegment3
                 else -> settings.bottomEdge
             }
-            val keys = when (segment) {
-                2 -> listOf(
-                    GestureSettingsKeys.BOTTOM_2_SWIPE_UP,
-                    GestureSettingsKeys.BOTTOM_2_SWIPE_UP_LONG,
-                    GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT,
-                    GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT_LONG,
-                    GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT,
-                    GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT_LONG
-                )
-                3 -> listOf(
-                    GestureSettingsKeys.BOTTOM_3_SWIPE_UP,
-                    GestureSettingsKeys.BOTTOM_3_SWIPE_UP_LONG,
-                    GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT,
-                    GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT_LONG,
-                    GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT,
-                    GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT_LONG
-                )
-                else -> listOf(
-                    GestureSettingsKeys.BOTTOM_SWIPE_UP,
-                    GestureSettingsKeys.BOTTOM_SWIPE_UP_LONG,
-                    GestureSettingsKeys.BOTTOM_SWIPE_LEFT,
-                    GestureSettingsKeys.BOTTOM_SWIPE_LEFT_LONG,
-                    GestureSettingsKeys.BOTTOM_SWIPE_RIGHT,
-                    GestureSettingsKeys.BOTTOM_SWIPE_RIGHT_LONG
-                )
-            }
+            val keys = gestureKeys(EdgePosition.BOTTOM, segment)
             listOf(
                 edge.swipeUp to keys[0],
                 edge.swipeUpLong to keys[1],
@@ -976,6 +948,13 @@ private fun getGestureActions(
         }
     }
 }
+
+// 取指定边缘与分段的 6 个手势动作存储键，顺序与列表展示一致
+private fun gestureKeys(
+    position: EdgePosition,
+    segment: Int
+): List<androidx.datastore.preferences.core.Preferences.Key<String>> =
+    (0..5).map { slot -> GestureSettingsKeys.keyFor(position, segment - 1, slot) }
 
 @Composable
 private fun getGestureLabels(edgeType: EdgeType): List<String> {

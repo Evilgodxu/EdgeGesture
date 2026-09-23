@@ -51,10 +51,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.graphics.drawable.toBitmap
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.app.AppInfo
 import com.edgegesture.evilgodxu.data.app.AppRepository
+import com.edgegesture.evilgodxu.data.app.loadAppIconBitmap
 import org.koin.compose.koinInject
 
 // 应用选择器组件
@@ -266,17 +266,3 @@ private fun AppPickerItem(
     }
 }
 
-// 加载应用图标：优先读取缓存文件，失败则回退到 PackageManager
-private fun loadAppIconBitmap(
-    context: android.content.Context,
-    app: AppInfo
-): android.graphics.Bitmap? {
-    if (app.iconPath.isNotBlank()) {
-        runCatching {
-            android.graphics.BitmapFactory.decodeFile(app.iconPath)
-        }.getOrNull()?.let { return it }
-    }
-    return runCatching {
-        context.packageManager.getApplicationIcon(app.packageName).toBitmap()
-    }.getOrNull()
-}

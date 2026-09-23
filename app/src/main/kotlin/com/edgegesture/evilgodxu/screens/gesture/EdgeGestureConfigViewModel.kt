@@ -10,6 +10,7 @@ import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
 import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeHeight
 import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeWidthPercent
 import com.edgegesture.evilgodxu.data.gesture.saveEdgeGesture
+import com.edgegesture.evilgodxu.data.gesture.saveLaunchAppTarget
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeHeightPercent
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgePositionPercent
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeWidth
@@ -86,6 +87,13 @@ class EdgeGestureConfigViewModel(
     fun saveGestureAction(key: Preferences.Key<String>, action: GestureAction) {
         viewModelScope.launch {
             context.saveEdgeGesture(key, action)
+        }
+    }
+
+    // 保存启动应用动作绑定的目标包名
+    fun saveLaunchAppTarget(key: Preferences.Key<String>, packageName: String?) {
+        viewModelScope.launch {
+            context.saveLaunchAppTarget(key, packageName)
         }
     }
 }

@@ -81,6 +81,7 @@
     <string name="gesture_action_task_panel">任务面板</string>
     <string name="gesture_action_compass_clock">罗盘时钟</string>
     <string name="gesture_action_translate">屏幕翻译</string>
+    <string name="gesture_action_launch_app">启动应用</string>
 
     <!-- 屏幕翻译 -->
     <string name="translate_started">正在翻译当前页面…</string>

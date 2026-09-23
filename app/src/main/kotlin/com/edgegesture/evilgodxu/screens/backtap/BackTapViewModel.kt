@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.edgegesture.evilgodxu.data.gesture.BackTapMode
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
+import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
 import com.edgegesture.evilgodxu.data.gesture.saveBackTapAction
 import com.edgegesture.evilgodxu.data.gesture.saveBackTapEnabled
@@ -13,6 +14,7 @@ import com.edgegesture.evilgodxu.data.gesture.saveBackTapMode
 import com.edgegesture.evilgodxu.data.gesture.saveBackTapPauseOnCharging
 import com.edgegesture.evilgodxu.data.gesture.saveBackTapRange
 import com.edgegesture.evilgodxu.data.gesture.saveBackTapSensitivity
+import com.edgegesture.evilgodxu.data.gesture.saveLaunchAppTarget
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -54,5 +56,12 @@ class BackTapViewModel(
 
     fun setBackTapAction(action: GestureAction) {
         viewModelScope.launch { context.saveBackTapAction(action) }
+    }
+
+    // 保存启动应用动作绑定的目标包名
+    fun setLaunchAppTarget(packageName: String?) {
+        viewModelScope.launch {
+            context.saveLaunchAppTarget(GestureSettingsKeys.BACK_TAP_ACTION, packageName)
+        }
     }
 }
