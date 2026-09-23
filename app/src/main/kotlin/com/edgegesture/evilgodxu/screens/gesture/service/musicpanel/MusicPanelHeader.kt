@@ -14,7 +14,6 @@ import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.Usb
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,7 +40,6 @@ internal fun HeaderRow(
     val currentTrackId = playbackState.currentTrack?.id
     val isLiked = currentTrackId?.let { id -> playbackState.likedIds.contains(id) } ?: false
 
-    val hasUsbDevice = playbackState.isUsbDeviceConnected && playbackState.usbDeviceName.isNotBlank()
     val hasBluetoothDevice = playbackState.isBluetoothHeadsetConnected && playbackState.bluetoothHeadsetName.isNotBlank()
 
     Box(
@@ -71,7 +69,7 @@ internal fun HeaderRow(
             }
         }
 
-        if (hasUsbDevice || hasBluetoothDevice) {
+        if (hasBluetoothDevice) {
             Row(
                 modifier = Modifier
                     .align(Alignment.Center)
@@ -80,38 +78,20 @@ internal fun HeaderRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (hasBluetoothDevice) {
-                    Icon(
-                        imageVector = Icons.Default.Bluetooth,
-                        contentDescription = stringResource(R.string.music_panel_bluetooth_device),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(15.dp),
-                    )
-                    Text(
-                        text = playbackState.bluetoothHeadsetName,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 10.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.widthIn(max = 108.dp),
-                    )
-                }
-                if (hasUsbDevice) {
-                    Icon(
-                        imageVector = Icons.Default.Usb,
-                        contentDescription = stringResource(R.string.music_panel_usb_device),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(15.dp),
-                    )
-                    Text(
-                        text = playbackState.usbDeviceName,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 10.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.widthIn(max = 108.dp),
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.Bluetooth,
+                    contentDescription = stringResource(R.string.music_panel_bluetooth_device),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(15.dp),
+                )
+                Text(
+                    text = playbackState.bluetoothHeadsetName,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 10.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = 108.dp),
+                )
             }
         }
 

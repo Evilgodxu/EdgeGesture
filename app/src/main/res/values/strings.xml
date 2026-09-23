@@ -111,10 +111,6 @@
     <string name="music_panel_search_source_qq">QQ音乐</string>
     <string name="music_panel_search_source_kugou">酷狗</string>
     <string name="music_panel_playback_settings">播放设置</string>
-    <string name="music_panel_usb_exclusive">USB 音频独占</string>
-    <string name="music_panel_usb_enabled">已启用：%s</string>
-    <string name="music_panel_usb_connected_not_enabled">已连接但未启用独占</string>
-    <string name="music_panel_usb_not_detected">未检测到 USB 音频设备</string>
     <string name="music_panel_sound_effects_title">音效设置</string>
     <string name="music_panel_sound_effects_enter">进入</string>
     <string name="music_panel_sound_effects_not_implemented">暂未实现</string>
@@ -140,9 +136,6 @@
     <string name="music_scanner_external_music">外部音乐</string>
     <string name="music_scanner_unknown_artist">未知艺术家</string>
     <string name="music_scanner_unknown_song">未知歌曲</string>
-
-    <!-- 设备名称兜底 -->
-    <string name="usb_audio_default_name">USB 音频设备</string>
 
     <!-- 播放链路面板 (Audio Signal Path) -->
     <string name="signal_path_title">播放链路</string>
@@ -412,7 +405,6 @@
     <string name="music_panel_mini_mode_desc">关闭音乐面板后显示迷你播放器</string>
     <string name="music_panel_favorite">收藏</string>
     <string name="music_panel_bluetooth_device">蓝牙设备</string>
-    <string name="music_panel_usb_device">USB 设备</string>
 
     <!-- 任务面板清理按钮 -->
     <string name="task_panel_clear">✕</string>

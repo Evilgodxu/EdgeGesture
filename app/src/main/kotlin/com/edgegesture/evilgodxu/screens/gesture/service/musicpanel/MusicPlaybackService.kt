@@ -6,12 +6,8 @@ import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.Player
-import androidx.media3.common.Format
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.audio.AudioSink
-import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.common.ForwardingPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -26,16 +22,7 @@ class MusicPlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        val usbAudioSink = DefaultAudioSink.Builder(this).build()
-        val renderersFactory = object : DefaultRenderersFactory(this) {
-            override fun buildAudioSink(
-                context: android.content.Context,
-                enableFloatOutput: Boolean,
-                enableAudioOutputPlaybackParameters: Boolean,
-            ): AudioSink = usbAudioSink
-        }
-        UsbAudioMonitor.audioSinkDeviceSetter = usbAudioSink::setPreferredDevice
-        player = ExoPlayer.Builder(this, renderersFactory)
+        player = ExoPlayer.Builder(this)
             .setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(C.USAGE_MEDIA)
@@ -70,11 +57,6 @@ class MusicPlaybackService : MediaSessionService() {
                     val sampleRate = format.sampleRate.takeIf { it > 0 } ?: 48000
                     val channels = format.channelCount.takeIf { it > 0 } ?: 2
                     val encoding = if (format.pcmEncoding > 0) format.pcmEncoding else android.media.AudioFormat.ENCODING_PCM_16BIT
-                    UsbAudioMonitor.updatePlaybackFormat(sampleRate, channels, encoding)
-                    // 独占模式下按新格式重新应用位完美混音属性（采样率/位深可能随曲目变化）
-                    if (state.isUsbExclusiveMode) {
-                        UsbAudioMonitor.setUsbExclusive(this@MusicPlaybackService, true)
-                    }
                     state.audioSignalPathFormat = AudioSignalPathFormat(
                         format = fileFormat ?: "PCM",
                         sampleRate = sampleRate,
@@ -202,13 +184,11 @@ class MusicPlaybackService : MediaSessionService() {
     override fun onDestroy() {
         mediaSession?.release()
         mediaSession = null
-        UsbAudioMonitor.audioSinkDeviceSetter = null
         player.release()
         super.onDestroy()
     }
 
     private fun resolveOutputDeviceName(state: MusicPlaybackState): String {
-        if (state.isUsbDeviceConnected && state.usbDeviceName.isNotBlank()) return state.usbDeviceName
         if (state.isBluetoothHeadsetConnected && state.bluetoothHeadsetName.isNotBlank()) {
             return state.bluetoothHeadsetName
         }
@@ -226,8 +206,8 @@ class MusicPlaybackService : MediaSessionService() {
 
     /** 刷新播放链路面板的状态行 */
     private fun updateSignalPathState(state: MusicPlaybackState) {
-        state.audioSignalPathStrategy = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
+        state.audioSignalPathStrategy = "Mixer"
         state.audioSignalPathOutputDevice = resolveOutputDeviceName(state)
-        state.audioSignalPathRoute = if (state.isUsbDeviceConnected) "USB" else if (state.isBluetoothHeadsetConnected) "Bluetooth" else "System"
+        state.audioSignalPathRoute = if (state.isBluetoothHeadsetConnected) "Bluetooth" else "System"
     }
 }

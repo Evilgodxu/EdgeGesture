@@ -261,12 +261,7 @@ class MusicPlaybackState {
         persistPlaylist()
     }
 
-    // USB 独占模式相关状态
-    var isUsbDeviceConnected by mutableStateOf(false)
-    var isUsbExclusiveMode by mutableStateOf(false)
-    var usbExclusiveEnabled by mutableStateOf(true)   // 用户偏好：是否启用 USB 独占（默认开启）
-    var usbDeviceName by mutableStateOf("")
-    var usbError by mutableStateOf<String?>(null)     // USB 错误信息（显示在面板底部）
+    // 播放链路状态
     var audioSignalPathFormat by mutableStateOf<AudioSignalPathFormat?>(null)
     var audioSignalPathStrategy by mutableStateOf("Mixer")
     var audioSignalPathOutputDevice by mutableStateOf("-")
@@ -655,8 +650,4 @@ class MusicPlaybackState {
     fun setTimerAutoStopped(stopped: Boolean) { timerAutoStopped = stopped }
     @JvmName("updateCurrentPosition")
     fun setCurrentPosition(position: Long) { currentPosition = position }
-    @JvmName("updateUsbExclusiveEnabled")
-    fun setUsbExclusiveEnabled(enabled: Boolean) { usbExclusiveEnabled = enabled }
-    @JvmName("updateUsbExclusiveMode")
-    fun setUsbExclusiveMode(enabled: Boolean) { isUsbExclusiveMode = enabled }
 }

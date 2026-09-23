@@ -111,10 +111,6 @@
     <string name="music_panel_search_source_qq">QQ Music</string>
     <string name="music_panel_search_source_kugou">Kugou</string>
     <string name="music_panel_playback_settings">Playback settings</string>
-    <string name="music_panel_usb_exclusive">USB audio exclusive</string>
-    <string name="music_panel_usb_enabled">Enabled: %s</string>
-    <string name="music_panel_usb_connected_not_enabled">Connected but exclusive not enabled</string>
-    <string name="music_panel_usb_not_detected">No USB audio device detected</string>
     <string name="music_panel_sound_effects_title">Sound effects</string>
     <string name="music_panel_sound_effects_enter">Open</string>
     <string name="music_panel_sound_effects_not_implemented">Not implemented yet</string>
@@ -140,9 +136,6 @@
     <string name="music_scanner_external_music">External music</string>
     <string name="music_scanner_unknown_artist">Unknown artist</string>
     <string name="music_scanner_unknown_song">Unknown song</string>
-
-    <!-- USB device fallback name -->
-    <string name="usb_audio_default_name">USB audio device</string>
 
     <!-- Audio signal path -->
     <string name="signal_path_title">Audio path</string>
@@ -412,7 +405,6 @@
     <string name="music_panel_mini_mode_desc">Show the mini player after closing the music panel</string>
     <string name="music_panel_favorite">Favorite</string>
     <string name="music_panel_bluetooth_device">Bluetooth device</string>
-    <string name="music_panel_usb_device">USB device</string>
 
     <!-- Task panel clear button -->
     <string name="task_panel_clear">✕</string>

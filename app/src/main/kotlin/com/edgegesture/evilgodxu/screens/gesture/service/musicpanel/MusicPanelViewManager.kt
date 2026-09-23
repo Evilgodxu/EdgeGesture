@@ -60,57 +60,11 @@ class MusicPanelViewManager(
 
     private val playbackState = MusicPanelStateHolder.state
     private var pendingExternalUri: android.net.Uri? = null
-    private var usbRouteJob: Job? = null
 
     // 封面/歌词后台提取的并发上限：限制同时进行的位图解码与网络请求数量，
     // 避免大歌单首次启动时内存与 CPU 尖峰导致面板卡顿
     private val metadataDispatcher = Dispatchers.IO.limitedParallelism(4)
 
-    // USB 音频独占监听器
-    private val usbAudioMonitor = UsbAudioMonitor(
-        context = context,
-        onUsbDeviceAttached = { deviceName ->
-            playbackState.usbDeviceName = deviceName
-            playbackState.isUsbDeviceConnected = true
-            playbackState.usbError = null  // 连接成功时清除错误
-            refreshSignalPathState(playbackState)
-            // 根据用户偏好自动启用 USB 独占
-            if (playbackState.usbExclusiveEnabled) {
-                usbRouteJob?.cancel()
-                usbRouteJob = managerScope.launch {
-                    val success = UsbAudioMonitor.setUsbExclusive(context, true)
-                    if (success && playbackState.isUsbDeviceConnected &&
-                        playbackState.usbDeviceName == deviceName) {
-                        withContext(Dispatchers.Main) {
-                            playbackState.isUsbExclusiveMode = true
-                        }
-                    } else {
-                        UsbAudioMonitor.setUsbExclusive(context, false)
-                        withContext(Dispatchers.Main) {
-                            playbackState.isUsbExclusiveMode = false
-                        }
-                    }
-                }
-            }
-        },
-        onUsbDeviceDetached = {
-            playbackState.isUsbDeviceConnected = false
-            playbackState.isUsbExclusiveMode = false
-            playbackState.usbDeviceName = ""
-            playbackState.usbError = null  // 断开时清除错误
-            refreshSignalPathState(playbackState)
-            // 移除首选设备设置，让音频回退到系统默认路由
-            usbRouteJob?.cancel()
-            usbRouteJob = managerScope.launch {
-                UsbAudioMonitor.setUsbExclusive(context, false)
-            }
-        },
-        onError = { message ->
-            playbackState.usbError = message
-        },
-        // 请求权限前先关闭面板（面板悬浮窗优先级高于系统弹窗）
-        onBeforeRequestPermission = { dismiss() }
-    )
     // 蓝牙耳机监听器
     private val bluetoothHeadsetMonitor = BluetoothHeadsetMonitor(
         context = context,
@@ -280,7 +234,6 @@ class MusicPanelViewManager(
                 playbackState.updatePosition()
             }
             registerMediaObserver()
-            usbAudioMonitor.register()
             bluetoothHeadsetMonitor.register()
         }
     }
@@ -644,9 +597,6 @@ class MusicPanelViewManager(
                     context.contentResolver.unregisterContentObserver(mediaObserver)
                     mediaObserverRegistered = false
                 }
-                usbAudioMonitor.unregister()
-                usbRouteJob?.cancel()
-                usbRouteJob = null
                 bluetoothHeadsetMonitor.unregister()
                 playbackState.updatePosition()
                 if (!playbackState.isPlayerActive) {
@@ -660,14 +610,12 @@ class MusicPanelViewManager(
 
     /** 刷新播放链路面板的状态行 */
     private fun refreshSignalPathState(state: MusicPlaybackState) {
-        state.audioSignalPathStrategy = if (state.isUsbExclusiveMode) "Direct" else "Mixer"
+        state.audioSignalPathStrategy = "Mixer"
         state.audioSignalPathOutputDevice = resolveOutputDeviceName(state)
-        state.audioSignalPathRoute = if (state.isUsbDeviceConnected) "USB"
-            else if (state.isBluetoothHeadsetConnected) "Bluetooth" else "System"
+        state.audioSignalPathRoute = if (state.isBluetoothHeadsetConnected) "Bluetooth" else "System"
     }
 
     private fun resolveOutputDeviceName(state: MusicPlaybackState): String {
-        if (state.isUsbDeviceConnected && state.usbDeviceName.isNotBlank()) return state.usbDeviceName
         if (state.isBluetoothHeadsetConnected && state.bluetoothHeadsetName.isNotBlank()) {
             return state.bluetoothHeadsetName
         }

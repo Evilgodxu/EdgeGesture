@@ -51,7 +51,6 @@ import kotlinx.coroutines.launch
 @Composable
 internal fun SettingsOverlay(
     visible: Boolean,
-    playbackState: MusicPlaybackState,
     showSoundEffects: Boolean,
     onShowSoundEffectsChange: (Boolean) -> Unit,
     onDismiss: () -> Unit,
@@ -138,49 +137,9 @@ internal fun SettingsOverlay(
 
                                 Spacer(modifier = Modifier.height(12.dp))
 
-                                SettingsSwitchRow(
-                                    title = stringResource(R.string.music_panel_usb_exclusive),
-                                    subtitle = if (playbackState.isUsbDeviceConnected) {
-                                        if (playbackState.isUsbExclusiveMode) {
-                                            stringResource(R.string.music_panel_usb_enabled, playbackState.usbDeviceName)
-                                        } else stringResource(R.string.music_panel_usb_connected_not_enabled)
-                                    } else {
-                                        stringResource(R.string.music_panel_usb_not_detected)
-                                    },
-                                    checked = if (playbackState.isUsbDeviceConnected)
-                                        playbackState.isUsbExclusiveMode
-                                    else
-                                        playbackState.usbExclusiveEnabled,
-                                    onCheckedChange = { enabled ->
-                                        playbackState.setUsbExclusiveEnabled(enabled)
-                                        if (playbackState.isUsbDeviceConnected) {
-                                            settingsScope.launch {
-                                                if (enabled) {
-                                                    playbackState.setUsbExclusiveMode(
-                                                        UsbAudioMonitor.setUsbExclusive(context, true)
-                                                    )
-                                                } else {
-                                                    UsbAudioMonitor.setUsbExclusive(context, false)
-                                                    playbackState.setUsbExclusiveMode(false)
-                                                }
-                                            }
-                                        }
-                                    }
-                                )
-
-                                Spacer(modifier = Modifier.height(12.dp))
-
                                 SoundEffectEntryRow(
                                     onClick = { onShowSoundEffectsChange(true) }
                                 )
-
-                                playbackState.usbError?.let { error ->
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    MusicErrorBanner(
-                                        message = error,
-                                        onDismiss = { playbackState.usbError = null }
-                                    )
-                                }
                             }
                         }
                     }
