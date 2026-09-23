@@ -61,6 +61,9 @@
     <string name="gesture_swipe_up_long">长按上滑</string>
     <string name="gesture_swipe_down">下滑</string>
     <string name="gesture_swipe_down_long">长按下滑</string>
+    <string name="gesture_tap">单击</string>
+    <string name="gesture_double_tap">双击</string>
+    <string name="gesture_long_press">长按</string>
 
     <!-- 手势功能选项 -->
     <string name="gesture_action_none">无</string>

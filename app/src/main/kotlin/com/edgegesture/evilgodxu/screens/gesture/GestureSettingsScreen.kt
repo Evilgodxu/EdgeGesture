@@ -650,6 +650,9 @@ private fun countNonNoneGestures(settings: GestureSettingsState): Int {
         if (swipeUpLong != GestureAction.NONE) count++
         if (swipeDown != GestureAction.NONE) count++
         if (swipeDownLong != GestureAction.NONE) count++
+        if (tap != GestureAction.NONE) count++
+        if (doubleTap != GestureAction.NONE) count++
+        if (longPress != GestureAction.NONE) count++
     }
     // 左侧第2段
     if (settings.leftSegmentCount >= 2) {
@@ -660,6 +663,9 @@ private fun countNonNoneGestures(settings: GestureSettingsState): Int {
             if (swipeUpLong != GestureAction.NONE) count++
             if (swipeDown != GestureAction.NONE) count++
             if (swipeDownLong != GestureAction.NONE) count++
+            if (tap != GestureAction.NONE) count++
+            if (doubleTap != GestureAction.NONE) count++
+            if (longPress != GestureAction.NONE) count++
         }
     }
     // 左侧第3段
@@ -671,6 +677,9 @@ private fun countNonNoneGestures(settings: GestureSettingsState): Int {
             if (swipeUpLong != GestureAction.NONE) count++
             if (swipeDown != GestureAction.NONE) count++
             if (swipeDownLong != GestureAction.NONE) count++
+            if (tap != GestureAction.NONE) count++
+            if (doubleTap != GestureAction.NONE) count++
+            if (longPress != GestureAction.NONE) count++
         }
     }
     // 右侧第1段
@@ -681,6 +690,9 @@ private fun countNonNoneGestures(settings: GestureSettingsState): Int {
         if (swipeUpLong != GestureAction.NONE) count++
         if (swipeDown != GestureAction.NONE) count++
         if (swipeDownLong != GestureAction.NONE) count++
+        if (tap != GestureAction.NONE) count++
+        if (doubleTap != GestureAction.NONE) count++
+        if (longPress != GestureAction.NONE) count++
     }
     // 右侧第2段
     if (settings.rightSegmentCount >= 2) {
@@ -691,6 +703,9 @@ private fun countNonNoneGestures(settings: GestureSettingsState): Int {
             if (swipeUpLong != GestureAction.NONE) count++
             if (swipeDown != GestureAction.NONE) count++
             if (swipeDownLong != GestureAction.NONE) count++
+            if (tap != GestureAction.NONE) count++
+            if (doubleTap != GestureAction.NONE) count++
+            if (longPress != GestureAction.NONE) count++
         }
     }
     // 右侧第3段
@@ -702,6 +717,9 @@ private fun countNonNoneGestures(settings: GestureSettingsState): Int {
             if (swipeUpLong != GestureAction.NONE) count++
             if (swipeDown != GestureAction.NONE) count++
             if (swipeDownLong != GestureAction.NONE) count++
+            if (tap != GestureAction.NONE) count++
+            if (doubleTap != GestureAction.NONE) count++
+            if (longPress != GestureAction.NONE) count++
         }
     }
     // 底部第1段
@@ -712,6 +730,9 @@ private fun countNonNoneGestures(settings: GestureSettingsState): Int {
         if (swipeLeftLong != GestureAction.NONE) count++
         if (swipeRight != GestureAction.NONE) count++
         if (swipeRightLong != GestureAction.NONE) count++
+        if (tap != GestureAction.NONE) count++
+        if (doubleTap != GestureAction.NONE) count++
+        if (longPress != GestureAction.NONE) count++
     }
     // 底部第2段
     if (settings.bottomSegmentCount >= 2) {
@@ -722,6 +743,9 @@ private fun countNonNoneGestures(settings: GestureSettingsState): Int {
             if (swipeLeftLong != GestureAction.NONE) count++
             if (swipeRight != GestureAction.NONE) count++
             if (swipeRightLong != GestureAction.NONE) count++
+            if (tap != GestureAction.NONE) count++
+            if (doubleTap != GestureAction.NONE) count++
+            if (longPress != GestureAction.NONE) count++
         }
     }
     // 底部第3段
@@ -733,6 +757,9 @@ private fun countNonNoneGestures(settings: GestureSettingsState): Int {
             if (swipeLeftLong != GestureAction.NONE) count++
             if (swipeRight != GestureAction.NONE) count++
             if (swipeRightLong != GestureAction.NONE) count++
+            if (tap != GestureAction.NONE) count++
+            if (doubleTap != GestureAction.NONE) count++
+            if (longPress != GestureAction.NONE) count++
         }
     }
     return count

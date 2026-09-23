@@ -61,6 +61,9 @@
     <string name="gesture_swipe_up_long">Long-press swipe up</string>
     <string name="gesture_swipe_down">Swipe down</string>
     <string name="gesture_swipe_down_long">Long-press swipe down</string>
+    <string name="gesture_tap">Tap</string>
+    <string name="gesture_double_tap">Double tap</string>
+    <string name="gesture_long_press">Long press</string>
 
     <!-- Gesture actions -->
     <string name="gesture_action_none">None</string>

@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -53,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -72,6 +74,13 @@ import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
 enum class EdgeType { LEFT, RIGHT, BOTTOM }
+
+// 点击类手势在配置列表中的起始槽位（单击/双击/长按）
+private const val TAP_SLOT_START = 6
+
+// 手势行图标着色：长按+滑动为紫色，点击类为青色
+private val SwipeLongPressIconColor = Color(0xFFa371f7)
+private val TapIconColor = Color(0xFF00BFA5)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -287,11 +296,18 @@ fun EdgeGestureConfigScreen(
                     val gestureLabels = getGestureLabels(edgeType)
                     val gestures = getGestureActions(edgeType, selectedSegment, currentSettings)
                     gestures.forEachIndexed { index, (action, key) ->
+                        // 槽位 6..8 为点击类手势，无方向图标，用独立着色区分
+                        val isTapGesture = index >= TAP_SLOT_START
                         GestureActionRow(
                             label = gestureLabels[index],
                             actionName = resolveActionDisplayName(action, key, currentSettings, appNameByPackage),
-                            isLongPress = index % 2 == 1,
-                            iconRotation = gestureIconRotation(edgeType, index),
+                            icon = if (isTapGesture) Icons.Outlined.TouchApp else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            iconRotation = if (isTapGesture) 0f else gestureIconRotation(edgeType, index),
+                            iconColor = when {
+                                isTapGesture -> TapIconColor
+                                index % 2 == 1 -> SwipeLongPressIconColor
+                                else -> MaterialTheme.colorScheme.primary
+                            },
                             onClick = {
                                 currentActionKey = key
                                 showActionDialog = true
@@ -836,12 +852,11 @@ private fun SegmentCountSlider(
 private fun GestureActionRow(
     label: String,
     actionName: String,
-    isLongPress: Boolean,
+    icon: ImageVector,
     iconRotation: Float,
+    iconColor: Color,
     onClick: () -> Unit
 ) {
-    val iconColor = if (isLongPress) Color(0xFFa371f7) else MaterialTheme.colorScheme.primary
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -856,9 +871,9 @@ private fun GestureActionRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // 左侧方向图标（无背景，长按紫色标记）
+            // 左侧手势图标（方向箭头按方向旋转，点击类为触摸图标）
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier
                     .size(16.dp)
@@ -911,7 +926,10 @@ private fun getGestureActions(
                 edge.swipeUp to keys[2],
                 edge.swipeUpLong to keys[3],
                 edge.swipeDown to keys[4],
-                edge.swipeDownLong to keys[5]
+                edge.swipeDownLong to keys[5],
+                edge.tap to keys[6],
+                edge.doubleTap to keys[7],
+                edge.longPress to keys[8]
             )
         }
         EdgeType.RIGHT -> {
@@ -927,7 +945,10 @@ private fun getGestureActions(
                 edge.swipeUp to keys[2],
                 edge.swipeUpLong to keys[3],
                 edge.swipeDown to keys[4],
-                edge.swipeDownLong to keys[5]
+                edge.swipeDownLong to keys[5],
+                edge.tap to keys[6],
+                edge.doubleTap to keys[7],
+                edge.longPress to keys[8]
             )
         }
         EdgeType.BOTTOM -> {
@@ -943,22 +964,25 @@ private fun getGestureActions(
                 edge.swipeLeft to keys[2],
                 edge.swipeLeftLong to keys[3],
                 edge.swipeRight to keys[4],
-                edge.swipeRightLong to keys[5]
+                edge.swipeRightLong to keys[5],
+                edge.tap to keys[6],
+                edge.doubleTap to keys[7],
+                edge.longPress to keys[8]
             )
         }
     }
 }
 
-// 取指定边缘与分段的 6 个手势动作存储键，顺序与列表展示一致
+// 取指定边缘与分段的 9 个手势动作存储键，顺序与列表展示一致
 private fun gestureKeys(
     position: EdgePosition,
     segment: Int
 ): List<androidx.datastore.preferences.core.Preferences.Key<String>> =
-    (0..5).map { slot -> GestureSettingsKeys.keyFor(position, segment - 1, slot) }
+    (0..8).map { slot -> GestureSettingsKeys.keyFor(position, segment - 1, slot) }
 
 @Composable
 private fun getGestureLabels(edgeType: EdgeType): List<String> {
-    return when (edgeType) {
+    val swipeLabels = when (edgeType) {
         EdgeType.LEFT -> listOf(
             stringResource(R.string.gesture_swipe_right),
             stringResource(R.string.gesture_swipe_right_long),
@@ -984,6 +1008,12 @@ private fun getGestureLabels(edgeType: EdgeType): List<String> {
             stringResource(R.string.gesture_swipe_right_long)
         )
     }
+    // 点击类手势标签与方向无关，各边缘一致
+    return swipeLabels + listOf(
+        stringResource(R.string.gesture_tap),
+        stringResource(R.string.gesture_double_tap),
+        stringResource(R.string.gesture_long_press)
+    )
 }
 
 // 获取当前选中动作（用于对话框）

@@ -61,11 +61,11 @@ object DataConfigManager {
         "double_swipe_enabled"
     )
     // 匹配 gestureDataStore 中属于导出范围的键名：
-    // - 边缘手势：left/right/bottom 开头，可带段号，后接 _swipe_
+    // - 边缘手势：left/right/bottom 开头，可带段号，后接 _swipe_ 或 _tap/_double_tap/_long_press
     // - 背面双击：back_tap_ 开头
     // - 触发区尺寸：left/right/bottom 的 edge_ 或 segment_count
     private val GESTURE_EXPORT_PATTERN = Regex(
-        "^(left|right|bottom)(_\\d)?_swipe_|^back_tap_|^(left|right|bottom)_(edge_|segment_count)"
+        "^(left|right|bottom)(_\\d)?_(swipe_|tap|double_tap|long_press)|^back_tap_|^(left|right|bottom)_(edge_|segment_count)"
     )
 
     private fun isGestureExportKey(name: String): Boolean =

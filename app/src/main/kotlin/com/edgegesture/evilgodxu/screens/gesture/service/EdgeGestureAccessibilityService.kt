@@ -624,7 +624,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         return pm.isInteractive
     }
 
-    override fun onSwipeAction(action: GestureAction, launchAppTarget: String?) {
+    override fun onGestureAction(action: GestureAction, launchAppTarget: String?) {
         actionExecutor.performAction(action, settings, launchAppTarget)
     }
 

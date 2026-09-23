@@ -110,6 +110,39 @@ object GestureSettingsKeys {
     val BOTTOM_3_SWIPE_RIGHT = stringPreferencesKey("bottom_3_swipe_right")
     val BOTTOM_3_SWIPE_RIGHT_LONG = stringPreferencesKey("bottom_3_swipe_right_long")
 
+    // 点击类手势设置（第1段）：单击、双击、长按（不滑动）
+    val LEFT_TAP = stringPreferencesKey("left_tap")
+    val LEFT_DOUBLE_TAP = stringPreferencesKey("left_double_tap")
+    val LEFT_LONG_PRESS = stringPreferencesKey("left_long_press")
+    val RIGHT_TAP = stringPreferencesKey("right_tap")
+    val RIGHT_DOUBLE_TAP = stringPreferencesKey("right_double_tap")
+    val RIGHT_LONG_PRESS = stringPreferencesKey("right_long_press")
+    val BOTTOM_TAP = stringPreferencesKey("bottom_tap")
+    val BOTTOM_DOUBLE_TAP = stringPreferencesKey("bottom_double_tap")
+    val BOTTOM_LONG_PRESS = stringPreferencesKey("bottom_long_press")
+
+    // 点击类手势设置（第2段）
+    val LEFT_2_TAP = stringPreferencesKey("left_2_tap")
+    val LEFT_2_DOUBLE_TAP = stringPreferencesKey("left_2_double_tap")
+    val LEFT_2_LONG_PRESS = stringPreferencesKey("left_2_long_press")
+    val RIGHT_2_TAP = stringPreferencesKey("right_2_tap")
+    val RIGHT_2_DOUBLE_TAP = stringPreferencesKey("right_2_double_tap")
+    val RIGHT_2_LONG_PRESS = stringPreferencesKey("right_2_long_press")
+    val BOTTOM_2_TAP = stringPreferencesKey("bottom_2_tap")
+    val BOTTOM_2_DOUBLE_TAP = stringPreferencesKey("bottom_2_double_tap")
+    val BOTTOM_2_LONG_PRESS = stringPreferencesKey("bottom_2_long_press")
+
+    // 点击类手势设置（第3段）
+    val LEFT_3_TAP = stringPreferencesKey("left_3_tap")
+    val LEFT_3_DOUBLE_TAP = stringPreferencesKey("left_3_double_tap")
+    val LEFT_3_LONG_PRESS = stringPreferencesKey("left_3_long_press")
+    val RIGHT_3_TAP = stringPreferencesKey("right_3_tap")
+    val RIGHT_3_DOUBLE_TAP = stringPreferencesKey("right_3_double_tap")
+    val RIGHT_3_LONG_PRESS = stringPreferencesKey("right_3_long_press")
+    val BOTTOM_3_TAP = stringPreferencesKey("bottom_3_tap")
+    val BOTTOM_3_DOUBLE_TAP = stringPreferencesKey("bottom_3_double_tap")
+    val BOTTOM_3_LONG_PRESS = stringPreferencesKey("bottom_3_long_press")
+
     // 背面双击设置
     val BACK_TAP_ENABLED = booleanPreferencesKey("back_tap_enabled")
     val BACK_TAP_SENSITIVITY = intPreferencesKey("back_tap_sensitivity")
@@ -126,28 +159,28 @@ object GestureSettingsKeys {
     // 启动应用动作的目标包名存储键后缀，实际键名为「动作键名 + 后缀」
     const val LAUNCH_APP_TARGET_SUFFIX = "__launch_app_target"
 
-    // 手势动作存储键的唯一来源：按「边缘 + 分段(0..2) + 槽位(0..5)」解析
-    // 槽位顺序与配置页列表一致：左/右边缘为 主方向短滑/长按、次方向短滑/长按、第三方向短滑/长按；底部边缘为上滑、左滑、右滑
+    // 手势动作存储键的唯一来源：按「边缘 + 分段(0..2) + 槽位(0..8)」解析
+    // 槽位顺序与配置页列表一致：左/右边缘为 主方向短滑/长按、次方向短滑/长按、第三方向短滑/长按，末尾为单击/双击/长按；底部边缘为上滑、左滑、右滑各短滑/长按，末尾同上
     private val EDGE_KEYS: Map<EdgePosition, List<List<Preferences.Key<String>>>> = mapOf(
         EdgePosition.LEFT to listOf(
-            listOf(LEFT_SWIPE_RIGHT, LEFT_SWIPE_RIGHT_LONG, LEFT_SWIPE_UP, LEFT_SWIPE_UP_LONG, LEFT_SWIPE_DOWN, LEFT_SWIPE_DOWN_LONG),
-            listOf(LEFT_2_SWIPE_RIGHT, LEFT_2_SWIPE_RIGHT_LONG, LEFT_2_SWIPE_UP, LEFT_2_SWIPE_UP_LONG, LEFT_2_SWIPE_DOWN, LEFT_2_SWIPE_DOWN_LONG),
-            listOf(LEFT_3_SWIPE_RIGHT, LEFT_3_SWIPE_RIGHT_LONG, LEFT_3_SWIPE_UP, LEFT_3_SWIPE_UP_LONG, LEFT_3_SWIPE_DOWN, LEFT_3_SWIPE_DOWN_LONG)
+            listOf(LEFT_SWIPE_RIGHT, LEFT_SWIPE_RIGHT_LONG, LEFT_SWIPE_UP, LEFT_SWIPE_UP_LONG, LEFT_SWIPE_DOWN, LEFT_SWIPE_DOWN_LONG, LEFT_TAP, LEFT_DOUBLE_TAP, LEFT_LONG_PRESS),
+            listOf(LEFT_2_SWIPE_RIGHT, LEFT_2_SWIPE_RIGHT_LONG, LEFT_2_SWIPE_UP, LEFT_2_SWIPE_UP_LONG, LEFT_2_SWIPE_DOWN, LEFT_2_SWIPE_DOWN_LONG, LEFT_2_TAP, LEFT_2_DOUBLE_TAP, LEFT_2_LONG_PRESS),
+            listOf(LEFT_3_SWIPE_RIGHT, LEFT_3_SWIPE_RIGHT_LONG, LEFT_3_SWIPE_UP, LEFT_3_SWIPE_UP_LONG, LEFT_3_SWIPE_DOWN, LEFT_3_SWIPE_DOWN_LONG, LEFT_3_TAP, LEFT_3_DOUBLE_TAP, LEFT_3_LONG_PRESS)
         ),
         EdgePosition.RIGHT to listOf(
-            listOf(RIGHT_SWIPE_LEFT, RIGHT_SWIPE_LEFT_LONG, RIGHT_SWIPE_UP, RIGHT_SWIPE_UP_LONG, RIGHT_SWIPE_DOWN, RIGHT_SWIPE_DOWN_LONG),
-            listOf(RIGHT_2_SWIPE_LEFT, RIGHT_2_SWIPE_LEFT_LONG, RIGHT_2_SWIPE_UP, RIGHT_2_SWIPE_UP_LONG, RIGHT_2_SWIPE_DOWN, RIGHT_2_SWIPE_DOWN_LONG),
-            listOf(RIGHT_3_SWIPE_LEFT, RIGHT_3_SWIPE_LEFT_LONG, RIGHT_3_SWIPE_UP, RIGHT_3_SWIPE_UP_LONG, RIGHT_3_SWIPE_DOWN, RIGHT_3_SWIPE_DOWN_LONG)
+            listOf(RIGHT_SWIPE_LEFT, RIGHT_SWIPE_LEFT_LONG, RIGHT_SWIPE_UP, RIGHT_SWIPE_UP_LONG, RIGHT_SWIPE_DOWN, RIGHT_SWIPE_DOWN_LONG, RIGHT_TAP, RIGHT_DOUBLE_TAP, RIGHT_LONG_PRESS),
+            listOf(RIGHT_2_SWIPE_LEFT, RIGHT_2_SWIPE_LEFT_LONG, RIGHT_2_SWIPE_UP, RIGHT_2_SWIPE_UP_LONG, RIGHT_2_SWIPE_DOWN, RIGHT_2_SWIPE_DOWN_LONG, RIGHT_2_TAP, RIGHT_2_DOUBLE_TAP, RIGHT_2_LONG_PRESS),
+            listOf(RIGHT_3_SWIPE_LEFT, RIGHT_3_SWIPE_LEFT_LONG, RIGHT_3_SWIPE_UP, RIGHT_3_SWIPE_UP_LONG, RIGHT_3_SWIPE_DOWN, RIGHT_3_SWIPE_DOWN_LONG, RIGHT_3_TAP, RIGHT_3_DOUBLE_TAP, RIGHT_3_LONG_PRESS)
         ),
         EdgePosition.BOTTOM to listOf(
-            listOf(BOTTOM_SWIPE_UP, BOTTOM_SWIPE_UP_LONG, BOTTOM_SWIPE_LEFT, BOTTOM_SWIPE_LEFT_LONG, BOTTOM_SWIPE_RIGHT, BOTTOM_SWIPE_RIGHT_LONG),
-            listOf(BOTTOM_2_SWIPE_UP, BOTTOM_2_SWIPE_UP_LONG, BOTTOM_2_SWIPE_LEFT, BOTTOM_2_SWIPE_LEFT_LONG, BOTTOM_2_SWIPE_RIGHT, BOTTOM_2_SWIPE_RIGHT_LONG),
-            listOf(BOTTOM_3_SWIPE_UP, BOTTOM_3_SWIPE_UP_LONG, BOTTOM_3_SWIPE_LEFT, BOTTOM_3_SWIPE_LEFT_LONG, BOTTOM_3_SWIPE_RIGHT, BOTTOM_3_SWIPE_RIGHT_LONG)
+            listOf(BOTTOM_SWIPE_UP, BOTTOM_SWIPE_UP_LONG, BOTTOM_SWIPE_LEFT, BOTTOM_SWIPE_LEFT_LONG, BOTTOM_SWIPE_RIGHT, BOTTOM_SWIPE_RIGHT_LONG, BOTTOM_TAP, BOTTOM_DOUBLE_TAP, BOTTOM_LONG_PRESS),
+            listOf(BOTTOM_2_SWIPE_UP, BOTTOM_2_SWIPE_UP_LONG, BOTTOM_2_SWIPE_LEFT, BOTTOM_2_SWIPE_LEFT_LONG, BOTTOM_2_SWIPE_RIGHT, BOTTOM_2_SWIPE_RIGHT_LONG, BOTTOM_2_TAP, BOTTOM_2_DOUBLE_TAP, BOTTOM_2_LONG_PRESS),
+            listOf(BOTTOM_3_SWIPE_UP, BOTTOM_3_SWIPE_UP_LONG, BOTTOM_3_SWIPE_LEFT, BOTTOM_3_SWIPE_LEFT_LONG, BOTTOM_3_SWIPE_RIGHT, BOTTOM_3_SWIPE_RIGHT_LONG, BOTTOM_3_TAP, BOTTOM_3_DOUBLE_TAP, BOTTOM_3_LONG_PRESS)
         )
     )
 
     fun keyFor(position: EdgePosition, segmentIndex: Int, slot: Int): Preferences.Key<String> =
-        EDGE_KEYS.getValue(position)[segmentIndex.coerceIn(0, 2)][slot.coerceIn(0, 5)]
+        EDGE_KEYS.getValue(position)[segmentIndex.coerceIn(0, 2)][slot.coerceIn(0, 8)]
 }
 
 // 手势动作枚举，显示名称通过 [getActionDisplayName] 函数从字符串资源获取，支持多语言
@@ -210,14 +243,24 @@ data class EdgeGestureConfig(
     val swipeLong: GestureAction = GestureAction.NONE
 )
 
+// 边缘分段的点击类手势槽位：单击、双击、长按（不滑动），供手势解析与配置页共用
+interface EdgeTapGestureConfig {
+    val tap: GestureAction
+    val doubleTap: GestureAction
+    val longPress: GestureAction
+}
+
 data class LeftEdgeConfig(
     val swipeRight: GestureAction = GestureAction.BACK,
     val swipeRightLong: GestureAction = GestureAction.LAST_APP,
     val swipeUp: GestureAction = GestureAction.PREVIOUS_TRACK,
     val swipeUpLong: GestureAction = GestureAction.POWER_MENU,
     val swipeDown: GestureAction = GestureAction.SCREENSHOT,
-    val swipeDownLong: GestureAction = GestureAction.LOCK_SCREEN
-)
+    val swipeDownLong: GestureAction = GestureAction.LOCK_SCREEN,
+    override val tap: GestureAction = GestureAction.NONE,
+    override val doubleTap: GestureAction = GestureAction.NONE,
+    override val longPress: GestureAction = GestureAction.NONE
+) : EdgeTapGestureConfig
 
 data class RightEdgeConfig(
     val swipeLeft: GestureAction = GestureAction.BACK,
@@ -225,8 +268,11 @@ data class RightEdgeConfig(
     val swipeUp: GestureAction = GestureAction.NEXT_TRACK,
     val swipeUpLong: GestureAction = GestureAction.FLASHLIGHT,
     val swipeDown: GestureAction = GestureAction.VOICE_ASSISTANT,
-    val swipeDownLong: GestureAction = GestureAction.EXPAND_PANEL
-)
+    val swipeDownLong: GestureAction = GestureAction.EXPAND_PANEL,
+    override val tap: GestureAction = GestureAction.NONE,
+    override val doubleTap: GestureAction = GestureAction.NONE,
+    override val longPress: GestureAction = GestureAction.NONE
+) : EdgeTapGestureConfig
 
 data class BottomEdgeConfig(
     val swipeUp: GestureAction = GestureAction.HOME,
@@ -234,8 +280,11 @@ data class BottomEdgeConfig(
     val swipeLeft: GestureAction = GestureAction.LAST_APP,
     val swipeLeftLong: GestureAction = GestureAction.NONE,
     val swipeRight: GestureAction = GestureAction.LAST_APP,
-    val swipeRightLong: GestureAction = GestureAction.NONE
-)
+    val swipeRightLong: GestureAction = GestureAction.NONE,
+    override val tap: GestureAction = GestureAction.NONE,
+    override val doubleTap: GestureAction = GestureAction.NONE,
+    override val longPress: GestureAction = GestureAction.NONE
+) : EdgeTapGestureConfig
 
 data class GestureSettingsState(
     val gestureEnabled: Boolean = false,
@@ -373,7 +422,10 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
             swipeUp = readAction(GestureSettingsKeys.LEFT_SWIPE_UP, GestureAction.PREVIOUS_TRACK),
             swipeUpLong = readAction(GestureSettingsKeys.LEFT_SWIPE_UP_LONG, GestureAction.POWER_MENU),
             swipeDown = readAction(GestureSettingsKeys.LEFT_SWIPE_DOWN, GestureAction.SCREENSHOT),
-            swipeDownLong = readAction(GestureSettingsKeys.LEFT_SWIPE_DOWN_LONG, GestureAction.LOCK_SCREEN)
+            swipeDownLong = readAction(GestureSettingsKeys.LEFT_SWIPE_DOWN_LONG, GestureAction.LOCK_SCREEN),
+            tap = readAction(GestureSettingsKeys.LEFT_TAP, GestureAction.NONE),
+            doubleTap = readAction(GestureSettingsKeys.LEFT_DOUBLE_TAP, GestureAction.NONE),
+            longPress = readAction(GestureSettingsKeys.LEFT_LONG_PRESS, GestureAction.NONE)
         ),
         rightEdge = RightEdgeConfig(
             swipeLeft = readAction(GestureSettingsKeys.RIGHT_SWIPE_LEFT, GestureAction.BACK),
@@ -381,7 +433,10 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
             swipeUp = readAction(GestureSettingsKeys.RIGHT_SWIPE_UP, GestureAction.NEXT_TRACK),
             swipeUpLong = readAction(GestureSettingsKeys.RIGHT_SWIPE_UP_LONG, GestureAction.FLASHLIGHT),
             swipeDown = readAction(GestureSettingsKeys.RIGHT_SWIPE_DOWN, GestureAction.VOICE_ASSISTANT),
-            swipeDownLong = readAction(GestureSettingsKeys.RIGHT_SWIPE_DOWN_LONG, GestureAction.EXPAND_PANEL)
+            swipeDownLong = readAction(GestureSettingsKeys.RIGHT_SWIPE_DOWN_LONG, GestureAction.EXPAND_PANEL),
+            tap = readAction(GestureSettingsKeys.RIGHT_TAP, GestureAction.NONE),
+            doubleTap = readAction(GestureSettingsKeys.RIGHT_DOUBLE_TAP, GestureAction.NONE),
+            longPress = readAction(GestureSettingsKeys.RIGHT_LONG_PRESS, GestureAction.NONE)
         ),
         bottomEdge = BottomEdgeConfig(
             swipeUp = readAction(GestureSettingsKeys.BOTTOM_SWIPE_UP, GestureAction.HOME),
@@ -389,7 +444,10 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
             swipeLeft = readAction(GestureSettingsKeys.BOTTOM_SWIPE_LEFT, GestureAction.LAST_APP),
             swipeLeftLong = readAction(GestureSettingsKeys.BOTTOM_SWIPE_LEFT_LONG, GestureAction.NONE),
             swipeRight = readAction(GestureSettingsKeys.BOTTOM_SWIPE_RIGHT, GestureAction.LAST_APP),
-            swipeRightLong = readAction(GestureSettingsKeys.BOTTOM_SWIPE_RIGHT_LONG, GestureAction.NONE)
+            swipeRightLong = readAction(GestureSettingsKeys.BOTTOM_SWIPE_RIGHT_LONG, GestureAction.NONE),
+            tap = readAction(GestureSettingsKeys.BOTTOM_TAP, GestureAction.NONE),
+            doubleTap = readAction(GestureSettingsKeys.BOTTOM_DOUBLE_TAP, GestureAction.NONE),
+            longPress = readAction(GestureSettingsKeys.BOTTOM_LONG_PRESS, GestureAction.NONE)
         ),
         // 手势配置（第2段）
         leftEdgeSegment2 = LeftEdgeConfig(
@@ -398,7 +456,10 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
             swipeUp = readAction(GestureSettingsKeys.LEFT_2_SWIPE_UP, GestureAction.NONE),
             swipeUpLong = readAction(GestureSettingsKeys.LEFT_2_SWIPE_UP_LONG, GestureAction.NONE),
             swipeDown = readAction(GestureSettingsKeys.LEFT_2_SWIPE_DOWN, GestureAction.NONE),
-            swipeDownLong = readAction(GestureSettingsKeys.LEFT_2_SWIPE_DOWN_LONG, GestureAction.NONE)
+            swipeDownLong = readAction(GestureSettingsKeys.LEFT_2_SWIPE_DOWN_LONG, GestureAction.NONE),
+            tap = readAction(GestureSettingsKeys.LEFT_2_TAP, GestureAction.NONE),
+            doubleTap = readAction(GestureSettingsKeys.LEFT_2_DOUBLE_TAP, GestureAction.NONE),
+            longPress = readAction(GestureSettingsKeys.LEFT_2_LONG_PRESS, GestureAction.NONE)
         ),
         rightEdgeSegment2 = RightEdgeConfig(
             swipeLeft = readAction(GestureSettingsKeys.RIGHT_2_SWIPE_LEFT, GestureAction.NONE),
@@ -406,7 +467,10 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
             swipeUp = readAction(GestureSettingsKeys.RIGHT_2_SWIPE_UP, GestureAction.NONE),
             swipeUpLong = readAction(GestureSettingsKeys.RIGHT_2_SWIPE_UP_LONG, GestureAction.NONE),
             swipeDown = readAction(GestureSettingsKeys.RIGHT_2_SWIPE_DOWN, GestureAction.NONE),
-            swipeDownLong = readAction(GestureSettingsKeys.RIGHT_2_SWIPE_DOWN_LONG, GestureAction.NONE)
+            swipeDownLong = readAction(GestureSettingsKeys.RIGHT_2_SWIPE_DOWN_LONG, GestureAction.NONE),
+            tap = readAction(GestureSettingsKeys.RIGHT_2_TAP, GestureAction.NONE),
+            doubleTap = readAction(GestureSettingsKeys.RIGHT_2_DOUBLE_TAP, GestureAction.NONE),
+            longPress = readAction(GestureSettingsKeys.RIGHT_2_LONG_PRESS, GestureAction.NONE)
         ),
         bottomEdgeSegment2 = BottomEdgeConfig(
             swipeUp = readAction(GestureSettingsKeys.BOTTOM_2_SWIPE_UP, GestureAction.NONE),
@@ -414,7 +478,10 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
             swipeLeft = readAction(GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT, GestureAction.NONE),
             swipeLeftLong = readAction(GestureSettingsKeys.BOTTOM_2_SWIPE_LEFT_LONG, GestureAction.NONE),
             swipeRight = readAction(GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT, GestureAction.NONE),
-            swipeRightLong = readAction(GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT_LONG, GestureAction.NONE)
+            swipeRightLong = readAction(GestureSettingsKeys.BOTTOM_2_SWIPE_RIGHT_LONG, GestureAction.NONE),
+            tap = readAction(GestureSettingsKeys.BOTTOM_2_TAP, GestureAction.NONE),
+            doubleTap = readAction(GestureSettingsKeys.BOTTOM_2_DOUBLE_TAP, GestureAction.NONE),
+            longPress = readAction(GestureSettingsKeys.BOTTOM_2_LONG_PRESS, GestureAction.NONE)
         ),
         // 手势配置（第3段）
         leftEdgeSegment3 = LeftEdgeConfig(
@@ -423,7 +490,10 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
             swipeUp = readAction(GestureSettingsKeys.LEFT_3_SWIPE_UP, GestureAction.NONE),
             swipeUpLong = readAction(GestureSettingsKeys.LEFT_3_SWIPE_UP_LONG, GestureAction.NONE),
             swipeDown = readAction(GestureSettingsKeys.LEFT_3_SWIPE_DOWN, GestureAction.NONE),
-            swipeDownLong = readAction(GestureSettingsKeys.LEFT_3_SWIPE_DOWN_LONG, GestureAction.NONE)
+            swipeDownLong = readAction(GestureSettingsKeys.LEFT_3_SWIPE_DOWN_LONG, GestureAction.NONE),
+            tap = readAction(GestureSettingsKeys.LEFT_3_TAP, GestureAction.NONE),
+            doubleTap = readAction(GestureSettingsKeys.LEFT_3_DOUBLE_TAP, GestureAction.NONE),
+            longPress = readAction(GestureSettingsKeys.LEFT_3_LONG_PRESS, GestureAction.NONE)
         ),
         rightEdgeSegment3 = RightEdgeConfig(
             swipeLeft = readAction(GestureSettingsKeys.RIGHT_3_SWIPE_LEFT, GestureAction.NONE),
@@ -431,7 +501,10 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
             swipeUp = readAction(GestureSettingsKeys.RIGHT_3_SWIPE_UP, GestureAction.NONE),
             swipeUpLong = readAction(GestureSettingsKeys.RIGHT_3_SWIPE_UP_LONG, GestureAction.NONE),
             swipeDown = readAction(GestureSettingsKeys.RIGHT_3_SWIPE_DOWN, GestureAction.NONE),
-            swipeDownLong = readAction(GestureSettingsKeys.RIGHT_3_SWIPE_DOWN_LONG, GestureAction.NONE)
+            swipeDownLong = readAction(GestureSettingsKeys.RIGHT_3_SWIPE_DOWN_LONG, GestureAction.NONE),
+            tap = readAction(GestureSettingsKeys.RIGHT_3_TAP, GestureAction.NONE),
+            doubleTap = readAction(GestureSettingsKeys.RIGHT_3_DOUBLE_TAP, GestureAction.NONE),
+            longPress = readAction(GestureSettingsKeys.RIGHT_3_LONG_PRESS, GestureAction.NONE)
         ),
         bottomEdgeSegment3 = BottomEdgeConfig(
             swipeUp = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_UP, GestureAction.NONE),
@@ -439,7 +512,10 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
             swipeLeft = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT, GestureAction.NONE),
             swipeLeftLong = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_LEFT_LONG, GestureAction.NONE),
             swipeRight = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT, GestureAction.NONE),
-            swipeRightLong = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT_LONG, GestureAction.NONE)
+            swipeRightLong = readAction(GestureSettingsKeys.BOTTOM_3_SWIPE_RIGHT_LONG, GestureAction.NONE),
+            tap = readAction(GestureSettingsKeys.BOTTOM_3_TAP, GestureAction.NONE),
+            doubleTap = readAction(GestureSettingsKeys.BOTTOM_3_DOUBLE_TAP, GestureAction.NONE),
+            longPress = readAction(GestureSettingsKeys.BOTTOM_3_LONG_PRESS, GestureAction.NONE)
         ),
         launchAppTargets = readLaunchAppTargets()
     )
