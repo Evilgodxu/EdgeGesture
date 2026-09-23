@@ -1,16 +1,20 @@
 package com.edgegesture.evilgodxu.screens.blacklist
 
+import android.app.Activity
 import android.content.Intent
 import android.provider.Settings
+import android.view.WindowManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -48,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -90,6 +95,20 @@ fun AppBlacklistScreen(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    // 搜索框固定在底部：强制 adjustResize，使键盘弹出时仅内容随 IME 内边距上移，
+    // 避免系统默认选择 adjustPan 平移整个窗口（顶栏被顶出屏幕）；离开本页恢复原模式
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val window = (view.context as? Activity)?.window
+        val previousMode = window?.attributes?.softInputMode
+        window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        onDispose {
+            if (previousMode != null) {
+                window?.setSoftInputMode(previousMode)
+            }
+        }
     }
 
     var searchQuery by remember { mutableStateOf("") }
@@ -160,6 +179,9 @@ fun AppBlacklistScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                // innerPadding 已含导航栏内边距，消费后再补 IME 内边距，避免重复叠加
+                .consumeWindowInsets(innerPadding)
+                .imePadding()
                 .padding(horizontal = 16.dp)
         ) {
             when {
