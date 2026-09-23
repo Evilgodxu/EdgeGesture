@@ -38,6 +38,8 @@ data class AudioSignalPathFormat(
     val outputRate: Int,
     val bitDepth: Int,
     val channels: Int,
+    // 比特率（kbps）：解码头未给出或 VBR 时为 0，信息条据此省略该段
+    val bitrate: Int = 0,
 )
 
 // 音乐播放器状态持有者（悬浮窗级共享状态）
@@ -253,6 +255,16 @@ class MusicPlaybackState {
     var audioSignalPathOutputDevice by mutableStateOf("-")
     var audioSignalPathRoute by mutableStateOf("-")
     var audioSignalPathDsdMode by mutableStateOf("PCM")
+    // 已展示格式信息所属的曲目与音频源：换源后曲目 ID 不变，故一并记录 URI
+    var audioSignalPathTrackId by mutableStateOf<Long?>(null)
+    var audioSignalPathSourceUri by mutableStateOf<String?>(null)
+
+    // 格式信息是否对应当前曲目的当前音频源：供信息条判定是否展示，
+    // 避免切歌或换源后把上一首的格式短暂显示在新曲目上
+    val isAudioSignalPathCurrent: Boolean
+        get() = currentTrack?.let {
+            it.id == audioSignalPathTrackId && it.audioUri == audioSignalPathSourceUri
+        } == true
 
     // 收藏的歌曲 ID 集合（面板级内存状态）
     var likedIds by mutableStateOf<Set<Long>>(emptySet())
