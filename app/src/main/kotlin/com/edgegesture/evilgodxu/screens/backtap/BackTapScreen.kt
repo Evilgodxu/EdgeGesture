@@ -38,6 +38,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +50,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -64,14 +66,12 @@ import com.edgegesture.evilgodxu.screens.gesture.components.ActionSelectionDialo
 import com.edgegesture.evilgodxu.screens.gesture.components.AppPickerDialog
 import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
 import kotlin.math.roundToInt
-import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BackTapScreen(
     onNavigateBack: () -> Unit,
-    viewModel: BackTapViewModel = koinViewModel(),
+    viewModel: BackTapViewModel = viewModel(),
 ) {
     val gestureSettings by viewModel.gestureSettings.collectAsStateWithLifecycle()
     val settings = gestureSettings
@@ -80,7 +80,7 @@ fun BackTapScreen(
     var showAppPicker by remember { mutableStateOf(false) }
 
     // 应用名映射，用于「启动应用」动作显示绑定的目标应用
-    val appRepository: AppRepository = koinInject()
+    val appRepository = AppRepository.getInstance(LocalContext.current)
     val apps by appRepository.appsFlow.collectAsStateWithLifecycle()
     val appNameByPackage = remember(apps) { apps.associate { it.packageName to it.appName } }
 

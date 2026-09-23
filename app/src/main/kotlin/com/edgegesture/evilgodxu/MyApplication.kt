@@ -3,15 +3,11 @@ package com.edgegesture.evilgodxu
 import android.app.Application
 import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
-import com.edgegesture.evilgodxu.di.appModule
 import com.edgegesture.evilgodxu.log.CrashLogManager
 import com.edgegesture.evilgodxu.update.UpdateViewModel
 import com.edgegesture.evilgodxu.utils.localization.LocalizationManager
-import org.koin.android.ext.koin.androidContext
-import org.koin.android.ext.koin.androidLogger
-import org.koin.core.context.startKoin
 
-// 应用入口类，初始化崩溃日志、Koin 依赖注入与后台任务
+// 应用入口类，初始化崩溃日志、全局依赖单例与后台任务
 class MyApplication : Application() {
 
     // 语言管理器单例，驱动 Compose 层语言热切换
@@ -25,12 +21,6 @@ class MyApplication : Application() {
 
         // 最先初始化崩溃日志系统，捕获启动阶段及后续所有未捕获异常
         CrashLogManager.init(this)
-
-        startKoin {
-            androidLogger()
-            androidContext(this@MyApplication)
-            modules(appModule)
-        }
 
         // 应用列表在需要时通过 EdgeGestureAccessibilityService 中的 initializeWithScan() 触发扫描
         val repository = AppRepository.getInstance(this)

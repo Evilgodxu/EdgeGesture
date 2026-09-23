@@ -65,13 +65,12 @@ import com.edgegesture.evilgodxu.data.gesture.appSwitchBlacklistFlow
 import com.edgegesture.evilgodxu.data.gesture.removeFromAppSwitchBlacklist
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppBlacklistScreen(
     onNavigateBack: () -> Unit,
-    appRepository: AppRepository = koinInject()
+    appRepository: AppRepository = AppRepository.getInstance(LocalContext.current)
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()

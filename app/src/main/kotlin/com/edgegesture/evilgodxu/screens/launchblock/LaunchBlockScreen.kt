@@ -47,13 +47,13 @@ import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockRule
 import com.edgegesture.evilgodxu.screens.gesture.components.GestureSettingsSwitchItem
 import com.edgegesture.evilgodxu.screens.settings.components.LaunchBlockRuleDialog
-import org.koin.androidx.compose.koinViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LaunchBlockScreen(
     onNavigateBack: () -> Unit,
-    viewModel: LaunchBlockViewModel = koinViewModel(),
+    viewModel: LaunchBlockViewModel = viewModel(),
 ) {
     val launchBlockState by viewModel.state.collectAsStateWithLifecycle()
     val appNames by viewModel.appNames.collectAsStateWithLifecycle()

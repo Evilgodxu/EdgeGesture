@@ -40,14 +40,14 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.app.ManagedDataType
-import org.koin.androidx.compose.koinViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import java.util.Locale
 
 @androidx.compose.material3.ExperimentalMaterial3Api
 @androidx.compose.runtime.Composable
 fun DataConfigScreen(
     onNavigateBack: () -> Unit,
-    viewModel: DataConfigViewModel = koinViewModel(),
+    viewModel: DataConfigViewModel = viewModel(),
 ) {
     val items by viewModel.items.collectAsStateWithLifecycle()
     val message by viewModel.message.collectAsStateWithLifecycle()

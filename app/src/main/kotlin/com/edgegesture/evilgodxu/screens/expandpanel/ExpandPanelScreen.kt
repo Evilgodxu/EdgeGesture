@@ -40,13 +40,13 @@ import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.AppPickerSc
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ShortcutsGrid
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.VerticalSlidersSection
 import com.edgegesture.evilgodxu.screens.gesture.service.FreeformAppLauncher
-import org.koin.androidx.compose.koinViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpandPanelScreen(
     onNavigateBack: () -> Unit,
-    viewModel: ExpandPanelViewModel = koinViewModel(),
+    viewModel: ExpandPanelViewModel = viewModel(),
 ) {
     val context = LocalContext.current
     val freeformAppLauncher = remember(context) { FreeformAppLauncher(context) }

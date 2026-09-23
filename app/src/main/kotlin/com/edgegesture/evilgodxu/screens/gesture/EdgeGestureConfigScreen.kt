@@ -37,6 +37,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +57,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -70,8 +72,6 @@ import com.edgegesture.evilgodxu.screens.gesture.components.ActionSelectionDialo
 import com.edgegesture.evilgodxu.screens.gesture.components.AppPickerDialog
 import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
 import kotlin.math.roundToInt
-import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 
 enum class EdgeType { LEFT, RIGHT, BOTTOM }
 
@@ -87,7 +87,7 @@ private val TapIconColor = Color(0xFF00BFA5)
 fun EdgeGestureConfigScreen(
     edgeType: EdgeType,
     onNavigateBack: () -> Unit,
-    viewModel: EdgeGestureConfigViewModel = koinViewModel(),
+    viewModel: EdgeGestureConfigViewModel = viewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val currentSettings = settings
@@ -98,7 +98,7 @@ fun EdgeGestureConfigScreen(
     var currentActionKey by remember { mutableStateOf<androidx.datastore.preferences.core.Preferences.Key<String>?>(null) }
 
     // 应用名映射，用于「启动应用」动作显示绑定的目标应用
-    val appRepository: AppRepository = koinInject()
+    val appRepository = AppRepository.getInstance(LocalContext.current)
     val apps by appRepository.appsFlow.collectAsStateWithLifecycle()
     val appNameByPackage = remember(apps) { apps.associate { it.packageName to it.appName } }
 

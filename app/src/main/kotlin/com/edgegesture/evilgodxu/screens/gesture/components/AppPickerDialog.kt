@@ -51,14 +51,13 @@ import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.app.AppInfo
 import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.app.loadAppIconBitmap
-import org.koin.compose.koinInject
 
 // 应用选择对话框：按应用名称或包名即时过滤，用于为「启动应用」动作绑定目标应用
 @Composable
 fun AppPickerDialog(
     onDismiss: () -> Unit,
     onAppSelected: (String) -> Unit,
-    appRepository: AppRepository = koinInject()
+    appRepository: AppRepository = AppRepository.getInstance(LocalContext.current)
 ) {
     val apps by appRepository.appsFlow.collectAsStateWithLifecycle()
     val isLoading by appRepository.isLoading.collectAsStateWithLifecycle()

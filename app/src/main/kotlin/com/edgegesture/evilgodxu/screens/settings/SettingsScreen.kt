@@ -61,7 +61,12 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.window.core.layout.WindowSizeClass
+import com.edgegesture.evilgodxu.MyApplication
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.log.CrashLogManager
 import com.edgegesture.evilgodxu.update.LocalUpdateViewModel
@@ -79,8 +84,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import org.koin.androidx.compose.koinViewModel
 import rikka.shizuku.Shizuku
+
+// 设置页 ViewModel 工厂：除 Application 外还需注入语言管理器
+private val settingsViewModelFactory = viewModelFactory {
+    initializer {
+        val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MyApplication
+        SettingsViewModel(app, app.localizationManager)
+    }
+}
 
 private const val GITHUB_URL = "https://github.com/Evilgodxu/EdgeGesture"
 
@@ -153,7 +165,7 @@ suspend fun Context.saveAppLanguage(language: AppLanguage) = withContext(Dispatc
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDataConfig: () -> Unit = {},
-    viewModel: SettingsViewModel = koinViewModel(),
+    viewModel: SettingsViewModel = viewModel(factory = settingsViewModelFactory),
 ) {
     val context = LocalContext.current
     val versionName = remember {

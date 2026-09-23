@@ -55,7 +55,6 @@ import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.app.AppInfo
 import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.app.loadAppIconBitmap
-import org.koin.compose.koinInject
 
 // 应用选择器组件
 // 使用 AppRepository 缓存实现即时加载，无需等待扫描
@@ -65,7 +64,7 @@ fun AppPickerScreen(
     onAppSelected: (String) -> Unit,
     onLaunchApp: (String) -> Unit,
     onCancel: () -> Unit,
-    appRepository: AppRepository = koinInject()
+    appRepository: AppRepository = AppRepository.getInstance(LocalContext.current)
 ) {
     val context = LocalContext.current
 

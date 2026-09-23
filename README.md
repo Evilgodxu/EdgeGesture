@@ -133,7 +133,7 @@ A WorkManager job checks GitHub Releases periodically (24 h internal cooldown) a
 | Language | Kotlin 2.4.10 |
 | UI | Jetpack Compose (BOM 2026.08.00) + Material 3 |
 | Adaptive layout | Material3 Adaptive 1.3.0 |
-| DI | Koin 4.2.2 |
+| DI | Native AndroidX ViewModel factories + app-level singletons |
 | Navigation | Navigation Compose 2.9.8 (type-safe routes) |
 | State | DataStore + StateFlow + MutableStateFlow |
 | Background | WorkManager 2.11.2 |
@@ -153,7 +153,6 @@ A WorkManager job checks GitHub Releases periodically (24 h internal cooldown) a
 │   └── src/main/
 │       ├── kotlin/com/edgegesture/evilgodxu/
 │       │   ├── data/                    # Data layer (settings, app repo, Shizuku, translate)
-│       │   ├── di/                      # Koin modules
 │       │   ├── log/                     # CrashLogManager
 │       │   ├── navigation/              # Navigation Compose type-safe routes
 │       │   ├── screens/                 # Screens
@@ -183,7 +182,7 @@ A WorkManager job checks GitHub Releases periodically (24 h internal cooldown) a
 
 ## Architecture
 
-The app follows **MVVM with unidirectional data flow**: state flows down from `ViewModel` → `UiState` → UI, while events flow up from the UI to the `ViewModel`. Shared data logic lives in the `data/` layer behind repositories (settings, app list, launch-block rules, translation), and everything is wired together by Koin.
+The app follows **MVVM with unidirectional data flow**: state flows down from `ViewModel` → `UiState` → UI, while events flow up from the UI to the `ViewModel`. Shared data logic lives in the `data/` layer behind repositories (settings, app list, launch-block rules, translation), wired together by AndroidX ViewModel factories and app-level singletons.
 
 All gesture and overlay capabilities sit in `screens/gesture/service/`. The `EdgeGestureAccessibilityService` detects swipes and background taps and dispatches actions through an `AccessibilityActionExecutor`. Overlay UIs (edge trigger view, expand panel, music panel, task panel, translation, compass clock) are rendered as system windows through their own window managers, coordinated from the accessibility service. Settings persist via DataStore, and optional root-level operations (process kill, freeform windowing) go through Shizuku's `CommandUserService`.
 

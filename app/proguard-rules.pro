@@ -26,12 +26,6 @@
     private ** descriptor;
 }
 
-# Koin 依赖注入
--keep class * extends org.koin.core.module.Module { *; }
--keepclassmembers class * {
-    @org.koin.core.annotation.* *;
-}
-
 # DataStore
 -keepclassmembers class * extends androidx.datastore.preferences.protobuf.GeneratedMessageLite* {
     <fields>;

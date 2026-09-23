@@ -133,7 +133,7 @@ WorkManager 周期检查 GitHub Releases（内部 24 小时冷却），发现新
 | 语言 | Kotlin 2.4.10 |
 | UI | Jetpack Compose（BOM 2026.08.00）+ Material 3 |
 | 自适应布局 | Material3 Adaptive 1.3.0 |
-| 依赖注入 | Koin 4.2.2 |
+| 依赖注入 | 原生 AndroidX ViewModel 工厂 + 应用级单例 |
 | 导航 | Navigation Compose 2.9.8（类型安全路由） |
 | 状态 | DataStore + StateFlow + MutableStateFlow |
 | 后台 | WorkManager 2.11.2 |
@@ -153,7 +153,6 @@ WorkManager 周期检查 GitHub Releases（内部 24 小时冷却），发现新
 │   └── src/main/
 │       ├── kotlin/com/edgegesture/evilgodxu/
 │       │   ├── data/                    # 数据层（设置、应用仓库、Shizuku、翻译）
-│       │   ├── di/                      # Koin 模块
 │       │   ├── log/                     # CrashLogManager
 │       │   ├── navigation/              # Navigation Compose 类型安全路由
 │       │   ├── screens/                 # 页面
@@ -183,7 +182,7 @@ WorkManager 周期检查 GitHub Releases（内部 24 小时冷却），发现新
 
 ## 架构
 
-应用遵循 **MVVM + 单向数据流**：状态由 `ViewModel` → `UiState` → UI 自上而下流动，事件由 UI 自下而上传递；共享数据逻辑位于 `data/` 层并通过 Repository 暴露（设置、应用列表、启动拦截规则、翻译），全部由 Koin 组装。
+应用遵循 **MVVM + 单向数据流**：状态由 `ViewModel` → `UiState` → UI 自上而下流动，事件由 UI 自下而上传递；共享数据逻辑位于 `data/` 层并通过 Repository 暴露（设置、应用列表、启动拦截规则、翻译），由 AndroidX ViewModel 工厂与应用级单例统一组装。
 
 所有手势与悬浮能力都位于 `screens/gesture/service/`。`EdgeGestureAccessibilityService` 负责检测滑动与背部双击，并通过 `AccessibilityActionExecutor` 派发操作。悬浮 UI（边缘触发区、扩展面板、音乐面板、任务面板、翻译、罗盘时钟）由各自的窗口管理器以系统窗口形式渲染，并由无障碍服务统一协调。设置通过 DataStore 持久化；可选的系统级操作（终止进程、小窗窗口）经由 Shizuku 的 `CommandUserService` 完成。
 

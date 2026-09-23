@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.app.AppRepository
-import org.koin.compose.koinInject
 
 @Composable
 fun ShortcutsGrid(
@@ -54,7 +53,7 @@ fun ShortcutsGrid(
     onLaunchApp: (String, Int) -> Unit,
     onFreeformToggle: (Int, Boolean) -> Unit,
     showTitle: Boolean = true,
-    appRepository: AppRepository = koinInject()
+    appRepository: AppRepository = AppRepository.getInstance(LocalContext.current)
 ) {
     // 从缓存仓库获取应用列表，实现图标预加载
     val apps by appRepository.appsFlow.collectAsStateWithLifecycle()

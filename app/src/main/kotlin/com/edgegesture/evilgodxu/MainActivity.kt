@@ -36,12 +36,14 @@ import com.edgegesture.evilgodxu.utils.localization.toLocale
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.koin.android.ext.android.inject
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var windowInsetsController: WindowInsetsControllerCompat
-    private val localizationManager: LocalizationManager by inject()
+
+    // 延迟从 Application 取语言管理器单例，避免属性初始化早于 Application 绑定
+    private val localizationManager: LocalizationManager
+        get() = (application as MyApplication).localizationManager
 
     // 冷启动按持久化语言创建配置上下文，进入界面即正确语言
     override fun attachBaseContext(newBase: Context) {

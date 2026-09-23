@@ -117,7 +117,7 @@ import com.edgegesture.evilgodxu.screens.gesture.components.GestureSettingsSwitc
 import com.edgegesture.evilgodxu.screens.gesture.components.PermissionCard
 import com.edgegesture.evilgodxu.screens.gesture.components.PermissionGroupCard
 import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
-import org.koin.androidx.compose.koinViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
 fun GestureSettingsScreen(
@@ -129,7 +129,7 @@ fun GestureSettingsScreen(
     onNavigateToRightEdge: () -> Unit = {},
     onNavigateToBottomEdge: () -> Unit = {},
     onNavigateToExpandPanel: () -> Unit = {},
-    viewModel: GestureSettingsViewModel = koinViewModel(),
+    viewModel: GestureSettingsViewModel = viewModel(),
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
