@@ -268,12 +268,6 @@ class MusicPlaybackState {
     var audioSignalPathRoute by mutableStateOf("-")
     var audioSignalPathDsdMode by mutableStateOf("PCM")
 
-    // 蓝牙耳机相关状态
-    var isBluetoothHeadsetConnected by mutableStateOf(false)
-    var bluetoothHeadsetName by mutableStateOf("")
-    // 单次播放会话内仅初始化一次蓝牙音量
-    var bluetoothVolumeInitialized = false
-
     // 收藏的歌曲 ID 集合（面板级内存状态）
     var likedIds by mutableStateOf<Set<Long>>(emptySet())
 
@@ -451,7 +445,6 @@ class MusicPlaybackState {
     }
 
     fun softRelease() {
-        bluetoothVolumeInitialized = false
         persistState()
         currentTrack?.let { track ->
             pendingSavedUri = track.audioUri
@@ -470,7 +463,6 @@ class MusicPlaybackState {
 
 
     fun release() {
-        bluetoothVolumeInitialized = false
         persistState()
         currentTrack?.let { track ->
             pendingSavedUri = track.audioUri

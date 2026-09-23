@@ -158,7 +158,6 @@
     <string name="signal_path_khz">%.1f kHz</string>
     <string name="signal_path_hz">%d Hz</string>
     <string name="signal_path_speaker">扬声器</string>
-    <string name="signal_path_bluetooth">蓝牙</string>
     <string name="signal_path_dash">-</string>
 
     <!-- 扫一扫 -->
@@ -404,7 +403,8 @@
     <string name="music_panel_mini_mode">迷你模式</string>
     <string name="music_panel_mini_mode_desc">关闭音乐面板后显示迷你播放器</string>
     <string name="music_panel_favorite">收藏</string>
-    <string name="music_panel_bluetooth_device">蓝牙设备</string>
+    <string name="music_panel_memory_usage">内存占用</string>
+    <string name="music_panel_memory_usage_value">内存 %1$d MB</string>
 
     <!-- 任务面板清理按钮 -->
     <string name="task_panel_clear">✕</string>

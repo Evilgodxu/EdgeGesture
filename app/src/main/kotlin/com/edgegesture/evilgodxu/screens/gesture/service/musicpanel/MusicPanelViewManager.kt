@@ -4,8 +4,6 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
-import android.media.AudioDeviceInfo
-import android.media.AudioManager
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Handler
@@ -29,7 +27,6 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 
-import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.log.CrashLogManager
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
@@ -65,25 +62,6 @@ class MusicPanelViewManager(
     // 避免大歌单首次启动时内存与 CPU 尖峰导致面板卡顿
     private val metadataDispatcher = Dispatchers.IO.limitedParallelism(4)
 
-    // 蓝牙耳机监听器
-    private val bluetoothHeadsetMonitor = BluetoothHeadsetMonitor(
-        context = context,
-        onHeadsetConnected = { deviceName, isNewConnection ->
-            playbackState.isBluetoothHeadsetConnected = true
-            deviceName?.let { playbackState.bluetoothHeadsetName = it }
-            refreshSignalPathState(playbackState)
-            if (isNewConnection && !playbackState.bluetoothVolumeInitialized) {
-                // 单次播放会话内首次连接蓝牙耳机时自动降低媒体音量到 25%
-                BluetoothHeadsetMonitor.reduceMediaVolume(context, 0.25f)
-                playbackState.bluetoothVolumeInitialized = true
-            }
-        },
-        onHeadsetDisconnected = {
-            playbackState.isBluetoothHeadsetConnected = false
-            playbackState.bluetoothHeadsetName = ""
-            refreshSignalPathState(playbackState)
-        }
-    )
     private val externalTrackMutex = Mutex()
     private val scanMutex = Mutex()
     // 封面/歌词后台提取的互斥锁：show / 刷新扫描 / 媒体变更三个入口都会并发触发 enrich，
@@ -162,9 +140,6 @@ class MusicPanelViewManager(
             blurBehindRadius = 80
         }
 
-        // 在 UI 渲染前同步检查已连接的蓝牙设备，确保首次显示时状态正确
-        bluetoothHeadsetMonitor.checkExistingSync()
-
         val view = ComposeView(context).apply {
             alpha = 0f
             scaleX = 0.8f
@@ -234,7 +209,6 @@ class MusicPanelViewManager(
                 playbackState.updatePosition()
             }
             registerMediaObserver()
-            bluetoothHeadsetMonitor.register()
         }
     }
 
@@ -597,7 +571,6 @@ class MusicPanelViewManager(
                     context.contentResolver.unregisterContentObserver(mediaObserver)
                     mediaObserverRegistered = false
                 }
-                bluetoothHeadsetMonitor.unregister()
                 playbackState.updatePosition()
                 if (!playbackState.isPlayerActive) {
                     playbackState.softRelease()
@@ -606,29 +579,6 @@ class MusicPanelViewManager(
                 managerJob.cancel()
             }
             .start()
-    }
-
-    /** 刷新播放链路面板的状态行 */
-    private fun refreshSignalPathState(state: MusicPlaybackState) {
-        state.audioSignalPathStrategy = "Mixer"
-        state.audioSignalPathOutputDevice = resolveOutputDeviceName(state)
-        state.audioSignalPathRoute = if (state.isBluetoothHeadsetConnected) "Bluetooth" else "System"
-    }
-
-    private fun resolveOutputDeviceName(state: MusicPlaybackState): String {
-        if (state.isBluetoothHeadsetConnected && state.bluetoothHeadsetName.isNotBlank()) {
-            return state.bluetoothHeadsetName
-        }
-        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        return audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
-            .firstOrNull { device ->
-                device.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER ||
-                    device.type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE
-            }
-            ?.productName
-            ?.toString()
-            ?.takeIf { it.isNotBlank() }
-            ?: context.getString(R.string.signal_path_speaker)
     }
 
     companion object {

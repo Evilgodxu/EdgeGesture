@@ -188,10 +188,7 @@ class MusicPlaybackService : MediaSessionService() {
         super.onDestroy()
     }
 
-    private fun resolveOutputDeviceName(state: MusicPlaybackState): String {
-        if (state.isBluetoothHeadsetConnected && state.bluetoothHeadsetName.isNotBlank()) {
-            return state.bluetoothHeadsetName
-        }
+    private fun resolveOutputDeviceName(): String {
         val audioManager = getSystemService(AUDIO_SERVICE) as android.media.AudioManager
         return audioManager.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS)
             .firstOrNull { device ->
@@ -207,7 +204,7 @@ class MusicPlaybackService : MediaSessionService() {
     /** 刷新播放链路面板的状态行 */
     private fun updateSignalPathState(state: MusicPlaybackState) {
         state.audioSignalPathStrategy = "Mixer"
-        state.audioSignalPathOutputDevice = resolveOutputDeviceName(state)
-        state.audioSignalPathRoute = if (state.isBluetoothHeadsetConnected) "Bluetooth" else "System"
+        state.audioSignalPathOutputDevice = resolveOutputDeviceName()
+        state.audioSignalPathRoute = "System"
     }
 }

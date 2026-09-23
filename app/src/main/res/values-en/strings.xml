@@ -158,7 +158,6 @@
     <string name="signal_path_khz">%.1f kHz</string>
     <string name="signal_path_hz">%d Hz</string>
     <string name="signal_path_speaker">Speaker</string>
-    <string name="signal_path_bluetooth">Bluetooth</string>
     <string name="signal_path_dash">-</string>
 
     <!-- QR scan -->
@@ -404,7 +403,8 @@
     <string name="music_panel_mini_mode">Mini mode</string>
     <string name="music_panel_mini_mode_desc">Show the mini player after closing the music panel</string>
     <string name="music_panel_favorite">Favorite</string>
-    <string name="music_panel_bluetooth_device">Bluetooth device</string>
+    <string name="music_panel_memory_usage">Memory usage</string>
+    <string name="music_panel_memory_usage_value">Memory %1$d MB</string>
 
     <!-- Task panel clear button -->
     <string name="task_panel_clear">✕</string>

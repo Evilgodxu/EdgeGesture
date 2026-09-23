@@ -8,26 +8,28 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import com.edgegesture.evilgodxu.R
 
 @Composable
@@ -39,8 +41,7 @@ internal fun HeaderRow(
 ) {
     val currentTrackId = playbackState.currentTrack?.id
     val isLiked = currentTrackId?.let { id -> playbackState.likedIds.contains(id) } ?: false
-
-    val hasBluetoothDevice = playbackState.isBluetoothHeadsetConnected && playbackState.bluetoothHeadsetName.isNotBlank()
+    val processMemoryMb by rememberProcessMemoryMb()
 
     Box(
         modifier = modifier.fillMaxWidth(),
@@ -69,30 +70,25 @@ internal fun HeaderRow(
             }
         }
 
-        if (hasBluetoothDevice) {
-            Row(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .alpha(0.72f)
-                    .widthIn(max = 264.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Bluetooth,
-                    contentDescription = stringResource(R.string.music_panel_bluetooth_device),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(15.dp),
-                )
-                Text(
-                    text = playbackState.bluetoothHeadsetName,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 10.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.widthIn(max = 108.dp),
-                )
-            }
+        Row(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .alpha(0.72f),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Memory,
+                contentDescription = stringResource(R.string.music_panel_memory_usage),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(15.dp),
+            )
+            Text(
+                text = stringResource(R.string.music_panel_memory_usage_value, processMemoryMb),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 10.sp,
+                maxLines = 1,
+            )
         }
 
         HeaderIconButton(
@@ -107,6 +103,20 @@ internal fun HeaderRow(
                 .offset(y = 4.dp)
         )
     }
+}
+
+// 定期刷新本应用进程的内存占用，供头部状态区展示
+@Composable
+private fun rememberProcessMemoryMb(): State<Int> = produceState(initialValue = processMemoryMb()) {
+    while (true) {
+        value = processMemoryMb()
+        delay(2000)
+    }
+}
+
+private fun processMemoryMb(): Int {
+    val runtime = Runtime.getRuntime()
+    return ((runtime.totalMemory() - runtime.freeMemory()) / (1024 * 1024)).toInt()
 }
 
 @Composable

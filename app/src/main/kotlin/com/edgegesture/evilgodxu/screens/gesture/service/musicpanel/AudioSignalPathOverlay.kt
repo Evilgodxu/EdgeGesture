@@ -149,7 +149,6 @@ private fun String.toSignalPathValue(): String = when (this) {
 @Composable
 private fun String.toRouteValue(): String = when (this) {
     "System" -> stringResource(R.string.signal_path_system)
-    "Bluetooth" -> stringResource(R.string.signal_path_bluetooth)
     else -> this
 }
 
