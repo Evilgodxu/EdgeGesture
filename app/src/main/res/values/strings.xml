@@ -381,6 +381,8 @@
     <string name="music_panel_pause">暂停</string>
     <string name="music_panel_mini_mode">迷你模式</string>
     <string name="music_panel_mini_mode_desc">关闭音乐面板后显示迷你播放器</string>
+    <string name="music_panel_word_by_word">逐字渲染</string>
+    <string name="music_panel_word_by_word_desc">歌词逐字高亮并同步跳动，关闭后整行高亮</string>
     <string name="music_panel_favorite">收藏</string>
     <string name="music_panel_memory_usage">内存占用</string>
     <string name="music_panel_memory_usage_value">内存 %1$d MB</string>

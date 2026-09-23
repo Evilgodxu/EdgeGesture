@@ -11,23 +11,71 @@ data class LyricWord(val startMs: Long, val durationMs: Long, val text: String)
 data class LyricLine(
     val timeMs: Long,
     val text: String,
-    val words: List<LyricWord> = emptyList()
+    val words: List<LyricWord> = emptyList(),
+    val translation: String? = null
 )
 
 // 设备本地歌词文件候选
 data class LocalLyric(val name: String, val path: String)
 
-// 标准 LRC 解析：兼容 [mm:ss.xx] 与 [mm:ss] 两种时间标签
+// 增强 LRC 解析：标准 [mm:ss(.xxx)] 行时间戳、行内 <mm:ss(.xxx)> 逐字标签、
+// [tr][/tr] 翻译块均支持；时间戳兼容长音频的小时制 [hh:mm:ss(.xxx)]，小数位 1~3 位
 internal fun parseLrcText(lrc: String): List<LyricLine> {
-    return lrc.lineSequence().mapNotNull { line ->
-        val match = Regex("\\[(\\d+):(\\d+)(?:\\.(\\d+))?](.*)").find(line) ?: return@mapNotNull null
+    val lines = lrc.lineSequence().mapNotNull { rawLine ->
+        val match = LINE_PATTERN.find(rawLine) ?: return@mapNotNull null
+        val content = match.groupValues[5]
+        val translation = TRANS_PATTERN.find(content)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() }
+        val cleanContent = TRANS_PATTERN.replace(content, "").trim()
+        val words = WORD_PATTERN.findAll(cleanContent).map { word ->
+            LyricWord(
+                startMs = (word.groupValues[1].toLongOrNull() ?: 0L) * 3_600_000L +
+                    word.groupValues[2].toLong() * 60_000L +
+                    word.groupValues[3].toLong() * 1_000L +
+                    word.groupValues[4].padEnd(3, '0').take(3).toLong(),
+                // 增强 LRC 只给词起点，时长由渲染端用下一个词起点推算
+                durationMs = 0L,
+                text = word.groupValues[5],
+            )
+        }.filter { it.text.isNotEmpty() }.toList()
+        val text = if (words.isNotEmpty()) words.joinToString("") { it.text } else cleanContent
         LyricLine(
-            timeMs = match.groupValues[1].toLong() * 60_000 +
-                    match.groupValues[2].toLong() * 1_000 +
-                    match.groupValues[3].padEnd(3, '0').take(3).toLong(),
-            text = match.groupValues[4].trim()
+            timeMs = (match.groupValues[1].toLongOrNull() ?: 0L) * 3_600_000L +
+                match.groupValues[2].toLong() * 60_000L +
+                match.groupValues[3].toLong() * 1_000L +
+                match.groupValues[4].padEnd(3, '0').take(3).toLong(),
+            text = text,
+            words = words,
+            translation = translation,
         ).takeIf { it.text.isNotBlank() }
     }.sortedBy { it.timeMs }.toList()
+    return repairLegacyWordStarts(lines)
+}
+
+// 行时间戳 [mm:ss](.xxx)、[hh:mm:ss](.xxx)：小时段可省略
+private val LINE_PATTERN = Regex("""\[(?:(\d+):)?(\d+):(\d+)(?:\.(\d+))?](.*)""")
+
+// 行内逐字时间戳 <mm:ss(.xxx)> / <hh:mm:ss(.xxx)>，其后的文本即该字内容
+private val WORD_PATTERN = Regex("""<(?:(\d+):)?(\d+):(\d+)(?:\.(\d+))?>([^<]*)""")
+
+// 翻译块 [tr]...[/tr]
+private val TRANS_PATTERN = Regex("""\[tr](.*?)\[/tr]""")
+
+// 兼容旧版逐字歌词的写法：部分来源把逐字标签写成整轨绝对时间（而非行内相对时间），
+// 识别到首字起点落在行时间戳之后时整体回退为行内相对时间，避免逐字高亮整行错位
+private fun repairLegacyWordStarts(lines: List<LyricLine>): List<LyricLine> {
+    return lines.mapIndexed { index, line ->
+        if (line.words.isEmpty()) return@mapIndexed line
+        val firstWordStart = line.words.first().startMs
+        val nextLineStart = lines.getOrNull(index + 1)?.timeMs
+        val inconsistent = nextLineStart
+            ?.let { it > line.timeMs && firstWordStart >= it }
+            ?: (firstWordStart >= line.timeMs * 2)
+        if (inconsistent) {
+            line.copy(words = line.words.map { it.copy(startMs = (it.startMs - line.timeMs).coerceAtLeast(0)) })
+        } else {
+            line
+        }
+    }
 }
 
 private const val MAX_LRC_FILES = 20

@@ -134,3 +134,13 @@ fun seekTo(state: MusicPlaybackState, positionMs: Long) {
         state.playbackScope.launch { controller.seekTo(positionMs) }
     }
 }
+
+// 歌词拖拽跳转：定位到目标行并从该处继续播放
+fun seekToAndPlay(state: MusicPlaybackState, positionMs: Long) {
+    state.mediaController?.let { controller ->
+        state.playbackScope.launch {
+            controller.seekTo(positionMs)
+            controller.play()
+        }
+    }
+}

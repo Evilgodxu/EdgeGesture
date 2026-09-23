@@ -381,6 +381,8 @@
     <string name="music_panel_pause">Pause</string>
     <string name="music_panel_mini_mode">Mini mode</string>
     <string name="music_panel_mini_mode_desc">Show the mini player after closing the music panel</string>
+    <string name="music_panel_word_by_word">Word-by-word lyrics</string>
+    <string name="music_panel_word_by_word_desc">Highlight lyrics character by character; turn off to highlight whole lines</string>
     <string name="music_panel_favorite">Favorite</string>
     <string name="music_panel_memory_usage">Memory usage</string>
     <string name="music_panel_memory_usage_value">Memory %1$d MB</string>

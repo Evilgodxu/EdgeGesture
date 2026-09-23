@@ -98,6 +98,7 @@ internal fun SettingsOverlay(
                         val context = LocalContext.current
                         val settingsScope = rememberCoroutineScope()
                         val miniEnabled by context.miniPlayerEnabledFlow().collectAsState(initial = true)
+                        val wordByWordEnabled by context.wordByWordRenderingFlow().collectAsState(initial = true)
                         Column(modifier = Modifier.fillMaxSize()) {
                             // 标题与关闭按钮固定在顶部，不随设置项滚动
                             Row(
@@ -132,6 +133,17 @@ internal fun SettingsOverlay(
                                     checked = miniEnabled,
                                     onCheckedChange = { enabled ->
                                         settingsScope.launch { context.saveMiniPlayerEnabled(enabled) }
+                                    }
+                                )
+
+                                Spacer(modifier = Modifier.height(12.dp))
+
+                                SettingsSwitchRow(
+                                    title = stringResource(R.string.music_panel_word_by_word),
+                                    subtitle = stringResource(R.string.music_panel_word_by_word_desc),
+                                    checked = wordByWordEnabled,
+                                    onCheckedChange = { enabled ->
+                                        settingsScope.launch { context.saveWordByWordRendering(enabled) }
                                     }
                                 )
 
