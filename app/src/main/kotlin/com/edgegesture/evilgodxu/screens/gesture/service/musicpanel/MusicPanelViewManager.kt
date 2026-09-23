@@ -296,7 +296,8 @@ class MusicPanelViewManager(
             track.copy(
                 coverCachePath = cached.coverCachePath,
                 lyricCachePath = cached.lyricCachePath,
-                lyricLines = cached.lyricLines
+                lyricLines = cached.lyricLines,
+                lyricResolved = cached.lyricResolved
             )
         }
     }
@@ -432,6 +433,26 @@ class MusicPanelViewManager(
     private suspend fun enrichPlaylistMetadata() {
         // 封面仅从本地提取（内嵌封面 / 系统缩略图 / 专辑封面），不再联网补全
         enrichLocalCovers()
+        // 歌词仅从本地补全：优先音频内嵌歌词，其次按文件名匹配本地 .lrc
+        enrichMissingLyrics()
+    }
+
+    /** 为尚无歌词的曲目做一次本地补全；已尝试过的曲目不再重复扫描 */
+    private suspend fun enrichMissingLyrics() {
+        val tracks = withContext(Dispatchers.Main) { playbackState.playlist.toList() }
+        val targets = tracks.filter { track ->
+            !track.lyricResolved && track.lyricLines.isEmpty() && !MusicMetadataCache.isValid(track.lyricCachePath)
+        }
+        if (targets.isEmpty()) return
+        val lrcCandidates = scanAllLrcFiles()
+        val updates = coroutineScope {
+            targets.map { track ->
+                async(metadataDispatcher) { resolveTrackLyrics(context, track, lrcCandidates) }
+            }.awaitAll()
+        }
+        withContext(Dispatchers.Main) {
+            playbackState.batchUpdateTracks(updates)
+        }
     }
 
     private fun restoreCurrentTrack() {

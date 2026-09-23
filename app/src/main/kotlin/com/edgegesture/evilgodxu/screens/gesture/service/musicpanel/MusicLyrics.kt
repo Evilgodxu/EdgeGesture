@@ -32,26 +32,31 @@ internal fun parseLrcText(lrc: String): List<LyricLine> {
 }
 
 private const val MAX_LRC_FILES = 20
+private const val MAX_LRC_CANDIDATES = 500
 private const val MAX_SCAN_DEPTH = 3
+// 内嵌歌词为无时间轴的纯文本时，按该间隔顺序铺开，避免全部挤在同一时间点
+private const val UNSYNCED_LINE_MS = 3000L
 
 // 扫描设备常见目录下的 .lrc 文件作为本地歌词候选，按与歌曲名相关度排序
-internal suspend fun scanLocalLrcFiles(track: MusicTrack): List<LocalLyric> =
-    withContext(Dispatchers.IO) {
-        val storageRoot = Environment.getExternalStorageDirectory()
-        val roots = listOf(
-            File(storageRoot, Environment.DIRECTORY_MUSIC),
-            File(storageRoot, Environment.DIRECTORY_DOWNLOADS)
-        )
-        val files = mutableListOf<File>()
-        roots.filter { it.isDirectory }.forEach { root -> collectLrcFiles(root, 0, files) }
-        if (files.isEmpty()) return@withContext emptyList()
-        val titleKey = normalizeTitle(track.title)
-        val artistKey = normalizeTitle(track.artist)
-        files
-            .map { LocalLyric(it.name, it.absolutePath) }
-            .sortedByDescending { scoreLyric(it.name, titleKey, artistKey) }
-            .take(MAX_LRC_FILES)
-    }
+internal suspend fun scanLocalLrcFiles(track: MusicTrack): List<LocalLyric> {
+    val titleKey = normalizeTitle(track.title)
+    val artistKey = normalizeTitle(track.artist)
+    return scanAllLrcFiles()
+        .sortedByDescending { scoreLyric(it.name, titleKey, artistKey) }
+        .take(MAX_LRC_FILES)
+}
+
+// 扫描设备全部本地歌词候选，供自动匹配时一次性复用
+internal suspend fun scanAllLrcFiles(): List<LocalLyric> = withContext(Dispatchers.IO) {
+    val storageRoot = Environment.getExternalStorageDirectory()
+    val roots = listOf(
+        File(storageRoot, Environment.DIRECTORY_MUSIC),
+        File(storageRoot, Environment.DIRECTORY_DOWNLOADS)
+    )
+    val files = mutableListOf<File>()
+    roots.filter { it.isDirectory }.forEach { root -> collectLrcFiles(root, 0, files) }
+    files.take(MAX_LRC_CANDIDATES).map { LocalLyric(it.name, it.absolutePath) }
+}
 
 private fun collectLrcFiles(dir: File, depth: Int, out: MutableList<File>) {
     if (depth > MAX_SCAN_DEPTH) return
@@ -76,6 +81,59 @@ private fun scoreLyric(fileName: String, titleKey: String, artistKey: String): I
     return score
 }
 
+// 自动补全歌词：优先读取音频内嵌歌词，其次按文件名自动匹配本地 .lrc。
+// 无论是否找到均标记 lyricResolved，避免后续重复扫描。
+internal suspend fun resolveTrackLyrics(
+    context: Context,
+    track: MusicTrack,
+    lrcCandidates: List<LocalLyric>,
+): MusicTrack = withContext(Dispatchers.IO) {
+    val lines = try {
+        readEmbeddedLyricLines(track) ?: matchLocalLrcLines(track, lrcCandidates)
+    } catch (e: Exception) {
+        CrashLogManager.logException("MusicLyrics", "自动补全歌词失败", e)
+        null
+    }
+    if (lines.isNullOrEmpty()) {
+        track.copy(lyricResolved = true)
+    } else {
+        val path = MusicMetadataCache.saveLyrics(context, track.id, lines).orEmpty()
+        track.copy(lyricResolved = true, lyricCachePath = path, lyricLines = lines)
+    }
+}
+
+private fun readEmbeddedLyricLines(track: MusicTrack): List<LyricLine>? {
+    val raw = MusicEmbeddedLyrics.read(track.path)?.takeIf { it.isNotBlank() } ?: return null
+    return textToLyricLines(raw, track.duration).takeIf { it.isNotEmpty() }
+}
+
+private fun matchLocalLrcLines(track: MusicTrack, candidates: List<LocalLyric>): List<LyricLine>? {
+    if (normalizeTitle(track.title).isBlank()) return null
+    val match = candidates.firstOrNull { matchesLrcName(normalizeTitle(it.name.substringBeforeLast('.')), track) }
+        ?: return null
+    return parseLrcText(File(match.path).readText()).takeIf { it.isNotEmpty() }
+}
+
+// 文件名归一化后需与「标题」或「标题+歌手 / 歌手+标题」完全一致，避免误匹配
+private fun matchesLrcName(nameKey: String, track: MusicTrack): Boolean {
+    val titleKey = normalizeTitle(track.title)
+    if (nameKey == titleKey) return true
+    val artistKey = normalizeTitle(track.artist)
+    if (artistKey.isBlank()) return false
+    return nameKey == normalizeTitle("${track.title} - ${track.artist}") ||
+        nameKey == normalizeTitle("${track.artist} - ${track.title}")
+}
+
+// 内嵌歌词优先按 LRC 解析时间轴，无时间标签时按行顺序铺开
+internal fun textToLyricLines(raw: String, durationMs: Long): List<LyricLine> {
+    val timed = parseLrcText(raw)
+    if (timed.isNotEmpty()) return timed
+    val lines = raw.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()
+    if (lines.isEmpty()) return emptyList()
+    val step = if (durationMs > 0) durationMs / lines.size else UNSYNCED_LINE_MS
+    return lines.mapIndexed { index, text -> LyricLine(timeMs = index * step, text = text) }
+}
+
 // 读取本地 .lrc 文件并作为当前歌曲歌词，成功后写入缓存与播放状态
 internal suspend fun importLocalLyrics(
     context: Context,
@@ -87,7 +145,7 @@ internal suspend fun importLocalLyrics(
         val lines = parseLrcText(File(lyric.path).readText())
         if (lines.isEmpty()) return@withContext false
         val path = MusicMetadataCache.saveLyrics(context, track.id, lines) ?: return@withContext false
-        val updated = track.copy(lyricCachePath = path, lyricLines = lines)
+        val updated = track.copy(lyricCachePath = path, lyricLines = lines, lyricResolved = true)
         withContext(Dispatchers.Main) {
             playbackState.updateTrack(updated)
         }

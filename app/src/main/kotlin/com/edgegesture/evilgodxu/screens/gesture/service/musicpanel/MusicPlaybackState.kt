@@ -369,6 +369,7 @@ class MusicPlaybackState {
                     albumId = item.getLong("albumId"),
                     coverCachePath = item.optString("coverCachePath", ""),
                     isFavorite = item.optBoolean("isFavorite", false),
+                    lyricResolved = item.optBoolean("lyricResolved", false),
                     lyricCachePath = savedLyricPath.takeIf { lyricLines.isNotEmpty() }.orEmpty(),
                     lyricLines = lyricLines
                 )
@@ -392,6 +393,7 @@ class MusicPlaybackState {
                 put("albumId", track.albumId)
                 put("coverCachePath", track.coverCachePath)
                 put("lyricCachePath", track.lyricCachePath)
+                put("lyricResolved", track.lyricResolved)
                 put("isFavorite", track.isFavorite)
             })
         }
