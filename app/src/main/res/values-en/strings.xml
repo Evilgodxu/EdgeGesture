@@ -354,22 +354,18 @@
     <string name="gesture_config_empty">Config is empty</string>
 
     <!-- App update -->
-    <string name="update_channel_name">App updates</string>
-    <string name="update_channel_desc">New version notifications</string>
-    <string name="update_notification_title">New version available</string>
-    <string name="update_notification_text">Edge Gesture %s is available</string>
+    <string name="update_notification_title">Edge Gesture update</string>
+    <string name="update_notification_downloading">Downloading %1$s</string>
     <string name="update_dialog_title">New version %s</string>
     <string name="update_dialog_description_alt">Download and install the new version?</string>
     <string name="update_dialog_downloading">Downloading...</string>
     <string name="update_dialog_download_failed">Download failed, try opening it in the browser</string>
-    <string name="update_dialog_up_to_date">You are up to date</string>
     <string name="update_dialog_changelog_title">Changelog:</string>
     <string name="update_dialog_download">Download</string>
     <string name="update_dialog_later">Later</string>
     <string name="update_dialog_open_browser">Open in browser</string>
-    <string name="update_dialog_error_title">Check failed</string>
-    <string name="update_dialog_error_description">Network timed out or the update service is temporarily unreachable. Visit the GitHub repository for the latest version.</string>
-    <string name="update_dialog_open_github">Open GitHub</string>
+    <string name="update_toast_up_to_date">You are up to date</string>
+    <string name="update_toast_error">Update check failed, please try again later</string>
 
     <!-- Data config (cache management) -->
     <string name="data_config_title">Music cache</string>

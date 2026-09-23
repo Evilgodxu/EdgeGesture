@@ -354,22 +354,18 @@
     <string name="gesture_config_empty">配置为空</string>
 
     <!-- 应用更新 (App Update) -->
-    <string name="update_channel_name">应用更新</string>
-    <string name="update_channel_desc">新版本更新通知</string>
-    <string name="update_notification_title">发现新版本</string>
-    <string name="update_notification_text">边缘手势 %s 已可用</string>
+    <string name="update_notification_title">边缘手势更新</string>
+    <string name="update_notification_downloading">正在下载 %1$s</string>
     <string name="update_dialog_title">发现新版本 %s</string>
     <string name="update_dialog_description_alt">是否下载并安装新版本？</string>
     <string name="update_dialog_downloading">正在下载...</string>
     <string name="update_dialog_download_failed">下载失败，请尝试使用浏览器下载</string>
-    <string name="update_dialog_up_to_date">已是最新版本</string>
     <string name="update_dialog_changelog_title">更新日志：</string>
     <string name="update_dialog_download">下载</string>
     <string name="update_dialog_later">稍后</string>
     <string name="update_dialog_open_browser">在浏览器中打开</string>
-    <string name="update_dialog_error_title">检查更新失败</string>
-    <string name="update_dialog_error_description">网络连接超时或暂时无法访问更新服务，请前往 GitHub 仓库获取最新版本。</string>
-    <string name="update_dialog_open_github">前往 GitHub</string>
+    <string name="update_toast_up_to_date">已是最新版本</string>
+    <string name="update_toast_error">检查更新失败，请稍后重试</string>
 
     <!-- 数据配置（缓存管理）页面 -->
     <string name="data_config_title">音乐缓存</string>

@@ -1,16 +1,26 @@
 package com.edgegesture.evilgodxu.update
 
 import android.app.Application
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.edgegesture.evilgodxu.screens.settings.appLanguageFlow
+import com.edgegesture.evilgodxu.utils.localization.LocalizationManager
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 // 更新检查与下载状态的统一管理，供主界面与设置页共用，
-// 状态生命周期与 ViewModel 一致，离开页面不会中断下载
-class UpdateViewModel(application: Application) : AndroidViewModel(application) {
+// 以单例形式注册，保证两处读写同一状态，对话框由宿主全局弹出
+class UpdateViewModel(
+    application: Application,
+    private val localizationManager: LocalizationManager,
+) : AndroidViewModel(application) {
 
     private val context get() = getApplication<Application>().applicationContext
 
@@ -23,17 +33,15 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
     private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
     val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
 
-    // 手动检查后的结果提示（已是最新 / 检查失败），自动检查不提示避免每次回前台误弹
-    private val _checkFeedback = MutableStateFlow<CheckFeedback?>(null)
-    val checkFeedback: StateFlow<CheckFeedback?> = _checkFeedback.asStateFlow()
+    // 手动检查结果的一次性提示：无回放，自动检查静默、仅手动检查反馈
+    private val _messages = MutableSharedFlow<CheckFeedback>(extraBufferCapacity = 1)
+    val messages: Flow<CheckFeedback> = _messages.asSharedFlow()
 
     /** 手动检查结果的提示类型 */
     enum class CheckFeedback { UP_TO_DATE, ERROR }
 
     // 检查更新：有新版本时弹出更新对话框，否则手动检查时给出"已是最新"或"失败"提示
     fun checkForUpdate(force: Boolean = false) {
-        // 手动强制检查时清空上次提示，避免旧结果误弹
-        _checkFeedback.value = null
         viewModelScope.launch {
             var checkFailed = false
             val result = UpdateManager.checkForUpdate(
@@ -44,9 +52,11 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
             if (result != null) {
                 _updateInfo.value = result
                 _showUpdateDialog.value = true
-            } else if (force) {
-                _checkFeedback.value = if (checkFailed) CheckFeedback.ERROR else CheckFeedback.UP_TO_DATE
+                return@launch
             }
+            // 自动检查静默：仅手动检查反馈一次性提示
+            if (!force) return@launch
+            _messages.emit(if (checkFailed) CheckFeedback.ERROR else CheckFeedback.UP_TO_DATE)
         }
     }
 
@@ -55,7 +65,12 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
         val info = _updateInfo.value ?: return
         _downloadState.value = DownloadState.Downloading(0f)
         viewModelScope.launch {
-            val success = UpdateManager.downloadAndInstall(context, info) { progress ->
+            // 下载通知文案面向用户：按当前应用语言构造本地化 Context 取资源，不使用系统 Context
+            val language = context.appLanguageFlow().first()
+            val localizedContext = localizationManager.createLocalizedContext(
+                localizationManager.resolveLanguage(language),
+            )
+            val success = UpdateManager.downloadAndInstall(localizedContext, info) { progress ->
                 _downloadState.value = if (progress < 0f) {
                     DownloadState.Failed("download_failed")
                 } else {
@@ -75,11 +90,11 @@ class UpdateViewModel(application: Application) : AndroidViewModel(application) 
     fun dismissUpdateDialog() {
         _showUpdateDialog.value = false
         _downloadState.value = DownloadState.Idle
-        UpdateManager.clearPendingUpdate(context)
+        viewModelScope.launch { UpdateManager.clearPendingUpdate(context) }
     }
+}
 
-    // 清除手动检查结果提示
-    fun clearCheckFeedback() {
-        _checkFeedback.value = null
-    }
+// 供界面树消费的组合局部，由宿主提供
+val LocalUpdateViewModel = staticCompositionLocalOf<UpdateViewModel> {
+    error("UpdateViewModel is not provided")
 }

@@ -37,11 +37,6 @@
     <fields>;
 }
 
-# WorkManager
--keepclassmembers class * extends androidx.work.Worker {
-    public <init>(android.content.Context,androidx.work.WorkerParameters);
-}
-
 # Shizuku AIDL/Binder IPC
 -keep class com.edgegesture.evilgodxu.service.** { *; }
 -keep class * extends rikka.shizuku.** { *; }

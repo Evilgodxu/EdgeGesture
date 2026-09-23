@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -38,12 +37,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,9 +64,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.window.core.layout.WindowSizeClass
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.log.CrashLogManager
-import com.edgegesture.evilgodxu.update.UpdateDialog
-import com.edgegesture.evilgodxu.update.UpdateManager
-import com.edgegesture.evilgodxu.update.UpdateViewModel
+import com.edgegesture.evilgodxu.update.LocalUpdateViewModel
 import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
 import com.edgegesture.evilgodxu.ui.adaptive.currentWindowSizeClass
 import com.edgegesture.evilgodxu.screens.settings.components.DonateDialog
@@ -161,8 +156,6 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val context = LocalContext.current
-    // 在组合阶段解析字符串资源，LaunchedEffect 内无法调用 stringResource
-    val upToDateMessage = stringResource(R.string.update_dialog_up_to_date)
     val versionName = remember {
         try {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: ""
@@ -195,11 +188,7 @@ fun SettingsScreen(
     var pendingThemeClickPosition by remember { mutableStateOf(Offset.Zero) }
 
     // 更新检测状态由 UpdateViewModel 统一管理，与主界面共享
-    val updateViewModel: UpdateViewModel = koinViewModel()
-    val updateInfo by updateViewModel.updateInfo.collectAsStateWithLifecycle()
-    val showUpdateDialog by updateViewModel.showUpdateDialog.collectAsStateWithLifecycle()
-    val checkFeedback by updateViewModel.checkFeedback.collectAsStateWithLifecycle()
-    val downloadState by updateViewModel.downloadState.collectAsStateWithLifecycle()
+    val updateViewModel = LocalUpdateViewModel.current
 
     DisposableEffect(Unit) {
         viewModel.initShizuku()
@@ -524,68 +513,6 @@ fun SettingsScreen(
     if (showGestureConfigDialog) {
         GestureConfigDialog(
             onDismiss = { showGestureConfigDialog = false }
-        )
-    }
-
-    // 更新检测对话框（与主界面共用 UpdateViewModel 与 UpdateDialog）
-    if (showUpdateDialog && updateInfo != null) {
-        // 委托属性无法智能转换，先解包为局部变量再判空
-        val info = updateInfo
-        if (info != null) {
-            UpdateDialog(
-                updateInfo = info,
-                downloadState = downloadState,
-                onDownload = { updateViewModel.downloadAndInstall() },
-                onOpenBrowser = {
-                    updateViewModel.dismissUpdateDialog()
-                    val url = UpdateManager.GITHUB_REPOSITORY_URL
-                    if (url.startsWith("http")) {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                    }
-                },
-                onDismiss = { updateViewModel.dismissUpdateDialog() }
-            )
-        }
-    }
-
-    // 手动检查更新结果提示：失败弹对话框，已是最新弹 Toast
-    var showCheckError by remember { mutableStateOf(false) }
-    LaunchedEffect(checkFeedback) {
-        when (checkFeedback) {
-            UpdateViewModel.CheckFeedback.UP_TO_DATE -> {
-                android.widget.Toast.makeText(
-                    context,
-                    upToDateMessage,
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
-                updateViewModel.clearCheckFeedback()
-            }
-            UpdateViewModel.CheckFeedback.ERROR -> {
-                showCheckError = true
-                updateViewModel.clearCheckFeedback()
-            }
-            null -> {}
-        }
-    }
-
-    if (showCheckError) {
-        AlertDialog(
-            onDismissRequest = { showCheckError = false },
-            title = { Text(stringResource(R.string.update_dialog_error_title)) },
-            text = { Text(stringResource(R.string.update_dialog_error_description)) },
-            confirmButton = {
-                TextButton(onClick = {
-                    showCheckError = false
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(UpdateManager.GITHUB_REPOSITORY_URL)))
-                }) {
-                    Text(stringResource(R.string.update_dialog_open_github))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCheckError = false }) {
-                    Text(stringResource(R.string.update_dialog_later))
-                }
-            }
         )
     }
 }

@@ -1,25 +1,25 @@
 package com.edgegesture.evilgodxu
 
 import android.app.Application
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
 import com.edgegesture.evilgodxu.data.app.AppRepository
-import com.edgegesture.evilgodxu.update.UpdateCheckWorker
 import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
 import com.edgegesture.evilgodxu.di.appModule
 import com.edgegesture.evilgodxu.log.CrashLogManager
+import com.edgegesture.evilgodxu.update.UpdateViewModel
+import com.edgegesture.evilgodxu.utils.localization.LocalizationManager
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
-import java.util.concurrent.TimeUnit
 
 // 应用入口类，初始化崩溃日志、Koin 依赖注入与后台任务
 class MyApplication : Application() {
+
+    // 语言管理器单例，驱动 Compose 层语言热切换
+    val localizationManager: LocalizationManager by lazy { LocalizationManager(this) }
+
+    // 更新检查以单例共享，主界面自动检查与设置页手动检查读写同一状态
+    val updateViewModel: UpdateViewModel by lazy { UpdateViewModel(this, localizationManager) }
+
     override fun onCreate() {
         super.onCreate()
 
@@ -41,41 +41,5 @@ class MyApplication : Application() {
 
         // 初始化手势统计数据管理器
         GestureStatsManager.init(this)
-
-        // 创建更新通知渠道
-        createUpdateNotificationChannel()
-
-        // 调度周期性更新检查（最小间隔 15 分钟，内部有 24 小时冷却）
-        scheduleUpdateCheck()
-    }
-
-    private fun createUpdateNotificationChannel() {
-        val channel = NotificationChannel(
-            UpdateCheckWorker.CHANNEL_ID,
-            getString(R.string.update_channel_name),
-            NotificationManager.IMPORTANCE_DEFAULT
-        ).apply {
-            description = getString(R.string.update_channel_desc)
-        }
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        nm.createNotificationChannel(channel)
-    }
-
-    private fun scheduleUpdateCheck() {
-        val constraints = Constraints.Builder()
-            .setRequiredNetworkType(NetworkType.CONNECTED)
-            .build()
-
-        val request = PeriodicWorkRequestBuilder<UpdateCheckWorker>(
-            15, TimeUnit.MINUTES  // WorkManager 最小周期为 15 分钟
-        )
-            .setConstraints(constraints)
-            .build()
-
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            UpdateCheckWorker.WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
-            request
-        )
     }
 }

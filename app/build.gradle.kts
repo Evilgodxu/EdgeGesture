@@ -23,8 +23,8 @@ android {
         applicationId = "com.edgegesture.evilgodxu"
         minSdk = 34
         targetSdk = 37
-        versionCode = 19
-        versionName = "5.1.2"
+        versionCode = 20
+        versionName = "5.2.0"
 
         ndk {
             abiFilters += listOf("arm64-v8a")
@@ -128,7 +128,6 @@ dependencies {
     implementation(libs.androidx.datastore.core)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
-    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.window)
     implementation(libs.androidx.compose.material3.adaptive)
     implementation(libs.androidx.compose.material3.adaptive.layout)

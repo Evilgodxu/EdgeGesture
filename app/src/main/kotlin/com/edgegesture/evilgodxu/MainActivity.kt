@@ -8,9 +8,11 @@ import android.os.LocaleList
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.res.stringResource
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
@@ -18,12 +20,13 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import android.widget.Toast
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
 import com.edgegesture.evilgodxu.navigation.NavGraph
 import com.edgegesture.evilgodxu.screens.settings.appLanguageFlow
 import com.edgegesture.evilgodxu.ui.adaptive.ProvideWindowSizeClass
 import com.edgegesture.evilgodxu.ui.theme.MyApplicationTheme
-import com.edgegesture.evilgodxu.update.UpdateCheckWorker
+import com.edgegesture.evilgodxu.update.LocalUpdateViewModel
 import com.edgegesture.evilgodxu.update.UpdateDialog
 import com.edgegesture.evilgodxu.update.UpdateManager
 import com.edgegesture.evilgodxu.update.UpdateViewModel
@@ -34,7 +37,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.koin.android.ext.android.inject
-import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
 
@@ -64,67 +66,69 @@ class MainActivity : ComponentActivity() {
         // 设置系统栏控制
         setupSystemBars()
 
-        // 监听生命周期，更新前台状态
-        lifecycle.addObserver(LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_START -> UpdateCheckWorker.isAppInForeground = true
-                Lifecycle.Event.ON_STOP -> UpdateCheckWorker.isAppInForeground = false
-                else -> {}
-            }
-        })
-
         setContent {
-            ProvideLocalizedContext(localizationManager) {
-                ProvideWindowSizeClass {
-                    MyApplicationTheme {
-                        val updateViewModel: UpdateViewModel = koinViewModel()
+            val app = application as MyApplication
+            CompositionLocalProvider(LocalUpdateViewModel provides app.updateViewModel) {
+                ProvideLocalizedContext(localizationManager) {
+                    ProvideWindowSizeClass {
+                        MyApplicationTheme {
+                            val updateViewModel = LocalUpdateViewModel.current
 
-                        // 从通知打开时检查是否携带 show_update 标记
-                        LaunchedEffect(Unit) {
-                            if (intent?.getBooleanExtra("show_update", false) == true) {
-                                updateViewModel.checkForUpdate(force = true)
-                            }
-                        }
-
-                        // 回到前台时检查是否有待更新
-                        // 协程由 ViewModel 的 viewModelScope 管理，无需手动创建作用域
-                        val lifecycleOwner = LocalLifecycleOwner.current
-                        DisposableEffect(lifecycleOwner) {
-                            val observer = LifecycleEventObserver { _, event ->
-                                if (event == Lifecycle.Event.ON_RESUME) {
-                                    updateViewModel.checkForUpdate()
+                            // 回前台时自动检查更新（每日仅检查一次）
+                            val lifecycleOwner = LocalLifecycleOwner.current
+                            DisposableEffect(lifecycleOwner) {
+                                val observer = LifecycleEventObserver { _, event ->
+                                    if (event == Lifecycle.Event.ON_RESUME &&
+                                        UpdateManager.shouldCheckUpdate(applicationContext)
+                                    ) {
+                                        updateViewModel.checkForUpdate()
+                                    }
+                                }
+                                lifecycleOwner.lifecycle.addObserver(observer)
+                                onDispose {
+                                    lifecycleOwner.lifecycle.removeObserver(observer)
                                 }
                             }
-                            lifecycleOwner.lifecycle.addObserver(observer)
-                            onDispose {
-                                lifecycleOwner.lifecycle.removeObserver(observer)
+
+                            // 手动检查结果提示：一次性 Toast，自动检查静默；
+                            // 以文案为键重建收集，避免语言切换后仍弹旧语言文案
+                            val upToDateText = stringResource(R.string.update_toast_up_to_date)
+                            val checkErrorText = stringResource(R.string.update_toast_error)
+                            LaunchedEffect(upToDateText, checkErrorText) {
+                                updateViewModel.messages.collect { message ->
+                                    val text = when (message) {
+                                        UpdateViewModel.CheckFeedback.UP_TO_DATE -> upToDateText
+                                        UpdateViewModel.CheckFeedback.ERROR -> checkErrorText
+                                    }
+                                    Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show()
+                                }
                             }
-                        }
 
-                        NavGraph()
+                            NavGraph()
 
-                        // 更新对话框
-                        val updateInfo by updateViewModel.updateInfo.collectAsStateWithLifecycle()
-                        val showUpdateDialog by updateViewModel.showUpdateDialog.collectAsStateWithLifecycle()
-                        val downloadState by updateViewModel.downloadState.collectAsStateWithLifecycle()
+                            // 更新对话框
+                            val updateInfo by updateViewModel.updateInfo.collectAsStateWithLifecycle()
+                            val showUpdateDialog by updateViewModel.showUpdateDialog.collectAsStateWithLifecycle()
+                            val downloadState by updateViewModel.downloadState.collectAsStateWithLifecycle()
 
-                        if (showUpdateDialog && updateInfo != null) {
-                            // 委托属性无法智能转换，先解包为局部变量再判空
-                            val info = updateInfo
-                            if (info != null) {
-                                UpdateDialog(
-                                    updateInfo = info,
-                                    downloadState = downloadState,
-                                    onDownload = { updateViewModel.downloadAndInstall() },
-                                    onOpenBrowser = {
-                                        val url = UpdateManager.GITHUB_REPOSITORY_URL
-                                        if (url.startsWith("http")) {
-                                            startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
-                                        }
-                                        updateViewModel.dismissUpdateDialog()
-                                    },
-                                    onDismiss = { updateViewModel.dismissUpdateDialog() }
-                                )
+                            if (showUpdateDialog && updateInfo != null) {
+                                // 委托属性无法智能转换，先解包为局部变量再判空
+                                val info = updateInfo
+                                if (info != null) {
+                                    UpdateDialog(
+                                        updateInfo = info,
+                                        downloadState = downloadState,
+                                        onDownload = { updateViewModel.downloadAndInstall() },
+                                        onOpenBrowser = {
+                                            val url = UpdateManager.GITHUB_REPOSITORY_URL
+                                            if (url.startsWith("http")) {
+                                                startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
+                                            }
+                                            updateViewModel.dismissUpdateDialog()
+                                        },
+                                        onDismiss = { updateViewModel.dismissUpdateDialog() }
+                                    )
+                                }
                             }
                         }
                     }
