@@ -48,7 +48,6 @@ internal fun CurrentCover(
     track: MusicTrack?,
     isPlaying: Boolean,
     onClick: () -> Unit,
-    onOnlineCover: () -> Unit = {},
     onLocalCover: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -71,10 +70,6 @@ internal fun CurrentCover(
         )
         CoverContextMenu(
             visible = showMenu,
-            onOnlineCover = {
-                showMenu = false
-                onOnlineCover()
-            },
             onLocalCover = {
                 showMenu = false
                 onLocalCover()
@@ -90,11 +85,10 @@ internal fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
     val coverFile = track?.coverCachePath
         ?.takeIf { MusicMetadataCache.isValid(it) }
         ?.let { File(it) }
-    val model: Any? = coverFile ?: track?.neteaseCoverUrl?.takeIf { it.isNotBlank() }
-    if (model != null) {
+    if (coverFile != null) {
         AsyncImage(
-            model = model,
-            contentDescription = track?.title,
+            model = coverFile,
+            contentDescription = track.title,
             contentScale = ContentScale.Crop,
             modifier = modifier.background(Color.Black),
         )
@@ -116,18 +110,14 @@ internal fun AlbumArt(track: MusicTrack?, modifier: Modifier = Modifier) {
 
 @Composable
 internal fun PlaylistArt(track: MusicTrack?, modifier: Modifier = Modifier) {
-    // 列表行小图：优先磁盘缓存文件与在线缩略 URL，避免加载全尺寸封面
+    // 列表行小图：优先使用磁盘缓存文件，避免加载全尺寸封面
     val coverFile = track?.coverCachePath
         ?.takeIf { MusicMetadataCache.isValid(it) }
         ?.let { File(it) }
-    val thumbUrl = track?.neteaseCoverUrl
-        ?.takeIf { it.isNotBlank() }
-        ?.let { NeteaseMusicApi.thumbUrl(it) }
-    val model: Any? = coverFile ?: thumbUrl
-    if (model != null) {
+    if (coverFile != null) {
         AsyncImage(
-            model = model,
-            contentDescription = track?.title,
+            model = coverFile,
+            contentDescription = track.title,
             contentScale = ContentScale.Crop,
             modifier = modifier.background(Color.Black),
         )
@@ -150,7 +140,6 @@ internal fun PlaylistArt(track: MusicTrack?, modifier: Modifier = Modifier) {
 @Composable
 private fun CoverContextMenu(
     visible: Boolean,
-    onOnlineCover: () -> Unit,
     onLocalCover: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -158,15 +147,6 @@ private fun CoverContextMenu(
         Popup(alignment = Alignment.BottomCenter, properties = PopupProperties(focusable = true), onDismissRequest = onDismiss) {
             Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceVariant, tonalElevation = 4.dp) {
                 Row(horizontalArrangement = Arrangement.Center) {
-                    Surface(shape = RoundedCornerShape(6.dp), color = Color.Transparent, onClick = onOnlineCover) {
-                        Text(
-                            text = stringResource(R.string.music_panel_online_cover),
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
-                        )
-                    }
                     Surface(shape = RoundedCornerShape(6.dp), color = Color.Transparent, onClick = onLocalCover) {
                         Text(
                             text = stringResource(R.string.music_panel_local_cover),

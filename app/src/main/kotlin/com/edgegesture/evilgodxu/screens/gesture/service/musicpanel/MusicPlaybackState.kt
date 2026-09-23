@@ -88,14 +88,6 @@ class MusicPlaybackState {
             when (playbackState) {
                 Player.STATE_READY -> {
                     isPrepared = true
-                    if (closeSearchResultsOnReady) {
-                        closeSearchResultsOnReady = false
-                        isSearchMode = false
-                        showSearchResults = false
-                        searchQuery = ""
-                        searchResults = emptyList()
-                        pendingSearchResults = emptyList()
-                    }
                     syncPlaybackState()
                 }
                 Player.STATE_ENDED -> {
@@ -129,8 +121,6 @@ class MusicPlaybackState {
             errorMsg = appContext?.getString(R.string.music_panel_play_failed)
             isPlaying = false
             isPrepared = false
-            closeSearchResultsOnReady = false
-            pendingSearchResults = emptyList()
             suppressAutoNext = true
             mediaController?.stop()
         }
@@ -162,22 +152,15 @@ class MusicPlaybackState {
     var isScanning by mutableStateOf(false)
     var isLyricsVisible by mutableStateOf(false)
 
-    // 在线搜索相关状态
+    // 本地歌曲搜索相关状态
     var isSearchMode by mutableStateOf(false)
     var searchQuery by mutableStateOf("")
-    var searchResults by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
+    var searchResults by mutableStateOf<List<MusicTrack>>(emptyList())
     var searchHistory by mutableStateOf<List<String>>(emptyList())
-    var isSearching by mutableStateOf(false)
     var showSearchResults by mutableStateOf(false)
-    var pendingSearchResults by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
-    var closeSearchResultsOnReady by mutableStateOf(false)
-    var coverCandidates by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
-    var isCoverSearching by mutableStateOf(false)
+    // 本地封面 / 歌词候选
     var localCoverCandidates by mutableStateOf<List<RecentCover>>(emptyList())
-    var lyricsCandidates by mutableStateOf<List<NeteaseSongSearchResult>>(emptyList())
-    var isLyricsSearching by mutableStateOf(false)
-    var isLyricsRefreshing by mutableStateOf(false)
-    var lyricsRefreshError by mutableStateOf<String?>(null)
+    var localLyricCandidates by mutableStateOf<List<LocalLyric>>(emptyList())
 
     private fun hasUriAccess(context: Context, audioUri: String): Boolean {
         val uri = Uri.parse(audioUri)
@@ -384,8 +367,6 @@ class MusicPlaybackState {
                     artist = item.getString("artist"),
                     duration = item.getLong("duration"),
                     albumId = item.getLong("albumId"),
-                    neteaseId = item.optLong("neteaseId", 0L),
-                    neteaseCoverUrl = item.optString("neteaseCoverUrl", ""),
                     coverCachePath = item.optString("coverCachePath", ""),
                     isFavorite = item.optBoolean("isFavorite", false),
                     lyricCachePath = savedLyricPath.takeIf { lyricLines.isNotEmpty() }.orEmpty(),
@@ -409,8 +390,6 @@ class MusicPlaybackState {
                 put("artist", track.artist)
                 put("duration", track.duration)
                 put("albumId", track.albumId)
-                put("neteaseId", track.neteaseId)
-                put("neteaseCoverUrl", track.neteaseCoverUrl)
                 put("coverCachePath", track.coverCachePath)
                 put("lyricCachePath", track.lyricCachePath)
                 put("isFavorite", track.isFavorite)
@@ -628,12 +607,8 @@ class MusicPlaybackState {
     fun setLyricsVisible(visible: Boolean) { isLyricsVisible = visible }
     @JvmName("updateLocalCoverCandidates")
     fun setLocalCoverCandidates(candidates: List<RecentCover>) { localCoverCandidates = candidates }
-    @JvmName("updateCoverCandidates")
-    fun setCoverCandidates(candidates: List<NeteaseSongSearchResult>) { coverCandidates = candidates }
-    @JvmName("updateLyricsCandidates")
-    fun setLyricsCandidates(candidates: List<NeteaseSongSearchResult>) { lyricsCandidates = candidates }
-    @JvmName("updateLyricsRefreshError")
-    fun setLyricsRefreshError(error: String?) { lyricsRefreshError = error }
+    @JvmName("updateLocalLyricCandidates")
+    fun setLocalLyricCandidates(candidates: List<LocalLyric>) { localLyricCandidates = candidates }
     @JvmName("updateErrorMsg")
     fun setErrorMsg(message: String?) { errorMsg = message }
     @JvmName("updateTimerMinutes")

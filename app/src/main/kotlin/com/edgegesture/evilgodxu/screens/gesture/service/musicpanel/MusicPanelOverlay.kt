@@ -74,7 +74,7 @@ fun MusicPanelOverlay(
     val colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme
     val scope = rememberCoroutineScope()
     // 在组合阶段解析字符串资源，协程内无法调用 stringResource
-    val lyricsRefreshFailedMessage = stringResource(R.string.music_panel_lyrics_refresh_failed)
+    val lyricsImportFailedMessage = stringResource(R.string.music_panel_lyrics_refresh_failed)
 
     LaunchedEffect(playbackState.isPlaying, playbackState.currentTrack) {
         while (isActive && playbackState.isPlaying) {
@@ -101,15 +101,14 @@ fun MusicPanelOverlay(
     var showRename by remember { mutableStateOf(false) }
     var renameIsTitle by remember { mutableStateOf(true) }
     var renameInitValue by remember { mutableStateOf("") }
-    var showCoverRefresh by remember { mutableStateOf(false) }
     var showLocalCover by remember { mutableStateOf(false) }
     var selectedLocalCover by remember { mutableStateOf<RecentCover?>(null) }
-    var showCoverReplace by remember { mutableStateOf(false) }
-    var selectedCoverCandidate by remember { mutableStateOf<NeteaseSongSearchResult?>(null) }
     var coverSaveFailed by remember { mutableStateOf(false) }
     var coverSaving by remember { mutableStateOf(false) }
-    var showLyricsRefresh by remember { mutableStateOf(false) }
-    var selectedLyricsCandidate by remember { mutableStateOf<NeteaseSongSearchResult?>(null) }
+    var showLyricsImport by remember { mutableStateOf(false) }
+    var selectedLocalLyric by remember { mutableStateOf<LocalLyric?>(null) }
+    var lyricImporting by remember { mutableStateOf(false) }
+    var lyricImportFailed by remember { mutableStateOf(false) }
     var coverTargetId by remember { mutableStateOf<Long?>(null) }
     var renameTargetId by remember { mutableStateOf<Long?>(null) }
     var lyricsTargetId by remember { mutableStateOf<Long?>(null) }
@@ -120,11 +119,11 @@ fun MusicPanelOverlay(
                 .fillMaxSize()
                 .onPreviewKeyEvent { event ->
                     if (event.type == KeyEventType.KeyUp && event.key == Key.Back) {
-                        if (showLyricsRefresh) {
-                            showLyricsRefresh = false
-                            selectedLyricsCandidate = null
-                            playbackState.setLyricsCandidates(emptyList())
-                            playbackState.setLyricsRefreshError(null)
+                        if (showLyricsImport) {
+                            showLyricsImport = false
+                            selectedLocalLyric = null
+                            lyricImportFailed = false
+                            playbackState.setLocalLyricCandidates(emptyList())
                         } else onDismiss()
                         true
                     } else false
@@ -271,11 +270,6 @@ fun MusicPanelOverlay(
                                             track = playbackState.currentTrack,
                                             isPlaying = playbackState.isPlaying,
                                             onClick = { playbackState.setLyricsVisible(true) },
-                                            onOnlineCover = {
-                                                coverTargetId = playbackState.currentTrack?.id
-                                                showCoverRefresh = true
-                                                scope.launch { searchCoverCandidates(playbackState, playbackState.currentTrack!!) }
-                                            },
                                             onLocalCover = {
                                                 coverTargetId = playbackState.currentTrack?.id
                                                 selectedLocalCover = null
@@ -302,10 +296,17 @@ fun MusicPanelOverlay(
                                 ControlBar(
                                     playbackState = playbackState,
                                     onPlaylistClick = { showPlaylist = true },
-                                    onLyricsRefreshClick = {
-                                        lyricsTargetId = playbackState.currentTrack?.id
-                                        showLyricsRefresh = true
-                                        playbackState.currentTrack?.let { track -> scope.launch { searchLyricsCandidates(playbackState, track) } }
+                                    onLyricsImportClick = {
+                                        val track = playbackState.currentTrack
+                                        if (track != null) {
+                                            lyricsTargetId = track.id
+                                            selectedLocalLyric = null
+                                            lyricImportFailed = false
+                                            scope.launch {
+                                                playbackState.setLocalLyricCandidates(scanLocalLrcFiles(track))
+                                                showLyricsImport = true
+                                            }
+                                        }
                                     }
                                 )
                             }
@@ -343,19 +344,16 @@ fun MusicPanelOverlay(
                     SearchResultsOverlay(
                         visible = playbackState.showSearchResults,
                         playbackState = playbackState,
-                        context = context,
                         onClose = {
                             playbackState.setSearchResultsVisible(false)
                             playbackState.setErrorMsg(null)
                         },
                         onRefresh = {
-                            scope.launch {
-                                performSearch(playbackState, context)
-                            }
+                            performLocalSearch(playbackState, playbackState.searchQuery)
                         },
-                        onTrackSelected = { result ->
+                        onTrackSelected = { track ->
                             scope.launch {
-                                playSearchResult(result, playbackState, context, scope)
+                                playLocalSearchResult(track, playbackState, context)
                             }
                         }
                     )
@@ -433,94 +431,43 @@ fun MusicPanelOverlay(
                         }
                     )
 
-                    CoverRefreshOverlay(
-                        visible = showCoverRefresh && !showCoverReplace && !showLocalCover,
-                        track = playbackState.currentTrack,
+                    LyricsImportOverlay(
+                        visible = showLyricsImport,
                         playbackState = playbackState,
-                        context = context,
-                        selectedId = selectedCoverCandidate?.id,
-                        saving = coverSaving,
-                        onCandidateSelected = { selectedCoverCandidate = it },
+                        selected = selectedLocalLyric,
+                        saving = lyricImporting,
+                        errorMessage = if (lyricImportFailed) lyricsImportFailedMessage else null,
+                        onSelected = {
+                            selectedLocalLyric = it
+                            lyricImportFailed = false
+                        },
                         onConfirm = {
-                            val candidate = selectedCoverCandidate
+                            val lyric = selectedLocalLyric
                             val track = playbackState.currentTrack
-                            if (candidate != null && track != null && track.id == coverTargetId) {
-                                val hasCover = MusicMetadataCache.isValid(track.coverCachePath) || track.neteaseCoverUrl.isNotBlank()
-                                if (hasCover) {
-                                    showCoverReplace = true
-                                } else {
-                                    coverSaving = true
-                                    coverSaveFailed = false
-                                    scope.launch {
-                                        coverSaveFailed = !applyCoverCandidate(context, playbackState, track, candidate)
-                                        if (!coverSaveFailed) {
-                                            showCoverRefresh = false
-                                            selectedCoverCandidate = null
-                                        }
-                                        coverSaving = false
+                            if (lyric != null && track != null && track.id == lyricsTargetId) {
+                                lyricImporting = true
+                                lyricImportFailed = false
+                                scope.launch {
+                                    if (importLocalLyrics(context, playbackState, track, lyric)) {
+                                        showLyricsImport = false
+                                        selectedLocalLyric = null
+                                        playbackState.setLocalLyricCandidates(emptyList())
+                                    } else {
+                                        lyricImportFailed = true
                                     }
+                                    lyricImporting = false
                                 }
                             }
                         },
                         onCancel = {
-                            showCoverRefresh = false
-                            selectedCoverCandidate = null
-                            playbackState.setCoverCandidates(emptyList())
-                        }
+                            showLyricsImport = false
+                            selectedLocalLyric = null
+                            lyricImportFailed = false
+                            playbackState.setLocalLyricCandidates(emptyList())
+                        },
+                        onDismissError = { lyricImportFailed = false }
                     )
 
-                    LyricsRefreshOverlay(
-                        visible = showLyricsRefresh,
-                        track = playbackState.currentTrack,
-                        playbackState = playbackState,
-                        selectedId = selectedLyricsCandidate?.id,
-                        context = context,
-                        onCandidateSelected = { selectedLyricsCandidate = it },
-                        onConfirm = {
-                            val candidate = selectedLyricsCandidate
-                            val track = playbackState.currentTrack
-                            if (candidate != null && track != null && track.id == lyricsTargetId) scope.launch {
-                                val success = applyLyricsCandidate(context, playbackState, track, candidate)
-                                if (success) {
-                                    showLyricsRefresh = false
-                                    selectedLyricsCandidate = null
-                                    playbackState.setLyricsCandidates(emptyList())
-                                } else {
-                                    playbackState.setLyricsRefreshError(lyricsRefreshFailedMessage)
-                                }
-                            }
-                        },
-                        onCancel = {
-                            showLyricsRefresh = false
-                            selectedLyricsCandidate = null
-                            playbackState.setLyricsCandidates(emptyList())
-                            playbackState.setLyricsRefreshError(null)
-                        }
-                    )
-
-                    CoverReplaceOverlay(
-                        visible = showCoverReplace,
-                        track = playbackState.currentTrack,
-                        candidate = selectedCoverCandidate,
-                        saving = coverSaving,
-                        onConfirm = {
-                            val candidate = selectedCoverCandidate ?: return@CoverReplaceOverlay
-                            val track = playbackState.currentTrack ?: return@CoverReplaceOverlay
-                            if (track.id != coverTargetId) return@CoverReplaceOverlay
-                            coverSaving = true
-                            coverSaveFailed = false
-                            scope.launch {
-                                coverSaveFailed = !applyCoverCandidate(context, playbackState, track, candidate)
-                                if (!coverSaveFailed) {
-                                    showCoverReplace = false
-                                    showCoverRefresh = false
-                                    selectedCoverCandidate = null
-                                }
-                                coverSaving = false
-                            }
-                        },
-                        onCancel = { showCoverReplace = false }
-                    )
                     if (coverSaveFailed) {
                         MusicErrorBanner(
                             message = stringResource(R.string.music_panel_cover_save_failed),

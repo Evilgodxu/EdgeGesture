@@ -75,7 +75,7 @@ internal suspend fun applyLocalCover(
         val oldPath = track.coverCachePath
         if (oldPath.isNotBlank() && oldPath != path) MusicMetadataCache.deleteCoverFile(oldPath)
         withContext(Dispatchers.Main) {
-            playbackState.updateTrack(track.copy(coverCachePath = path, neteaseCoverUrl = ""))
+            playbackState.updateTrack(track.copy(coverCachePath = path))
             playbackState.setLocalCoverCandidates(emptyList())
         }
         true

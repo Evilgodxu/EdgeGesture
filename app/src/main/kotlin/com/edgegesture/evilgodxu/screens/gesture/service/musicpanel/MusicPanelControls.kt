@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 internal fun ControlBar(
     playbackState: MusicPlaybackState,
     onPlaylistClick: () -> Unit,
-    onLyricsRefreshClick: () -> Unit,
+    onLyricsImportClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -134,7 +134,7 @@ internal fun ControlBar(
                     .align(Alignment.Center)
                     .offset(x = (-110).dp)
                     .size(32.dp),
-                onClick = onLyricsRefreshClick
+                onClick = onLyricsImportClick
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(

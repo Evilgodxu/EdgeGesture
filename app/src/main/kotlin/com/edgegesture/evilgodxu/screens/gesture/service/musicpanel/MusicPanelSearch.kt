@@ -1,6 +1,5 @@
 package com.edgegesture.evilgodxu.screens.gesture.service.musicpanel
 
-import android.content.Context
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -22,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -33,10 +31,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -44,13 +40,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -58,11 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
-import coil3.request.CachePolicy
-import coil3.request.ImageRequest
 import com.edgegesture.evilgodxu.R
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,8 +59,6 @@ internal fun SearchOverlay(
     playbackState: MusicPlaybackState,
     modifier: Modifier = Modifier,
 ) {
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     Column(
         modifier = modifier.pointerInput(Unit) {
             detectHorizontalDragGestures { _, dragAmount ->
@@ -128,12 +115,7 @@ internal fun SearchOverlay(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(
                     onSearch = {
-                        val query = playbackState.searchQuery.trim()
-                        if (query.isNotBlank()) {
-                            scope.launch {
-                                performSearch(playbackState, context)
-                            }
-                        }
+                        performLocalSearch(playbackState, playbackState.searchQuery)
                     }
                 ),
                 decorationBox = { innerTextField ->
@@ -205,7 +187,7 @@ internal fun SearchOverlay(
                             .clip(RoundedCornerShape(8.dp))
                             .clickable {
                                 playbackState.setSearchQuery(query)
-                                scope.launch { performSearch(playbackState, context) }
+                                performLocalSearch(playbackState, query)
                             }
                             .padding(start = 8.dp, end = 2.dp, top = 4.dp, bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -240,10 +222,9 @@ internal fun SearchOverlay(
 internal fun SearchResultsOverlay(
     visible: Boolean,
     playbackState: MusicPlaybackState,
-    context: Context,
     onClose: () -> Unit,
     onRefresh: () -> Unit,
-    onTrackSelected: (NeteaseSongSearchResult) -> Unit,
+    onTrackSelected: (MusicTrack) -> Unit,
 ) {
     AnimatedContent(
         targetState = visible,
@@ -283,9 +264,8 @@ internal fun SearchResultsOverlay(
                         )
                         HeaderIconButton(
                             icon = Icons.Default.Refresh,
-                            onClick = { if (!playbackState.isSearching) onRefresh() },
-                            modifier = Modifier.size(24.dp),
-                            enabled = !playbackState.isSearching
+                            onClick = { onRefresh() },
+                            modifier = Modifier.size(24.dp)
                         )
                         HeaderIconButton(
                             icon = Icons.Default.Close,
@@ -306,11 +286,7 @@ internal fun SearchResultsOverlay(
                     Spacer(modifier = Modifier.height(4.dp))
                 }
 
-                if (playbackState.isSearching) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                    }
-                } else if (playbackState.searchResults.isEmpty()) {
+                if (playbackState.searchResults.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
                             text = stringResource(R.string.music_panel_search_no_results),
@@ -327,12 +303,11 @@ internal fun SearchResultsOverlay(
                     ) {
                         itemsIndexed(
                             items = playbackState.searchResults,
-                            // 聚合两种来源后 id 可能重复，key 需结合来源保证唯一
-                            key = { _, result -> "${result.source}-${result.id}" }
-                        ) { index, result ->
+                            key = { _, track -> track.id }
+                        ) { _, track ->
                             SearchResultRow(
-                                result = result,
-                                onClick = { onTrackSelected(result) }
+                                track = track,
+                                onClick = { onTrackSelected(track) }
                             )
                         }
                     }
@@ -346,7 +321,7 @@ internal fun SearchResultsOverlay(
 
 @Composable
 internal fun SearchResultRow(
-    result: NeteaseSongSearchResult,
+    track: MusicTrack,
     onClick: () -> Unit,
 ) {
     Row(
@@ -358,72 +333,31 @@ internal fun SearchResultRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Box(
+        PlaylistArt(
+            track = track,
             modifier = Modifier
                 .size(28.dp)
                 .clip(RoundedCornerShape(6.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center
-        ) {
-            val coverModel = (result.coverThumbUrl ?: result.coverUrl)?.takeIf { it.isNotBlank() }
-            if (coverModel != null) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(coverModel)
-                        .diskCachePolicy(CachePolicy.DISABLED)
-                        .build(),
-                    contentDescription = result.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            } else {
-                Icon(
-                    imageVector = Icons.Default.MusicNote,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp)
-                )
-            }
-        }
+        )
 
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = result.title,
+                text = track.title,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 12.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = result.artist,
+                text = track.artist,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 10.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
-
-        Text(
-            text = stringResource(
-                when (result.source) {
-                    MusicSearchSource.JAMENDO -> R.string.music_panel_search_source_jamendo
-                    MusicSearchSource.QQ -> R.string.music_panel_search_source_qq
-                    MusicSearchSource.KUGOU -> R.string.music_panel_search_source_kugou
-                    MusicSearchSource.NETEASE -> R.string.music_panel_search_source
-                }
-            ),
-            color = MaterialTheme.colorScheme.primary,
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier
-                .background(
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                    RoundedCornerShape(4.dp)
-                )
-                .padding(horizontal = 5.dp, vertical = 2.dp)
-        )
     }
 }
