@@ -194,6 +194,12 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     // 启动拦截相关
     private var launchBlockState: LaunchBlockState = LaunchBlockState()
     private var currentPackage: String? = null
+    // 桌面（Launcher）包名，用于识别拦截来源是否为桌面
+    private val homePackage: String? by lazy {
+        val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        packageManager.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY)
+            ?.activityInfo?.packageName
+    }
     // 防呆：每个启动者当前连续终止次数
     private val launcherKillCount = mutableMapOf<String, Int>()
     // 防呆：每个启动者冷却截止时间
@@ -447,11 +453,15 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         }
     }
 
-    // 拦截后切回上一个应用；无可用目标时退回桌面，避免被拦截应用停留在前台
+    // 拦截后返回本次拦截的来源应用：来源为桌面时直接回到桌面，
+    // 来源为其他应用时严格切回该应用，避免切换到无关应用
     private fun returnFromBlockedApp(launcherPackage: String?) {
-        if (!actionExecutor.switchToLastApp(launcherPackage)) {
-            performGlobalAction(GLOBAL_ACTION_HOME)
+        if (launcherPackage != null && launcherPackage != homePackage &&
+            actionExecutor.switchToApp(launcherPackage)
+        ) {
+            return
         }
+        performGlobalAction(GLOBAL_ACTION_HOME)
     }
 
     // 终止启动者进程（带防呆：连续最多终止5次，之后冷却15秒）

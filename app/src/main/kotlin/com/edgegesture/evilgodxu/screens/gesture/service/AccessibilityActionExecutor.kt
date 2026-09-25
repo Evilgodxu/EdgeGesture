@@ -576,6 +576,15 @@ class AccessibilityActionExecutor(
         return true
     }
 
+    // 切回指定应用（用于启动拦截后返回来源应用）：只启动该应用，不回退到其他应用。
+    // 返回值表示是否成功切换，供调用方决定是否需要兜底
+    fun switchToApp(packageName: String): Boolean {
+        if (packageName.isBlank() || !launchApp(packageName)) return false
+        previousApp = currentApp
+        currentApp = packageName
+        return true
+    }
+
     fun invalidateBlacklistCache() {
     }
 
