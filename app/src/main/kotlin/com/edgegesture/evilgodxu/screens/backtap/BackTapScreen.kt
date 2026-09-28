@@ -309,11 +309,13 @@ fun BackTapScreen(
     if (showAppPicker) {
         AppPickerDialog(
             onDismiss = { showAppPicker = false },
-            onAppSelected = { packageName ->
+            onAppSelected = { packageName, useFreeform ->
                 viewModel.setBackTapAction(GestureAction.LAUNCH_APP)
                 viewModel.setLaunchAppTarget(packageName)
+                viewModel.setLaunchAppFreeform(useFreeform)
                 showAppPicker = false
-            }
+            },
+            initialFreeform = settings?.launchAppFreeform?.get(GestureSettingsKeys.BACK_TAP_ACTION.name) == true
         )
     }
 }

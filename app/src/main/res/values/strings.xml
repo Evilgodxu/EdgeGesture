@@ -275,6 +275,7 @@
     <string name="expand_panel_controls_title">系统控制</string>
     <string name="expand_panel_add_shortcut_desc">添加快捷方式</string>
     <string name="expand_panel_app_picker_title">选择应用</string>
+    <string name="expand_panel_freeform_launch">小窗启动</string>
     <string name="expand_panel_cancel">取消</string>
     <string name="expand_panel_search_hint">搜索应用名称或包名</string>
     <string name="expand_panel_loading_apps">正在加载应用列表…</string>

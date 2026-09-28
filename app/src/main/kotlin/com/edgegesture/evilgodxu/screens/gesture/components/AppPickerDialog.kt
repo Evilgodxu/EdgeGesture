@@ -25,6 +25,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -37,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
@@ -52,16 +54,20 @@ import com.edgegesture.evilgodxu.data.app.AppInfo
 import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.app.loadAppIconBitmap
 
-// 应用选择对话框：按应用名称或包名即时过滤，用于为「启动应用」动作绑定目标应用
+// 应用选择对话框：按应用名称或包名即时过滤，用于为「启动应用」动作绑定目标应用。
+// 标题栏取消按钮左侧提供小窗启动开关，开启后选中的应用在触发时以小窗模式启动
 @Composable
 fun AppPickerDialog(
     onDismiss: () -> Unit,
-    onAppSelected: (String) -> Unit,
+    onAppSelected: (packageName: String, useFreeform: Boolean) -> Unit,
+    initialFreeform: Boolean = false,
     appRepository: AppRepository = AppRepository.getInstance(LocalContext.current)
 ) {
     val apps by appRepository.appsFlow.collectAsStateWithLifecycle()
     val isLoading by appRepository.isLoading.collectAsStateWithLifecycle()
     var searchQuery by remember { mutableStateOf("") }
+    // 小窗启动开关状态，默认关闭
+    var useFreeform by remember { mutableStateOf(initialFreeform) }
 
     // 应用列表为空时触发后台扫描，适用于无障碍服务未启动或缓存为空的情况
     LaunchedEffect(Unit) {
@@ -97,13 +103,29 @@ fun AppPickerDialog(
                     text = stringResource(R.string.expand_panel_app_picker_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
-                TextButton(onClick = onDismiss) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = stringResource(R.string.expand_panel_cancel),
-                        color = MaterialTheme.colorScheme.primary
+                        text = stringResource(R.string.expand_panel_freeform_launch),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Switch(
+                        checked = useFreeform,
+                        onCheckedChange = { useFreeform = it },
+                        modifier = Modifier.scale(0.8f)
+                    )
+                    TextButton(onClick = onDismiss) {
+                        Text(
+                            text = stringResource(R.string.expand_panel_cancel),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         },
@@ -154,7 +176,7 @@ fun AppPickerDialog(
                             items(items = filteredApps, key = { it.packageName }) { app ->
                                 AppPickerDialogItem(
                                     app = app,
-                                    onClick = { onAppSelected(app.packageName) }
+                                    onClick = { onAppSelected(app.packageName, useFreeform) }
                                 )
                             }
                         }

@@ -159,6 +159,9 @@ object GestureSettingsKeys {
     // 启动应用动作的目标包名存储键后缀，实际键名为「动作键名 + 后缀」
     const val LAUNCH_APP_TARGET_SUFFIX = "__launch_app_target"
 
+    // 启动应用动作的小窗启动标记存储键后缀，实际键名为「动作键名 + 后缀」
+    const val LAUNCH_APP_FREEFORM_SUFFIX = "__launch_app_freeform"
+
     // 手势动作存储键的唯一来源：按「边缘 + 分段(0..2) + 槽位(0..8)」解析
     // 槽位顺序与配置页列表一致：左/右边缘为 主方向短滑/长按、次方向短滑/长按、第三方向短滑/长按，末尾为单击/双击/长按；底部边缘为上滑、左滑、右滑各短滑/长按，末尾同上
     private val EDGE_KEYS: Map<EdgePosition, List<List<Preferences.Key<String>>>> = mapOf(
@@ -369,7 +372,9 @@ data class GestureSettingsState(
         swipeRightLong = GestureAction.NONE
     ),
     // 启动应用动作绑定的目标包名，key 为动作存储键名
-    val launchAppTargets: Map<String, String> = emptyMap()
+    val launchAppTargets: Map<String, String> = emptyMap(),
+    // 启动应用动作是否以小窗模式启动，key 为动作存储键名，仅记录开启项
+    val launchAppFreeform: Map<String, Boolean> = emptyMap()
 )
 
 // 从 Preferences 读取手势动作，统一默认值处理
@@ -383,6 +388,14 @@ private fun Preferences.readLaunchAppTargets(): Map<String, String> =
         if (!name.endsWith(GestureSettingsKeys.LAUNCH_APP_TARGET_SUFFIX)) return@mapNotNull null
         (value as? String)?.takeIf { it.isNotBlank() }
             ?.let { name.removeSuffix(GestureSettingsKeys.LAUNCH_APP_TARGET_SUFFIX) to it }
+    }.toMap()
+
+// 扫描带小窗标记后缀的存储键，构建「动作键名 → 是否小窗启动」映射
+private fun Preferences.readLaunchAppFreeform(): Map<String, Boolean> =
+    asMap().entries.mapNotNull { (key, value) ->
+        val name = key.name
+        if (!name.endsWith(GestureSettingsKeys.LAUNCH_APP_FREEFORM_SUFFIX)) return@mapNotNull null
+        (value as? Boolean)?.let { name.removeSuffix(GestureSettingsKeys.LAUNCH_APP_FREEFORM_SUFFIX) to it }
     }.toMap()
 
 // 从 Preferences 构建 GestureSettingsState，统一默认值处理
@@ -517,7 +530,8 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
             doubleTap = readAction(GestureSettingsKeys.BOTTOM_3_DOUBLE_TAP, GestureAction.NONE),
             longPress = readAction(GestureSettingsKeys.BOTTOM_3_LONG_PRESS, GestureAction.NONE)
         ),
-        launchAppTargets = readLaunchAppTargets()
+        launchAppTargets = readLaunchAppTargets(),
+        launchAppFreeform = readLaunchAppFreeform()
     )
 }
 
@@ -633,6 +647,18 @@ suspend fun Context.saveLaunchAppTarget(actionKey: Preferences.Key<String>, pack
             prefs.minusAssign(targetKey)
         } else {
             prefs[targetKey] = packageName
+        }
+    }
+}
+
+// 保存启动应用动作的小窗启动标记，关闭时清除存储避免冗余
+suspend fun Context.saveLaunchAppFreeform(actionKey: Preferences.Key<String>, enabled: Boolean) = withContext(Dispatchers.IO) {
+    val flagKey = booleanPreferencesKey(actionKey.name + GestureSettingsKeys.LAUNCH_APP_FREEFORM_SUFFIX)
+    gestureDataStore.edit { prefs ->
+        if (enabled) {
+            prefs[flagKey] = true
+        } else {
+            prefs.minusAssign(flagKey)
         }
     }
 }

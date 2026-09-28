@@ -351,12 +351,14 @@ fun EdgeGestureConfigScreen(
                 showAppPicker = false
                 currentActionKey = null
             },
-            onAppSelected = { packageName ->
+            onAppSelected = { packageName, useFreeform ->
                 viewModel.saveGestureAction(pendingKey, GestureAction.LAUNCH_APP)
                 viewModel.saveLaunchAppTarget(pendingKey, packageName)
+                viewModel.saveLaunchAppFreeform(pendingKey, useFreeform)
                 showAppPicker = false
                 currentActionKey = null
-            }
+            },
+            initialFreeform = currentSettings?.launchAppFreeform?.get(pendingKey.name) == true
         )
     }
 }

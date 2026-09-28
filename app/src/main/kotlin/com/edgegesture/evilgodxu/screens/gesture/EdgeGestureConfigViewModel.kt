@@ -11,6 +11,7 @@ import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeHeight
 import com.edgegesture.evilgodxu.data.gesture.saveBottomEdgeWidthPercent
 import com.edgegesture.evilgodxu.data.gesture.saveEdgeGesture
 import com.edgegesture.evilgodxu.data.gesture.saveLaunchAppTarget
+import com.edgegesture.evilgodxu.data.gesture.saveLaunchAppFreeform
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeHeightPercent
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgePositionPercent
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeWidth
@@ -94,6 +95,13 @@ class EdgeGestureConfigViewModel(
     fun saveLaunchAppTarget(key: Preferences.Key<String>, packageName: String?) {
         viewModelScope.launch {
             context.saveLaunchAppTarget(key, packageName)
+        }
+    }
+
+    // 保存启动应用动作是否以小窗模式启动
+    fun saveLaunchAppFreeform(key: Preferences.Key<String>, enabled: Boolean) {
+        viewModelScope.launch {
+            context.saveLaunchAppFreeform(key, enabled)
         }
     }
 }

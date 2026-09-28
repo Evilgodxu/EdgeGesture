@@ -15,6 +15,7 @@ import com.edgegesture.evilgodxu.data.gesture.saveBackTapPauseOnCharging
 import com.edgegesture.evilgodxu.data.gesture.saveBackTapRange
 import com.edgegesture.evilgodxu.data.gesture.saveBackTapSensitivity
 import com.edgegesture.evilgodxu.data.gesture.saveLaunchAppTarget
+import com.edgegesture.evilgodxu.data.gesture.saveLaunchAppFreeform
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -62,6 +63,13 @@ class BackTapViewModel(
     fun setLaunchAppTarget(packageName: String?) {
         viewModelScope.launch {
             context.saveLaunchAppTarget(GestureSettingsKeys.BACK_TAP_ACTION, packageName)
+        }
+    }
+
+    // 保存启动应用动作是否以小窗模式启动
+    fun setLaunchAppFreeform(enabled: Boolean) {
+        viewModelScope.launch {
+            context.saveLaunchAppFreeform(GestureSettingsKeys.BACK_TAP_ACTION, enabled)
         }
     }
 }

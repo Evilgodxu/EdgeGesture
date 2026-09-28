@@ -21,11 +21,15 @@ class AccessibilityGestureDetector(
 ) {
 
     interface GestureCallback {
-        fun onGestureAction(action: GestureAction, launchAppTarget: String?)
+        fun onGestureAction(action: GestureAction, launchAppTarget: String?, useFreeform: Boolean)
     }
 
-    // 手势解析结果：动作 + 启动应用动作绑定的目标包名
-    private data class ResolvedGesture(val action: GestureAction, val launchAppTarget: String?)
+    // 手势解析结果：动作 + 启动应用动作绑定的目标包名 + 是否以小窗模式启动
+    private data class ResolvedGesture(
+        val action: GestureAction,
+        val launchAppTarget: String?,
+        val useFreeform: Boolean
+    )
 
     enum class SwipeDirection {
         UP, DOWN, LEFT, RIGHT
@@ -105,7 +109,7 @@ class AccessibilityGestureDetector(
                             val gesture = resolveTapGesture(position, segmentIndex, TapType.LONG_PRESS, settings)
                             if (gesture.action != GestureAction.NONE) {
                                 isLongPressActionTriggered = true
-                                callback.onGestureAction(gesture.action, gesture.launchAppTarget)
+                                callback.onGestureAction(gesture.action, gesture.launchAppTarget, gesture.useFreeform)
                             }
                         }
                     }
@@ -169,7 +173,7 @@ class AccessibilityGestureDetector(
                             // 第二次点击：触发双击动作（单击已在按下阶段取消）
                             val gesture = resolveTapGesture(position, segmentIndex, TapType.DOUBLE, settings)
                             if (gesture.action != GestureAction.NONE) {
-                                callback.onGestureAction(gesture.action, gesture.launchAppTarget)
+                                callback.onGestureAction(gesture.action, gesture.launchAppTarget, gesture.useFreeform)
                             }
                         } else {
                             val doubleGesture = resolveTapGesture(position, segmentIndex, TapType.DOUBLE, settings)
@@ -179,14 +183,14 @@ class AccessibilityGestureDetector(
                                 val runnable = Runnable {
                                     pendingSingleTap = null
                                     if (singleGesture.action != GestureAction.NONE) {
-                                        callback.onGestureAction(singleGesture.action, singleGesture.launchAppTarget)
+                                        callback.onGestureAction(singleGesture.action, singleGesture.launchAppTarget, singleGesture.useFreeform)
                                     }
                                 }
                                 pendingSingleTap = runnable
                                 handler.postDelayed(runnable, doubleTapTimeout)
                             } else if (singleGesture.action != GestureAction.NONE) {
                                 // 未配置双击：单击立即触发
-                                callback.onGestureAction(singleGesture.action, singleGesture.launchAppTarget)
+                                callback.onGestureAction(singleGesture.action, singleGesture.launchAppTarget, singleGesture.useFreeform)
                             }
                         }
                     }
@@ -221,7 +225,7 @@ class AccessibilityGestureDetector(
     ) {
         val gesture = resolveGesture(position, segmentIndex, direction, isLongPress, settings)
         if (gesture.action != GestureAction.NONE) {
-            callback.onGestureAction(gesture.action, gesture.launchAppTarget)
+            callback.onGestureAction(gesture.action, gesture.launchAppTarget, gesture.useFreeform)
         }
     }
 
@@ -255,7 +259,14 @@ class AccessibilityGestureDetector(
         } else {
             null
         }
-        return ResolvedGesture(action, target)
+        val useFreeform = if (action == GestureAction.LAUNCH_APP) {
+            slotOf(position, direction, isLongPress)?.let { slot ->
+                settings.launchAppFreeform[GestureSettingsKeys.keyFor(position, segmentIndex, slot).name] == true
+            } ?: false
+        } else {
+            false
+        }
+        return ResolvedGesture(action, target, useFreeform)
     }
 
     // 解析点击类手势对应的动作及其启动应用目标
@@ -276,7 +287,12 @@ class AccessibilityGestureDetector(
         } else {
             null
         }
-        return ResolvedGesture(action, target)
+        val useFreeform = if (action == GestureAction.LAUNCH_APP) {
+            settings.launchAppFreeform[GestureSettingsKeys.keyFor(position, segmentIndex, slotOfTap(tapType)).name] == true
+        } else {
+            false
+        }
+        return ResolvedGesture(action, target, useFreeform)
     }
 
     // 取指定边缘分段的点击类手势配置

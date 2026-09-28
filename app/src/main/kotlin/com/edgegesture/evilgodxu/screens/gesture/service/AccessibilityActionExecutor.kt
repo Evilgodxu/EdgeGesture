@@ -133,7 +133,12 @@ class AccessibilityActionExecutor(
         }
     }
 
-    fun performAction(action: GestureAction, settings: GestureSettingsState, launchAppTarget: String? = null) {
+    fun performAction(
+        action: GestureAction,
+        settings: GestureSettingsState,
+        launchAppTarget: String? = null,
+        useFreeform: Boolean = false
+    ) {
         if (action == GestureAction.NONE) return
         vibrate(settings)
         GestureStatsManager.incrementGestureCount(service)
@@ -172,7 +177,7 @@ class AccessibilityActionExecutor(
             GestureAction.REMIND_5M -> scheduleReminder(5)
             GestureAction.REMIND_10M -> scheduleReminder(10)
             GestureAction.REMIND_15M -> scheduleReminder(15)
-            GestureAction.LAUNCH_APP -> launchAppTarget?.let { launchApp(it) }
+            GestureAction.LAUNCH_APP -> launchAppTarget?.let { launchApp(it, useFreeform) }
             GestureAction.NONE -> {}
         }
     }
@@ -588,7 +593,8 @@ class AccessibilityActionExecutor(
     fun invalidateBlacklistCache() {
     }
 
-    fun launchApp(packageName: String): Boolean {
+    fun launchApp(packageName: String, useFreeform: Boolean = false): Boolean {
+        if (useFreeform) return freeformAppLauncher.launch(packageName, useFreeform = true)
         return try {
             val launchIntent = service.packageManager.getLaunchIntentForPackage(packageName)
             if (launchIntent != null) {
