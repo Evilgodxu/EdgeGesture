@@ -329,6 +329,8 @@ fun EdgeGestureConfigScreen(
     if (showActionDialog && pendingKey != null && currentSettings != null) {
         ActionSelectionDialog(
             currentAction = getCurrentActionForDialog(edgeType, selectedSegment, currentSettings, pendingKey),
+            currentRemindMinutes = currentSettings.remindMinutes[pendingKey.name]
+                ?: GestureSettingsKeys.DEFAULT_REMIND_MINUTES,
             onDismiss = { showActionDialog = false },
             onActionSelected = { action ->
                 if (action == GestureAction.LAUNCH_APP) {
@@ -339,6 +341,11 @@ fun EdgeGestureConfigScreen(
                     viewModel.saveGestureAction(pendingKey, action)
                     showActionDialog = false
                 }
+            },
+            onRemindConfirmed = { minutes ->
+                viewModel.saveGestureAction(pendingKey, GestureAction.REMIND)
+                viewModel.saveRemindMinutes(pendingKey, minutes)
+                showActionDialog = false
             },
             getActionDisplayName = { getActionDisplayName(it) }
         )

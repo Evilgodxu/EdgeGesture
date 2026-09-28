@@ -290,6 +290,8 @@ fun BackTapScreen(
     if (showActionDialog && settings != null) {
         ActionSelectionDialog(
             currentAction = settings.backTapAction,
+            currentRemindMinutes = settings.remindMinutes[GestureSettingsKeys.BACK_TAP_ACTION.name]
+                ?: GestureSettingsKeys.DEFAULT_REMIND_MINUTES,
             onDismiss = { showActionDialog = false },
             onActionSelected = { action ->
                 if (action == GestureAction.LAUNCH_APP) {
@@ -300,6 +302,11 @@ fun BackTapScreen(
                     viewModel.setBackTapAction(action)
                     showActionDialog = false
                 }
+            },
+            onRemindConfirmed = { minutes ->
+                viewModel.setBackTapAction(GestureAction.REMIND)
+                viewModel.setRemindMinutes(minutes)
+                showActionDialog = false
             },
             getActionDisplayName = { getActionDisplayName(it) }
         )

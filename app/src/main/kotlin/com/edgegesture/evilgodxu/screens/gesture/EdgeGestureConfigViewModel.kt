@@ -16,6 +16,7 @@ import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeHeightPercent
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgePositionPercent
 import com.edgegesture.evilgodxu.data.gesture.saveLeftEdgeWidth
 import com.edgegesture.evilgodxu.data.gesture.saveLeftSegmentCount
+import com.edgegesture.evilgodxu.data.gesture.saveRemindMinutes
 import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeHeightPercent
 import com.edgegesture.evilgodxu.data.gesture.saveRightEdgePositionPercent
 import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeWidth
@@ -102,6 +103,13 @@ class EdgeGestureConfigViewModel(
     fun saveLaunchAppFreeform(key: Preferences.Key<String>, enabled: Boolean) {
         viewModelScope.launch {
             context.saveLaunchAppFreeform(key, enabled)
+        }
+    }
+
+    // 保存定时提醒动作的分钟数
+    fun saveRemindMinutes(key: Preferences.Key<String>, minutes: Int) {
+        viewModelScope.launch {
+            context.saveRemindMinutes(key, minutes)
         }
     }
 }

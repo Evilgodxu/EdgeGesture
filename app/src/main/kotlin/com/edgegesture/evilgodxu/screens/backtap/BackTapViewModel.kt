@@ -16,6 +16,7 @@ import com.edgegesture.evilgodxu.data.gesture.saveBackTapRange
 import com.edgegesture.evilgodxu.data.gesture.saveBackTapSensitivity
 import com.edgegesture.evilgodxu.data.gesture.saveLaunchAppTarget
 import com.edgegesture.evilgodxu.data.gesture.saveLaunchAppFreeform
+import com.edgegesture.evilgodxu.data.gesture.saveRemindMinutes
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -70,6 +71,13 @@ class BackTapViewModel(
     fun setLaunchAppFreeform(enabled: Boolean) {
         viewModelScope.launch {
             context.saveLaunchAppFreeform(GestureSettingsKeys.BACK_TAP_ACTION, enabled)
+        }
+    }
+
+    // 保存定时提醒动作的分钟数
+    fun setRemindMinutes(minutes: Int) {
+        viewModelScope.launch {
+            context.saveRemindMinutes(GestureSettingsKeys.BACK_TAP_ACTION, minutes)
         }
     }
 }

@@ -137,7 +137,8 @@ class AccessibilityActionExecutor(
         action: GestureAction,
         settings: GestureSettingsState,
         launchAppTarget: String? = null,
-        useFreeform: Boolean = false
+        useFreeform: Boolean = false,
+        remindMinutes: Int? = null
     ) {
         if (action == GestureAction.NONE) return
         vibrate(settings)
@@ -172,11 +173,7 @@ class AccessibilityActionExecutor(
             GestureAction.TRANSLATE -> toggleTranslation()
             GestureAction.ALIPAY_SCAN -> launchScanAlipay()
             GestureAction.WECHAT_SCAN -> launchScanWechat()
-            GestureAction.REMIND_1M -> scheduleReminder(1)
-            GestureAction.REMIND_3M -> scheduleReminder(3)
-            GestureAction.REMIND_5M -> scheduleReminder(5)
-            GestureAction.REMIND_10M -> scheduleReminder(10)
-            GestureAction.REMIND_15M -> scheduleReminder(15)
+            GestureAction.REMIND -> scheduleReminder(remindMinutes ?: GestureSettingsKeys.DEFAULT_REMIND_MINUTES)
             GestureAction.LAUNCH_APP -> launchAppTarget?.let { launchApp(it, useFreeform) }
             GestureAction.NONE -> {}
         }

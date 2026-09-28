@@ -162,6 +162,12 @@ object GestureSettingsKeys {
     // 启动应用动作的小窗启动标记存储键后缀，实际键名为「动作键名 + 后缀」
     const val LAUNCH_APP_FREEFORM_SUFFIX = "__launch_app_freeform"
 
+    // 定时提醒动作的分钟数存储键后缀，实际键名为「动作键名 + 后缀」
+    const val REMIND_MINUTES_SUFFIX = "__remind_minutes"
+
+    // 定时提醒的默认分钟数
+    const val DEFAULT_REMIND_MINUTES = 5
+
     // 手势动作存储键的唯一来源：按「边缘 + 分段(0..2) + 槽位(0..8)」解析
     // 槽位顺序与配置页列表一致：左/右边缘为 主方向短滑/长按、次方向短滑/长按、第三方向短滑/长按，末尾为单击/双击/长按；底部边缘为上滑、左滑、右滑各短滑/长按，末尾同上
     private val EDGE_KEYS: Map<EdgePosition, List<List<Preferences.Key<String>>>> = mapOf(
@@ -213,12 +219,8 @@ enum class GestureAction(val value: String) {
     // 扫一扫
     ALIPAY_SCAN("alipay_scan"),
     WECHAT_SCAN("wechat_scan"),
-    // 延时提醒
-    REMIND_1M("remind_1m"),
-    REMIND_3M("remind_3m"),
-    REMIND_5M("remind_5m"),
-    REMIND_10M("remind_10m"),
-    REMIND_15M("remind_15m"),
+    // 定时提醒，具体分钟数单独存储
+    REMIND("remind"),
     // 启动指定应用，目标包名单独存储
     LAUNCH_APP("launch_app");
 
@@ -374,7 +376,9 @@ data class GestureSettingsState(
     // 启动应用动作绑定的目标包名，key 为动作存储键名
     val launchAppTargets: Map<String, String> = emptyMap(),
     // 启动应用动作是否以小窗模式启动，key 为动作存储键名，仅记录开启项
-    val launchAppFreeform: Map<String, Boolean> = emptyMap()
+    val launchAppFreeform: Map<String, Boolean> = emptyMap(),
+    // 定时提醒动作的分钟数，key 为动作存储键名，缺省时使用 [GestureSettingsKeys.DEFAULT_REMIND_MINUTES]
+    val remindMinutes: Map<String, Int> = emptyMap()
 )
 
 // 从 Preferences 读取手势动作，统一默认值处理
@@ -396,6 +400,14 @@ private fun Preferences.readLaunchAppFreeform(): Map<String, Boolean> =
         val name = key.name
         if (!name.endsWith(GestureSettingsKeys.LAUNCH_APP_FREEFORM_SUFFIX)) return@mapNotNull null
         (value as? Boolean)?.let { name.removeSuffix(GestureSettingsKeys.LAUNCH_APP_FREEFORM_SUFFIX) to it }
+    }.toMap()
+
+// 扫描带定时提醒分钟数后缀的存储键，构建「动作键名 → 分钟数」映射
+private fun Preferences.readRemindMinutes(): Map<String, Int> =
+    asMap().entries.mapNotNull { (key, value) ->
+        val name = key.name
+        if (!name.endsWith(GestureSettingsKeys.REMIND_MINUTES_SUFFIX)) return@mapNotNull null
+        (value as? Int)?.let { name.removeSuffix(GestureSettingsKeys.REMIND_MINUTES_SUFFIX) to it }
     }.toMap()
 
 // 从 Preferences 构建 GestureSettingsState，统一默认值处理
@@ -531,7 +543,8 @@ fun Preferences.toGestureSettingsState(): GestureSettingsState {
             longPress = readAction(GestureSettingsKeys.BOTTOM_3_LONG_PRESS, GestureAction.NONE)
         ),
         launchAppTargets = readLaunchAppTargets(),
-        launchAppFreeform = readLaunchAppFreeform()
+        launchAppFreeform = readLaunchAppFreeform(),
+        remindMinutes = readRemindMinutes()
     )
 }
 
@@ -660,6 +673,14 @@ suspend fun Context.saveLaunchAppFreeform(actionKey: Preferences.Key<String>, en
         } else {
             prefs.minusAssign(flagKey)
         }
+    }
+}
+
+// 保存定时提醒动作的分钟数
+suspend fun Context.saveRemindMinutes(actionKey: Preferences.Key<String>, minutes: Int) = withContext(Dispatchers.IO) {
+    val minutesKey = intPreferencesKey(actionKey.name + GestureSettingsKeys.REMIND_MINUTES_SUFFIX)
+    gestureDataStore.edit { prefs ->
+        prefs[minutesKey] = minutes
     }
 }
 

@@ -29,11 +29,7 @@ fun getActionDisplayName(action: GestureAction): String {
         GestureAction.TRANSLATE -> stringResource(R.string.gesture_action_translate)
         GestureAction.ALIPAY_SCAN -> stringResource(R.string.gesture_action_alipay_scan)
         GestureAction.WECHAT_SCAN -> stringResource(R.string.gesture_action_wechat_scan)
-        GestureAction.REMIND_1M -> stringResource(R.string.gesture_action_remind_1m)
-        GestureAction.REMIND_3M -> stringResource(R.string.gesture_action_remind_3m)
-        GestureAction.REMIND_5M -> stringResource(R.string.gesture_action_remind_5m)
-        GestureAction.REMIND_10M -> stringResource(R.string.gesture_action_remind_10m)
-        GestureAction.REMIND_15M -> stringResource(R.string.gesture_action_remind_15m)
+        GestureAction.REMIND -> stringResource(R.string.gesture_action_remind)
         GestureAction.LAUNCH_APP -> stringResource(R.string.gesture_action_launch_app)
     }
 }

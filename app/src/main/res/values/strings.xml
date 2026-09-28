@@ -159,12 +159,11 @@
     <string name="gesture_action_alipay_scan">支付宝扫一扫</string>
     <string name="gesture_action_wechat_scan">微信扫一扫</string>
 
-    <!-- 延时提醒 -->
-    <string name="gesture_action_remind_1m">1分钟后提醒</string>
-    <string name="gesture_action_remind_3m">3分钟后提醒</string>
-    <string name="gesture_action_remind_5m">5分钟后提醒</string>
-    <string name="gesture_action_remind_10m">10分钟后提醒</string>
-    <string name="gesture_action_remind_15m">15分钟后提醒</string>
+    <!-- 定时提醒 -->
+    <string name="gesture_action_remind">定时提醒</string>
+    <string name="gesture_remind_timer_minutes">分钟</string>
+    <string name="gesture_remind_timer_confirm">确定</string>
+    <string name="gesture_remind_timer_cancel">取消</string>
     <string name="gesture_remind_feedback">已设置%d分钟后提醒</string>
     <string name="gesture_remind_cancelled">已取消%d分钟提醒</string>
     <string name="gesture_remind_channel_name">手势提醒</string>

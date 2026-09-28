@@ -160,11 +160,10 @@
     <string name="gesture_action_wechat_scan">WeChat scan</string>
 
     <!-- Delay reminders -->
-    <string name="gesture_action_remind_1m">Remind in 1 minute</string>
-    <string name="gesture_action_remind_3m">Remind in 3 minutes</string>
-    <string name="gesture_action_remind_5m">Remind in 5 minutes</string>
-    <string name="gesture_action_remind_10m">Remind in 10 minutes</string>
-    <string name="gesture_action_remind_15m">Remind in 15 minutes</string>
+    <string name="gesture_action_remind">Scheduled reminder</string>
+    <string name="gesture_remind_timer_minutes">min</string>
+    <string name="gesture_remind_timer_confirm">OK</string>
+    <string name="gesture_remind_timer_cancel">Cancel</string>
     <string name="gesture_remind_feedback">Reminder set in %d minutes</string>
     <string name="gesture_remind_cancelled">Reminder cancelled (%d minutes)</string>
     <string name="gesture_remind_channel_name">Gesture reminders</string>

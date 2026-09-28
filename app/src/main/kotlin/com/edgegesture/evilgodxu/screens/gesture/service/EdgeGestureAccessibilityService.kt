@@ -320,7 +320,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                 s.backTapAction,
                 settings,
                 s.launchAppTargets[GestureSettingsKeys.BACK_TAP_ACTION.name],
-                s.launchAppFreeform[GestureSettingsKeys.BACK_TAP_ACTION.name] == true
+                s.launchAppFreeform[GestureSettingsKeys.BACK_TAP_ACTION.name] == true,
+                s.remindMinutes[GestureSettingsKeys.BACK_TAP_ACTION.name]
             )
         }.also {
             it.setMode(s.backTapMode)
@@ -646,8 +647,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         return pm.isInteractive
     }
 
-    override fun onGestureAction(action: GestureAction, launchAppTarget: String?, useFreeform: Boolean) {
-        actionExecutor.performAction(action, settings, launchAppTarget, useFreeform)
+    override fun onGestureAction(action: GestureAction, launchAppTarget: String?, useFreeform: Boolean, remindMinutes: Int?) {
+        actionExecutor.performAction(action, settings, launchAppTarget, useFreeform, remindMinutes)
     }
 
     // 系统返回键（含手势导航返回）触发时关闭屏幕翻译；

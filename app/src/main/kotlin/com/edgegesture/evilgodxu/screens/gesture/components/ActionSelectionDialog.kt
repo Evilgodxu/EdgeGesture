@@ -13,6 +13,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,14 +29,28 @@ import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 
 // 动作选择对话框
+// 「定时提醒」不直接选中，而是展开二级对话框调整分钟数后回传
 @Composable
 fun ActionSelectionDialog(
     currentAction: GestureAction,
+    currentRemindMinutes: Int,
     onDismiss: () -> Unit,
     onActionSelected: (GestureAction) -> Unit,
+    onRemindConfirmed: (Int) -> Unit,
     getActionDisplayName: @Composable (GestureAction) -> String
 ) {
     val isDarkTheme = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    var showRemindDialog by remember { mutableStateOf(false) }
+
+    if (showRemindDialog) {
+        // 二级对话框：调整定时提醒分钟数
+        RemindTimerDialog(
+            initialMinutes = currentRemindMinutes,
+            onDismiss = { showRemindDialog = false },
+            onConfirm = onRemindConfirmed
+        )
+        return
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -66,7 +84,14 @@ fun ActionSelectionDialog(
                                     else -> MaterialTheme.colorScheme.surface
                                 }
                             )
-                            .clickable { onActionSelected(action) }
+                            .clickable {
+                                if (action == GestureAction.REMIND) {
+                                    // 定时提醒需先在二级对话框确定分钟数
+                                    showRemindDialog = true
+                                } else {
+                                    onActionSelected(action)
+                                }
+                            }
                             .padding(vertical = 14.dp),
                         textAlign = TextAlign.Center,
                         color = when {

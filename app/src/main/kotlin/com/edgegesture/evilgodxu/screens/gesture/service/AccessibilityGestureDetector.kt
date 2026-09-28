@@ -21,14 +21,15 @@ class AccessibilityGestureDetector(
 ) {
 
     interface GestureCallback {
-        fun onGestureAction(action: GestureAction, launchAppTarget: String?, useFreeform: Boolean)
+        fun onGestureAction(action: GestureAction, launchAppTarget: String?, useFreeform: Boolean, remindMinutes: Int?)
     }
 
-    // 手势解析结果：动作 + 启动应用动作绑定的目标包名 + 是否以小窗模式启动
+    // 手势解析结果：动作 + 启动应用动作绑定的目标包名 + 是否以小窗模式启动 + 定时提醒分钟数
     private data class ResolvedGesture(
         val action: GestureAction,
         val launchAppTarget: String?,
-        val useFreeform: Boolean
+        val useFreeform: Boolean,
+        val remindMinutes: Int?
     )
 
     enum class SwipeDirection {
@@ -109,7 +110,7 @@ class AccessibilityGestureDetector(
                             val gesture = resolveTapGesture(position, segmentIndex, TapType.LONG_PRESS, settings)
                             if (gesture.action != GestureAction.NONE) {
                                 isLongPressActionTriggered = true
-                                callback.onGestureAction(gesture.action, gesture.launchAppTarget, gesture.useFreeform)
+                                callback.onGestureAction(gesture.action, gesture.launchAppTarget, gesture.useFreeform, gesture.remindMinutes)
                             }
                         }
                     }
@@ -173,7 +174,7 @@ class AccessibilityGestureDetector(
                             // 第二次点击：触发双击动作（单击已在按下阶段取消）
                             val gesture = resolveTapGesture(position, segmentIndex, TapType.DOUBLE, settings)
                             if (gesture.action != GestureAction.NONE) {
-                                callback.onGestureAction(gesture.action, gesture.launchAppTarget, gesture.useFreeform)
+                                callback.onGestureAction(gesture.action, gesture.launchAppTarget, gesture.useFreeform, gesture.remindMinutes)
                             }
                         } else {
                             val doubleGesture = resolveTapGesture(position, segmentIndex, TapType.DOUBLE, settings)
@@ -183,14 +184,14 @@ class AccessibilityGestureDetector(
                                 val runnable = Runnable {
                                     pendingSingleTap = null
                                     if (singleGesture.action != GestureAction.NONE) {
-                                        callback.onGestureAction(singleGesture.action, singleGesture.launchAppTarget, singleGesture.useFreeform)
+                                        callback.onGestureAction(singleGesture.action, singleGesture.launchAppTarget, singleGesture.useFreeform, singleGesture.remindMinutes)
                                     }
                                 }
                                 pendingSingleTap = runnable
                                 handler.postDelayed(runnable, doubleTapTimeout)
                             } else if (singleGesture.action != GestureAction.NONE) {
                                 // 未配置双击：单击立即触发
-                                callback.onGestureAction(singleGesture.action, singleGesture.launchAppTarget, singleGesture.useFreeform)
+                                callback.onGestureAction(singleGesture.action, singleGesture.launchAppTarget, singleGesture.useFreeform, singleGesture.remindMinutes)
                             }
                         }
                     }
@@ -225,7 +226,7 @@ class AccessibilityGestureDetector(
     ) {
         val gesture = resolveGesture(position, segmentIndex, direction, isLongPress, settings)
         if (gesture.action != GestureAction.NONE) {
-            callback.onGestureAction(gesture.action, gesture.launchAppTarget, gesture.useFreeform)
+            callback.onGestureAction(gesture.action, gesture.launchAppTarget, gesture.useFreeform, gesture.remindMinutes)
         }
     }
 
@@ -266,7 +267,14 @@ class AccessibilityGestureDetector(
         } else {
             false
         }
-        return ResolvedGesture(action, target, useFreeform)
+        val remindMinutes = if (action == GestureAction.REMIND) {
+            slotOf(position, direction, isLongPress)?.let { slot ->
+                settings.remindMinutes[GestureSettingsKeys.keyFor(position, segmentIndex, slot).name]
+            }
+        } else {
+            null
+        }
+        return ResolvedGesture(action, target, useFreeform, remindMinutes)
     }
 
     // 解析点击类手势对应的动作及其启动应用目标
@@ -292,7 +300,12 @@ class AccessibilityGestureDetector(
         } else {
             false
         }
-        return ResolvedGesture(action, target, useFreeform)
+        val remindMinutes = if (action == GestureAction.REMIND) {
+            settings.remindMinutes[GestureSettingsKeys.keyFor(position, segmentIndex, slotOfTap(tapType)).name]
+        } else {
+            null
+        }
+        return ResolvedGesture(action, target, useFreeform, remindMinutes)
     }
 
     // 取指定边缘分段的点击类手势配置
