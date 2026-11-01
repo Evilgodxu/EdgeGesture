@@ -57,6 +57,10 @@ android {
     }
 
     packaging {
+        dex {
+            // 默认按 stored 打包（安装时少一次解压，APK 却明显增大）；这里优先发布包体积，改用 deflate
+            useLegacyPackaging = true
+        }
         resources {
             excludes += setOf(
                 // Kotlin 模块元数据文件（每个 Kotlin 库都会生成，必然重复）
