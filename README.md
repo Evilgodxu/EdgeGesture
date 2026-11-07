@@ -4,23 +4,23 @@
 
 <img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp" width="96" alt="EdgeGesture" />
 
-**An Android app built on the accessibility service — edge gestures, back double-tap, expand / task panels, a floating music panel and more.**
+**An Android app built on the accessibility service — edge gestures, back double-tap, expand panel, launch blocking and more.**
 
 **English** | [简体中文](README.zh-CN.md)
 
 ![Release](https://img.shields.io/github/v/release/Evilgodxu/EdgeGesture?style=flat-square&color=4f46e5)
 ![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 ![Platform](https://img.shields.io/badge/platform-Android-brightgreen)
-![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-purple)
-![AGP](https://img.shields.io/badge/AGP-9.4.0-blue)
-![Gradle](https://img.shields.io/badge/Gradle-9.7.1-blue)
+![Kotlin](https://img.shields.io/badge/Kotlin-2.4.21-purple)
+![AGP](https://img.shields.io/badge/AGP-9.5.0-blue)
+![Gradle](https://img.shields.io/badge/Gradle-9.8.2-blue)
 ![Compose BOM](https://img.shields.io/badge/Compose%20BOM-2026.09.00-blue)
 ![minSdk](https://img.shields.io/badge/minSdk-34-orange)
 ![targetSdk](https://img.shields.io/badge/targetSdk-37-orange)
 
 </div>
 
-**EdgeGesture (边缘手势)** lets you drive the phone with edge swipes and taps or double-taps on the back of the device, launch apps from an expand panel, and pull a **floating music panel**, a **task panel** or a **compass clock** over any app.
+**EdgeGesture (边缘手势)** lets you drive the phone with edge swipes and taps or double-taps on the back of the device, launch apps from an expand panel, and block unwanted app launches.
 
 ## Features
 
@@ -51,11 +51,10 @@ Detects double taps on the back of the device with the accelerometer, using a he
 | Media | Previous track, Next track |
 | System | Flashlight, Voice assistant, Power menu, Lock screen, Screenshot |
 | Window | Freeform window |
-| Panel | Expand panel, Music panel, Task panel, Compass clock |
-| Translate | Screen translate |
+| Panel | Expand panel |
 | Shortcut | Alipay scan, WeChat scan |
 | App | Launch app — bind any installed app as the target |
-| Other | Delay reminders (1 / 3 / 5 / 10 / 15 min), None |
+| Other | Delay reminders (custom minutes), None |
 
 ### Expand panel
 
@@ -63,28 +62,6 @@ Detects double taps on the back of the device with the accelerometer, using a he
 - **App shortcuts** — 8 slots, tap to launch instantly
 - **Freeform launch** — each slot can be toggled to open in a freeform (mini) window
 - **Icon cache** — app icons are cached while scanning the app list
-
-### Task panel
-
-- Lists the recent-app history the accessibility service has collected (max 10 entries, filtered by the app-switch blacklist)
-- **Tap to open**, **double-tap for a freeform window**, **swipe or clear to dismiss** — dismissal removes the task through Shizuku
-
-### Screen translate
-
-- Reads on-screen text and its coordinates from the accessibility tree and overlays the translation in place; the overlay is not touchable, so the app underneath keeps working
-- Falls back across **Microsoft Edge**, **Google** and a **free model** endpoint, and remembers the last provider that succeeded
-- Toggle-style: trigger again (or switch apps) to dismiss
-
-### Music panel
-
-- Full playback panel rendered as a floating overlay on top of any app
-- **Mini player** — a compact bar pinned under the status bar while playing; tap to expand back into the full panel
-- **Local library** — MediaStore scan plus audio import through `VIEW` / `SEND` intents; search is local and keeps a history
-- **Lyrics** — embedded lyrics and local `.lrc` files, including enhanced LRC with per-word timestamps and `[tr]` translation blocks; word-by-word highlighting can be switched off
-- **Covers** — system thumbnails / embedded art plus local image candidates (Coil)
-- **Metadata write-back** — rename title / artist and write cover art into MP3 (ID3v2), MP4 / M4A, FLAC and Opus files with a built-in tag writer
-- **Audio signal path** panel — format, source / output sample rate, bit depth, channels, output strategy, output device and route of the current track
-- Play modes (repeat one / repeat all / shuffle), favorites, sleep timer, playlist with long-press removal, and playback settings
 
 ### Launch blocker
 
@@ -104,10 +81,6 @@ Built on the accessibility service, optionally assisted by **Shizuku**.
 - Auto-initializes with system apps and the app itself on first launch; permission-aware, with a `PackageManager` + `<queries>` fallback when `QUERY_ALL_PACKAGES` is unavailable
 - Listens for app install / uninstall and updates automatically
 
-### Compass clock
-
-A canvas overlay: the year sits in the center and seven concentric rings carry month / day / weekday / Chinese double-hour / hour / minute / second, with the current value at the 3 o'clock position. It plays an opening sequence, spins 720°, then ticks in real time; trigger it again to close.
-
 ### Settings
 
 - **Theme** — light, dark or follow system, switched with a circular-reveal transition
@@ -120,13 +93,11 @@ A canvas overlay: the year sits in the center and seven concentric rings carry m
 Permission cards live on the main page and show their grant state; the whole group collapses once everything is granted. Tapping a card opens the system page and starts a 500 ms poll that refreshes state and brings the app back to the foreground as soon as the permission is granted. Required by feature:
 
 - **Accessibility service** — core system-level gesture handling
-- **Display over other apps** — trigger area and all floating panels
+- **Display over other apps** — trigger area and expand panel
 - **Notification** — keeps the gesture service running in the background
 - **Battery optimization** — ignored so the service stays alive
 - **Query installed apps** — full app list scanning
 - **Write system settings** — brightness slider in the expand panel
-- **Media audio / images** — local music library and artwork
-- **All files access** (optional) — write metadata back into audio files
 
 ### In-app updates
 
@@ -140,20 +111,17 @@ Uncaught exceptions and handled exceptions are written to daily log files under 
 
 | Layer | Technology |
 | --- | --- |
-| Language | Kotlin 2.4.20 |
+| Language | Kotlin 2.4.21 |
 | UI | Jetpack Compose (BOM 2026.09.00) + Material 3 |
 | Adaptive layout | androidx.window 1.5.1 (`WindowSizeClass`) |
 | DI | AndroidX ViewModel factories + app-level singletons |
-| Navigation | Navigation 3 — `navigation3-runtime` / `navigation3-ui` 1.1.7 (type-safe `NavKey`) |
-| State | DataStore Preferences 1.2.1 + StateFlow / MutableStateFlow |
+| Navigation | Navigation 3 — `navigation3-runtime` / `navigation3-ui` 1.2.0 (type-safe `NavKey`) |
+| State | DataStore Preferences 1.3.0 + StateFlow / MutableStateFlow |
 | Permissions | Shizuku 13.1.5 + custom `UserService` (AIDL) |
-| Audio | Media3 ExoPlayer 1.11.1 + MediaSessionService |
-| Image loading | Coil 3.6.2 (local cover candidates) |
-| Network | OkHttp 5.5.0 |
-| Serialization | kotlinx.serialization 1.11.0 |
-| Coroutines | kotlinx.coroutines 1.11.0 (incl. coroutines-guava for MediaController) |
-| Hidden API bypass | hidden-api-bypass 6.1 (freeform windowing mode) |
-| Build | AGP 9.4.0, Gradle 9.7.1, refreshVersions, JDK 21 |
+| Network | OkHttp 5.5.1 |
+| Serialization | kotlinx.serialization 1.12.0 |
+| Hidden API bypass | hidden-api-bypass 6.2 (freeform windowing mode) |
+| Build | AGP 9.5.0, Gradle 9.8.2, refreshVersions, JDK 21 |
 
 ## Project Structure
 
@@ -168,19 +136,14 @@ Uncaught exceptions and handled exceptions are written to daily log files under 
 │       │   │   ├── gesture/         # Gesture / expand-panel settings, GestureStatsManager
 │       │   │   ├── launchblock/     # Launch-block rules
 │       │   │   ├── permission/      # PermissionMonitor
-│       │   │   ├── shizuku/         # ShizukuManager
-│       │   │   └── translate/       # TranslationService
+│       │   │   └── shizuku/         # ShizukuManager
 │       │   ├── log/                 # CrashLogManager
 │       │   ├── navigation/          # NavGraph (Navigation 3 type-safe keys)
 │       │   ├── screens/
 │       │   │   ├── gesture/         #   Main page + edge config
 │       │   │   │   ├── components/  #   Shared page components
 │       │   │   │   └── service/     #   Accessibility service + overlays
-│       │   │   │       ├── compassclock/
-│       │   │   │       ├── expandpanel/
-│       │   │   │       ├── musicpanel/
-│       │   │   │       ├── taskpanel/
-│       │   │   │       └── translate/
+│       │   │   │       └── expandpanel/
 │       │   │   ├── backtap/         #   Back double tap
 │       │   │   ├── blacklist/       #   App switch blacklist
 │       │   │   ├── expandpanel/     #   Expand panel settings
@@ -193,6 +156,7 @@ Uncaught exceptions and handled exceptions are written to daily log files under 
 │       │   ├── MainActivity.kt
 │       │   └── MyApplication.kt
 │       └── res/                     # Resources (values / values-en)
+├── archive/removed-features/        # Archived removed features (source + integration snapshots)
 ├── gradle/
 │   ├── libs.versions.toml           # Version catalog
 │   └── wrapper/
@@ -205,12 +169,12 @@ Uncaught exceptions and handled exceptions are written to daily log files under 
 
 ## Architecture
 
-The app follows **MVVM with unidirectional data flow**: state flows down from `ViewModel` → `UiState` → UI while events flow up from the UI to the `ViewModel`. Shared data logic lives in `data/` behind repository-style objects (settings, app list, launch-block rules, translation, permissions, Shizuku), wired together by AndroidX ViewModel factories and app-level singletons.
+The app follows **MVVM with unidirectional data flow**: state flows down from `ViewModel` → `UiState` → UI while events flow up from the UI to the `ViewModel`. Shared data logic lives in `data/` behind repository-style objects (settings, app list, launch-block rules, permissions, Shizuku), wired together by AndroidX ViewModel factories and app-level singletons.
 
 Gesture and overlay capabilities sit in `screens/gesture/service/`:
-`EdgeGestureAccessibilityService` detects edge swipes, edge taps and background taps and dispatches actions through `AccessibilityActionExecutor`. Each overlay (edge trigger area, expand panel, music panel, mini player, task panel, translation, compass clock) is a system window hosted by its own manager, mostly as a `ComposeView`, coordinated from the accessibility service.
+`EdgeGestureAccessibilityService` detects edge swipes, edge taps and background taps and dispatches actions through `AccessibilityActionExecutor`. Each overlay (edge trigger area, expand panel) is a system window hosted by its own manager, mostly as a `ComposeView`, coordinated from the accessibility service.
 
-Settings persist in DataStore (`gesture_settings`, `settings`, `launch_block`). Optional system-level operations — removing a task / stopping an app process, freeform windowing — go through Shizuku's `CommandUserService` or the hidden-API bypass, and simply stay inactive when Shizuku is unavailable.
+Settings persist in DataStore (`gesture_settings`, `settings`, `launch_block`). Optional system-level operations — stopping an app process, freeform windowing — go through Shizuku's `CommandUserService` or the hidden-API bypass, and simply stay inactive when Shizuku is unavailable.
 
 ## Getting Started
 
@@ -246,10 +210,6 @@ KEY_PASSWORD=your_key_password
 ```
 
 The keystore is expected at `jh.keystore` in the project root (adjust `storeFile` in `app/build.gradle.kts` if needed). Both files are git-ignored — never commit them.
-
-## Disclaimer
-
-Screen translation relies on third-party public endpoints (Microsoft Edge / Google / free model), whose availability and policy may vary by region and content. The app and document are for learning and communication only — please support the copyright holders.
 
 ## License
 
