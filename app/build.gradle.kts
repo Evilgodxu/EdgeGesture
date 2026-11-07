@@ -23,8 +23,8 @@ android {
         applicationId = "com.edgegesture.evilgodxu"
         minSdk = 34
         targetSdk = 37
-        versionCode = 22
-        versionName = "5.2.2"
+        versionCode = 23
+        versionName = "5.3.0"
 
         ndk {
             abiFilters += listOf("arm64-v8a")
@@ -57,8 +57,12 @@ android {
     }
 
     packaging {
+        jniLibs {
+            // 不压缩原生库，确保可以 mmap 加载，安装后体积最小
+            useLegacyPackaging = false
+        }
         dex {
-            // 默认按 stored 打包（安装时少一次解压，APK 却明显增大）；这里优先发布包体积，改用 deflate
+            // 定向压缩 DEX，减小分发体积
             useLegacyPackaging = true
         }
         resources {
