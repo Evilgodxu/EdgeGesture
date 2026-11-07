@@ -22,10 +22,7 @@ datastore = "1.3.0"
 workmanager = "2.11.2"
 window = "1.5.1"
 material3Adaptive = "1.3.0"
-coroutines = "1.11.0"
 hiddenApiBypass = "6.2"
-coil = "3.6.3"
-media3 = "1.11.1"
 okhttp = "5.5.1"
 kotlinxSerializationJson = "1.12.0"
 
@@ -58,9 +55,6 @@ androidx-window = { group = "androidx.window", name = "window", version.ref = "w
 androidx-compose-material3-adaptive = { group = "androidx.compose.material3.adaptive", name = "adaptive", version.ref = "material3Adaptive" }
 androidx-compose-material3-adaptive-layout = { group = "androidx.compose.material3.adaptive", name = "adaptive-layout", version.ref = "material3Adaptive" }
 
-# Guava 集成：Media3 MediaController 异步构建结果的 await 支持
-kotlinx-coroutines-guava = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-guava", version.ref = "coroutines" }
-
 # Kotlin Serialization
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 
@@ -71,12 +65,5 @@ shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version = "
 # Hidden API Bypass
 hidden-api-bypass = { group = "org.lsposed.hiddenapibypass", name = "hiddenapibypass", version.ref = "hiddenApiBypass" }
 
-coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
-coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
-
-# Media3 ExoPlayer
-androidx-media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", version.ref = "media3" }
-androidx-media3-session = { group = "androidx.media3", name = "media3-session", version.ref = "media3" }
-
-# 屏幕翻译网络请求
+# 应用更新网络请求
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }

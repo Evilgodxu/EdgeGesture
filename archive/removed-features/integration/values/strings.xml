@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 应用通用 -->
+    <string name="app_name">边缘手势</string>
+    <string name="task_panel_empty">暂无最近使用的应用</string>
+    <string name="task_panel_single_tap_hint">单击启动</string>
+    <string name="task_panel_double_tap_hint">双击小窗</string>
+
+    <!-- 设置页 (Settings) -->
+    <!-- 页面通用 -->
+    <string name="settings_title">更多设置</string>
+
+    <!-- 外观设置 -->
+    <string name="settings_section_appearance">外观</string>
+    <string name="settings_theme_title">主题模式</string>
+    <string name="settings_theme_system">跟随系统</string>
+    <string name="settings_theme_dark">始终深色</string>
+    <string name="settings_theme_light">始终浅色</string>
+    <string name="settings_theme_dialog_title">选择主题</string>
+
+    <!-- 语言设置 -->
+    <string name="settings_section_language">语言</string>
+    <string name="settings_language_title">应用语言</string>
+    <string name="settings_language_system">跟随系统</string>
+    <string name="settings_language_dialog_title">选择语言</string>
+    <string name="settings_language_chinese">简体中文</string>
+    <string name="settings_language_english">English</string>
+
+    <!-- 捐赠设置 -->
+    <string name="settings_donate">捐赠打赏</string>
+    <string name="settings_donate_desc">支持开发者继续改进应用</string>
+    <string name="settings_donate_alipay">支付宝</string>
+    <string name="settings_donate_thanks">感谢您的支持！</string>
+
+    <!-- 震动设置 -->
+    <string name="settings_vibration_title">震动反馈</string>
+    <string name="settings_vibration_desc">滑动操作时触发震动效果</string>
+
+    <!-- 二次滑动 -->
+    <string name="gesture_double_swipe_title">二次滑动</string>
+    <string name="gesture_double_swipe_desc">全屏或横屏模式下需连续滑动两次方可触发</string>
+
+    <!-- 手势触发区显示设置 -->
+    <string name="gesture_hide_overlay_title">隐藏显示</string>
+    <string name="gesture_hide_overlay_desc">隐藏手势触发区</string>
+
+    <!-- 最近任务隐藏 -->
+    <string name="gesture_hide_recents_title">隐藏后台</string>
+    <string name="gesture_hide_recents_desc">在最近任务列表中隐藏本应用</string>
+
+    <!-- 避免输入法遮挡 -->
+    <string name="gesture_avoid_keyboard_overlap_title">避免遮挡</string>
+    <string name="gesture_avoid_keyboard_overlap_desc">输入法弹出时自动禁用手势触发区</string>
+
+    <!-- 手势操作类型 -->
+    <string name="gesture_swipe_right">右滑</string>
+    <string name="gesture_swipe_right_long">长按右滑</string>
+    <string name="gesture_swipe_left">左滑</string>
+    <string name="gesture_swipe_left_long">长按左滑</string>
+    <string name="gesture_swipe_up">上滑</string>
+    <string name="gesture_swipe_up_long">长按上滑</string>
+    <string name="gesture_swipe_down">下滑</string>
+    <string name="gesture_swipe_down_long">长按下滑</string>
+    <string name="gesture_tap">单击</string>
+    <string name="gesture_double_tap">双击</string>
+    <string name="gesture_long_press">长按</string>
+
+    <!-- 手势功能选项 -->
+    <string name="gesture_action_none">无</string>
+    <string name="gesture_action_home">主页键</string>
+    <string name="gesture_action_recent">任务键</string>
+    <string name="gesture_action_back">返回键</string>
+    <string name="gesture_action_last_app">上一个应用</string>
+    <string name="gesture_action_previous_track">上一曲</string>
+    <string name="gesture_action_next_track">下一曲</string>
+    <string name="gesture_action_flashlight">手电筒</string>
+    <string name="gesture_action_voice_assistant">语音助手</string>
+    <string name="gesture_action_power_menu">电源菜单</string>
+    <string name="gesture_action_lock_screen">锁屏</string>
+    <string name="gesture_action_screenshot">截屏</string>
+    <string name="gesture_action_freeform_mode">小窗模式</string>
+    <string name="gesture_action_expand_panel">扩展面板</string>
+    <string name="gesture_action_music_panel">音乐面板</string>
+    <string name="gesture_action_task_panel">任务面板</string>
+    <string name="gesture_action_compass_clock">罗盘时钟</string>
+    <string name="gesture_action_translate">屏幕翻译</string>
+    <string name="gesture_action_launch_app">启动应用</string>
+
+    <!-- 屏幕翻译 -->
+    <string name="translate_started">正在翻译当前页面…</string>
+    <string name="translate_failed">翻译失败，请重试</string>
+    <string name="translate_no_text">当前页面没有可翻译的文本</string>
+
+    <!-- 音乐面板 -->
+    <string name="music_panel_empty">暂无本地音乐</string>
+    <string name="music_panel_scanning">正在扫描音乐…</string>
+    <string name="music_panel_playlist_title">播放列表</string>
+    <string name="music_panel_timer_title">定时关闭</string>
+    <string name="music_panel_timer_minutes">分钟</string>
+    <string name="music_panel_timer_confirm">确定</string>
+    <string name="music_panel_timer_cancel">取消</string>
+    <string name="music_panel_search_placeholder">搜索歌曲</string>
+    <string name="music_panel_search_title">搜索本地歌曲</string>
+    <string name="music_panel_delete_title">是否删除这首歌曲？</string>
+    <string name="music_panel_delete_cancel">取消</string>
+    <string name="music_panel_delete_confirm">删除</string>
+    <string name="music_panel_no_lyrics">暂无歌词</string>
+    <string name="music_panel_track_count">%d 首</string>
+    <string name="music_panel_search_history">搜索历史</string>
+    <string name="music_panel_search_history_clear">清理全部历史</string>
+    <string name="music_panel_search_history_delete">删除历史</string>
+    <string name="music_panel_search_no_results">未找到相关歌曲</string>
+    <string name="music_panel_playback_settings">播放设置</string>
+    <string name="music_panel_sound_effects_title">音效设置</string>
+    <string name="music_panel_sound_effects_enter">进入</string>
+    <string name="music_panel_sound_effects_not_implemented">暂未实现</string>
+    <string name="music_panel_play_failed">播放失败</string>
+    <string name="music_panel_copy">复制</string>
+    <string name="music_panel_rename">重命名</string>
+    <string name="music_panel_local_cover">本地封面</string>
+    <string name="music_panel_refresh_lyrics">导入歌词</string>
+    <string name="music_panel_lyrics_no_candidates">未找到本地歌词文件</string>
+    <string name="music_panel_lyrics_refresh_failed">歌词导入失败，请重试</string>
+    <string name="music_panel_cover_save_failed">封面保存失败，请重试</string>
+    <string name="music_panel_rename_title">重命名歌曲名</string>
+    <string name="music_panel_rename_artist">重命名艺术家</string>
+    <string name="music_panel_rename_confirm">确定</string>
+    <string name="music_panel_rename_cancel">取消</string>
+
+    <!-- 音乐扫描 -->
+    <string name="music_scanner_external_music">外部音乐</string>
+    <string name="music_scanner_unknown_artist">未知艺术家</string>
+    <string name="music_scanner_unknown_song">未知歌曲</string>
+
+    <!-- 播放链路面板 (Audio Signal Path) -->
+    <string name="signal_path_title">播放链路</string>
+    <string name="signal_path_format">音频格式</string>
+    <string name="signal_path_sample_rate">源采样率</string>
+    <string name="signal_path_output_rate">输出采样率</string>
+    <string name="signal_path_bit_depth">位深</string>
+    <string name="signal_path_channels">声道</string>
+    <string name="signal_path_output_strategy">输出策略</string>
+    <string name="signal_path_output_device">输出设备</string>
+    <string name="signal_path_route">音频路由</string>
+    <string name="signal_path_dsd_mode">DSD 模式</string>
+    <string name="signal_path_direct">直出</string>
+    <string name="signal_path_mixer">混音</string>
+    <string name="signal_path_system">系统</string>
+    <string name="signal_path_mono">单声道</string>
+    <string name="signal_path_stereo">立体声</string>
+    <string name="signal_path_channels_value">%d 声道</string>
+    <string name="signal_path_bit_value">%d 位</string>
+    <string name="signal_path_khz">%.1f kHz</string>
+    <string name="signal_path_hz">%d Hz</string>
+    <string name="signal_path_speaker">扬声器</string>
+    <string name="signal_path_dash">-</string>
+
+    <!-- 扫一扫 -->
+    <string name="gesture_action_alipay_scan">支付宝扫一扫</string>
+    <string name="gesture_action_wechat_scan">微信扫一扫</string>
+
+    <!-- 定时提醒 -->
+    <string name="gesture_action_remind">定时提醒</string>
+    <string name="gesture_remind_timer_minutes">分钟</string>
+    <string name="gesture_remind_timer_confirm">确定</string>
+    <string name="gesture_remind_timer_cancel">取消</string>
+    <string name="gesture_remind_feedback">已设置%d分钟后提醒</string>
+    <string name="gesture_remind_cancelled">已取消%d分钟提醒</string>
+    <string name="gesture_remind_channel_name">手势提醒</string>
+    <string name="gesture_remind_notify_title">手势提醒</string>
+    <string name="gesture_remind_notify_body">您设置的%d分钟提醒时间到了</string>
+
+    <!-- 手势操作选择对话框 -->
+    <string name="gesture_select_action_title">选择操作</string>
+
+    <!-- 服务状态卡片 -->
+    <string name="gesture_service_running">运行中</string>
+    <string name="gesture_service_stopped">已停止</string>
+    <string name="gesture_service_subtitle">无障碍服务 · 边缘手势</string>
+    <string name="gesture_service_start">启动服务</string>
+    <string name="gesture_service_stop">停止服务</string>
+    <string name="gesture_service_title">服务状态</string>
+    <string name="gesture_count_label">手势</string>
+
+    <!-- 权限 -->
+    <string name="permission_accessibility_title">无障碍服务权限</string>
+    <string name="permission_accessibility_desc">实现系统级手势操作</string>
+
+    <!-- 手势触发区预览 -->
+    <string name="gesture_preview_title">触发区域预览</string>
+
+    <!-- 触发区设置 -->
+    <string name="trigger_area_settings_title">触发区设置</string>
+
+    <string name="stats_gesture_count">次数</string>
+    <string name="stats_block_count">拦截</string>
+
+    <!-- 统计周期 -->
+    <string name="stats_period_title">统计周期</string>
+    <string name="stats_period_1d">近1天</string>
+    <string name="stats_period_7d">近7天</string>
+    <string name="stats_period_30d">近30天</string>
+    <string name="stats_period_hint">周期：</string>
+
+    <!-- 更多功能 -->
+    <string name="more_section_title">更多功能</string>
+    <string name="more_expand_panel">扩展面板</string>
+    <string name="more_blacklist">应用切换黑名单</string>
+    <string name="more_launch_block">启动拦截</string>
+    <string name="more_settings">更多设置</string>
+
+    <!-- 手势配置摘要 -->
+    <string name="gesture_config_section_title">手势配置</string>
+    <string name="gesture_operation_section_title">手势操作</string>
+    <string name="gesture_config_left">左侧手势</string>
+    <string name="gesture_config_right">右侧手势</string>
+    <string name="gesture_config_bottom">底部手势</string>
+
+    <!-- 高级手势 -->
+    <string name="advanced_gesture_section_title">高级手势</string>
+    <string name="advanced_gesture_back_tap_title">背面双击</string>
+    <string name="advanced_gesture_back_tap_disabled">未启用</string>
+    <string name="advanced_gesture_back_tap_enabled">已启用</string>
+
+    <!-- 应用切换黑名单 (App Blacklist) -->
+    <string name="settings_about">关于</string>
+    <string name="settings_version">版本 %s</string>
+    <string name="nav_back">返回</string>
+    <string name="settings_blacklist_title">应用切换黑名单</string>
+    <string name="settings_blacklist_search_hint">搜索应用</string>
+    <string name="settings_blacklist_system_tag">系统</string>
+    <string name="settings_blacklist_loading">加载中…</string>
+    <string name="settings_blacklist_empty">暂无应用数据</string>
+    <string name="settings_blacklist_no_permission">缺少查询应用权限</string>
+    <string name="settings_blacklist_go_settings">前往设置</string>
+    <string name="settings_blacklist_refresh">刷新列表</string>
+    <string name="settings_blacklist_no_results">未找到与「%s」匹配的应用</string>
+
+    <!-- 边缘尺寸设置 (Edge Size) -->
+    <string name="edge_width">宽度</string>
+    <string name="edge_height">高度</string>
+    <string name="edge_height_percent">高度百分比</string>
+    <string name="edge_width_percent">宽度百分比</string>
+    <string name="edge_position_percent">位置百分比</string>
+    <string name="edge_segment_count">段数</string>
+    <string name="edge_segment_unit">段</string>
+    <string name="gesture_segment_label">第%d段</string>
+    <string name="gesture_disabled">禁用</string>
+
+    <!-- 权限申请 (Permissions) -->
+    <string name="permission_status_title">权限状态</string>
+    <string name="permission_granted">已授权</string>
+    <string name="permission_request_button">去授权</string>
+    <string name="permission_overlay_title">悬浮窗权限</string>
+    <string name="permission_overlay_desc">创建手势触发区域与扩展面板所需</string>
+    <string name="permission_notification_title">通知权限</string>
+    <string name="permission_notification_desc">保持手势服务在后台运行所需</string>
+    <string name="permission_battery_title">省电优化权限</string>
+    <string name="permission_battery_desc">避免系统省电终止手势服务所需</string>
+    <string name="permission_query_packages_title">获取已安装应用权限</string>
+    <string name="permission_query_packages_desc">创建应用切换黑名单所需</string>
+
+    <!-- 无障碍服务 (Accessibility Service) -->
+    <string name="accessibility_service_description">边缘手势需要无障碍权限来实现覆盖系统手势操作</string>
+
+    <string name="expand_panel_freeform_label">小</string>
+
+    <!-- 扩展面板 (Expand Panel) -->
+    <string name="expand_panel_brightness">屏幕亮度</string>
+    <string name="expand_panel_alarm_volume">闹钟音量</string>
+    <string name="expand_panel_ring_volume">铃声音量</string>
+    <string name="expand_panel_media_volume">媒体音量</string>
+    <string name="expand_panel_shortcuts_title">快捷方式</string>
+    <string name="expand_panel_controls_title">系统控制</string>
+    <string name="expand_panel_add_shortcut_desc">添加快捷方式</string>
+    <string name="expand_panel_app_picker_title">选择应用</string>
+    <string name="expand_panel_freeform_launch">小窗启动</string>
+    <string name="expand_panel_cancel">取消</string>
+    <string name="expand_panel_search_hint">搜索应用名称或包名</string>
+    <string name="expand_panel_loading_apps">正在加载应用列表…</string>
+
+    <!-- 启动拦截 (Launch Block) -->
+    <string name="settings_launch_block_title">启动拦截</string>
+    <string name="settings_launch_block_desc">拦截指定应用的启动行为</string>
+    <string name="launch_block_shizuku_not_installed_short">需安装 Shizuku</string>
+    <string name="launch_block_shizuku_not_running_short">需启动 Shizuku</string>
+    <string name="launch_block_shizuku_denied_short">需 Shizuku 授权</string>
+    <string name="launch_block_add_title">添加拦截规则</string>
+    <string name="launch_block_edit_title">编辑拦截规则</string>
+    <string name="launch_block_launcher_label">启动者（可选）</string>
+    <string name="launch_block_launcher_hint">输入应用包名，如 com.example.app</string>
+    <string name="launch_block_launcher_supporting">留空则直接拦截被启动者</string>
+    <string name="launch_block_target_label">被启动者（必填）</string>
+    <string name="launch_block_target_hint">输入应用包名，如 com.example.app</string>
+    <string name="launch_block_target_supporting">当此应用被启动时将触发拦截</string>
+    <string name="launch_block_target_required">请输入被启动应用</string>
+    <string name="launch_block_kill_switch_title">终止启动者</string>
+    <string name="launch_block_kill_switch_desc">每次触发拦截时直接终止启动者进程（连续最多5次，之后冷却15秒）</string>
+    <string name="launch_block_kill_switch_disabled_hint">需要先输入启动者才能启用</string>
+    <string name="launch_block_kill_target_title">终止被启动者</string>
+    <string name="launch_block_kill_target_desc">拦截后终止被启动应用进程</string>
+    <string name="launch_block_allow_kill_system_title">允许终止系统程序</string>
+    <string name="launch_block_allow_kill_system_desc">警告:终止系统应用可能导致系统不稳定</string>
+    <string name="launch_block_rules_title">拦截规则</string>
+    <string name="launch_block_rules_count">共 %d 条规则</string>
+    <string name="launch_block_add_rule">添加规则</string>
+    <string name="launch_block_edit_rule">编辑</string>
+    <string name="launch_block_delete_rule">删除</string>
+    <string name="launch_block_no_rules">暂无拦截规则，点击 + 添加</string>
+    <string name="launch_block_rule_launcher">启动者：%s</string>
+    <string name="launch_block_rule_target">目标：%s</string>
+    <string name="launch_block_rule_kill_enabled">已启用进程终止</string>
+    <string name="launch_block_rule_enabled_title">启用规则</string>
+    <string name="launch_block_rule_enabled_desc">启用后将拦截目标应用的启动</string>
+    <string name="launch_block_rule_disabled">已禁用</string>
+    <string name="launch_block_delay_title">拦截时机</string>
+    <string name="launch_block_delay_desc">选择触发拦截效果的时机</string>
+    <string name="launch_block_delay_immediate">立即</string>
+    <string name="launch_block_delay_500ms">稍缓</string>
+    <string name="launch_block_delay_1000ms">延迟</string>
+
+    <!-- 通用对话框按钮 -->
+    <string name="dialog_confirm">确定</string>
+    <string name="dialog_cancel">取消</string>
+    <string name="dialog_delete">删除</string>
+
+    <!-- 背面双击 (Back Tap) -->
+    <string name="back_tap_title">背面双击</string>
+    <string name="back_tap_summary_no_action" formatted="false">灵敏度 %1$d · 范围 %2$d</string>
+    <string name="back_tap_summary_with_action" formatted="false">灵敏度 %1$d · 范围 %2$d · %3$s</string>
+    <string name="back_tap_enable_title">背面双击</string>
+    <string name="back_tap_enable_desc">双击手机背面触发操作</string>
+    <string name="back_tap_sensitivity">灵敏度</string>
+    <string name="back_tap_range">检测范围</string>
+    <string name="back_tap_action">背面双击操作</string>
+    <string name="back_tap_mode">工作模式</string>
+    <string name="back_tap_mode_always">始终激活</string>
+    <string name="back_tap_mode_screen_off">熄屏激活</string>
+    <string name="back_tap_mode_screen_on">亮屏激活</string>
+    <string name="back_tap_pause_on_charging_title">充电时暂停</string>
+    <string name="back_tap_pause_on_charging_desc">充电时自动暂停检测,减少误触</string>
+    <string name="back_tap_config_title">背面双击配置</string>
+
+    <!-- 手势配置对话框 -->
+    <string name="gesture_config_title">手势配置</string>
+    <string name="gesture_config_desc">导入或导出手势配置。</string>
+    <string name="gesture_config_import">导入</string>
+    <string name="gesture_config_export">导出</string>
+    <string name="gesture_config_import_confirm_title">覆盖手势配置</string>
+    <string name="gesture_config_import_confirm_desc">导入后将完全覆盖当前手势配置和启动拦截配置。</string>
+    <string name="gesture_config_import_confirm_continue">继续</string>
+    <string name="gesture_config_export_failed">无法写入文件</string>
+    <string name="gesture_config_export_error">导出失败：%s</string>
+    <string name="gesture_config_export_success">配置已导出</string>
+    <string name="gesture_config_import_failed_read">无法读取文件</string>
+    <string name="gesture_config_import_error">导入失败：%s</string>
+    <string name="gesture_config_import_success">配置已导入</string>
+    <string name="gesture_config_empty">配置为空</string>
+
+    <!-- 应用更新 (App Update) -->
+    <string name="update_notification_title">边缘手势更新</string>
+    <string name="update_notification_downloading">正在下载 %1$s</string>
+    <string name="update_dialog_title">发现新版本 %s</string>
+    <string name="update_dialog_description_alt">是否下载并安装新版本？</string>
+    <string name="update_dialog_downloading">正在下载...</string>
+    <string name="update_dialog_download_failed">下载失败，请尝试使用浏览器下载</string>
+    <string name="update_dialog_changelog_title">更新日志：</string>
+    <string name="update_dialog_download">下载</string>
+    <string name="update_dialog_later">稍后</string>
+    <string name="update_dialog_open_browser">在浏览器中打开</string>
+    <string name="update_toast_up_to_date">已是最新版本</string>
+    <string name="update_toast_error">检查更新失败，请稍后重试</string>
+
+    <!-- 音乐面板短按钮文案 -->
+    <string name="music_panel_lyrics_short">词</string>
+    <string name="music_panel_play_mode">播放模式</string>
+    <string name="music_panel_previous_track">上一首</string>
+    <string name="music_panel_next_track">下一首</string>
+    <string name="music_panel_playlist">播放列表</string>
+    <string name="music_panel_play">播放</string>
+    <string name="music_panel_pause">暂停</string>
+    <string name="music_panel_mini_mode">迷你模式</string>
+    <string name="music_panel_mini_mode_desc">关闭音乐面板后显示迷你播放器</string>
+    <string name="music_panel_word_by_word">逐字渲染</string>
+    <string name="music_panel_word_by_word_desc">歌词逐字高亮并同步跳动，关闭后整行高亮</string>
+    <string name="music_panel_favorite">收藏</string>
+    <string name="music_panel_memory_usage">内存占用</string>
+    <string name="music_panel_memory_usage_value">内存 %1$d MB</string>
+
+    <!-- 任务面板清理按钮 -->
+    <string name="task_panel_clear">✕</string>
+
+    <!-- 迷你播放器 -->
+    <string name="mini_player_expand_panel">展开音乐面板</string>
+    <string name="mini_player_cover">专辑封面</string>
+    <string name="mini_player_track_info">歌曲名称 + 艺术家，当前歌词</string>
+    <string name="mini_player_previous">上一曲</string>
+    <string name="mini_player_next">下一曲</string>
+    <string name="mini_player_playlist">播放列表</string>
+    <string name="mini_player_no_lyrics">暂无歌词</string>
+    <string name="mini_player_playlist_title">播放列表</string>
+</resources>

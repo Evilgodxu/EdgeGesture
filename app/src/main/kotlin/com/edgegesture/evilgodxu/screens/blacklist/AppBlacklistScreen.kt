@@ -1,9 +1,7 @@
 package com.edgegesture.evilgodxu.screens.blacklist
 
-import android.app.Activity
 import android.content.Intent
 import android.provider.Settings
-import android.view.WindowManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -52,7 +50,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -97,19 +94,8 @@ fun AppBlacklistScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // 搜索框固定在底部：强制 adjustResize，使键盘弹出时仅内容随 IME 内边距上移，
-    // 避免系统默认选择 adjustPan 平移整个窗口（顶栏被顶出屏幕）；离开本页恢复原模式
-    val view = LocalView.current
-    DisposableEffect(view) {
-        val window = (view.context as? Activity)?.window
-        val previousMode = window?.attributes?.softInputMode
-        window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-        onDispose {
-            if (previousMode != null) {
-                window?.setSoftInputMode(previousMode)
-            }
-        }
-    }
+    // 搜索框固定在底部，键盘弹出时由 imePadding 抬高内容；
+    // 主界面已通过 enableEdgeToEdge 关闭系统自动窗口适配，无需再修改 softInputMode
 
     var searchQuery by remember { mutableStateOf("") }
     var debouncedQuery by remember { mutableStateOf("") }

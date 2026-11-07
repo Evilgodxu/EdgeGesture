@@ -56,10 +56,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (handleExternalAudioIntent(intent)) {
-            finish()
-            return
-        }
         enableEdgeToEdge()
 
         // 绑定当前 Activity，使对话框等独立窗口在切语言时同步更新资源
@@ -151,29 +147,6 @@ class MainActivity : ComponentActivity() {
         } else {
             windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
         }
-    }
-
-    private fun handleExternalAudioIntent(intent: android.content.Intent?): Boolean {
-        val uri = when (intent?.action) {
-            android.content.Intent.ACTION_VIEW -> intent.data
-            android.content.Intent.ACTION_SEND -> intent.getParcelableExtra(
-                android.content.Intent.EXTRA_STREAM,
-                android.net.Uri::class.java
-            )
-            else -> null
-        } ?: return false
-
-        return com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService
-            .handleExternalAudioIntent(uri)
-    }
-
-    override fun onNewIntent(intent: android.content.Intent) {
-        super.onNewIntent(intent)
-        if (handleExternalAudioIntent(intent)) {
-            finish()
-            return
-        }
-        setIntent(intent)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

@@ -1,20 +1,16 @@
 package com.edgegesture.evilgodxu.screens.gesture.service
 
-import android.Manifest
 import android.accessibilityservice.AccessibilityService
-import android.content.pm.PackageManager
-import androidx.core.content.ContextCompat
-import com.edgegesture.evilgodxu.R
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.BatteryManager
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
-import android.view.KeyEvent
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityWindowInfo
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
@@ -68,16 +64,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         fun updateSettings(context: Context) {
             getInstance()?.refreshSettings()
         }
-
-        fun handleExternalAudioIntent(uri: android.net.Uri): Boolean {
-            val service = getInstance() ?: return false
-            if (ContextCompat.checkSelfPermission(service, Manifest.permission.READ_MEDIA_AUDIO) !=
-                PackageManager.PERMISSION_GRANTED
-            ) {
-                return false
-            }
-            return service.actionExecutor.handleExternalAudioIntent(uri)
-        }
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -117,11 +103,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                 Intent.ACTION_USER_PRESENT -> backTapDetector?.setScreenOn(true)
                 Intent.ACTION_SCREEN_OFF -> {
                     backTapDetector?.setScreenOn(false)
-                    if (::actionExecutor.isInitialized) {
-                        actionExecutor.dismissTaskPanel()
-                        actionExecutor.dismissCompassClock()
-                        actionExecutor.dismissTranslation()
-                    }
                 }
             }
         }
@@ -649,15 +630,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
     override fun onGestureAction(action: GestureAction, launchAppTarget: String?, useFreeform: Boolean, remindMinutes: Int?) {
         actionExecutor.performAction(action, settings, launchAppTarget, useFreeform, remindMinutes)
-    }
-
-    // 系统返回键（含手势导航返回）触发时关闭屏幕翻译；
-    // 返回 false 不拦截按键，仍交由系统处理
-    override fun onKeyEvent(event: KeyEvent): Boolean {
-        if (event.keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
-            if (::actionExecutor.isInitialized) actionExecutor.dismissTranslation()
-        }
-        return super.onKeyEvent(event)
     }
 
     private suspend fun loadSettings() {

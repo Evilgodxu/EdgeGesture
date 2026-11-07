@@ -208,14 +208,6 @@ enum class GestureAction(val value: String) {
     SCREENSHOT("screenshot"),
     FREEFORM_MODE("freeform_mode"),
     EXPAND_PANEL("expand_panel"),
-    // 音乐面板
-    MUSIC_PANEL("music_panel"),
-    // 任务面板
-    TASK_PANEL("task_panel"),
-    // 罗盘时钟
-    COMPASS_CLOCK("compass_clock"),
-    // 屏幕翻译
-    TRANSLATE("translate"),
     // 扫一扫
     ALIPAY_SCAN("alipay_scan"),
     WECHAT_SCAN("wechat_scan"),

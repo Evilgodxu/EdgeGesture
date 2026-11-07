@@ -1,18 +1,15 @@
 package com.edgegesture.evilgodxu.screens.gesture.service
 
-import android.Manifest
 import android.accessibilityservice.AccessibilityService
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.net.Uri
-import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
@@ -20,7 +17,6 @@ import android.os.VibratorManager
 import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
@@ -32,40 +28,22 @@ import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcut
 import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcutFreeform
 import com.edgegesture.evilgodxu.data.permission.PermissionMonitor
 import com.edgegesture.evilgodxu.data.permission.PermissionType
-import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
-import com.edgegesture.evilgodxu.data.shizuku.ShizukuState
 import com.edgegesture.evilgodxu.log.CrashLogManager
-import com.edgegesture.evilgodxu.screens.gesture.service.compassclock.CompassClockViewManager
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelPermissionCallback
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelViewManager
-import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelPermissionActivity
-import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelPermissionBridge
-import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelViewManager
-import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MiniPlayerViewManager
-import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.MusicPanelStateHolder
-import com.edgegesture.evilgodxu.screens.gesture.service.musicpanel.miniPlayerEnabledFlow
-import com.edgegesture.evilgodxu.screens.gesture.service.taskpanel.TaskPanelApp
-import com.edgegesture.evilgodxu.screens.gesture.service.taskpanel.TaskPanelViewManager
-import com.edgegesture.evilgodxu.screens.gesture.service.translate.TranslationOverlayManager
 import com.edgegesture.evilgodxu.screens.settings.themeModeFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
-import rikka.shizuku.Shizuku
 
 class AccessibilityActionExecutor(
     private val service: AccessibilityService
 ) : ExpandPanelPermissionCallback {
-    private val taskPanelHistory = mutableListOf<String>()
     private var currentApp: String? = null
     private var previousApp: String? = null
 
@@ -75,17 +53,6 @@ class AccessibilityActionExecutor(
 
     private var expandPanelViewManager: ExpandPanelViewManager? = null
     private var pendingExpandPanelShow = false
-    private var musicPanelViewManager: MusicPanelViewManager? = null
-    // 迷你播放器：面板关闭后播放时显示的状态栏下方迷你条
-    private var miniPlayerViewManager: MiniPlayerViewManager? = null
-    // 滑动临时关闭迷你播放器后，遮挡标记，下次满足触发条件时恢复显示
-    private var miniPlayerTemporarilyHidden = false
-    @Volatile private var miniPlayerEnabled = true
-    private var taskPanelViewManager: TaskPanelViewManager? = null
-    private var pendingTaskPanelShow = false
-    private var taskPanelLoadJob: Job? = null
-    private var compassClockViewManager: CompassClockViewManager? = null
-    private var translationOverlayManager: TranslationOverlayManager? = null
     private val permissionMonitor = PermissionMonitor(service)
     private val executorScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -94,42 +61,11 @@ class AccessibilityActionExecutor(
 
     @Volatile private var blacklistSnapshot: Set<String> = emptySet()
 
-    // 任务面板 Shizuku 权限申请相关
-    private val taskPanelShizukuRequestCode = 2001
-    private var taskPanelPermissionListener: Shizuku.OnRequestPermissionResultListener? = null
-    // 等待 Shizuku 权限结果的协程
-    private val permissionWaiters = mutableListOf<CompletableDeferred<Boolean>>()
-
     init {
-        // 监听任务面板 Shizuku 权限申请结果
-        val listener = Shizuku.OnRequestPermissionResultListener { requestCode, grantResult ->
-            if (requestCode == taskPanelShizukuRequestCode) {
-                val granted = grantResult == PackageManager.PERMISSION_GRANTED
-                if (granted) {
-                    CrashLogManager.logException("AccessibilityActionExecutor", "任务面板 Shizuku 权限已授予")
-                } else {
-                    CrashLogManager.logException("AccessibilityActionExecutor", "任务面板 Shizuku 权限被拒绝，滑掉时仅清理任务面板历史")
-                }
-                synchronized(permissionWaiters) {
-                    permissionWaiters.forEach { it.complete(granted) }
-                    permissionWaiters.clear()
-                }
-            }
-        }
-        ShizukuManager.addPermissionListener(listener)
-        taskPanelPermissionListener = listener
-
         executorScope.launch {
             (service as Context).gestureDataStore.data
                 .map { prefs -> prefs[GestureSettingsKeys.APP_SWITCH_BLACKLIST] ?: emptySet() }
                 .collect { blacklistSnapshot = it }
-        }
-
-        executorScope.launch(Dispatchers.Main) {
-            service.miniPlayerEnabledFlow().collect { enabled ->
-                miniPlayerEnabled = enabled
-                if (enabled) maybeShowMiniPlayer() else dismissMiniPlayer()
-            }
         }
     }
 
@@ -144,15 +80,8 @@ class AccessibilityActionExecutor(
         vibrate(settings)
         GestureStatsManager.incrementGestureCount(service)
 
-        // 导航类手势会改变当前页面，先关闭屏幕翻译与罗盘时钟
-        if (action in NAVIGATION_ACTIONS) {
-            dismissTranslation()
-            dismissCompassClock()
-        }
-
         when (action) {
             GestureAction.HOME -> {
-                dismissTaskPanel()
                 service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
             }
             GestureAction.RECENT -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
@@ -167,10 +96,6 @@ class AccessibilityActionExecutor(
             GestureAction.SCREENSHOT -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT)
             GestureAction.FREEFORM_MODE -> launchCurrentAppInFreeform()
             GestureAction.EXPAND_PANEL -> showExpandPanel()
-            GestureAction.MUSIC_PANEL -> showMusicPanel()
-            GestureAction.TASK_PANEL -> showTaskPanel()
-            GestureAction.COMPASS_CLOCK -> showCompassClock()
-            GestureAction.TRANSLATE -> toggleTranslation()
             GestureAction.ALIPAY_SCAN -> launchScanAlipay()
             GestureAction.WECHAT_SCAN -> launchScanWechat()
             GestureAction.REMIND -> scheduleReminder(remindMinutes ?: GestureSettingsKeys.DEFAULT_REMIND_MINUTES)
@@ -284,59 +209,6 @@ class AccessibilityActionExecutor(
         }
     }
 
-    fun handleExternalAudioIntent(uri: android.net.Uri): Boolean {
-        val manager = musicPanelViewManager ?: MusicPanelViewManager(
-            context = service,
-            onDismiss = { musicPanelViewManager = null }
-        ).also {
-            musicPanelViewManager = it
-        }
-        manager.playExternalUri(uri)
-        return true
-    }
-
-    private fun showMusicPanel() {
-        if (musicPanelViewManager != null) {
-            musicPanelViewManager?.dismiss()
-            return
-        }
-
-        // 显示完整面板时隐藏迷你播放器，并清除滑动临时隐藏状态
-        dismissMiniPlayer()
-        miniPlayerTemporarilyHidden = false
-
-        val showPanel = {
-            musicPanelViewManager = MusicPanelViewManager(
-                context = service,
-                onDismiss = {
-                    musicPanelViewManager = null
-                    maybeShowMiniPlayer()
-                }
-            ).apply { show() }
-        }
-
-        when {
-            ContextCompat.checkSelfPermission(service, Manifest.permission.READ_MEDIA_AUDIO) ==
-                    PackageManager.PERMISSION_GRANTED &&
-                    ContextCompat.checkSelfPermission(service, Manifest.permission.READ_MEDIA_IMAGES) ==
-                    PackageManager.PERMISSION_GRANTED &&
-                    Environment.isExternalStorageManager() -> showPanel()
-            else -> {
-                // 每次启动面板都检查音频访问与全部文件访问权限并自动申请
-                MusicPanelPermissionBridge.pendingShowAction = showPanel
-                val intent = Intent(service, MusicPanelPermissionActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }
-                try {
-                    service.startActivity(intent)
-                } catch (e: Exception) {
-                    MusicPanelPermissionBridge.clearPendingShowAction()
-                    CrashLogManager.logException("AccessibilityActionExecutor", "启动音乐面板权限页面失败", e)
-                }
-            }
-        }
-    }
-
     fun dismissExpandPanel() {
         expandPanelViewManager?.dismiss()
         expandPanelViewManager = null
@@ -344,189 +216,11 @@ class AccessibilityActionExecutor(
         writeSettingsMonitorJob?.cancel()
     }
 
-    fun dismissMusicPanel() {
-        musicPanelViewManager?.dismiss()
-        musicPanelViewManager = null
-    }
-
-    // 关闭完整音乐面板后，若满足迷你模式触发条件则显示迷你播放器
-    private fun maybeShowMiniPlayer() {
-        if (!miniPlayerEnabled || miniPlayerTemporarilyHidden) return
-        // 完整面板显示时两者互斥，不显示迷你播放器
-        if (musicPanelViewManager != null) return
-        if (miniPlayerViewManager != null) return
-        if (!MusicPanelStateHolder.state.isPlaying) return
-        miniPlayerViewManager = MiniPlayerViewManager(
-            context = service,
-            onExpandPanel = { showMusicPanel() },
-            onSwipedDismiss = {
-                miniPlayerTemporarilyHidden = true
-                miniPlayerViewManager = null
-            }
-        ).also { it.show() }
-    }
-
-    fun dismissMiniPlayer() {
-        miniPlayerViewManager?.dismiss()
-        miniPlayerViewManager = null
-    }
-
-    fun dismissTaskPanel() {
-        taskPanelLoadJob?.cancel()
-        taskPanelLoadJob = null
-        taskPanelViewManager?.dismiss()
-        taskPanelViewManager = null
-        pendingTaskPanelShow = false
-    }
-
-    // 罗盘时钟：开关式交互，再次触发时关闭
-    private fun showCompassClock() {
-        if (compassClockViewManager != null) {
-            compassClockViewManager?.dismiss()
-            return
-        }
-        val manager = CompassClockViewManager(
-            context = service,
-            onDismiss = { compassClockViewManager = null }
-        )
-        compassClockViewManager = manager
-        if (!manager.show()) {
-            compassClockViewManager = null
-        }
-    }
-
-    fun dismissCompassClock() {
-        compassClockViewManager?.dismiss()
-        compassClockViewManager = null
-    }
-
-    // 屏幕翻译：开关式交互，再次触发或切换应用时关闭
-    private fun toggleTranslation() {
-        if (translationOverlayManager != null) {
-            dismissTranslation()
-            return
-        }
-        val manager = TranslationOverlayManager(service) { translationOverlayManager = null }
-        translationOverlayManager = manager
-        manager.show()
-    }
-
-    fun dismissTranslation() {
-        translationOverlayManager?.dismiss()
-        translationOverlayManager = null
-    }
-
-    // 申请 Shizuku 权限并等待结果：已授权直接返回 true，不可用/拒绝/超时返回 false
-    private suspend fun awaitShizukuPermission(): Boolean {
-        if (ShizukuManager.isAvailable()) return true
-        when (ShizukuManager.state.value) {
-            is ShizukuState.NotInstalled -> {
-                CrashLogManager.logException("AccessibilityActionExecutor", "任务面板：Shizuku 未安装，滑掉时仅清理任务面板历史")
-                return false
-            }
-            is ShizukuState.NotRunning -> {
-                CrashLogManager.logException("AccessibilityActionExecutor", "任务面板：Shizuku 未运行，滑掉时仅清理任务面板历史")
-                return false
-            }
-            is ShizukuState.Denied, is ShizukuState.Waiting -> {}
-            else -> return false
-        }
-        val deferred = CompletableDeferred<Boolean>()
-        synchronized(permissionWaiters) { permissionWaiters.add(deferred) }
-        ShizukuManager.requestPermission(taskPanelShizukuRequestCode)
-        // 仅当确实发起了新申请（进入 Waiting，系统会弹窗）才等待结果；
-        // 此前拒绝过时系统不再弹窗，立即按失败处理，避免面板卡住
-        if (ShizukuManager.state.value is ShizukuState.Waiting) {
-            return withTimeoutOrNull(10_000) { deferred.await() } ?: false
-        }
-        synchronized(permissionWaiters) { permissionWaiters.remove(deferred) }
-        return false
-    }
-
-    private fun showTaskPanel() {
-        if (taskPanelViewManager != null) { dismissTaskPanel(); return }
-        if (pendingTaskPanelShow) {
-            dismissTaskPanel()
-            return
-        }
-        pendingTaskPanelShow = true
-        val currentPackage = service.rootInActiveWindow?.packageName?.toString()
-            ?.takeIf { it != service.packageName }
-            ?: currentApp
-            ?: service.packageName
-        taskPanelLoadJob = executorScope.launch {
-            // 先申请 Shizuku 权限（等待授权结果），再显示任务面板
-            awaitShizukuPermission()
-            val blacklist = blacklistSnapshot
-            val packages = taskPanelHistory
-                .asReversed()
-                .filter { it != service.packageName }
-                .distinct()
-                .filter { it !in blacklist }
-            val apps = packages.mapNotNull { pkg ->
-                try {
-                    service.packageManager.getLaunchIntentForPackage(pkg) ?: return@mapNotNull null
-                    val info = service.packageManager.getApplicationInfo(pkg, 0)
-                    TaskPanelApp(pkg, service.packageManager.getApplicationLabel(info).toString(), service.packageManager.getApplicationIcon(info))
-                } catch (e: Exception) {
-                    CrashLogManager.logException("AccessibilityActionExecutor", "获取任务面板应用信息失败", e)
-                    null
-                }
-            }.take(10).toList()
-            withContext(Dispatchers.Main) {
-                // 异步加载期间可能已被关闭，不再显示
-                if (!pendingTaskPanelShow) return@withContext
-                pendingTaskPanelShow = false
-                taskPanelViewManager = TaskPanelViewManager(
-                    service, apps, currentPackage, currentPackage,
-                    { launchApp(it) },
-                    { freeformAppLauncher.launch(it, useFreeform = true) },
-                    { onTaskPanelSwipeAway(it) },
-                    { taskPanelViewManager = null; pendingTaskPanelShow = false }
-                ).also {
-                    taskPanelLoadJob = null
-                    if (!it.show()) {
-                        taskPanelViewManager = null
-                    }
-                }
-            }
-        }
-    }
-
-    // 任务面板卡片被滑掉/清理后：从历史移除，并尽力结束对应应用的进程
-    private fun onTaskPanelSwipeAway(packageName: String) {
-        taskPanelHistory.removeAll { it == packageName }
-        if (packageName == service.packageName) return
-        executorScope.launch { endAppProcess(packageName) }
-    }
-
-    // 结束第三方应用进程：与系统最近任务滑掉一致，通过 Shizuku 移除该应用的任务，
-    // 否则仅清理任务面板历史栈；失败记录日志
-    private suspend fun endAppProcess(packageName: String) {
-        if (!ShizukuManager.isAvailable()) {
-            CrashLogManager.logException("AccessibilityActionExecutor", "任务面板滑掉后 Shizuku 不可用，仅清理任务面板历史: $packageName")
-            return
-        }
-        if (ShizukuManager.removePackageTasks(packageName)) {
-            CrashLogManager.logException("AccessibilityActionExecutor", "任务面板滑掉后已从系统最近任务移除: $packageName")
-        } else {
-            CrashLogManager.logException("AccessibilityActionExecutor", "任务面板滑掉后移除系统最近任务失败，仅清理任务面板历史: $packageName")
-        }
-    }
-
     // 清理资源
     fun cleanup() {
-        taskPanelPermissionListener?.let { ShizukuManager.removePermissionListener(it) }
-        taskPanelPermissionListener = null
         dismissExpandPanel()
-        dismissMusicPanel()
-        dismissMiniPlayer()
-        dismissTaskPanel()
-        dismissCompassClock()
-        dismissTranslation()
         writeSettingsMonitorJob?.cancel()
         writeSettingsMonitorJob = null
-        MusicPanelPermissionBridge.clearPendingShowAction()
         executorScope.cancel()
     }
 
@@ -538,20 +232,7 @@ class AccessibilityActionExecutor(
 
         val packageName = event.packageName?.toString() ?: return
         if (packageName == service.packageName) return
-
-        // 屏幕翻译开启时，窗口状态变化（返回、页面跳转、弹窗、切换应用等）即关闭，
-        // 避免译文停留在旧页面；切换应用时窗口内容类型变化也能触发关闭
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
-            (currentApp != null && packageName != currentApp)
-        ) {
-            dismissTranslation()
-        }
-
         if (packageName == currentApp) return
-
-        taskPanelHistory.remove(packageName)
-        taskPanelHistory.add(packageName)
-        if (taskPanelHistory.size > 10) taskPanelHistory.removeAt(0)
 
         val blacklist = blacklistSnapshot
         if (packageName in blacklist) return
@@ -831,14 +512,5 @@ class AccessibilityActionExecutor(
     companion object {
         private const val TAG = "ActionExecutor"
         private const val REMIND_REQUEST_CODE_BASE = 3000
-
-        // 会改变当前页面的导航类手势
-        private val NAVIGATION_ACTIONS = setOf(
-            GestureAction.HOME,
-            GestureAction.RECENT,
-            GestureAction.BACK,
-            GestureAction.LAST_APP,
-            GestureAction.LOCK_SCREEN
-        )
     }
 }

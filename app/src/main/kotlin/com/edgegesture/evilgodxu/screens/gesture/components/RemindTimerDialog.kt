@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.edgegesture.evilgodxu.R
 
-// 定时提醒分钟数选择对话框，视觉沿用音乐面板「定时关闭」面板：标题 + 步进调整 + 取消/确定
+// 定时提醒分钟数选择对话框：标题 + 步进调整 + 取消/确定
 @Composable
 fun RemindTimerDialog(
     initialMinutes: Int,
@@ -116,7 +116,7 @@ fun RemindTimerDialog(
     }
 }
 
-// 分钟数步进调整按钮，沿用音乐面板「定时关闭」面板的圆形按钮样式
+// 分钟数步进调整按钮
 @Composable
 private fun RemindAdjustButton(text: String, onClick: () -> Unit) {
     Surface(

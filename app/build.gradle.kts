@@ -131,8 +131,6 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons)
 
-    implementation(libs.coil.compose)
-    implementation(libs.coil.network.okhttp)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.datastore.core)
     implementation(libs.androidx.navigation3.runtime)
@@ -140,9 +138,6 @@ dependencies {
     implementation(libs.androidx.window)
     implementation(libs.androidx.compose.material3.adaptive)
     implementation(libs.androidx.compose.material3.adaptive.layout)
-
-    // Guava 集成（Media3 异步控制器 await）
-    implementation(libs.kotlinx.coroutines.guava)
 
     // Kotlin Serialization
     implementation(libs.kotlinx.serialization.json)
@@ -154,11 +149,7 @@ dependencies {
     // Hidden API Bypass（用于调用 setLaunchWindowingMode 等小窗隐藏 API）
     implementation(libs.hidden.api.bypass)
 
-    // Media3 ExoPlayer — 多格式音频播放引擎
-    implementation(libs.androidx.media3.exoplayer)
-    implementation(libs.androidx.media3.session)
-
-    // 屏幕翻译网络请求
+    // 应用更新网络请求
     implementation(libs.okhttp)
 
     testImplementation(libs.junit)

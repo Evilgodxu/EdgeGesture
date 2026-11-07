@@ -2,9 +2,6 @@
 <resources>
     <!-- App general -->
     <string name="app_name">Edge Gesture</string>
-    <string name="task_panel_empty">No recent apps</string>
-    <string name="task_panel_single_tap_hint">Tap to open</string>
-    <string name="task_panel_double_tap_hint">Double tap for freeform window</string>
 
     <!-- Settings -->
     <!-- Common -->
@@ -80,80 +77,7 @@
     <string name="gesture_action_screenshot">Screenshot</string>
     <string name="gesture_action_freeform_mode">Freeform window</string>
     <string name="gesture_action_expand_panel">Expand panel</string>
-    <string name="gesture_action_music_panel">Music panel</string>
-    <string name="gesture_action_task_panel">Task panel</string>
-    <string name="gesture_action_compass_clock">Compass clock</string>
-    <string name="gesture_action_translate">Screen translate</string>
     <string name="gesture_action_launch_app">Launch app</string>
-
-    <!-- Screen translate -->
-    <string name="translate_started">Translating current screen…</string>
-    <string name="translate_failed">Translation failed, try again</string>
-    <string name="translate_no_text">No translatable text on this screen</string>
-
-    <!-- Music panel -->
-    <string name="music_panel_empty">No local music</string>
-    <string name="music_panel_scanning">Scanning music…</string>
-    <string name="music_panel_playlist_title">Playlist</string>
-    <string name="music_panel_timer_title">Sleep timer</string>
-    <string name="music_panel_timer_minutes">minutes</string>
-    <string name="music_panel_timer_confirm">OK</string>
-    <string name="music_panel_timer_cancel">Cancel</string>
-    <string name="music_panel_search_placeholder">Search songs</string>
-    <string name="music_panel_search_title">Search local songs</string>
-    <string name="music_panel_delete_title">Delete this song?</string>
-    <string name="music_panel_delete_cancel">Cancel</string>
-    <string name="music_panel_delete_confirm">Delete</string>
-    <string name="music_panel_no_lyrics">No lyrics</string>
-    <string name="music_panel_track_count">%d tracks</string>
-    <string name="music_panel_search_history">Search history</string>
-    <string name="music_panel_search_history_clear">Clear history</string>
-    <string name="music_panel_search_history_delete">Delete history</string>
-    <string name="music_panel_search_no_results">No matching songs</string>
-    <string name="music_panel_playback_settings">Playback settings</string>
-    <string name="music_panel_sound_effects_title">Sound effects</string>
-    <string name="music_panel_sound_effects_enter">Open</string>
-    <string name="music_panel_sound_effects_not_implemented">Not implemented yet</string>
-    <string name="music_panel_play_failed">Playback failed</string>
-    <string name="music_panel_copy">Copy</string>
-    <string name="music_panel_rename">Rename</string>
-    <string name="music_panel_local_cover">Local cover</string>
-    <string name="music_panel_refresh_lyrics">Import lyrics</string>
-    <string name="music_panel_lyrics_no_candidates">No local lyric file found</string>
-    <string name="music_panel_lyrics_refresh_failed">Lyrics import failed, try again</string>
-    <string name="music_panel_cover_save_failed">Cover save failed, try again</string>
-    <string name="music_panel_rename_title">Rename song title</string>
-    <string name="music_panel_rename_artist">Rename artist</string>
-    <string name="music_panel_rename_confirm">OK</string>
-    <string name="music_panel_rename_cancel">Cancel</string>
-
-    <!-- Music scanner -->
-    <string name="music_scanner_external_music">External music</string>
-    <string name="music_scanner_unknown_artist">Unknown artist</string>
-    <string name="music_scanner_unknown_song">Unknown song</string>
-
-    <!-- Audio signal path -->
-    <string name="signal_path_title">Audio path</string>
-    <string name="signal_path_format">Audio format</string>
-    <string name="signal_path_sample_rate">Source rate</string>
-    <string name="signal_path_output_rate">Output rate</string>
-    <string name="signal_path_bit_depth">Bit depth</string>
-    <string name="signal_path_channels">Channels</string>
-    <string name="signal_path_output_strategy">Output strategy</string>
-    <string name="signal_path_output_device">Output device</string>
-    <string name="signal_path_route">Audio route</string>
-    <string name="signal_path_dsd_mode">DSD mode</string>
-    <string name="signal_path_direct">Direct</string>
-    <string name="signal_path_mixer">Mixer</string>
-    <string name="signal_path_system">System</string>
-    <string name="signal_path_mono">Mono</string>
-    <string name="signal_path_stereo">Stereo</string>
-    <string name="signal_path_channels_value">%d channels</string>
-    <string name="signal_path_bit_value">%d-bit</string>
-    <string name="signal_path_khz">%.1f kHz</string>
-    <string name="signal_path_hz">%d Hz</string>
-    <string name="signal_path_speaker">Speaker</string>
-    <string name="signal_path_dash">-</string>
 
     <!-- QR scan -->
     <string name="gesture_action_alipay_scan">Alipay scan</string>
@@ -370,33 +294,4 @@
     <string name="update_dialog_open_browser">Open in browser</string>
     <string name="update_toast_up_to_date">You are up to date</string>
     <string name="update_toast_error">Update check failed, please try again later</string>
-
-    <!-- Music panel short buttons -->
-    <string name="music_panel_lyrics_short">Lyrics</string>
-    <string name="music_panel_play_mode">Play mode</string>
-    <string name="music_panel_previous_track">Previous</string>
-    <string name="music_panel_next_track">Next</string>
-    <string name="music_panel_playlist">Playlist</string>
-    <string name="music_panel_play">Play</string>
-    <string name="music_panel_pause">Pause</string>
-    <string name="music_panel_mini_mode">Mini mode</string>
-    <string name="music_panel_mini_mode_desc">Show the mini player after closing the music panel</string>
-    <string name="music_panel_word_by_word">Word-by-word lyrics</string>
-    <string name="music_panel_word_by_word_desc">Highlight lyrics character by character; turn off to highlight whole lines</string>
-    <string name="music_panel_favorite">Favorite</string>
-    <string name="music_panel_memory_usage">Memory usage</string>
-    <string name="music_panel_memory_usage_value">Memory %1$d MB</string>
-
-    <!-- Task panel clear button -->
-    <string name="task_panel_clear">✕</string>
-
-    <!-- Mini player -->
-    <string name="mini_player_expand_panel">Expand music panel</string>
-    <string name="mini_player_cover">Album cover</string>
-    <string name="mini_player_track_info">Song title + artist, current lyrics</string>
-    <string name="mini_player_previous">Previous</string>
-    <string name="mini_player_next">Next</string>
-    <string name="mini_player_playlist">Playlist</string>
-    <string name="mini_player_no_lyrics">No lyrics</string>
-    <string name="mini_player_playlist_title">Playlist</string>
 </resources>
