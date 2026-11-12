@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
@@ -49,8 +50,19 @@ class AccessibilityActionExecutor(
     // 主题来源是应用级仓库，服务只读装配器需要的流
     private fun themeModeFlow(): Flow<ThemeMode> =
         (service.application as App).container.settingsRepository.settings.map { it.themeMode }
+    // 最近使用在前的前台应用历史；只收可启动且未加入切换黑名单的应用，
+    // 「上一个应用」按这份历史定位
+    private val appHistory = ArrayDeque<String>()
+    // 当前前台应用；停留在被过滤的应用（含桌面）或不可识别窗口时为 null
     private var currentApp: String? = null
-    private var previousApp: String? = null
+
+    // 桌面（含第三方启动器）：作为前台状态参与判定，但不作为切换目标
+    private val homePackages: Set<String> by lazy {
+        service.packageManager.queryIntentActivities(
+            Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
+            PackageManager.ResolveInfoFlags.of(0L)
+        ).mapNotNull { it.activityInfo?.packageName }.toSet()
+    }
 
     private val appContainer = (service.application as App).container
 
@@ -93,10 +105,7 @@ class AccessibilityActionExecutor(
             }
             GestureAction.RECENT -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
             GestureAction.BACK -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-            // 无可切换目标或启动失败时回到最近任务，避免手势没有任何响应
-            GestureAction.LAST_APP -> if (!switchToLastApp()) {
-                service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
-            }
+            GestureAction.LAST_APP -> switchToLastApp()
             GestureAction.PREVIOUS_TRACK -> sendMediaKeyEvent(android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS)
             GestureAction.NEXT_TRACK -> sendMediaKeyEvent(android.view.KeyEvent.KEYCODE_MEDIA_NEXT)
             GestureAction.FLASHLIGHT -> toggleFlashlight()
@@ -234,7 +243,7 @@ class AccessibilityActionExecutor(
         executorScope.cancel()
     }
 
-    // 监听窗口变化事件，维护当前应用和上一个应用
+    // 监听窗口变化事件，维护前台应用历史
     fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
             event?.eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED
@@ -242,46 +251,80 @@ class AccessibilityActionExecutor(
 
         val packageName = event.packageName?.toString() ?: return
         if (packageName == service.packageName) return
+
+        if (packageName in homePackages) {
+            // 只有窗口状态变化才视为「回到桌面」，避免桌面后台窗口变化误判；
+            // 桌面不占历史位，但作为前台状态清空当前应用
+            if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+                currentApp = null
+            }
+            return
+        }
         if (packageName == currentApp) return
 
-        val blacklist = blacklistSnapshot
-        if (packageName in blacklist) return
+        // 有启动入口说明是用户能打开的应用，否则是输入法、系统面板等临时窗口
+        val launchable = service.packageManager.getLaunchIntentForPackage(packageName) != null
 
+        if (packageName in blacklistSnapshot) {
+            // 被过滤的应用同样不占历史位：从这类应用触发时回到最近使用的应用，
+            // 而不是沿历史再往前跳一格；临时窗口则完全忽略，不改变当前应用
+            if (launchable && event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+                currentApp = null
+            }
+            return
+        }
         // 只记录可启动的应用：输入法、系统面板等临时窗口无法作为切换目标，
         // 记入后会让「上一个应用」锁死在一个启动不起来的包上
-        if (service.packageManager.getLaunchIntentForPackage(packageName) == null) return
+        if (!launchable) return
 
-        previousApp = currentApp
+        recordForeground(packageName)
+    }
+
+    // 记录前台应用：移到历史最前，超出上限时丢弃最旧项
+    private fun recordForeground(packageName: String) {
+        appHistory.remove(packageName)
+        appHistory.addFirst(packageName)
+        while (appHistory.size > APP_HISTORY_LIMIT) {
+            appHistory.removeLast()
+        }
         currentApp = packageName
     }
 
     private fun launchCurrentAppInFreeform() {
-        val packageName = currentApp ?: return
+        // 在桌面时沿用进入桌面前的应用，与历史栈的定位保持一致
+        val packageName = currentApp ?: appHistory.firstOrNull() ?: return
         if (packageName == service.packageName) return
         freeformAppLauncher.launch(packageName, useFreeform = true)
     }
 
-    // 切回上一个应用；显式目标命中应用切换黑名单时不作为切换目标，
-    // 改用黑名单过滤后的上一个应用，避免落到桌面、系统弹窗等临时窗口。
+    // 切回上一个应用：历史栈中当前应用之后的第一项。
+    // 当前在桌面时回退到历史栈顶，即回到进入桌面前的应用；
+    // 历史中没有更早的应用时不做任何操作，不额外拉起最近任务。
     // 返回值表示是否成功切换，供调用方决定是否需要兜底
     fun switchToLastApp(target: String? = null): Boolean {
         val preferred = target?.takeIf { it.isNotBlank() && it !in blacklistSnapshot }
-        // 与当前应用相同的记录不是有效的切换目标，交由调用方兜底
-        val pkg = preferred
-            ?: previousApp?.takeIf { it != currentApp && it !in blacklistSnapshot }
-            ?: return false
+        val pkg = preferred ?: previousAppTarget() ?: return false
         if (!launchApp(pkg)) return false
-        previousApp = currentApp
-        currentApp = pkg
+        recordForeground(pkg)
         return true
+    }
+
+    // 取历史栈中当前应用的下一个可用应用；当前不在已知应用内时取历史最前
+    private fun previousAppTarget(): String? {
+        val currentIndex = currentApp?.let { appHistory.indexOf(it) } ?: -1
+        val candidate = if (currentIndex < 0) {
+            appHistory.firstOrNull()
+        } else {
+            appHistory.getOrNull(currentIndex + 1)
+        } ?: return null
+        return candidate.takeIf { it != currentApp && it !in blacklistSnapshot }
     }
 
     // 切回指定应用（用于启动拦截后返回来源应用）：只启动该应用，不回退到其他应用。
     // 返回值表示是否成功切换，供调用方决定是否需要兜底
     fun switchToApp(packageName: String): Boolean {
         if (packageName.isBlank() || !launchApp(packageName)) return false
-        previousApp = currentApp
-        currentApp = packageName
+        recordForeground(packageName)
         return true
     }
 
@@ -529,5 +572,7 @@ class AccessibilityActionExecutor(
     companion object {
         private const val TAG = "ActionExecutor"
         private const val REMIND_REQUEST_CODE_BASE = 3000
+        // 前台应用历史的保留条数，只影响「上一个应用」能回溯的深度
+        private const val APP_HISTORY_LIMIT = 10
     }
 }
