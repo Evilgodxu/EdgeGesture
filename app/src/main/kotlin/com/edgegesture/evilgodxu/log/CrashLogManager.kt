@@ -30,7 +30,7 @@ object CrashLogManager : Thread.UncaughtExceptionHandler {
     private const val LOG_DIR_NAME = "logs"
 
     /** 日志文件名前缀 */
-    private const val LOG_FILE_PREFIX = "crash_"
+    private const val LOG_FILE_PREFIX = "EdgeGesture_"
 
     /** 保留天数：最多保留最近 3 天的日志 */
     private const val KEEP_DAYS = 3L
@@ -80,6 +80,13 @@ object CrashLogManager : Thread.UncaughtExceptionHandler {
         logExecutor.execute {
             writeLog(title = "$className: $description", throwable = throwable)
         }
+    }
+
+    /** 今日日志文件；当天没有写入过日志时返回 null */
+    fun getTodayLogFile(): File? {
+        val dir = logDir ?: return null
+        val logFile = File(dir, "$LOG_FILE_PREFIX${LocalDate.now().format(dateFormat)}.log")
+        return logFile.takeIf { it.isFile && it.length() > 0L }
     }
 
     override fun uncaughtException(thread: Thread, throwable: Throwable) {

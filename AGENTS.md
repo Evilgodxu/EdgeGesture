@@ -93,7 +93,8 @@ screens/<page>/
 
 ## 日志与崩溃
 
-- `CrashLogManager` 是唯一崩溃落盘入口，已在 `App` 最先注册为默认 `UncaughtExceptionHandler`；业务里不要再建第二套日志框架。
+- `CrashLogManager` 是唯一崩溃落盘入口，已在 `App` 最先注册为默认 `UncaughtExceptionHandler`；业务里不要再建第二套日志框架。日志写入 `getExternalFilesDir/logs/crash_yyyy-MM-dd.log`，保留 3 天。
+- 设置页底部提供今日日志分享入口：`CrashLogManager.getTodayLogFile()` + `FileProvider`（`file_paths.xml` 的 `logs/`），今日无日志时用 Toast 提示，不额外造导出文件。
 - 临时埋点日志在验证结束后删除，不保留防御性日志。
 - 失败要给出可执行路径（引导授权、重试、回退），只 `Log` 不提示视为未完成。
 

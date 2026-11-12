@@ -155,6 +155,9 @@
     <!-- About -->
     <string name="settings_about">About</string>
     <string name="settings_version">Version %s</string>
+    <string name="settings_log">[Log]</string>
+    <string name="settings_log_empty_today">No log available today</string>
+    <string name="settings_share_log_title">Share log</string>
     <string name="nav_back">Back</string>
     <string name="settings_blacklist_title">App switch blacklist</string>
     <string name="settings_blacklist_search_hint">Search apps</string>
