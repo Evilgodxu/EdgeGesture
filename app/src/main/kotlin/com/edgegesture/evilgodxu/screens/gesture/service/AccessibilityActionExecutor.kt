@@ -93,7 +93,10 @@ class AccessibilityActionExecutor(
             }
             GestureAction.RECENT -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
             GestureAction.BACK -> service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK)
-            GestureAction.LAST_APP -> switchToLastApp()
+            // 无可切换目标或启动失败时回到最近任务，避免手势没有任何响应
+            GestureAction.LAST_APP -> if (!switchToLastApp()) {
+                service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_RECENTS)
+            }
             GestureAction.PREVIOUS_TRACK -> sendMediaKeyEvent(android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS)
             GestureAction.NEXT_TRACK -> sendMediaKeyEvent(android.view.KeyEvent.KEYCODE_MEDIA_NEXT)
             GestureAction.FLASHLIGHT -> toggleFlashlight()
@@ -244,6 +247,10 @@ class AccessibilityActionExecutor(
         val blacklist = blacklistSnapshot
         if (packageName in blacklist) return
 
+        // 只记录可启动的应用：输入法、系统面板等临时窗口无法作为切换目标，
+        // 记入后会让「上一个应用」锁死在一个启动不起来的包上
+        if (service.packageManager.getLaunchIntentForPackage(packageName) == null) return
+
         previousApp = currentApp
         currentApp = packageName
     }
@@ -259,7 +266,10 @@ class AccessibilityActionExecutor(
     // 返回值表示是否成功切换，供调用方决定是否需要兜底
     fun switchToLastApp(target: String? = null): Boolean {
         val preferred = target?.takeIf { it.isNotBlank() && it !in blacklistSnapshot }
-        val pkg = preferred ?: previousApp ?: return false
+        // 与当前应用相同的记录不是有效的切换目标，交由调用方兜底
+        val pkg = preferred
+            ?: previousApp?.takeIf { it != currentApp && it !in blacklistSnapshot }
+            ?: return false
         if (!launchApp(pkg)) return false
         previousApp = currentApp
         currentApp = pkg
