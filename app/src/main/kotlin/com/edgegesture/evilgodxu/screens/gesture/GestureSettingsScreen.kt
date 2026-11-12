@@ -1,7 +1,6 @@
 package com.edgegesture.evilgodxu.screens.gesture
 
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -30,6 +29,7 @@ import com.edgegesture.evilgodxu.screens.gesture.assembly.GestureSettingsAssembl
 import com.edgegesture.evilgodxu.screens.gesture.component.header.GestureSettingsHeader
 import com.edgegesture.evilgodxu.screens.gesture.service.EdgeGestureAccessibilityService
 import com.edgegesture.evilgodxu.ui.adaptive.currentWindowSizeClass
+import com.edgegesture.evilgodxu.utils.localization.findActivity
 
 // 页面入口：只做状态连接、权限判定与副作用，布局交给组装器
 @Composable
@@ -45,7 +45,7 @@ fun GestureSettingsScreen(
     viewModel: GestureSettingsViewModel = viewModel(),
 ) {
     val context = LocalContext.current
-    val activity = context as? Activity
+    val activity = context.findActivity()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val stats by viewModel.stats.collectAsStateWithLifecycle()
     val statsPeriod by viewModel.statsPeriod.collectAsStateWithLifecycle()

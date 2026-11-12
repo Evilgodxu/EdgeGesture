@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.res.Configuration
+import android.content.res.Resources
 import android.os.LocaleList
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.LocalActivityResultRegistryOwner
@@ -35,7 +36,7 @@ class LocalizationManager(
 
     fun localeFor(language: AppLanguage): Locale = language.toLocale(systemLocale)
 
-    // 以指定语言创建本地化上下文
+    // 以应用上下文创建本地化上下文，供没有 Activity 的场景（如通知文案）使用
     fun createLocalizedContext(locale: Locale): Context {
         val config = Configuration(context.resources.configuration).apply {
             setLocales(LocaleList(locale))
@@ -51,13 +52,14 @@ fun ProvideLocalizedContext(
     content: @Composable () -> Unit,
 ) {
     val appUiState by LocalMainViewModel.current.uiState.collectAsStateWithLifecycle()
-    val localizedContext = localizationManager.createLocalizedContext(
-        localizationManager.localeFor(appUiState.language),
-    )
-    // LocalActivity 与 LocalActivityResultRegistryOwner 的默认值沿 LocalContext 链推导；
-    // 本地化 Context 基于 Application 创建，链上取不到宿主 Activity，会使依赖 Activity 的能力失效，
-    // 故显式提供进入时的宿主 Activity 与其注册表能力
+    // 本地化 Context 以宿主 Activity 为 base 只替换 Resources：
+    // 若直接提供基于 Application 的配置上下文，组合层里的 startActivity 会因缺少
+    // FLAG_ACTIVITY_NEW_TASK 抛 AndroidRuntimeException，且拿不到宿主 Activity
     val activity = checkNotNull(LocalContext.current.findActivity())
+    val localizedContext = LocalizedActivityContext(
+        base = activity,
+        locale = localizationManager.localeFor(appUiState.language),
+    )
     val resultRegistryOwner = checkNotNull(activity as? ActivityResultRegistryOwner) {
         "宿主 Activity 必须实现 ActivityResultRegistryOwner"
     }
@@ -74,8 +76,24 @@ fun ProvideLocalizedContext(
     }
 }
 
+// 组合层可用的本地化 Context：以 Activity 为 base，仅替换 Resources
+private class LocalizedActivityContext(base: Activity, locale: Locale) : ContextWrapper(base) {
+
+    private val localizedResources: Resources = createLocalizedResources(base, locale)
+
+    override fun getResources(): Resources = localizedResources
+}
+
+// 以指定语言覆盖配置后取资源
+private fun createLocalizedResources(base: Context, locale: Locale): Resources {
+    val config = Configuration(base.resources.configuration).apply {
+        setLocales(LocaleList(locale))
+    }
+    return base.createConfigurationContext(config).resources
+}
+
 // 沿 ContextWrapper 链向上查找宿主 Activity
-private tailrec fun Context.findActivity(): Activity? = when {
+fun Context.findActivity(): Activity? = when {
     this is Activity -> this
     this is ContextWrapper -> baseContext.findActivity()
     else -> null

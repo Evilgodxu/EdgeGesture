@@ -66,6 +66,7 @@ Composable → ViewModel 方法 → Repository → DataStore          事件向�
 - 不要改用 `Configuration.screenWidthDp` 或 `currentWindowAdaptiveInfo`：前者被取整且与 inset 行为耦合，后者在 Android 16 上要求带 display 关联的 UI Context，非 UI 上下文会抛异常。
 - 用户可见文案一律进 `res/values/strings.xml`（中文为默认，`resources.properties` 声明 `unqualifiedResLocale=zh`）与 `res/values-en/strings.xml`，同一 commit 内成对补齐；代码里不出现硬编码文案。带数量的文案用 `<plurals>` + `pluralStringResource` / `getQuantityString`。`localeFilters` 只保留 `zh` / `en`，`generateLocaleConfig` 由 AGP 生成清单声明，不手写 `locale_config.xml`。
 - 语言热切换：`LocalizationManager` 负责语言转 Locale 与创建本地化 Context，`ProvideLocalizedContext` 同时提供 `LocalContext`、`LocalResources`、`LocalActivity` 与 `ActivityResultRegistryOwner`；新增独立窗口（Dialog、悬浮层）须走同一组合局部，不要各自 `setLocale`。
+- 本地化只替换 Resources，不能让 `LocalContext` 失去宿主 Activity：`LocalizedActivityContext` 以 Activity 为 base，否则组合层里的 `startActivity` 会因缺少 `FLAG_ACTIVITY_NEW_TASK` 抛 `AndroidRuntimeException`。需要 Activity 能力时用 `Context.findActivity()`，不要写 `context as? Activity`；从服务或应用上下文启动 Activity 必须显式加 `FLAG_ACTIVITY_NEW_TASK`。
 - 主题：配色令牌在 `ui/theme/Color.kt`，主题模式由 `ThemeMode` 驱动；新增颜色走令牌，不内联 `Color(0xFF…)`。
 - 图标优先用 `material-icons-extended` 已有项；需要自绘矢量时从本机仓库根 `Material Symbols/`（outlined SVG，不入版本库）取样，不手画近似图标。
 
