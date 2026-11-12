@@ -88,8 +88,12 @@
     <string name="gesture_remind_timer_minutes">分钟</string>
     <string name="gesture_remind_timer_confirm">确定</string>
     <string name="gesture_remind_timer_cancel">取消</string>
-    <string name="gesture_remind_feedback">已设置%d分钟后提醒</string>
-    <string name="gesture_remind_cancelled">已取消%d分钟提醒</string>
+    <plurals name="gesture_remind_feedback">
+        <item quantity="other">已设置%d分钟后提醒</item>
+    </plurals>
+    <plurals name="gesture_remind_cancelled">
+        <item quantity="other">已取消%d分钟提醒</item>
+    </plurals>
     <string name="gesture_remind_channel_name">手势提醒</string>
     <string name="gesture_remind_notify_title">手势提醒</string>
     <string name="gesture_remind_notify_body">您设置的%d分钟提醒时间到了</string>
@@ -226,7 +230,9 @@
     <string name="launch_block_allow_kill_system_title">允许终止系统程序</string>
     <string name="launch_block_allow_kill_system_desc">警告:终止系统应用可能导致系统不稳定</string>
     <string name="launch_block_rules_title">拦截规则</string>
-    <string name="launch_block_rules_count">共 %d 条规则</string>
+    <plurals name="launch_block_rules_count">
+        <item quantity="other">共 %d 条规则</item>
+    </plurals>
     <string name="launch_block_add_rule">添加规则</string>
     <string name="launch_block_edit_rule">编辑</string>
     <string name="launch_block_delete_rule">删除</string>
@@ -286,7 +292,7 @@
     <string name="update_notification_downloading">正在下载 %1$s</string>
     <string name="update_dialog_title">发现新版本 %s</string>
     <string name="update_dialog_description_alt">是否下载并安装新版本？</string>
-    <string name="update_dialog_downloading">正在下载...</string>
+    <string name="update_dialog_downloading">正在下载…</string>
     <string name="update_dialog_download_failed">下载失败，请尝试使用浏览器下载</string>
     <string name="update_dialog_changelog_title">更新日志：</string>
     <string name="update_dialog_download">下载</string>

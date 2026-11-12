@@ -1564,8 +1564,8 @@ private fun MoreGridCard(
 private fun MoreGridItem(
     icon: @Composable () -> Unit,
     label: String,
+    modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier

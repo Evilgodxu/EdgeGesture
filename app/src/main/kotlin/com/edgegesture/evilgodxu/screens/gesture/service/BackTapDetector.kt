@@ -1,6 +1,7 @@
 package com.edgegesture.evilgodxu.screens.gesture.service
 
 import android.content.Context
+import android.annotation.SuppressLint
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -241,6 +242,8 @@ class BackTapDetector(
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "EdgeGesture:BackTap")
     }
 
+    // 唤醒锁的生命周期与检测器启停严格成对，加超时会在长时监听中意外失效，故此处沿用无超时形式
+    @SuppressLint("WakelockTimeout")
     private fun acquireWakeLock() {
         ensureWakeLock()
         if (!isWakeLockHeld) {

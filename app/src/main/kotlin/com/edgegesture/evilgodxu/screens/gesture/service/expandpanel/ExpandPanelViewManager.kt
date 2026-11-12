@@ -9,6 +9,7 @@ import android.view.Gravity
 import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.compose.ui.platform.ComposeView
+import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
@@ -22,7 +23,7 @@ import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.edgegesture.evilgodxu.data.gesture.ExpandPanelShortcutsState
 import com.edgegesture.evilgodxu.log.CrashLogManager
-import com.edgegesture.evilgodxu.screens.settings.ThemeMode
+import com.edgegesture.evilgodxu.data.settings.ThemeMode
 import kotlinx.coroutines.flow.Flow
 
 // 扩展面板悬浮窗管理器
@@ -70,7 +71,7 @@ class ExpandPanelViewManager(
             if (!handled) {
                 // 回调未处理，使用默认方式跳转设置页
                 val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
-                    data = android.net.Uri.parse("package:${context.packageName}")
+                    data = "package:${context.packageName}".toUri()
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
                 context.startActivity(intent)

@@ -1,71 +1,49 @@
 package com.edgegesture.evilgodxu.screens.settings
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
-import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
-import com.edgegesture.evilgodxu.data.shizuku.ShizukuState
-import com.edgegesture.evilgodxu.utils.localization.LocalizationManager
+import androidx.compose.ui.geometry.Offset
+import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.update
 
-// 设置页面 ViewModel，管理主题、语言、Shizuku 等设置状态
-class SettingsViewModel(
-    application: Application,
-    private val localizationManager: LocalizationManager,
-) : AndroidViewModel(application) {
+// 设置页 ViewModel：只持有页面级弹窗状态；
+// 主题、语言、版本与更新检查均属应用级，分别由 MainViewModel、UpdateViewModel 提供
+class SettingsViewModel : ViewModel() {
 
-    private val context get() = getApplication<Application>().applicationContext
+    private val _uiState = MutableStateFlow(SettingsUiState())
+    val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
-    // 请求 Shizuku 权限的请求码，与 UI 层注册的权限结果监听共用
-    val shizukuPermissionCode = 1001
-
-    private val _shizukuState = MutableStateFlow<ShizukuState>(ShizukuState.NotRunning)
-    val shizukuState: StateFlow<ShizukuState> = _shizukuState.asStateFlow()
-
-    val uiState: StateFlow<SettingsUiState> = combine(
-        context.settingsFlow(),
-        context.appLanguageFlow(),
-    ) { settings, language ->
-        SettingsUiState(
-            isLoading = false,
-            themeMode = settings.themeMode,
-            language = language,
-        )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = SettingsUiState(isLoading = true),
-    )
-
-    // 初始化 Shizuku（内部幂等，可重复调用），并同步当前状态
-    fun initShizuku() {
-        ShizukuManager.init(context)
-        _shizukuState.value = ShizukuManager.state.value
+    // 点击主题项：记录动效起点并打开主题弹窗
+    fun showThemeDialog(position: Offset) {
+        _uiState.update { it.copy(showThemeDialog = true, pendingThemeClickPosition = position) }
     }
 
-    // 接收权限结果回调，更新 Shizuku 状态
-    fun setShizukuPermissionResult(granted: Boolean) {
-        _shizukuState.value = if (granted) ShizukuState.Granted else ShizukuState.Denied
+    fun dismissThemeDialog() {
+        _uiState.update { it.copy(showThemeDialog = false) }
     }
 
-    // 设置主题模式
-    fun setThemeMode(mode: ThemeMode) {
-        viewModelScope.launch {
-            context.saveThemeMode(mode)
-        }
+    fun showLanguageDialog() {
+        _uiState.update { it.copy(showLanguageDialog = true) }
     }
 
-    // 设置应用语言：先同步 app/activity 层 Resources，再写入 DataStore 驱动 Compose 热切换
-    fun setLanguage(language: AppLanguage) {
-        localizationManager.applyAppLocale(localizationManager.resolveLanguage(language))
-        viewModelScope.launch {
-            context.saveAppLanguage(language)
-        }
+    fun dismissLanguageDialog() {
+        _uiState.update { it.copy(showLanguageDialog = false) }
+    }
+
+    fun showDonateDialog() {
+        _uiState.update { it.copy(showDonateDialog = true) }
+    }
+
+    fun dismissDonateDialog() {
+        _uiState.update { it.copy(showDonateDialog = false) }
+    }
+
+    fun showGestureConfigDialog() {
+        _uiState.update { it.copy(showGestureConfigDialog = true) }
+    }
+
+    fun dismissGestureConfigDialog() {
+        _uiState.update { it.copy(showGestureConfigDialog = false) }
     }
 }

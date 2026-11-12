@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  弃用 API（Deprecated）与 UnsafeOptIn 提级为 Error：
+  abortOnError 开启时任一 Error 即阻断构建，禁止新增 baseline 压后处理。
+
+  以下为定向排除，每项均须写明「为什么这是有意为之」。
+-->
+<lint>
+    <issue id="Deprecated" severity="error" />
+    <issue id="UnsafeOptInUsageError" severity="error" />
+    <issue id="UnsafeOptInUsageWarning" severity="error" />
+    <!--
+      本应用刻意只发布 arm64-v8a（APK 命名亦为 -arm64），
+      ChromeOS 的 x86_64 兼容交给系统二进制翻译，故忽略该检查。
+    -->
+    <issue id="ChromeOsAbiSupport" severity="ignore" />
+    <!--
+      本应用不经 Play 商店分发，电池优化白名单是手势服务在国产 ROM 上持续运行的前提，
+      REQUEST_IGNORE_BATTERY_OPTIMIZATIONS 的引导由用户在系统弹窗中显式确认。
+    -->
+    <issue id="BatteryLife" severity="ignore" />
+</lint>

@@ -1,517 +1,84 @@
 package com.edgegesture.evilgodxu.screens.settings
 
-import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import android.content.pm.PackageManager
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Code
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Palette
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.window.core.layout.WindowSizeClass
-import com.edgegesture.evilgodxu.MyApplication
-import com.edgegesture.evilgodxu.R
-import com.edgegesture.evilgodxu.log.CrashLogManager
-import com.edgegesture.evilgodxu.update.LocalUpdateViewModel
-import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
+import androidx.core.net.toUri
+import com.edgegesture.evilgodxu.LocalMainViewModel
+import com.edgegesture.evilgodxu.screens.settings.assembly.SettingsAssembly
+import com.edgegesture.evilgodxu.screens.settings.component.dialog.DonateDialog
+import com.edgegesture.evilgodxu.screens.settings.component.dialog.GestureConfigDialog
+import com.edgegesture.evilgodxu.screens.settings.component.dialog.LanguageSelectionDialog
+import com.edgegesture.evilgodxu.screens.settings.component.dialog.ThemeSelectionDialog
 import com.edgegesture.evilgodxu.ui.adaptive.currentWindowSizeClass
-import com.edgegesture.evilgodxu.screens.settings.components.DonateDialog
-import com.edgegesture.evilgodxu.screens.settings.components.GestureConfigDialog
-import com.edgegesture.evilgodxu.screens.settings.components.LanguageSelectionDialog
-
-import com.edgegesture.evilgodxu.screens.settings.components.SettingsClickableItem
-import com.edgegesture.evilgodxu.screens.settings.components.SettingsSection
-import com.edgegesture.evilgodxu.screens.settings.components.ThemeSelectionDialog
 import com.edgegesture.evilgodxu.ui.theme.LocalThemeTransitionController
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
-import rikka.shizuku.Shizuku
+import com.edgegesture.evilgodxu.update.LocalUpdateViewModel
+import com.edgegesture.evilgodxu.update.UpdateManager
 
-// 设置页 ViewModel 工厂：除 Application 外还需注入语言管理器
-private val settingsViewModelFactory = viewModelFactory {
-    initializer {
-        val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MyApplication
-        SettingsViewModel(app, app.localizationManager)
-    }
-}
-
-private const val GITHUB_URL = "https://github.com/Evilgodxu/EdgeGesture"
-
-// 应用设置 DataStore 实例
-val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
-
-// 设置存储键名定义
-object SettingsKeys {
-    val THEME_MODE = stringPreferencesKey("theme_mode")
-    // 语言统一落 DataStore，由 Compose 层驱动热切换
-    val LANGUAGE = stringPreferencesKey("language")
-}
-
-// 应用主题模式
-enum class ThemeMode(val value: String) {
-    SYSTEM("system"),
-    DARK("dark"),
-    LIGHT("light");
-
-    companion object {
-        fun fromValue(value: String): ThemeMode = entries.find { it.value == value } ?: SYSTEM
-    }
-}
-
-// 应用语言：中文/英文/跟随系统，持久化到 DataStore 由 Compose 层驱动切换
-enum class AppLanguage(val languageTag: String?) {
-    SYSTEM(null),
-    CHINESE("zh"),
-    ENGLISH("en");
-}
-
-// 设置状态数据类
-data class SettingsState(
-    val themeMode: ThemeMode = ThemeMode.SYSTEM
-)
-
-// 获取设置状态流，合并主题和震动设置
-fun Context.settingsFlow(): Flow<SettingsState> = settingsDataStore.data.map { preferences ->
-    SettingsState(
-        themeMode = ThemeMode.fromValue(preferences[SettingsKeys.THEME_MODE] ?: ThemeMode.SYSTEM.value)
-    )
-}
-
-// 获取主题模式流
-fun Context.themeModeFlow(): Flow<ThemeMode> = settingsDataStore.data.map { preferences ->
-    ThemeMode.fromValue(preferences[SettingsKeys.THEME_MODE] ?: ThemeMode.SYSTEM.value)
-}
-
-// 保存主题模式设置
-suspend fun Context.saveThemeMode(mode: ThemeMode) = withContext(Dispatchers.IO) {
-    settingsDataStore.edit { preferences ->
-        preferences[SettingsKeys.THEME_MODE] = mode.value
-    }
-}
-
-// 获取应用语言流
-fun Context.appLanguageFlow(): Flow<AppLanguage> = settingsDataStore.data.map { preferences ->
-    AppLanguage.entries.find { it.languageTag == preferences[SettingsKeys.LANGUAGE] } ?: AppLanguage.SYSTEM
-}
-
-// 保存应用语言设置
-suspend fun Context.saveAppLanguage(language: AppLanguage) = withContext(Dispatchers.IO) {
-    settingsDataStore.edit { preferences ->
-        preferences[SettingsKeys.LANGUAGE] = language.languageTag.orEmpty()
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
+// 页面入口：提升状态与事件，窗口尺寸类在此计算后作为参数下传，布局交给组装器；
+// 弹层与形态无关，统一挂在骨架层
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
-    viewModel: SettingsViewModel = viewModel(factory = settingsViewModelFactory),
+    viewModel: SettingsViewModel = viewModel(),
 ) {
     val context = LocalContext.current
-    val versionName = remember {
-        try {
-            context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: ""
-        } catch (e: Exception) {
-            CrashLogManager.logException("SettingsScreen", "获取版本号失败", e)
-            ""
-        }
-    }
-
-    // 通过 ViewModel 获取设置状态，自动响应设置变更
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val windowSizeClass = currentWindowSizeClass()
-
-    if (uiState.isLoading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator()
-        }
-        return
-    }
-
-    // 各对话框显示状态管理
-    var showThemeDialog by remember { mutableStateOf(false) }
-    var showLanguageDialog by remember { mutableStateOf(false) }
-    var showDonateDialog by remember { mutableStateOf(false) }
-    var showGestureConfigDialog by remember { mutableStateOf(false) }
-    // 主题项点击位置，用于触发圆形揭示过渡动画
-    var pendingThemeClickPosition by remember { mutableStateOf(Offset.Zero) }
-
-    // 更新检测状态由 UpdateViewModel 统一管理，与主界面共享
+    val mainViewModel = LocalMainViewModel.current
     val updateViewModel = LocalUpdateViewModel.current
+    val themeTransitionController = LocalThemeTransitionController.current
 
-    DisposableEffect(Unit) {
-        viewModel.initShizuku()
+    val appUiState by mainViewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-        val listener = Shizuku.OnRequestPermissionResultListener { requestCode, grantResult ->
-            if (requestCode == viewModel.shizukuPermissionCode) {
-                viewModel.setShizukuPermissionResult(grantResult == PackageManager.PERMISSION_GRANTED)
-            }
-        }
-        ShizukuManager.addPermissionListener(listener)
-
-        onDispose {
-            ShizukuManager.removePermissionListener(listener)
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.settings_title),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.nav_back)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+    SettingsAssembly(
+        windowSizeClass = currentWindowSizeClass(),
+        appUiState = appUiState,
+        onBack = onNavigateBack,
+        onShowThemeDialog = viewModel::showThemeDialog,
+        onShowLanguageDialog = viewModel::showLanguageDialog,
+        onShowDonateDialog = viewModel::showDonateDialog,
+        onShowGestureConfigDialog = viewModel::showGestureConfigDialog,
+        onCheckForUpdate = { updateViewModel.checkForUpdate(force = true) },
+        onOpenRepository = {
+            context.startActivity(
+                Intent(Intent.ACTION_VIEW, UpdateManager.GITHUB_REPOSITORY_URL.toUri()),
             )
         },
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-    ) { innerPadding ->
-        val contentModifier = Modifier
-            .fillMaxSize()
-            .consumeWindowInsets(innerPadding)
-            .padding(innerPadding)
-            .padding(16.dp)
+    )
 
-        if (windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)) {
-            // 宽屏设备使用双列布局，提高空间利用率
-            Row(
-                modifier = contentModifier.verticalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
-            ) {
-                // 外观与语言设置列
-                Column(
-                    modifier = Modifier.weight(1f),
-                ) {
-                    // 主题设置
-                    SettingsSection(title = stringResource(R.string.settings_section_appearance)) {
-                        SettingsClickableItem(
-                            icon = Icons.Default.Palette,
-                            title = stringResource(R.string.settings_theme_title),
-                            subtitle = when (uiState.themeMode) {
-                                ThemeMode.SYSTEM -> stringResource(R.string.settings_theme_system)
-                                ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
-                                ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
-                            },
-                            onClick = { showThemeDialog = true },
-                            onClickWithPosition = { position -> pendingThemeClickPosition = position }
-                        )
-                    }
-
-                    // 语言设置
-                    SettingsSection(title = stringResource(R.string.settings_section_language)) {
-                        SettingsClickableItem(
-                            icon = Icons.Default.Language,
-                            title = stringResource(R.string.settings_language_title),
-                            subtitle = when (uiState.language) {
-                                AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
-                                AppLanguage.CHINESE -> stringResource(R.string.settings_language_chinese)
-                                AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
-                            },
-                            onClick = { showLanguageDialog = true }
-                        )
-                    }
-                }
-
-                // 手势与更多设置列
-                Column(
-                    modifier = Modifier.weight(1f),
-                ) {
-                    // 更多设置项
-                    SettingsSection(title = stringResource(R.string.settings_about)) {
-                        SettingsClickableItem(
-                            icon = Icons.Default.Folder,
-                            title = stringResource(R.string.gesture_config_title),
-                            subtitle = stringResource(R.string.gesture_config_desc),
-                            onClick = { showGestureConfigDialog = true }
-                        )
-                        HorizontalDivider()
-                        SettingsClickableItem(
-                            icon = Icons.Default.Favorite,
-                            title = stringResource(R.string.settings_donate),
-                            subtitle = stringResource(R.string.settings_donate_desc),
-                            onClick = { showDonateDialog = true }
-                        )
-                    }
-                }
-            }
-
-            // 版本信息（宽屏）
-            Text(
-                text = "Evilgodxu",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp, bottom = 2.dp)
-            )
-            Text(
-                text = stringResource(R.string.settings_version, versionName),
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 6.dp)
-            )
-
-            // 项目链接
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    modifier = Modifier
-                        .clickable {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_URL))
-                            context.startActivity(intent)
-                        }
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Code,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = GITHUB_URL,
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        textDecoration = TextDecoration.Underline
-                    )
-                }
-            }
-        } else {
-            // 窄屏设备使用单列布局
-            Column(
-                modifier = contentModifier.verticalScroll(rememberScrollState()),
-            ) {
-                // 主题设置
-                SettingsSection(title = stringResource(R.string.settings_section_appearance)) {
-                    SettingsClickableItem(
-                        icon = Icons.Default.Palette,
-                        title = stringResource(R.string.settings_theme_title),
-                        subtitle = when (uiState.themeMode) {
-                            ThemeMode.SYSTEM -> stringResource(R.string.settings_theme_system)
-                            ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
-                            ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
-                        },
-                        onClick = { showThemeDialog = true },
-                        onClickWithPosition = { position -> pendingThemeClickPosition = position }
-                    )
-                }
-
-                // 语言设置
-                SettingsSection(title = stringResource(R.string.settings_section_language)) {
-                    SettingsClickableItem(
-                        icon = Icons.Default.Language,
-                        title = stringResource(R.string.settings_language_title),
-                        subtitle = when (uiState.language) {
-                            AppLanguage.SYSTEM -> stringResource(R.string.settings_language_system)
-                            AppLanguage.CHINESE -> stringResource(R.string.settings_language_chinese)
-                            AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
-                        },
-                        onClick = { showLanguageDialog = true }
-                    )
-                }
-
-                // 更多设置项
-                SettingsSection(title = stringResource(R.string.settings_about)) {
-                    SettingsClickableItem(
-                        icon = Icons.Default.Folder,
-                        title = stringResource(R.string.gesture_config_title),
-                        subtitle = stringResource(R.string.gesture_config_desc),
-                        onClick = { showGestureConfigDialog = true }
-                    )
-                    HorizontalDivider()
-                    SettingsClickableItem(
-                        icon = Icons.Default.Favorite,
-                        title = stringResource(R.string.settings_donate),
-                        subtitle = stringResource(R.string.settings_donate_desc),
-                        onClick = { showDonateDialog = true }
-                    )
-                }
-
-                // 版本信息（点击检查更新）
-                Text(
-                    text = "Evilgodxu",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp, bottom = 2.dp)
-                )
-                Text(
-                    text = stringResource(R.string.settings_version, versionName),
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            updateViewModel.checkForUpdate(force = true)
-                        }
-                        .padding(bottom = 6.dp)
-                )
-
-                // 项目链接
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 24.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .clickable {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_URL))
-                                context.startActivity(intent)
-                            }
-                            .padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Code,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = GITHUB_URL,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            textDecoration = TextDecoration.Underline
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    // 主题选择对话框
-    val themeTransitionController = LocalThemeTransitionController.current
-    if (showThemeDialog) {
+    if (uiState.showThemeDialog) {
         ThemeSelectionDialog(
-            currentTheme = uiState.themeMode,
-            onDismiss = { showThemeDialog = false },
+            currentTheme = appUiState.themeMode,
+            onDismiss = viewModel::dismissThemeDialog,
+            // 先从点击位置播放圆形揭示，再落库主题：揭示动画需要旧主题画面作为底图
             onThemeSelected = { themeMode ->
-                viewModel.setThemeMode(themeMode)
-                themeTransitionController.revealAt(pendingThemeClickPosition)
-                showThemeDialog = false
-            }
+                themeTransitionController.revealAt(uiState.pendingThemeClickPosition)
+                mainViewModel.setThemeMode(themeMode)
+                viewModel.dismissThemeDialog()
+            },
         )
     }
 
-    // 语言选择对话框
-    if (showLanguageDialog) {
+    if (uiState.showLanguageDialog) {
         LanguageSelectionDialog(
-            currentLanguage = uiState.language,
-            onDismiss = { showLanguageDialog = false },
+            currentLanguage = appUiState.language,
+            onDismiss = viewModel::dismissLanguageDialog,
+            // 先关闭弹窗再切换语言：语言变化会就地重建弹窗内文案，视觉上会看到一次闪跳
             onLanguageSelected = { language ->
-                showLanguageDialog = false
-                viewModel.setLanguage(language)
-            }
+                viewModel.dismissLanguageDialog()
+                mainViewModel.setLanguage(language)
+            },
         )
     }
 
-    // 捐赠支持对话框
-    if (showDonateDialog) {
-        DonateDialog(
-            onDismiss = { showDonateDialog = false }
-        )
+    if (uiState.showDonateDialog) {
+        DonateDialog(onDismiss = viewModel::dismissDonateDialog)
     }
 
-    if (showGestureConfigDialog) {
-        GestureConfigDialog(
-            onDismiss = { showGestureConfigDialog = false }
-        )
+    if (uiState.showGestureConfigDialog) {
+        GestureConfigDialog(onDismiss = viewModel::dismissGestureConfigDialog)
     }
 }
-
-

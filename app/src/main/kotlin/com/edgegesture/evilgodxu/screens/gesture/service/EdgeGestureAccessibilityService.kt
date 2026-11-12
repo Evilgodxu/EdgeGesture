@@ -327,6 +327,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                     checkAppLaunch(it)
                 }
                 AccessibilityEvent.TYPE_VIEW_FOCUSED -> checkInputFieldFocused(it)
+                // 其余事件类型（公告、朗读进度等）不参与手势与拦截判定
+                else -> Unit
             }
         }
     }

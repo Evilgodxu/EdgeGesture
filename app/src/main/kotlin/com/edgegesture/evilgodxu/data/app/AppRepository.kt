@@ -1,5 +1,6 @@
 package com.edgegesture.evilgodxu.data.app
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -44,6 +45,8 @@ class AppRepository private constructor(private val context: Context) {
     private var isReceiverRegistered = false
 
     companion object {
+        // 持有的是 applicationContext，与应用进程同生命周期，不构成泄漏
+        @SuppressLint("StaticFieldLeak")
         @Volatile
         private var instance: AppRepository? = null
 

@@ -98,7 +98,7 @@ private fun sq(value: Float): Float {
 
 // 将 Drawable 转换为 Bitmap
 fun android.graphics.drawable.Drawable.toBitmap(): android.graphics.Bitmap {
-    val bitmap = android.graphics.Bitmap.createBitmap(
+    val bitmap = androidx.core.graphics.createBitmap(
         intrinsicWidth.coerceAtLeast(1),
         intrinsicHeight.coerceAtLeast(1),
         android.graphics.Bitmap.Config.ARGB_8888

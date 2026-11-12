@@ -25,13 +25,12 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.core.view.drawToBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.edgegesture.evilgodxu.screens.settings.ThemeMode
-import com.edgegesture.evilgodxu.screens.settings.settingsFlow
+import com.edgegesture.evilgodxu.LocalMainViewModel
+import com.edgegesture.evilgodxu.data.settings.ThemeMode
 
 val DarkColorScheme = darkColorScheme(
     primary = md_theme_dark_primary,
@@ -129,13 +128,13 @@ fun MyApplicationTheme(
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val context = LocalContext.current
-    val settings by context.settingsFlow().collectAsStateWithLifecycle(initialValue = null)
+    // 主题来源是应用级状态的唯一副本，此处只读不另存
+    val appUiState by LocalMainViewModel.current.uiState.collectAsStateWithLifecycle()
 
-    val isDarkTheme = when (settings?.themeMode) {
+    val isDarkTheme = when (appUiState.themeMode) {
         ThemeMode.DARK -> true
         ThemeMode.LIGHT -> false
-        else -> darkTheme
+        ThemeMode.SYSTEM -> darkTheme
     }
 
     val colorScheme = if (isDarkTheme) DarkColorScheme else LightColorScheme

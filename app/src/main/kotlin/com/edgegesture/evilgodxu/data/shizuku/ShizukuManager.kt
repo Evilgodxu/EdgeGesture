@@ -49,6 +49,18 @@ object ShizukuManager {
         commandService = null
     }
 
+    // 授权结果由管理器统一落状态：页面只读 state，不另存副本
+    private val requestPermissionResultListener = Shizuku.OnRequestPermissionResultListener { _, grantResult ->
+        _state.value = if (grantResult == PackageManager.PERMISSION_GRANTED) {
+            ShizukuState.Granted
+        } else {
+            ShizukuState.Denied
+        }
+        if (grantResult == PackageManager.PERMISSION_GRANTED) {
+            bindUserService()
+        }
+    }
+
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             commandService = ICommandService.Stub.asInterface(service)
@@ -73,6 +85,7 @@ object ShizukuManager {
             initialized = true
             Shizuku.addBinderReceivedListener(binderReceivedListener)
             Shizuku.addBinderDeadListener(binderDeadListener)
+            Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
         }
 
         // 初始状态检查

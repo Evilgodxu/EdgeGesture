@@ -1,29 +1,42 @@
 package com.edgegesture.evilgodxu
 
+import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
 import android.os.LocaleList
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
+import androidx.core.view.WindowCompat
+import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import android.widget.Toast
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
+import com.edgegesture.evilgodxu.data.settings.AppLanguage
 import com.edgegesture.evilgodxu.navigation.NavGraph
-import com.edgegesture.evilgodxu.screens.settings.appLanguageFlow
 import com.edgegesture.evilgodxu.ui.adaptive.ProvideWindowSizeClass
 import com.edgegesture.evilgodxu.ui.theme.MyApplicationTheme
 import com.edgegesture.evilgodxu.update.LocalUpdateViewModel
@@ -37,19 +50,62 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
+// Activity 只做入口：挂载导航图与全局副作用，状态由 MainViewModel 与 UpdateViewModel 持有
 class MainActivity : ComponentActivity() {
 
-    private lateinit var windowInsetsController: WindowInsetsControllerCompat
+    // 手动 DI：经 Application 容器取依赖，ViewModel 以工厂注入构造参数
+    private val appContainer: AppContainer
+        get() = (application as App).container
 
-    // 延迟从 Application 取语言管理器单例，避免属性初始化早于 Application 绑定
     private val localizationManager: LocalizationManager
-        get() = (application as MyApplication).localizationManager
+        get() = appContainer.localizationManager
+
+    // 首帧状态：主题与语言的持久化值在进入组合前读出，避免默认主题闪现
+    private val initialAppUiState: AppUiState by lazy {
+        val repository = appContainer.settingsRepository
+        runBlocking {
+            AppUiState(
+                themeMode = repository.settings.first().themeMode,
+                language = repository.appLanguage.first(),
+                version = appContainer.appVersion,
+            )
+        }
+    }
+
+    private val mainViewModel: MainViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                MainViewModel(
+                    settingsRepository = appContainer.settingsRepository,
+                    initialState = initialAppUiState,
+                )
+            }
+        }
+    }
+
+    private val updateViewModel: UpdateViewModel by viewModels {
+        viewModelFactory {
+            initializer {
+                val application = checkNotNull(
+                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY],
+                )
+                UpdateViewModel(
+                    application = application,
+                    settingsRepository = appContainer.settingsRepository,
+                    updateCheckRepository = appContainer.updateCheckRepository,
+                    localizationManager = appContainer.localizationManager,
+                )
+            }
+        }
+    }
 
     // 冷启动按持久化语言创建配置上下文，进入界面即正确语言
     override fun attachBaseContext(newBase: Context) {
-        val locale = runBlocking { newBase.appLanguageFlow().first() }.toLocale()
+        val language = (newBase.applicationContext as? App)
+            ?.let { app -> runBlocking { app.container.settingsRepository.appLanguage.first() } }
+            ?: AppLanguage.SYSTEM
         val config = Configuration(newBase.resources.configuration).apply {
-            setLocales(LocaleList(locale))
+            setLocales(LocaleList(language.toLocale()))
         }
         super.attachBaseContext(newBase.createConfigurationContext(config))
     }
@@ -58,100 +114,82 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // 绑定当前 Activity，使对话框等独立窗口在切语言时同步更新资源
-        localizationManager.bindActivity(this)
-
-        // 设置系统栏控制
-        setupSystemBars()
-
         setContent {
-            val app = application as MyApplication
-            CompositionLocalProvider(LocalUpdateViewModel provides app.updateViewModel) {
+            CompositionLocalProvider(
+                LocalMainViewModel provides mainViewModel,
+                LocalUpdateViewModel provides updateViewModel,
+            ) {
                 ProvideLocalizedContext(localizationManager) {
                     ProvideWindowSizeClass {
-                        MyApplicationTheme {
-                            val updateViewModel = LocalUpdateViewModel.current
-
-                            // 回前台时自动检查更新（每日仅检查一次）
-                            val lifecycleOwner = LocalLifecycleOwner.current
-                            DisposableEffect(lifecycleOwner) {
-                                val observer = LifecycleEventObserver { _, event ->
-                                    if (event == Lifecycle.Event.ON_RESUME &&
-                                        UpdateManager.shouldCheckUpdate(applicationContext)
-                                    ) {
-                                        updateViewModel.checkForUpdate()
-                                    }
-                                }
-                                lifecycleOwner.lifecycle.addObserver(observer)
-                                onDispose {
-                                    lifecycleOwner.lifecycle.removeObserver(observer)
-                                }
-                            }
-
-                            // 手动检查结果提示：一次性 Toast，自动检查静默；
-                            // 以文案为键重建收集，避免语言切换后仍弹旧语言文案
-                            val upToDateText = stringResource(R.string.update_toast_up_to_date)
-                            val checkErrorText = stringResource(R.string.update_toast_error)
-                            LaunchedEffect(upToDateText, checkErrorText) {
-                                updateViewModel.messages.collect { message ->
-                                    val text = when (message) {
-                                        UpdateViewModel.CheckFeedback.UP_TO_DATE -> upToDateText
-                                        UpdateViewModel.CheckFeedback.ERROR -> checkErrorText
-                                    }
-                                    Toast.makeText(this@MainActivity, text, Toast.LENGTH_SHORT).show()
-                                }
-                            }
-
-                            NavGraph()
-
-                            // 更新对话框
-                            val updateInfo by updateViewModel.updateInfo.collectAsStateWithLifecycle()
-                            val showUpdateDialog by updateViewModel.showUpdateDialog.collectAsStateWithLifecycle()
-                            val downloadState by updateViewModel.downloadState.collectAsStateWithLifecycle()
-
-                            if (showUpdateDialog && updateInfo != null) {
-                                // 委托属性无法智能转换，先解包为局部变量再判空
-                                val info = updateInfo
-                                if (info != null) {
-                                    UpdateDialog(
-                                        updateInfo = info,
-                                        downloadState = downloadState,
-                                        onDownload = { updateViewModel.downloadAndInstall() },
-                                        onOpenBrowser = {
-                                            val url = UpdateManager.GITHUB_REPOSITORY_URL
-                                            if (url.startsWith("http")) {
-                                                startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url)))
-                                            }
-                                            updateViewModel.dismissUpdateDialog()
-                                        },
-                                        onDismiss = { updateViewModel.dismissUpdateDialog() }
-                                    )
-                                }
-                            }
-                        }
+                        MainContent()
                     }
                 }
             }
         }
     }
 
-    private fun setupSystemBars() {
-        windowInsetsController = WindowInsetsControllerCompat(window, window.decorView)
-        windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        updateSystemBarsVisibility()
-    }
+    @Composable
+    private fun MainContent() {
+        MyApplicationTheme {
+            // 全局副作用：按窗口方向显隐系统栏
+            SystemBarsVisibilityEffect()
 
-    private fun updateSystemBarsVisibility() {
-        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
-        } else {
-            windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
+            // 回前台自动检查更新（每日仅一次），是否该检查由 ViewModel 判定
+            LifecycleResumeEffect(Unit) {
+                updateViewModel.onForeground()
+                onPauseOrDispose { }
+            }
+
+            UpdateToastEffect()
+
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background,
+            ) {
+                NavGraph()
+            }
+
+            // 更新对话框挂在应用级：各页面共用同一份更新状态
+            val updateUiState by updateViewModel.uiState.collectAsStateWithLifecycle()
+            val info = updateUiState.updateInfo
+            if (updateUiState.dialogVisible && info != null) {
+                UpdateDialog(
+                    updateInfo = info,
+                    downloadState = updateUiState.downloadState,
+                    onDownload = updateViewModel::downloadAndInstall,
+                    onOpenBrowser = {
+                        val url = UpdateManager.GITHUB_REPOSITORY_URL
+                        if (url.startsWith("http")) {
+                            startActivity(
+                                android.content.Intent(
+                                    android.content.Intent.ACTION_VIEW,
+                                    url.toUri(),
+                                ),
+                            )
+                        }
+                        updateViewModel.dismissUpdateDialog()
+                    },
+                    onDismiss = updateViewModel::dismissUpdateDialog,
+                )
+            }
         }
     }
 
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        updateSystemBarsVisibility()
+    // 手动检查结果的一次性提示；以文案为键重建收集，避免语言切换后仍提示旧语言文案
+    @Composable
+    private fun UpdateToastEffect() {
+        val context = LocalContext.current
+        val upToDateText = stringResource(R.string.update_toast_up_to_date)
+        val checkErrorText = stringResource(R.string.update_toast_error)
+        LaunchedEffect(upToDateText, checkErrorText) {
+            updateViewModel.messages.collect { feedback ->
+                val text = when (feedback) {
+                    UpdateViewModel.CheckFeedback.UP_TO_DATE -> upToDateText
+                    UpdateViewModel.CheckFeedback.ERROR -> checkErrorText
+                }
+                Toast.makeText(context, text, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     override fun onResume() {
@@ -163,6 +201,24 @@ class MainActivity : ComponentActivity() {
             am.appTasks.forEach { task ->
                 task.setExcludeFromRecents(settings.hideFromRecents)
             }
+        }
+    }
+}
+
+// 按窗口方向显隐系统栏的全局副作用；横屏隐藏、竖屏显示
+@Composable
+private fun SystemBarsVisibilityEffect() {
+    val view = LocalView.current
+    if (view.isInEditMode) return
+    val orientation = LocalConfiguration.current.orientation
+    SideEffect {
+        val window = (view.context as? Activity)?.window ?: return@SideEffect
+        val controller = WindowCompat.getInsetsController(window, view)
+        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+        } else {
+            controller.show(WindowInsetsCompat.Type.systemBars())
         }
     }
 }

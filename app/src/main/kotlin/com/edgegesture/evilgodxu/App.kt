@@ -3,24 +3,25 @@ package com.edgegesture.evilgodxu
 import android.app.Application
 import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
+import com.edgegesture.evilgodxu.data.shizuku.ShizukuManager
 import com.edgegesture.evilgodxu.log.CrashLogManager
-import com.edgegesture.evilgodxu.update.UpdateViewModel
-import com.edgegesture.evilgodxu.utils.localization.LocalizationManager
 
-// 应用入口类，初始化崩溃日志、全局依赖单例与后台任务
-class MyApplication : Application() {
+class App : Application() {
 
-    // 语言管理器单例，驱动 Compose 层语言热切换
-    val localizationManager: LocalizationManager by lazy { LocalizationManager(this) }
-
-    // 更新检查以单例共享，主界面自动检查与设置页手动检查读写同一状态
-    val updateViewModel: UpdateViewModel by lazy { UpdateViewModel(this, localizationManager) }
+    // 手动 DI 容器：Application 级单例，宿主 Activity 启动时取用
+    lateinit var container: AppContainer
+        private set
 
     override fun onCreate() {
         super.onCreate()
 
         // 最先初始化崩溃日志系统，捕获启动阶段及后续所有未捕获异常
         CrashLogManager.init(this)
+
+        container = AppContainer(this)
+
+        // Shizuku 属应用级能力：提前注册 binder 与授权结果监听，页面只读状态
+        ShizukuManager.init(this)
 
         // 应用列表在需要时通过 EdgeGestureAccessibilityService 中的 initializeWithScan() 触发扫描
         val repository = AppRepository.getInstance(this)

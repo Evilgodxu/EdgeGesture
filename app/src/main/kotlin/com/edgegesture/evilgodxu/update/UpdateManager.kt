@@ -8,8 +8,9 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Environment
 import com.edgegesture.evilgodxu.R
+import androidx.core.net.toUri
+import com.edgegesture.evilgodxu.data.repository.UpdateCheckRepository
 import com.edgegesture.evilgodxu.log.CrashLogManager
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -45,12 +46,6 @@ sealed class DownloadState {
  */
 object UpdateManager {
 
-    private const val PREFS_NAME = "update_prefs"
-    private const val KEY_LAST_CHECK_DAY = "last_check_day"
-    private const val KEY_PENDING_VERSION = "pending_version"
-    private const val KEY_PENDING_URL = "pending_url"
-    private const val KEY_PENDING_CHANGELOG = "pending_changelog"
-    private const val KEY_IGNORED_VERSION = "ignored_version"
     private const val TAG = "UpdateManager"
 
     // GitHub 仓库配置
@@ -65,14 +60,6 @@ object UpdateManager {
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
-
-    private val prefsMap = ConcurrentHashMap<String, android.content.SharedPreferences>()
-
-    private fun prefs(context: Context): android.content.SharedPreferences {
-        return prefsMap.getOrPut(context.packageName) {
-            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        }
-    }
 
     /**
      * GitHub Release 响应模型（仅解析需要的字段）
@@ -95,10 +82,8 @@ object UpdateManager {
     /**
      * 是否已进入新的一天，即是否需要检查更新
      */
-    fun shouldCheckUpdate(context: Context): Boolean {
-        val lastCheckDay = prefs(context).getString(KEY_LAST_CHECK_DAY, null)
-        return lastCheckDay != currentDay()
-    }
+    private suspend fun shouldCheckUpdate(repository: UpdateCheckRepository): Boolean =
+        repository.lastCheckDay() != currentDay()
 
     private fun currentDay(): String =
         java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
@@ -108,13 +93,12 @@ object UpdateManager {
      */
     suspend fun checkForUpdate(
         context: Context,
+        repository: UpdateCheckRepository,
         force: Boolean = false,
         onError: ((Exception) -> Unit)? = null
     ): UpdateInfo? {
-        val prefs = prefs(context)
-
         // 非强制检查仅当进入新的一天时才执行
-        if (!force && !shouldCheckUpdate(context)) {
+        if (!force && !shouldCheckUpdate(repository)) {
             return null
         }
 
@@ -127,7 +111,7 @@ object UpdateManager {
 
             val latest = normalizeVersion(release.tag_name)
             val current = getCurrentVersion(context)
-            val ignored = prefs.getString(KEY_IGNORED_VERSION, null)?.let(::normalizeVersion)
+            val ignored = repository.ignoredVersion()?.let(::normalizeVersion)
 
             if (isNewerVersion(latest, current) && latest != ignored) {
                 val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk") }
@@ -138,15 +122,8 @@ object UpdateManager {
                 // 缺失时留空，下载阶段会因无法校验而拒绝安装
                 val sha256 = apkAsset.digest.substringAfter("sha256:", "").trim().lowercase()
 
-                // 同步写盘：待更新信息用于冷启动恢复，异步落盘存在进程被杀丢失窗口
-                withContext(Dispatchers.IO) {
-                    prefs.edit()
-                        .putString(KEY_LAST_CHECK_DAY, day)
-                        .putString(KEY_PENDING_VERSION, latest)
-                        .putString(KEY_PENDING_URL, downloadUrl)
-                        .putString(KEY_PENDING_CHANGELOG, release.body)
-                        .commit()
-                }
+                // 记录检查日：即使进程随后被杀，当天也不会重复请求
+                repository.setLastCheckDay(day)
 
                 UpdateInfo(
                     latestVersion = latest,
@@ -155,9 +132,7 @@ object UpdateManager {
                     sha256 = sha256
                 )
             } else {
-                withContext(Dispatchers.IO) {
-                    prefs.edit().putString(KEY_LAST_CHECK_DAY, day).commit()
-                }
+                repository.setLastCheckDay(day)
                 null
             }
         } catch (e: Exception) {
@@ -240,7 +215,7 @@ object UpdateManager {
             }
 
             val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            val req = DownloadManager.Request(Uri.parse(requireHttps(updateInfo.downloadUrl)))
+            val req = DownloadManager.Request(requireHttps(updateInfo.downloadUrl).toUri())
                 .setTitle(context.getString(R.string.update_notification_title))
                 .setDescription(context.getString(R.string.update_notification_downloading, updateInfo.latestVersion))
                 .setDestinationUri(Uri.fromFile(outFile))
@@ -323,7 +298,6 @@ object UpdateManager {
             addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(installIntent)
-        clearPendingUpdate(context)
     }
 
     // 校验已下载 APK 的 SHA-256：期望哈希缺失视为不可校验，与不符一律判失败
@@ -363,33 +337,6 @@ object UpdateManager {
             throw IllegalArgumentException("不安全的下载地址: $url")
         }
         return url
-    }
-
-    /**
-     * 清除缓存的更新信息
-     */
-    suspend fun clearPendingUpdate(context: Context) {
-        withContext(Dispatchers.IO) {
-            prefs(context).edit()
-                .remove(KEY_PENDING_VERSION)
-                .remove(KEY_PENDING_URL)
-                .remove(KEY_PENDING_CHANGELOG)
-                .commit()
-        }
-    }
-
-    /**
-     * 忽略某个版本
-     */
-    suspend fun ignoreVersion(context: Context, version: String) {
-        withContext(Dispatchers.IO) {
-            prefs(context).edit()
-                .putString(KEY_IGNORED_VERSION, version)
-                .remove(KEY_PENDING_VERSION)
-                .remove(KEY_PENDING_URL)
-                .remove(KEY_PENDING_CHANGELOG)
-                .commit()
-        }
     }
 
     /**

@@ -1,8 +1,7 @@
-package com.edgegesture.evilgodxu.screens.settings.components
+package com.edgegesture.evilgodxu.screens.launchblock.component
 
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import androidx.compose.ui.unit.dp
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockRule
@@ -53,7 +54,7 @@ fun LaunchBlockRuleDialog(
     var enableKill by remember { mutableStateOf(rule?.enableKillOnFrequentLaunch ?: false) }
     var enableKillTarget by remember { mutableStateOf(rule?.enableKillTarget ?: false) }
     var allowKillSystemApp by remember { mutableStateOf(rule?.allowKillSystemApp ?: false) }
-    var blockDelay by remember { mutableStateOf(rule?.blockDelay ?: 0) }
+    var blockDelay by remember { mutableIntStateOf(rule?.blockDelay ?: 0) }
     var showError by remember { mutableStateOf(false) }
 
     // Shizuku 状态
@@ -216,7 +217,7 @@ fun LaunchBlockRuleDialog(
                                 when (shizukuState) {
                                     is ShizukuState.NotInstalled -> {
                                         val intent = Intent(Intent.ACTION_VIEW).apply {
-                                            data = Uri.parse("https://shizuku.rikka.app/")
+                                            data = "https://shizuku.rikka.app/".toUri()
                                         }
                                         context.startActivity(intent)
                                     }
@@ -280,7 +281,7 @@ fun LaunchBlockRuleDialog(
                                 when (shizukuState) {
                                     is ShizukuState.NotInstalled -> {
                                         val intent = Intent(Intent.ACTION_VIEW).apply {
-                                            data = Uri.parse("https://shizuku.rikka.app/")
+                                            data = "https://shizuku.rikka.app/".toUri()
                                         }
                                         context.startActivity(intent)
                                     }
@@ -349,7 +350,7 @@ fun LaunchBlockRuleDialog(
                                 when (shizukuState) {
                                     is ShizukuState.NotInstalled -> {
                                         val intent = Intent(Intent.ACTION_VIEW).apply {
-                                            data = Uri.parse("https://shizuku.rikka.app/")
+                                            data = "https://shizuku.rikka.app/".toUri()
                                         }
                                         context.startActivity(intent)
                                     }

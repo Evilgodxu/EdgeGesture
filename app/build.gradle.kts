@@ -1,3 +1,4 @@
+import com.android.build.api.variant.HasUnitTestBuilder
 import java.io.FileInputStream
 import java.util.Properties
 
@@ -42,18 +43,28 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+            // AGP 9.3+ 的统一优化入口：代码优化、优化型资源缩减与平台默认 keep 规则一并开启，
+            // 默认规则已等价于 proguard-android-optimize.txt，无需再单独声明
+            optimization {
+                enable = true
+            }
+            isCrunchPngs = true
+            proguardFiles("proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
         }
     }
     androidResources {
         // 保留打包语言，支持应用内语言切换
         localeFilters += listOf("zh", "en")
+        // 由 AGP 依据资源目录生成 locale_config 并写入清单，避免手写文件与资源漂移
+        generateLocaleConfig = true
+    }
+
+    // 语言资源不分包，确保运行时语言切换可用
+    bundle {
+        language {
+            enableSplit = false
+        }
     }
 
     packaging {
@@ -105,12 +116,37 @@ android {
         includeInApk = false
         includeInBundle = false
     }
+
+    testOptions {
+        unitTests {
+            // Compose Preview 与资源解析任务依赖编译后的 Android 资源
+            isIncludeAndroidResources = true
+        }
+    }
+
+    lint {
+        // 质量门禁：Lint Error 阻断构建，release 变体同规则
+        abortOnError = true
+        checkReleaseBuilds = true
+    }
 }
 
 // 构建产物统一命名为 EdgeGesture-<versionName>-arm64.apk
 val apkVersionName = android.defaultConfig.versionName ?: "0.0.0"
 
+kotlin {
+    compilerOptions {
+        // Kotlin 编译警告提级为 Error，弃用 API 告警源头清零
+        allWarningsAsErrors.set(true)
+    }
+}
+
 androidComponents {
+    // AGP 9.5 会为开启 compose 的每个变体注册 Compose Preview 任务，变体未启用单元测试时创建即失败，
+    // 使 tasks 与 IDE 同步中断；该开关在 VariantBuilder 上已隐藏，需经 HasUnitTestBuilder 设置
+    beforeVariants(selector().all()) { variant ->
+        (variant as HasUnitTestBuilder).enableUnitTest = true
+    }
     onVariants(selector().all()) { variant ->
         variant.outputs.forEach { output ->
             output.outputFileName.set("EdgeGesture-$apkVersionName-arm64.apk")
@@ -135,6 +171,7 @@ dependencies {
     implementation(libs.androidx.datastore.core)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.window)
     implementation(libs.androidx.compose.material3.adaptive)
     implementation(libs.androidx.compose.material3.adaptive.layout)
@@ -153,6 +190,7 @@ dependencies {
     implementation(libs.okhttp)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))

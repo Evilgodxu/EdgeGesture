@@ -88,8 +88,14 @@
     <string name="gesture_remind_timer_minutes">min</string>
     <string name="gesture_remind_timer_confirm">OK</string>
     <string name="gesture_remind_timer_cancel">Cancel</string>
-    <string name="gesture_remind_feedback">Reminder set in %d minutes</string>
-    <string name="gesture_remind_cancelled">Reminder cancelled (%d minutes)</string>
+    <plurals name="gesture_remind_feedback">
+        <item quantity="one">Reminder set in %d minute</item>
+        <item quantity="other">Reminder set in %d minutes</item>
+    </plurals>
+    <plurals name="gesture_remind_cancelled">
+        <item quantity="one">Reminder cancelled (%d minute)</item>
+        <item quantity="other">Reminder cancelled (%d minutes)</item>
+    </plurals>
     <string name="gesture_remind_channel_name">Gesture reminders</string>
     <string name="gesture_remind_notify_title">Gesture reminder</string>
     <string name="gesture_remind_notify_body">Your %d-minute reminder is up</string>
@@ -226,7 +232,10 @@
     <string name="launch_block_allow_kill_system_title">Allow killing system apps</string>
     <string name="launch_block_allow_kill_system_desc">Warning: killing system apps may cause instability</string>
     <string name="launch_block_rules_title">Block rules</string>
-    <string name="launch_block_rules_count">%d rules</string>
+    <plurals name="launch_block_rules_count">
+        <item quantity="one">%d rule</item>
+        <item quantity="other">%d rules</item>
+    </plurals>
     <string name="launch_block_add_rule">Add rule</string>
     <string name="launch_block_edit_rule">Edit</string>
     <string name="launch_block_delete_rule">Delete</string>
@@ -286,7 +295,7 @@
     <string name="update_notification_downloading">Downloading %1$s</string>
     <string name="update_dialog_title">New version %s</string>
     <string name="update_dialog_description_alt">Download and install the new version?</string>
-    <string name="update_dialog_downloading">Downloading...</string>
+    <string name="update_dialog_downloading">Downloading…</string>
     <string name="update_dialog_download_failed">Download failed, try opening it in the browser</string>
     <string name="update_dialog_changelog_title">Changelog:</string>
     <string name="update_dialog_download">Download</string>

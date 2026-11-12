@@ -9,7 +9,6 @@ import android.content.Intent
 import android.hardware.camera2.CameraAccessException
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
@@ -17,6 +16,8 @@ import android.os.VibratorManager
 import android.provider.Settings
 import android.view.accessibility.AccessibilityEvent
 import android.widget.Toast
+import com.edgegesture.evilgodxu.App
+import androidx.core.net.toUri
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
@@ -28,14 +29,15 @@ import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcut
 import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcutFreeform
 import com.edgegesture.evilgodxu.data.permission.PermissionMonitor
 import com.edgegesture.evilgodxu.data.permission.PermissionType
+import com.edgegesture.evilgodxu.data.settings.ThemeMode
 import com.edgegesture.evilgodxu.log.CrashLogManager
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelPermissionCallback
 import com.edgegesture.evilgodxu.screens.gesture.service.expandpanel.ExpandPanelViewManager
-import com.edgegesture.evilgodxu.screens.settings.themeModeFlow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -44,6 +46,10 @@ import kotlinx.coroutines.runBlocking
 class AccessibilityActionExecutor(
     private val service: AccessibilityService
 ) : ExpandPanelPermissionCallback {
+
+    // 主题来源是应用级仓库，服务只读装配器需要的流
+    private fun themeModeFlow(): Flow<ThemeMode> =
+        (service.application as App).container.settingsRepository.settings.map { it.themeMode }
     private var currentApp: String? = null
     private var previousApp: String? = null
 
@@ -112,7 +118,7 @@ class AccessibilityActionExecutor(
         val manager = ExpandPanelViewManager(
             context = service,
             shortcutsFlow = service.expandPanelShortcutsFlow(),
-            themeModeFlow = service.themeModeFlow(),
+            themeModeFlow = themeModeFlow(),
             onShortcutSet = { index, packageName ->
                 kotlinx.coroutines.runBlocking {
                     service.saveExpandPanelShortcut(index, packageName)
@@ -142,7 +148,7 @@ class AccessibilityActionExecutor(
         startWriteSettingsMonitor()
         // 跳转到系统设置页
         val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
-            data = android.net.Uri.parse("package:${service.packageName}")
+            data = "package:${service.packageName}".toUri()
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
         service.startActivity(intent)
@@ -186,7 +192,7 @@ class AccessibilityActionExecutor(
         val manager = ExpandPanelViewManager(
             context = service,
             shortcutsFlow = service.expandPanelShortcutsFlow(),
-            themeModeFlow = service.themeModeFlow(),
+            themeModeFlow = themeModeFlow(),
             onShortcutSet = { index, packageName ->
                 kotlinx.coroutines.runBlocking {
                     service.saveExpandPanelShortcut(index, packageName)
@@ -384,7 +390,7 @@ class AccessibilityActionExecutor(
     private fun launchScanAlipay() {
         try {
             val intent = Intent(Intent.ACTION_VIEW).apply {
-                data = Uri.parse("alipays://platformapi/startapp?saId=10000007")
+                data = "alipays://platformapi/startapp?saId=10000007".toUri()
                 setPackage("com.eg.android.AlipayGphone")
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
@@ -434,7 +440,7 @@ class AccessibilityActionExecutor(
         try {
             Toast.makeText(
                 service,
-                service.getString(R.string.gesture_remind_feedback, minutes),
+                service.resources.getQuantityString(R.plurals.gesture_remind_feedback, minutes, minutes),
                 Toast.LENGTH_SHORT
             ).show()
         } catch (e: Exception) {
@@ -453,7 +459,7 @@ class AccessibilityActionExecutor(
         try {
             Toast.makeText(
                 service,
-                service.getString(R.string.gesture_remind_cancelled, minutes),
+                service.resources.getQuantityString(R.plurals.gesture_remind_cancelled, minutes, minutes),
                 Toast.LENGTH_SHORT
             ).show()
         } catch (e: Exception) {

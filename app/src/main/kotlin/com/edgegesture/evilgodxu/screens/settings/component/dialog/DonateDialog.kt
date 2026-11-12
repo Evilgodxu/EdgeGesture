@@ -1,4 +1,4 @@
-package com.edgegesture.evilgodxu.screens.settings.components
+package com.edgegesture.evilgodxu.screens.settings.component.dialog
 
 import android.content.Intent
 import androidx.compose.foundation.clickable

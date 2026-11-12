@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,7 +47,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockRule
 import com.edgegesture.evilgodxu.screens.gesture.components.GestureSettingsSwitchItem
-import com.edgegesture.evilgodxu.screens.settings.components.LaunchBlockRuleDialog
+import com.edgegesture.evilgodxu.screens.launchblock.component.LaunchBlockRuleDialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,7 +126,11 @@ fun LaunchBlockScreen(
             // 拦截规则标题
             Text(
                 text = stringResource(R.string.launch_block_rules_title) + " (" +
-                    stringResource(R.string.launch_block_rules_count, launchBlockState.rules.size) + ")",
+                    pluralStringResource(
+                        R.plurals.launch_block_rules_count,
+                        launchBlockState.rules.size,
+                        launchBlockState.rules.size,
+                    ) + ")",
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 1.2.sp
