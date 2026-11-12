@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.app.AppInfo
+import com.edgegesture.evilgodxu.appContainer
 import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.app.loadAppIconBitmap
 
@@ -64,7 +65,7 @@ fun AppPickerScreen(
     onAppSelected: (String) -> Unit,
     onLaunchApp: (String) -> Unit,
     onCancel: () -> Unit,
-    appRepository: AppRepository = AppRepository.getInstance(LocalContext.current)
+    appRepository: AppRepository = LocalContext.current.appContainer.appRepository
 ) {
     val context = LocalContext.current
 

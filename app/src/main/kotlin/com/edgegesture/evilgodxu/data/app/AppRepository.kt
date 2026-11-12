@@ -1,6 +1,5 @@
 package com.edgegesture.evilgodxu.data.app
 
-import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -27,8 +26,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-// 应用仓库单例，提供全局应用列表，支持延迟初始化和权限感知
-class AppRepository private constructor(private val context: Context) {
+// 应用仓库：提供全局应用列表，支持延迟初始化和权限感知；实例由 AppContainer 持有
+class AppRepository(context: Context) {
+
+    private val context = context.applicationContext
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val mutex = Mutex()
@@ -43,21 +44,6 @@ class AppRepository private constructor(private val context: Context) {
 
     // 是否已注册广播监听
     private var isReceiverRegistered = false
-
-    companion object {
-        // 持有的是 applicationContext，与应用进程同生命周期，不构成泄漏
-        @SuppressLint("StaticFieldLeak")
-        @Volatile
-        private var instance: AppRepository? = null
-
-        fun getInstance(context: Context): AppRepository {
-            return instance ?: synchronized(this) {
-                instance ?: AppRepository(context.applicationContext).also {
-                    instance = it
-                }
-            }
-        }
-    }
 
     // 检查是否真正拥有查询所有应用权限
     fun hasQueryPermission(): Boolean {

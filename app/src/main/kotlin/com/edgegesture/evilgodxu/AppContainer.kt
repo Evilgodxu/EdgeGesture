@@ -6,6 +6,10 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
+import com.edgegesture.evilgodxu.data.app.AppRepository
+import com.edgegesture.evilgodxu.data.gesture.DataStoreGestureStatsRepository
+import com.edgegesture.evilgodxu.data.gesture.GestureStatsRepository
+import com.edgegesture.evilgodxu.data.gesture.gestureDataStore
 import com.edgegesture.evilgodxu.data.repository.DataStoreSettingsRepository
 import com.edgegesture.evilgodxu.data.repository.DataStoreUpdateCheckRepository
 import com.edgegesture.evilgodxu.data.repository.SettingsRepository
@@ -24,6 +28,16 @@ class AppContainer(context: Context) {
 
     val updateCheckRepository: UpdateCheckRepository by lazy {
         DataStoreUpdateCheckRepository(settingsDataStore, legacyUpdatePreferences)
+    }
+
+    // 应用列表：全局单例改由容器持有，页面与服务经构造注入或容器访问器取用
+    val appRepository: AppRepository by lazy {
+        AppRepository(appContext)
+    }
+
+    // 手势统计：数据源与设置共用 gesture_settings，统计值由 DataStore 派生
+    val gestureStatsRepository: GestureStatsRepository by lazy {
+        DataStoreGestureStatsRepository(appContext.gestureDataStore)
     }
 
     val localizationManager: LocalizationManager by lazy {
@@ -54,3 +68,7 @@ class AppContainer(context: Context) {
         const val LEGACY_UPDATE_PREFERENCES = "update_prefs"
     }
 }
+
+// 组合根访问器：页面、ViewModel 与无障碍服务经此取容器依赖，不再各自维护静态单例
+val Context.appContainer: AppContainer
+    get() = (applicationContext as App).container

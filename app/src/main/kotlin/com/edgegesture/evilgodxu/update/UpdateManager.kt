@@ -85,8 +85,8 @@ object UpdateManager {
     private suspend fun shouldCheckUpdate(repository: UpdateCheckRepository): Boolean =
         repository.lastCheckDay() != currentDay()
 
-    private fun currentDay(): String =
-        java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+    // 检查日期用 ISO 日期字符串，与 DataStore 中既有值格式一致
+    private fun currentDay(): String = java.time.LocalDate.now().toString()
 
     /**
      * 检查是否有新版本（非强制检查时仅当进入新的一天才检查）

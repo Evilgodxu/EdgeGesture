@@ -22,7 +22,6 @@ import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
-import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
 import com.edgegesture.evilgodxu.data.gesture.expandPanelShortcutsFlow
 import com.edgegesture.evilgodxu.data.gesture.gestureDataStore
 import com.edgegesture.evilgodxu.data.gesture.saveExpandPanelShortcut
@@ -52,6 +51,8 @@ class AccessibilityActionExecutor(
         (service.application as App).container.settingsRepository.settings.map { it.themeMode }
     private var currentApp: String? = null
     private var previousApp: String? = null
+
+    private val appContainer = (service.application as App).container
 
     private var flashlightOn = false
     private val cameraManager = service.getSystemService(Context.CAMERA_SERVICE) as CameraManager
@@ -84,7 +85,7 @@ class AccessibilityActionExecutor(
     ) {
         if (action == GestureAction.NONE) return
         vibrate(settings)
-        GestureStatsManager.incrementGestureCount(service)
+        executorScope.launch { appContainer.gestureStatsRepository.incrementGestureCount() }
 
         when (action) {
             GestureAction.HOME -> {

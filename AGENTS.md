@@ -23,7 +23,8 @@ DataStore ⇄ Repository ⇄ ViewModel ⇄ UiState ⇄ Composable   状态向下
 Composable → ViewModel 方法 → Repository → DataStore          事件向上
 ```
 
-- **手动 DI**：`App` 在 `onCreate` 构造 `AppContainer`，容器按需 `lazy` 提供 `settingsRepository`、`updateCheckRepository`、`localizationManager` 与 `appVersion`。Activity 经 `viewModelFactory` + `initializer` 注入构造参数。不引入 Hilt / Koin / Dagger。
+- **手动 DI**：`App` 在 `onCreate` 构造 `AppContainer`，容器按需 `lazy` 提供 `settingsRepository`、`updateCheckRepository`、`appRepository`、`gestureStatsRepository`、`localizationManager` 与 `appVersion`。Activity 经 `viewModelFactory` + `initializer` 注入构造参数。不引入 Hilt / Koin / Dagger。
+- **组合根访问器**：页面、ViewModel 与无障碍服务需要容器依赖时用 `Context.appContainer`（`AppContainer.kt` 内的扩展），不新增 `object` + `getInstance(context)` 形式的静态单例；仓库实例只由容器创建。
 - **应用级状态**（主题 / 语言 / 版本）由 Activity 作用域的 `MainViewModel` 聚合为 `AppUiState`，经 `LocalMainViewModel` 下发；主题、本地化与各页面共用这一份，界面层不直连数据源。首帧状态由宿主在进入组合前读出持久化值注入构造，避免冷启动先渲染默认主题再切换。
 - **页面级状态**由 `{Screen}ViewModel` 持有 `MutableStateFlow<{Screen}UiState>`，对外只暴露不可变 `StateFlow`；作用域由 Navigation3 的 `rememberViewModelStoreNavEntryDecorator()` 绑定到导航条目，出栈即回收。
 - 更新域由 `UpdateViewModel` 持有单一 `UpdateUiState`（待更新信息 + 对话框显隐 + 下载进度），`LocalUpdateViewModel` 下发；自动检查进入新一天的判定在 ViewModel/仓库内完成，页面不参与。
@@ -35,7 +36,8 @@ Composable → ViewModel 方法 → Repository → DataStore          事件向�
 
 ## 数据持久化
 
-- Preferences DataStore 是唯一数据源。设置与更新检查记录共用 `AppContainer` 内的同一份 `settings` DataStore；手势设置、启动拦截各自持库（`gesture_settings`、`launch_block`）。不引入 SharedPreferences、Room 或内存副本。
+- Preferences DataStore 是唯一数据源。设置与更新检查记录共用 `AppContainer` 内的同一份 `settings` DataStore；手势设置、启动拦截各自持库（`gesture_settings`、`launch_block`），统计与手势设置共用 `gesture_settings`。不引入 SharedPreferences、Room 或内存副本。
+- 统计类数据只存按日计数键（`daily_gesture_yyyy-MM-dd` / `daily_block_yyyy-MM-dd`），周期汇总结果由 DataStore 派生为 `Flow`，不在内存里维护可变的统计副本；日期用 `java.time.LocalDate`，不再用 `SimpleDateFormat` / `Calendar`。
 - 新增持久化先定义仓库接口（`data/repository/`），再写 DataStore 实现；数据源经构造注入，保证单测可替换。
 - 键集中在各 `*Keys` object：`SettingsKeys`、`GestureSettingsKeys`、`ExpandPanelSettingsKeys`、`ExpandPanelFreeformKeys`、`LaunchBlockKeys`。新增设置项先加键，再补仓库方法或 `Context` 扩展函数。
 - 写入一律 `suspend` + `dataStore.edit {}`；同一次变更涉及多个键时放同一个 `edit` 内，保证原子。
@@ -115,7 +117,7 @@ screens/<page>/
 | 场景 | 做法 |
 |---|---|
 | 单个 XML 元素可标注 | 该元素上 `tools:ignore="检查名"`（根元素补 `xmlns:tools`），如清单里的 `QueryAllPackagesPermission`、`ProtectedPermissions` |
-| 单处 Kotlin 代码可标注 | 该声明上 `@SuppressLint("检查名")` 并写明理由，如 `AppRepository` 的 `StaticFieldLeak`、`BackTapDetector` 的 `WakelockTimeout` |
+| 单处 Kotlin 代码可标注 | 该声明上 `@SuppressLint("检查名")` 并写明理由，如 `BackTapDetector` 的 `WakelockTimeout` |
 | 与源码位置无关或取决于分发方式 | `app/lint.xml` 内 `<issue id="..." severity="ignore" />` 并写明理由，如 `ChromeOsAbiSupport`、`BatteryLife` |
 
 - 定向优先于整体：能只排除一处就不要 `disable` 整个检查；每处抑制写明「为什么这是有意为之」，二进制资源的理由写在 `app/lint.xml` 该条目的注释里。

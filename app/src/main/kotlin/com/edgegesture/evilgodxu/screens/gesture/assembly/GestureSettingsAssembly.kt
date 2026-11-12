@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
+import com.edgegesture.evilgodxu.data.gesture.GestureStats
+import com.edgegesture.evilgodxu.data.gesture.StatsPeriod
 import com.edgegesture.evilgodxu.screens.gesture.GestureSettingsUiState
 import com.edgegesture.evilgodxu.screens.gesture.component.preview.GesturePreview
 import com.edgegesture.evilgodxu.screens.gesture.component.config.AdvancedGestureSection
@@ -30,8 +32,11 @@ import com.edgegesture.evilgodxu.screens.gesture.component.status.ServiceStatusS
 fun GestureSettingsAssembly(
     uiState: GestureSettingsUiState,
     settings: GestureSettingsState,
+    stats: GestureStats,
+    statsPeriod: StatsPeriod,
     windowSizeClass: WindowSizeClass,
     onToggleService: (Boolean) -> Unit,
+    onStatsPeriodSelected: (StatsPeriod) -> Unit,
     onRequestAccessibility: () -> Unit,
     onRequestOverlay: () -> Unit,
     onRequestNotification: () -> Unit,
@@ -71,7 +76,10 @@ fun GestureSettingsAssembly(
                 ServiceEntrySections(
                     uiState = uiState,
                     settings = settings,
+                    stats = stats,
+                    statsPeriod = statsPeriod,
                     onToggleService = onToggleService,
+                    onStatsPeriodSelected = onStatsPeriodSelected,
                     onRequestAccessibility = onRequestAccessibility,
                     onRequestOverlay = onRequestOverlay,
                     onRequestNotification = onRequestNotification,
@@ -131,7 +139,10 @@ fun GestureSettingsAssembly(
             ServiceEntrySections(
                 uiState = uiState,
                 settings = settings,
+                stats = stats,
+                statsPeriod = statsPeriod,
                 onToggleService = onToggleService,
+                onStatsPeriodSelected = onStatsPeriodSelected,
                 onRequestAccessibility = onRequestAccessibility,
                 onRequestOverlay = onRequestOverlay,
                 onRequestNotification = onRequestNotification,
@@ -204,14 +215,23 @@ fun GestureSettingsAssembly(
 private fun ServiceEntrySections(
     uiState: GestureSettingsUiState,
     settings: GestureSettingsState,
+    stats: GestureStats,
+    statsPeriod: StatsPeriod,
     onToggleService: (Boolean) -> Unit,
+    onStatsPeriodSelected: (StatsPeriod) -> Unit,
     onRequestAccessibility: () -> Unit,
     onRequestOverlay: () -> Unit,
     onRequestNotification: () -> Unit,
     onRequestBattery: () -> Unit,
     onRequestQueryPackages: () -> Unit,
 ) {
-    ServiceStatusSection(settings = settings, onToggleService = onToggleService)
+    ServiceStatusSection(
+        settings = settings,
+        stats = stats,
+        statsPeriod = statsPeriod,
+        onPeriodSelected = onStatsPeriodSelected,
+        onToggleService = onToggleService,
+    )
     PermissionsSection(
         uiState = uiState,
         onRequestAccessibility = onRequestAccessibility,

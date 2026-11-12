@@ -32,47 +32,41 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
 import com.edgegesture.evilgodxu.data.gesture.GestureStats
-import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
 import com.edgegesture.evilgodxu.data.gesture.StatsPeriod
 import com.edgegesture.evilgodxu.screens.gesture.component.dialog.StatsPeriodDialog
 import com.edgegesture.evilgodxu.screens.gesture.component.dialog.labelRes
-import kotlinx.coroutines.launch
 
 // 服务状态区块：运行状态、启停按钮与统计网格（长按切换统计周期）
 @Composable
 fun ServiceStatusSection(
     settings: GestureSettingsState,
+    stats: GestureStats,
+    statsPeriod: StatsPeriod,
+    onPeriodSelected: (StatsPeriod) -> Unit,
     onToggleService: (Boolean) -> Unit,
 ) {
-    val context = LocalContext.current
-    val stats by GestureStatsManager.stats.collectAsStateWithLifecycle()
-    val statsPeriod by GestureStatsManager.period.collectAsStateWithLifecycle()
     // 手势配置数仅在设置变化时重新统计，避免每次重组全量遍历
     val totalGestureCount = remember(settings) { countNonNoneGestures(settings) }
     var showStatsPeriodDialog by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
 
     if (showStatsPeriodDialog) {
         StatsPeriodDialog(
             currentPeriod = statsPeriod,
             onDismiss = { showStatsPeriodDialog = false },
             onPeriodSelected = { period ->
-                coroutineScope.launch { GestureStatsManager.setPeriod(context, period) }
+                onPeriodSelected(period)
                 showStatsPeriodDialog = false
             },
         )

@@ -3,7 +3,7 @@ package com.edgegesture.evilgodxu.screens.blacklist
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.edgegesture.evilgodxu.data.app.AppRepository
+import com.edgegesture.evilgodxu.appContainer
 import com.edgegesture.evilgodxu.data.gesture.addToAppSwitchBlacklist
 import com.edgegesture.evilgodxu.data.gesture.appSwitchBlacklistFlow
 import com.edgegesture.evilgodxu.data.gesture.removeFromAppSwitchBlacklist
@@ -21,7 +21,7 @@ class AppBlacklistViewModel(
 ) : AndroidViewModel(application) {
 
     private val context get() = getApplication<Application>().applicationContext
-    private val appRepository = AppRepository.getInstance(context)
+    private val appRepository = context.appContainer.appRepository
 
     private val _uiState = MutableStateFlow(
         AppBlacklistUiState(hasPermission = appRepository.hasQueryPermission()),

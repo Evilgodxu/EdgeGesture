@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.edgegesture.evilgodxu.appContainer
 import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
@@ -25,7 +26,7 @@ fun BackTapScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     // 应用名映射，用于「启动应用」动作显示绑定的目标应用
-    val appRepository = AppRepository.getInstance(LocalContext.current)
+    val appRepository = LocalContext.current.appContainer.appRepository
     val apps by appRepository.appsFlow.collectAsStateWithLifecycle()
     val appNameByPackage = remember(apps) { apps.associate { it.packageName to it.appName } }
 

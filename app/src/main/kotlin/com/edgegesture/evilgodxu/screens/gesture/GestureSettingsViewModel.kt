@@ -38,7 +38,9 @@ import com.edgegesture.evilgodxu.data.gesture.saveRightEdgePositionPercent
 import com.edgegesture.evilgodxu.data.gesture.saveRightEdgeWidth
 import com.edgegesture.evilgodxu.data.gesture.saveRightSegmentCount
 import com.edgegesture.evilgodxu.data.gesture.saveVibrationEnabled
-import com.edgegesture.evilgodxu.data.app.AppRepository
+import com.edgegesture.evilgodxu.appContainer
+import com.edgegesture.evilgodxu.data.gesture.GestureStats
+import com.edgegesture.evilgodxu.data.gesture.StatsPeriod
 import com.edgegesture.evilgodxu.data.permission.PermissionMonitor
 import com.edgegesture.evilgodxu.data.permission.PermissionType
 import com.edgegesture.evilgodxu.log.CrashLogManager
@@ -59,6 +61,25 @@ class GestureSettingsViewModel(
 
     private val context get() = getApplication<Application>().applicationContext
     private val permissionMonitor = PermissionMonitor(context)
+
+    // 手势统计：数据来自统计仓库，页面只读
+    private val statsRepository = context.appContainer.gestureStatsRepository
+
+    val stats: StateFlow<GestureStats> = statsRepository.stats.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = GestureStats(),
+    )
+
+    val statsPeriod: StateFlow<StatsPeriod> = statsRepository.period.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = StatsPeriod.DAY_1,
+    )
+
+    fun setStatsPeriod(period: StatsPeriod) {
+        viewModelScope.launch { statsRepository.setPeriod(period) }
+    }
 
     // 独立的无障碍权限状态流，用于实时刷新
     private val _accessibilityEnabledFlow = MutableStateFlow(isAccessibilityServiceEnabled(context))
@@ -127,7 +148,7 @@ class GestureSettingsViewModel(
                         // 如果是查询应用权限，重置黑名单初始化标志并重新扫描
                         // 以便用完整权限重新初始化黑名单（包含所有系统应用）
                         if (permissionType == PermissionType.QUERY_ALL_PACKAGES) {
-                            AppRepository.getInstance(context).onQueryPermissionGranted()
+                            context.appContainer.appRepository.onQueryPermissionGranted()
                         }
                         permissionMonitorJob?.cancel()
                     }

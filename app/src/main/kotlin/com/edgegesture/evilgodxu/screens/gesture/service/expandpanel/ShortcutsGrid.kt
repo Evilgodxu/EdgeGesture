@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.appContainer
 import com.edgegesture.evilgodxu.data.app.AppRepository
 
 @Composable
@@ -53,7 +54,7 @@ fun ShortcutsGrid(
     onLaunchApp: (String, Int) -> Unit,
     onFreeformToggle: (Int, Boolean) -> Unit,
     showTitle: Boolean = true,
-    appRepository: AppRepository = AppRepository.getInstance(LocalContext.current)
+    appRepository: AppRepository = LocalContext.current.appContainer.appRepository
 ) {
     // 从缓存仓库获取应用列表，实现图标预加载
     val apps by appRepository.appsFlow.collectAsStateWithLifecycle()

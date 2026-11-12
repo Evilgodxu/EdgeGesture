@@ -13,13 +13,12 @@ import android.os.Looper
 import android.os.PowerManager
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityWindowInfo
+import com.edgegesture.evilgodxu.appContainer
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
-import com.edgegesture.evilgodxu.data.gesture.GestureStatsManager
 import com.edgegesture.evilgodxu.data.gesture.gestureDataStore
 import com.edgegesture.evilgodxu.data.gesture.gestureSettingsFlow
-import com.edgegesture.evilgodxu.data.app.AppRepository
 import com.edgegesture.evilgodxu.data.gesture.toGestureSettingsState
 import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockRule
 import com.edgegesture.evilgodxu.data.launchblock.LaunchBlockState
@@ -193,7 +192,6 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         // 重置连续失败计数，每次服务重新连接都从头开始
         consecutiveAttachFailures = 0
 
-        GestureStatsManager.init(this)
 
         actionExecutor = AccessibilityActionExecutor(this)
         gestureDetector = AccessibilityGestureDetector(this)
@@ -233,7 +231,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         // 预加载应用列表到缓存，确保扩展面板的应用选择器能快速显示
         // 在后台线程执行，避免阻塞服务启动
         serviceScope.launch {
-            val repository = AppRepository.getInstance(this@EdgeGestureAccessibilityService)
+            val repository = appContainer.appRepository
             repository.initializeWithScan()
         }
     }
@@ -372,7 +370,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     }
 
     private fun blockLaunch(rule: LaunchBlockRule, launcherPackage: String?, targetPackage: String) {
-        GestureStatsManager.incrementBlockCount(this)
+        serviceScope.launch { appContainer.gestureStatsRepository.incrementBlockCount() }
         // 检查被启动者是否为系统应用
         val isTargetSystemApp = targetPackage.let { pkg ->
             try {

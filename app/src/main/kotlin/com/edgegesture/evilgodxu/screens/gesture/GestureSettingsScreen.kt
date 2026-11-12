@@ -47,6 +47,8 @@ fun GestureSettingsScreen(
     val context = LocalContext.current
     val activity = context as? Activity
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val stats by viewModel.stats.collectAsStateWithLifecycle()
+    val statsPeriod by viewModel.statsPeriod.collectAsStateWithLifecycle()
     val settings = uiState.settings
     val lifecycleOwner = LocalLifecycleOwner.current
     val windowSizeClass = currentWindowSizeClass()
@@ -93,7 +95,10 @@ fun GestureSettingsScreen(
         GestureSettingsAssembly(
             uiState = uiState,
             settings = settings,
+            stats = stats,
+            statsPeriod = statsPeriod,
             windowSizeClass = windowSizeClass,
+            onStatsPeriodSelected = viewModel::setStatsPeriod,
             onToggleService = { enable ->
                 if (enable && !uiState.isAccessibilityEnabled) {
                     // 未授权无障碍：跳转系统设置并开始监控授权结果
