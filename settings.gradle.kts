@@ -1,7 +1,9 @@
 pluginManagement {
-    // 依赖版本巡检插件改用本地维护分支构建，源码位于同级目录
-    includeBuild("../refreshVersions/plugins")
+    // 版本巡检插件由本机仓库（~/.m2）消费：源码分支改完执行一次 publishToMavenLocal 即可生效，
+    // 不再 includeBuild 源码工程，避免每次构建都为它配置并编译插件
     repositories {
+        mavenLocal()
+        // 插件与依赖优先走腾讯云镜像，Google 与 AndroidX 包由 google() 兜底
         maven { url = uri("https://mirrors.cloud.tencent.com/nexus/repository/maven-public/") }
         maven { url = uri("https://mirrors.cloud.tencent.com/nexus/repository/gradle-plugins/") }
         google {
@@ -15,8 +17,8 @@ pluginManagement {
     }
 }
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
-    id("de.fayard.refreshVersions")
+    // 版本号与 ../refreshVersions/plugins/version.txt 保持一致
+    id("de.fayard.refreshVersions") version "1.0.1"
 }
 
 refreshVersions {
@@ -30,7 +32,6 @@ refreshVersions {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        maven { url = uri("https://maven.aliyun.com/repository/central/") }
         maven { url = uri("https://mirrors.cloud.tencent.com/nexus/repository/maven-public/") }
         google()
         mavenCentral()
