@@ -23,7 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.edgegesture.evilgodxu.R
-import com.edgegesture.evilgodxu.data.app.DataConfigManager
+import com.edgegesture.evilgodxu.appContainer
 import kotlinx.coroutines.launch
 
 @Composable
@@ -46,7 +46,7 @@ fun GestureConfigDialog(onDismiss: () -> Unit) {
         if (uri != null) scope.launch {
             runCatching {
                 context.contentResolver.openOutputStream(uri)?.use {
-                    it.write(DataConfigManager.export(context))
+                    it.write(context.appContainer.configTransfer.export())
                 } ?: error(exportFailedMessage)
             }.onFailure {
                 message = exportErrorTemplate.format(it.message ?: "")
@@ -114,7 +114,7 @@ fun GestureConfigDialog(onDismiss: () -> Unit) {
                     showImportConfirm = false
                     scope.launch {
                         runCatching {
-                            DataConfigManager.import(context, pendingImport ?: error(emptyMessage))
+                            context.appContainer.configTransfer.import(pendingImport ?: error(emptyMessage))
                         }.onFailure {
                             message = importErrorTemplate.format(it.message ?: "")
                         }.onSuccess {

@@ -27,7 +27,7 @@ Composable → ViewModel 方法 → Repository → DataStore          事件向�
 - **组合根访问器**：页面、ViewModel 与无障碍服务需要容器依赖时用 `Context.appContainer`（`AppContainer.kt` 内的扩展），不新增 `object` + `getInstance(context)` 形式的静态单例；仓库实例只由容器创建。
 - **应用级状态**（主题 / 语言 / 版本）由 Activity 作用域的 `MainViewModel` 聚合为 `AppUiState`，经 `LocalMainViewModel` 下发；主题、本地化与各页面共用这一份，界面层不直连数据源。首帧状态由宿主在进入组合前读出持久化值注入构造，避免冷启动先渲染默认主题再切换。
 - **页面级状态**由 `{Screen}ViewModel` 持有 `MutableStateFlow<{Screen}UiState>`，对外只暴露不可变 `StateFlow`；作用域由 Navigation3 的 `rememberViewModelStoreNavEntryDecorator()` 绑定到导航条目，出栈即回收。
-- 更新域由 `UpdateViewModel` 持有单一 `UpdateUiState`（待更新信息 + 对话框显隐 + 下载进度），`LocalUpdateViewModel` 下发；自动检查进入新一天的判定在 ViewModel/仓库内完成，页面不参与。
+- 更新域由 `UpdateViewModel` 持有单一 `UpdateUiState`（待更新信息 + 对话框显隐 + 下载进度），`LocalUpdateViewModel` 下发。检查与下载分属 `UpdateChecker`（网络 + 版本比较，容器持有）与 `UpdateDownloader`（下载 + 校验 + 拉起安装，按需构造），每日一次的闸门与「检查日」写入留在 ViewModel，页面不参与。
 - 状态变化用框架原生机制响应：`StateFlow`、`collectAsStateWithLifecycle()`、`CompositionLocal`。禁止把状态包成自定义回调层层转发，也禁止为同一份状态另存副本（含在 ViewModel 里镜像数据层状态）。
 - 页面 ViewModel 只依赖仓库与纯逻辑工具，不直接触碰 DataStore 键值、文件或网络。
 - 导航集中在 `navigation/`：路由键在 `Screen.kt`，`NavGraph.kt` 负责 `NavDisplay` 装配与返回分发；页面不直接操作 `NavBackStack`。
@@ -43,7 +43,8 @@ Composable → ViewModel 方法 → Repository → DataStore          事件向�
 - 写入一律 `suspend` + `dataStore.edit {}`；同一次变更涉及多个键时放同一个 `edit` 内，保证原子。
 - 读取字符串型枚举必须回落默认值而非抛错（范式：`ThemeMode.fromValue`、`AppLanguage.fromTag`）。
 - 迁移旧存储时在仓库内部做一次性搬迁并以标记位收敛（范式：`DataStoreUpdateCheckRepository` 从 `update_prefs` 搬到 DataStore），不要让页面感知新旧差异。
-- 配置导入导出走 `DataConfigManager`：`FORMAT_VERSION` 与导出键范围（正则 + 开关白名单）是同一份契约，改任一侧都要同步另一侧并升版本；导入先全量校验类型，再写入，避免中途异常清空配置。
+- 配置导入导出走容器持有的 `GestureConfigTransfer`：`FORMAT_VERSION` 与导出键范围（正则 + 开关白名单）是同一份契约，改任一侧都要同步另一侧并升版本；导入先全量校验类型，再写入，避免中途异常清空配置。
+- 手势数据层按职责分文件：`GestureAction`（动作枚举）、`GestureSettingsModels`（边缘配置与状态）、`GestureSettingsStore`（DataStore 与键定义）、`GestureSettings`（读取映射与写入扩展）；新增内容按此归位，避免单文件继续膨胀。
 
 ## 无障碍服务与特权通道
 

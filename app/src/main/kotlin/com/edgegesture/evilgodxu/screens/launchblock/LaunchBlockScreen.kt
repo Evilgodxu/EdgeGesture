@@ -5,7 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.edgegesture.evilgodxu.screens.launchblock.assembly.LaunchBlockAssembly
-import com.edgegesture.evilgodxu.screens.launchblock.component.LaunchBlockRuleDialog
+import com.edgegesture.evilgodxu.screens.launchblock.component.dialog.LaunchBlockRuleDialog
 import com.edgegesture.evilgodxu.ui.adaptive.currentWindowSizeClass
 
 // 页面入口：状态与事件上提，窗口尺寸类在此计算后下传，规则弹窗挂在骨架层

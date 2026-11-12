@@ -7,13 +7,16 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.edgegesture.evilgodxu.data.app.AppRepository
+import com.edgegesture.evilgodxu.data.config.GestureConfigTransfer
 import com.edgegesture.evilgodxu.data.gesture.DataStoreGestureStatsRepository
 import com.edgegesture.evilgodxu.data.gesture.GestureStatsRepository
 import com.edgegesture.evilgodxu.data.gesture.gestureDataStore
+import com.edgegesture.evilgodxu.data.launchblock.launchBlockDataStore
 import com.edgegesture.evilgodxu.data.repository.DataStoreSettingsRepository
 import com.edgegesture.evilgodxu.data.repository.DataStoreUpdateCheckRepository
 import com.edgegesture.evilgodxu.data.repository.SettingsRepository
 import com.edgegesture.evilgodxu.data.repository.UpdateCheckRepository
+import com.edgegesture.evilgodxu.update.UpdateChecker
 import com.edgegesture.evilgodxu.utils.localization.LocalizationManager
 
 // 手动 DI 容器：Application 启动时构造并持有全部依赖
@@ -42,6 +45,16 @@ class AppContainer(context: Context) {
 
     val localizationManager: LocalizationManager by lazy {
         LocalizationManager(appContext)
+    }
+
+    // 配置导入导出：跨手势与启动拦截两份 DataStore
+    val configTransfer: GestureConfigTransfer by lazy {
+        GestureConfigTransfer(appContext.gestureDataStore, appContext.launchBlockDataStore)
+    }
+
+    // 版本检查依赖当前版本号，冷启动读取一次即可
+    val updateChecker: UpdateChecker by lazy {
+        UpdateChecker(appVersion)
     }
 
     // 应用版本号：冷启动读取一次，供应用级状态与更新检查共用

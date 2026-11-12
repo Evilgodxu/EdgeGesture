@@ -16,7 +16,7 @@ import com.edgegesture.evilgodxu.screens.settings.component.dialog.ThemeSelectio
 import com.edgegesture.evilgodxu.ui.adaptive.currentWindowSizeClass
 import com.edgegesture.evilgodxu.ui.theme.LocalThemeTransitionController
 import com.edgegesture.evilgodxu.update.LocalUpdateViewModel
-import com.edgegesture.evilgodxu.update.UpdateManager
+import com.edgegesture.evilgodxu.update.UpdateSource
 
 // 页面入口：提升状态与事件，窗口尺寸类在此计算后作为参数下传，布局交给组装器；
 // 弹层与形态无关，统一挂在骨架层
@@ -44,7 +44,7 @@ fun SettingsScreen(
         onCheckForUpdate = { updateViewModel.checkForUpdate(force = true) },
         onOpenRepository = {
             context.startActivity(
-                Intent(Intent.ACTION_VIEW, UpdateManager.GITHUB_REPOSITORY_URL.toUri()),
+                Intent(Intent.ACTION_VIEW, UpdateSource.REPOSITORY_URL.toUri()),
             )
         },
     )

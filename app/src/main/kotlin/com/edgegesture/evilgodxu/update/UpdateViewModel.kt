@@ -6,7 +6,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.edgegesture.evilgodxu.data.repository.SettingsRepository
 import com.edgegesture.evilgodxu.data.repository.UpdateCheckRepository
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import com.edgegesture.evilgodxu.utils.localization.LocalizationManager
+import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,10 +32,11 @@ class UpdateViewModel(
     application: Application,
     private val settingsRepository: SettingsRepository,
     private val updateCheckRepository: UpdateCheckRepository,
+    private val updateChecker: UpdateChecker,
     private val localizationManager: LocalizationManager,
 ) : AndroidViewModel(application) {
 
-    private val context get() = getApplication<Application>().applicationContext
+    private val appContext get() = getApplication<Application>().applicationContext
 
     private val _uiState = MutableStateFlow(UpdateUiState())
     val uiState: StateFlow<UpdateUiState> = _uiState.asStateFlow()
@@ -53,13 +56,22 @@ class UpdateViewModel(
     // 检查更新：有新版本时弹出更新对话框，否则手动检查时给出"已是最新"或"失败"提示
     fun checkForUpdate(force: Boolean = false) {
         viewModelScope.launch {
+            val today = LocalDate.now().toString()
+            // 非强制检查每天最多一次
+            if (!force && updateCheckRepository.lastCheckDay() == today) return@launch
+
             var checkFailed = false
-            val result = UpdateManager.checkForUpdate(
-                context = context,
-                repository = updateCheckRepository,
-                force = force,
-                onError = { checkFailed = true },
-            )
+            val result = try {
+                updateChecker.check(updateCheckRepository.ignoredVersion()).also {
+                    // 请求成功即记录检查日；失败不记录，下次回前台会重试
+                    updateCheckRepository.setLastCheckDay(today)
+                }
+            } catch (e: Exception) {
+                CrashLogManager.logException("UpdateViewModel", "检查更新失败", e)
+                checkFailed = true
+                null
+            }
+
             if (result != null) {
                 _uiState.update { it.copy(updateInfo = result, dialogVisible = true) }
                 return@launch
@@ -80,7 +92,7 @@ class UpdateViewModel(
             val localizedContext = localizationManager.createLocalizedContext(
                 localizationManager.localeFor(language),
             )
-            val success = UpdateManager.downloadAndInstall(localizedContext, info) { progress ->
+            val success = UpdateDownloader(localizedContext).downloadAndInstall(info) { progress ->
                 _uiState.update { state ->
                     state.copy(
                         downloadState = if (progress < 0f) {

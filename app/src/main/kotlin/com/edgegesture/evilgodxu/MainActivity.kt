@@ -41,7 +41,7 @@ import com.edgegesture.evilgodxu.ui.adaptive.ProvideWindowSizeClass
 import com.edgegesture.evilgodxu.ui.theme.MyApplicationTheme
 import com.edgegesture.evilgodxu.update.LocalUpdateViewModel
 import com.edgegesture.evilgodxu.update.UpdateDialog
-import com.edgegesture.evilgodxu.update.UpdateManager
+import com.edgegesture.evilgodxu.update.UpdateSource
 import com.edgegesture.evilgodxu.update.UpdateViewModel
 import com.edgegesture.evilgodxu.utils.localization.LocalizationManager
 import com.edgegesture.evilgodxu.utils.localization.ProvideLocalizedContext
@@ -93,6 +93,7 @@ class MainActivity : ComponentActivity() {
                     application = application,
                     settingsRepository = appContainer.settingsRepository,
                     updateCheckRepository = appContainer.updateCheckRepository,
+                    updateChecker = appContainer.updateChecker,
                     localizationManager = appContainer.localizationManager,
                 )
             }
@@ -158,7 +159,7 @@ class MainActivity : ComponentActivity() {
                     downloadState = updateUiState.downloadState,
                     onDownload = updateViewModel::downloadAndInstall,
                     onOpenBrowser = {
-                        val url = UpdateManager.GITHUB_REPOSITORY_URL
+                        val url = UpdateSource.REPOSITORY_URL
                         if (url.startsWith("http")) {
                             startActivity(
                                 android.content.Intent(

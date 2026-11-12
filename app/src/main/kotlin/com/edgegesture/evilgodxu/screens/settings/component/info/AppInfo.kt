@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.ui.component.SectionCard
 import com.edgegesture.evilgodxu.screens.settings.component.SettingsClickableItem
-import com.edgegesture.evilgodxu.update.UpdateManager
+import com.edgegesture.evilgodxu.update.UpdateSource
 
 // 信息区块：手势配置入口、捐赠入口、版本号（点击检查更新）与项目链接
 @Composable
@@ -95,7 +95,7 @@ fun AppInfo(
                 tint = MaterialTheme.colorScheme.primary,
             )
             Text(
-                text = UpdateManager.GITHUB_REPOSITORY_URL,
+                text = UpdateSource.REPOSITORY_URL,
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.primary,
                 textDecoration = TextDecoration.Underline,

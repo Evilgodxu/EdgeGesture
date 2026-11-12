@@ -1,60 +1,45 @@
-package com.edgegesture.evilgodxu.data.app
+package com.edgegesture.evilgodxu.data.config
 
-import android.content.Context
+import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.MutablePreferences
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
-import com.edgegesture.evilgodxu.data.gesture.gestureDataStore
-import com.edgegesture.evilgodxu.data.launchblock.launchBlockDataStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 
-object DataConfigManager {
+// 手势与启动拦截配置的导入导出：导出范围由键名规则决定，导入先全量校验再写入
+class GestureConfigTransfer(
+    private val gestureDataStore: DataStore<Preferences>,
+    private val launchBlockDataStore: DataStore<Preferences>,
+) {
 
-    // 配置导出范围：边缘手势、背面双击、触发区设置、启动拦截
-    private const val FORMAT_VERSION = 1
-    // 触发区设置中的开关（尺寸/分段通过下方正则匹配）
-    private val TRIGGER_AREA_SWITCH_KEYS = setOf(
-        "hide_overlay",
-        "hide_from_recents",
-        "avoid_keyboard_overlap",
-        "vibration_enabled",
-        "double_swipe_enabled"
-    )
-    // 匹配 gestureDataStore 中属于导出范围的键名：
-    // - 边缘手势：left/right/bottom 开头，可带段号，后接 _swipe_ 或 _tap/_double_tap/_long_press
-    // - 背面双击：back_tap_ 开头
-    // - 触发区尺寸：left/right/bottom 的 edge_ 或 segment_count
-    private val GESTURE_EXPORT_PATTERN = Regex(
-        "^(left|right|bottom)(_\\d)?_(swipe_|tap|double_tap|long_press)|^back_tap_|^(left|right|bottom)_(edge_|segment_count)"
-    )
-
-    private fun isGestureExportKey(name: String): Boolean =
-        name in TRIGGER_AREA_SWITCH_KEYS || GESTURE_EXPORT_PATTERN.containsMatchIn(name)
-
-    suspend fun export(context: Context): ByteArray = withContext(Dispatchers.IO) {
+    suspend fun export(): ByteArray = withContext(Dispatchers.IO) {
         val root = JSONObject().put("formatVersion", FORMAT_VERSION)
+
         val gesture = JSONObject()
-        val prefs = context.gestureDataStore.data.first()
-        prefs.asMap().forEach { (key, value) ->
+        gestureDataStore.data.first().asMap().forEach { (key, value) ->
             if (isGestureExportKey(key.name)) gesture.put(key.name, encodeValue(value))
         }
         root.put("gesture", gesture)
+
         root.put("launchBlock", JSONObject().apply {
-            val values = context.launchBlockDataStore.data.first().asMap()
-            values.forEach { (key, value) -> put(key.name, encodeValue(value)) }
+            launchBlockDataStore.data.first().asMap().forEach { (key, value) ->
+                put(key.name, encodeValue(value))
+            }
         })
+
         root.toString(2).toByteArray(Charsets.UTF_8)
     }
 
-    suspend fun import(context: Context, bytes: ByteArray) = withContext(Dispatchers.IO) {
+    suspend fun import(bytes: ByteArray) = withContext(Dispatchers.IO) {
         val root = JSONObject(bytes.toString(Charsets.UTF_8))
         require(root.optInt("formatVersion") == FORMAT_VERSION) { "不支持的配置版本" }
         val gesture = root.getJSONObject("gesture")
@@ -64,13 +49,13 @@ object DataConfigManager {
         validateObject(gesture)
         validateObject(launch)
 
-        context.gestureDataStore.edit { prefs ->
+        gestureDataStore.edit { preferences ->
             // 仅覆盖导出范围内的键，其余数据保持不变
-            putObject(prefs, gesture) { isGestureExportKey(it) }
+            putObject(preferences, gesture) { isGestureExportKey(it) }
         }
-        context.launchBlockDataStore.edit { prefs ->
-            prefs.clear()
-            putObject(prefs, launch)
+        launchBlockDataStore.edit { preferences ->
+            preferences.clear()
+            putObject(preferences, launch)
         }
     }
 
@@ -87,6 +72,7 @@ object DataConfigManager {
                     val array = encoded.getJSONArray("value")
                     for (i in 0 until array.length()) array.getString(i)
                 }
+
                 else -> throw IllegalArgumentException("未知配置类型: $name")
             }
         }
@@ -102,21 +88,50 @@ object DataConfigManager {
         }
     }
 
-    private fun putObject(prefs: MutablePreferences, obj: JSONObject, include: (String) -> Boolean = { true }) {
+    private fun putObject(
+        preferences: MutablePreferences,
+        obj: JSONObject,
+        include: (String) -> Boolean = { true },
+    ) {
         obj.keys().forEach { name ->
             if (!include(name)) return@forEach
             val encoded = obj.getJSONObject(name)
             when (encoded.getString("type")) {
-                "boolean" -> prefs[booleanPreferencesKey(name)] = encoded.getBoolean("value")
-                "int" -> prefs[intPreferencesKey(name)] = encoded.getInt("value")
-                "long" -> prefs[longPreferencesKey(name)] = encoded.getLong("value")
-                "string" -> prefs[stringPreferencesKey(name)] = encoded.getString("value")
-                "stringSet" -> prefs[stringSetPreferencesKey(name)] = buildSet(encoded.getJSONArray("value"))
+                "boolean" -> preferences[booleanPreferencesKey(name)] = encoded.getBoolean("value")
+                "int" -> preferences[intPreferencesKey(name)] = encoded.getInt("value")
+                "long" -> preferences[longPreferencesKey(name)] = encoded.getLong("value")
+                "string" -> preferences[stringPreferencesKey(name)] = encoded.getString("value")
+                "stringSet" -> preferences[stringSetPreferencesKey(name)] = buildSet(encoded.getJSONArray("value"))
             }
         }
     }
 
     private fun buildSet(array: JSONArray): Set<String> = buildSet {
         for (i in 0 until array.length()) add(array.getString(i))
+    }
+
+    private companion object {
+        // 配置导出范围：边缘手势、背面双击、触发区设置、启动拦截
+        const val FORMAT_VERSION = 1
+
+        // 触发区设置中的开关（尺寸/分段通过键名正则匹配）
+        val TRIGGER_AREA_SWITCH_KEYS = setOf(
+            "hide_overlay",
+            "hide_from_recents",
+            "avoid_keyboard_overlap",
+            "vibration_enabled",
+            "double_swipe_enabled",
+        )
+
+        // 匹配 gestureDataStore 中属于导出范围的键名：
+        // - 边缘手势：left/right/bottom 开头，可带段号，后接 _swipe_ 或 _tap/_double_tap/_long_press
+        // - 背面双击：back_tap_ 开头
+        // - 触发区尺寸：left/right/bottom 的 edge_ 或 segment_count
+        val GESTURE_EXPORT_PATTERN = Regex(
+            "^(left|right|bottom)(_\\d)?_(swipe_|tap|double_tap|long_press)|^back_tap_|^(left|right|bottom)_(edge_|segment_count)",
+        )
+
+        fun isGestureExportKey(name: String): Boolean =
+            name in TRIGGER_AREA_SWITCH_KEYS || GESTURE_EXPORT_PATTERN.containsMatchIn(name)
     }
 }
