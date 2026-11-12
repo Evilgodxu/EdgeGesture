@@ -24,35 +24,40 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.edgegesture.evilgodxu.R
-import com.edgegesture.evilgodxu.ui.component.SectionCard
 import com.edgegesture.evilgodxu.screens.settings.component.SettingsClickableItem
+import com.edgegesture.evilgodxu.ui.component.SectionCard
 import com.edgegesture.evilgodxu.update.UpdateSource
 
-// 信息区块：手势配置入口、捐赠入口、版本号（点击检查更新）与项目链接
+// 「关于」区块：手势配置入口与捐赠入口
 @Composable
-fun AppInfo(
-    version: String,
+fun AppAboutSection(
     onShowGestureConfig: () -> Unit,
     onShowDonate: () -> Unit,
-    onCheckForUpdate: () -> Unit,
-    onOpenRepository: () -> Unit,
 ) {
     SectionCard(title = stringResource(R.string.settings_about)) {
         SettingsClickableItem(
             icon = Icons.Default.Folder,
             title = stringResource(R.string.gesture_config_title),
             subtitle = stringResource(R.string.gesture_config_desc),
-            onClick = { onShowGestureConfig() },
+            onClick = onShowGestureConfig,
         )
         HorizontalDivider()
         SettingsClickableItem(
             icon = Icons.Default.Favorite,
             title = stringResource(R.string.settings_donate),
             subtitle = stringResource(R.string.settings_donate_desc),
-            onClick = { onShowDonate() },
+            onClick = onShowDonate,
         )
     }
+}
 
+// 页面底部：作者、版本与项目链接；版本号仅在提供回调时可点击（与宽屏布局保持一致）
+@Composable
+fun AppFooter(
+    version: String,
+    onOpenRepository: () -> Unit,
+    onCheckForUpdate: (() -> Unit)? = null,
+) {
     Text(
         text = "Evilgodxu",
         fontSize = 14.sp,
@@ -70,7 +75,7 @@ fun AppInfo(
         textAlign = TextAlign.Center,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onCheckForUpdate)
+            .then(if (onCheckForUpdate != null) Modifier.clickable(onClick = onCheckForUpdate) else Modifier)
             .padding(bottom = 6.dp),
     )
 

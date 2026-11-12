@@ -62,7 +62,7 @@ Composable → ViewModel 方法 → Repository → DataStore          事件向�
 
 - `MainActivity` 统一处理 edge-to-edge、横屏系统栏显隐、回前台自动检查更新；崩溃捕获在 `App` 里最先初始化。页面不重复做这些。
 - 窗口尺寸类由 `ProvideWindowSizeClass` 在 Activity 层按窗口容器尺寸（`LocalWindowInfo.containerSize`）计算，页面用 `currentWindowSizeClass()` 读取；组件不自行读窗口尺寸。
-- 形态差异优先用「行宽上限」表达：`ui/component/ContentPane` 负责单栏收窄，行宽阈值由 `WindowSizeClass.contentMaxWidth` 给出，同一份内容不维护两套布局。
+- 布局形态沿用各页原有实现，重构只拆结构、不改排布：设置页与手势首页宽窗仍是两列/两栏，其余页面仍是单列滚动。新增页面若确有形态差异，用布局标志位表达，同一份内容不维护两套组装器。
 - 不要改用 `Configuration.screenWidthDp` 或 `currentWindowAdaptiveInfo`：前者被取整且与 inset 行为耦合，后者在 Android 16 上要求带 display 关联的 UI Context，非 UI 上下文会抛异常。
 - 用户可见文案一律进 `res/values/strings.xml`（中文为默认，`resources.properties` 声明 `unqualifiedResLocale=zh`）与 `res/values-en/strings.xml`，同一 commit 内成对补齐；代码里不出现硬编码文案。带数量的文案用 `<plurals>` + `pluralStringResource` / `getQuantityString`。`localeFilters` 只保留 `zh` / `en`，`generateLocaleConfig` 由 AGP 生成清单声明，不手写 `locale_config.xml`。
 - 语言热切换：`LocalizationManager` 负责语言转 Locale 与创建本地化 Context，`ProvideLocalizedContext` 同时提供 `LocalContext`、`LocalResources`、`LocalActivity` 与 `ActivityResultRegistryOwner`；新增独立窗口（Dialog、悬浮层）须走同一组合局部，不要各自 `setLocale`。
@@ -82,10 +82,10 @@ screens/<page>/
 ```
 
 - 页面根包只放骨架三件套；其余文件进 `component/`（或按业务语义新建子目录）。跨页面复用上提 `ui/component/`，无复用的留在页面内。
-- 跨页面共享组件固定为 `ui/component/` 内的 `AppTopBar`（标题 + 可选返回）、`SectionCard`（分组标题 + 卡片）、`ContentPane`（单栏收窄）、`SwitchRow`（标题 + 说明 + 开关）、`SliderTrack`（0..1 位置与手势，数值换算在调用方）；新增页面直接复用，不在页面内各写一份。
+- 跨页面共享组件固定为 `ui/component/` 内的 `AppTopBar`（标题 + 可选返回）、`SectionCard`（分组标题 + 卡片，`titleTopPadding` 用于对齐各页原有间距）、`SwitchRow`（标题 + 说明 + 开关）、`SliderTrack`（0..1 位置与手势，数值换算在调用方）；新增页面直接复用，不在页面内各写一份。
 - 手势首页是唯一的两栏形态（宽窗「状态与入口 | 手势配置」）：两栏共用的区块抽成组装器内的 `private` Composable，两种形态只允许在区块外层的滚动与显隐包装上不同。
 - 骨架只做连接与副作用，布局装配下放到 `assembly/` 或同文件的 `private` Composable；组装器只消费一份 `UiState` 与一套事件回调，`compact/` 与 `expanded/` 若拆出也必须共享这两者。
-- 列表型页面（如应用黑名单）不套 `ContentPane`：滚动区域需要占满剩余高度，由组装器自行组织 `LazyColumn` 与固定底栏。
+- 列表型页面的滚动区域占满剩余高度，由组装器自行组织 `LazyColumn` 与固定底栏；表单型页面沿用各页原有滚动容器（`Column` + `verticalScroll` + 原内边距）。
 - 区块内的弹层（如统计周期选择）由该区块自行持有状态；页面级弹层（动作选择、应用选择、规则编辑）挂在骨架层，便于跨形态复用。
 - 页面级弹层挂在骨架层，不随形态重复实现；弹窗自身放在 `component/dialog/`。
 - 拆分判据是「单一问题」：可独立交互 / 预览 / 测试的区块才拆组件；单行 `Text`、`Spacer` 内联。

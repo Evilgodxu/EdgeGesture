@@ -18,6 +18,8 @@ class MainViewModel(
     private val settingsRepository: SettingsRepository,
     // 首帧状态由宿主同步读取持久化值注入，避免冷启动先渲染默认主题再切换
     initialState: AppUiState,
+    // 语言落库前同步非 Compose 资源（Toast、通知等），由宿主注入
+    private val applyLocale: (AppLanguage) -> Unit = {},
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(initialState)
@@ -42,6 +44,7 @@ class MainViewModel(
     }
 
     fun setLanguage(language: AppLanguage) {
+        applyLocale(language)
         viewModelScope.launch { settingsRepository.setAppLanguage(language) }
     }
 }

@@ -1,31 +1,28 @@
 package com.edgegesture.evilgodxu.screens.backtap.assembly
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowSizeClass
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.BackTapMode
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
 import com.edgegesture.evilgodxu.screens.backtap.component.action.BackTapAction
 import com.edgegesture.evilgodxu.screens.backtap.component.config.BackTapConfig
-import com.edgegesture.evilgodxu.ui.adaptive.contentMaxWidth
 import com.edgegesture.evilgodxu.ui.component.AppTopBar
-import com.edgegesture.evilgodxu.ui.component.ContentPane
 
-// 背面双击页组装器：配置卡片 + 触发操作卡片，行宽由 ContentPane 收窄
+// 背面双击页组装器：配置卡片 + 触发操作卡片，滚动容器沿用重构前的内边距与顺序
 @Composable
 fun BackTapAssembly(
-    windowSizeClass: WindowSizeClass,
     settings: GestureSettingsState?,
     appNameByPackage: Map<String, String>,
     onBack: () -> Unit,
@@ -46,14 +43,13 @@ fun BackTapAssembly(
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { innerPadding ->
-        ContentPane(
-            maxContentWidth = windowSizeClass.contentMaxWidth,
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .consumeWindowInsets(innerPadding)
-                .padding(innerPadding),
+                .padding(innerPadding)
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
         ) {
             BackTapConfig(
                 settings = settings,

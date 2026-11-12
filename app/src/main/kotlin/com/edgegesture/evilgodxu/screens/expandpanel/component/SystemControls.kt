@@ -13,7 +13,10 @@ import com.edgegesture.evilgodxu.ui.component.SectionCard
 // 系统控制区块：亮度与音量滑杆，与悬浮面板共用同一套滑块实现
 @Composable
 fun SystemControls() {
-    SectionCard(title = stringResource(R.string.expand_panel_controls_title)) {
+    SectionCard(
+        title = stringResource(R.string.expand_panel_controls_title),
+        titleTopPadding = 8.dp,
+    ) {
         Column(modifier = Modifier.padding(20.dp)) {
             VerticalSlidersSection()
         }

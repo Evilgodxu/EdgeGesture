@@ -1,9 +1,14 @@
 package com.edgegesture.evilgodxu.screens.settings.assembly
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,17 +24,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import com.edgegesture.evilgodxu.AppUiState
 import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.screens.settings.component.appearance.Appearance
-import com.edgegesture.evilgodxu.screens.settings.component.info.AppInfo
+import com.edgegesture.evilgodxu.screens.settings.component.info.AppAboutSection
+import com.edgegesture.evilgodxu.screens.settings.component.info.AppFooter
 import com.edgegesture.evilgodxu.screens.settings.component.language.Language
-import com.edgegesture.evilgodxu.ui.adaptive.contentMaxWidth
-import com.edgegesture.evilgodxu.ui.component.ContentPane
 
-// 设置页组装器：骨架为 Scaffold + 单栏内容区，形态差异经 ContentPane 的行宽上限表达，
-// 窄窗与宽窗共用同一份区块组成
+// 设置页组装器：宽窗两列（外观/语言 | 关于），窄窗单列，与重构前的排布保持一致
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsAssembly(
@@ -70,22 +74,50 @@ fun SettingsAssembly(
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { innerPadding ->
-        ContentPane(
-            maxContentWidth = windowSizeClass.contentMaxWidth,
-            modifier = Modifier
-                .fillMaxSize()
-                .consumeWindowInsets(innerPadding)
-                .padding(innerPadding),
-        ) {
-            Appearance(themeMode = appUiState.themeMode, onThemeClick = onShowThemeDialog)
-            Language(language = appUiState.language, onShowDialog = onShowLanguageDialog)
-            AppInfo(
+        val contentModifier = Modifier
+            .fillMaxSize()
+            .consumeWindowInsets(innerPadding)
+            .padding(innerPadding)
+            .padding(16.dp)
+
+        if (windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)) {
+            // 宽屏双列：左侧外观与语言，右侧关于
+            Row(
+                modifier = contentModifier.verticalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Appearance(themeMode = appUiState.themeMode, onThemeClick = onShowThemeDialog)
+                    Language(language = appUiState.language, onShowDialog = onShowLanguageDialog)
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    AppAboutSection(
+                        onShowGestureConfig = onShowGestureConfigDialog,
+                        onShowDonate = onShowDonateDialog,
+                    )
+                }
+            }
+
+            // 宽屏的版本号不可点击，与原实现一致
+            AppFooter(
                 version = appUiState.version,
-                onShowGestureConfig = onShowGestureConfigDialog,
-                onShowDonate = onShowDonateDialog,
-                onCheckForUpdate = onCheckForUpdate,
                 onOpenRepository = onOpenRepository,
             )
+        } else {
+            // 窄屏单列，版本号可点击检查更新
+            Column(modifier = contentModifier.verticalScroll(rememberScrollState())) {
+                Appearance(themeMode = appUiState.themeMode, onThemeClick = onShowThemeDialog)
+                Language(language = appUiState.language, onShowDialog = onShowLanguageDialog)
+                AppAboutSection(
+                    onShowGestureConfig = onShowGestureConfigDialog,
+                    onShowDonate = onShowDonateDialog,
+                )
+                AppFooter(
+                    version = appUiState.version,
+                    onOpenRepository = onOpenRepository,
+                    onCheckForUpdate = onCheckForUpdate,
+                )
+            }
         }
     }
 }

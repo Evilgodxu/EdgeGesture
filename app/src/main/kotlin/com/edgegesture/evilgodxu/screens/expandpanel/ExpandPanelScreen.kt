@@ -9,7 +9,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.edgegesture.evilgodxu.screens.expandpanel.assembly.ExpandPanelAssembly
 import com.edgegesture.evilgodxu.screens.expandpanel.component.dialog.ShortcutAppPickerDialog
 import com.edgegesture.evilgodxu.screens.gesture.service.FreeformAppLauncher
-import com.edgegesture.evilgodxu.ui.adaptive.currentWindowSizeClass
 
 // 页面入口：状态与事件上提，应用选择器挂在骨架层，与形态无关
 @Composable
@@ -23,7 +22,6 @@ fun ExpandPanelScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     ExpandPanelAssembly(
-        windowSizeClass = currentWindowSizeClass(),
         state = shortcuts,
         onBack = onNavigateBack,
         onPickShortcut = viewModel::showAppPicker,

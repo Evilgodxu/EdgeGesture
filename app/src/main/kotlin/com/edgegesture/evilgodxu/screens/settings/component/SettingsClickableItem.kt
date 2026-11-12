@@ -1,5 +1,6 @@
 package com.edgegesture.evilgodxu.screens.settings.component
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,44 +26,56 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// 可点击的设置项组件：点击位置转换为根坐标后回传，
-// 供主题切换等以点击点为起点的过渡动画取用；不关心位置时忽略该参数即可
+// 可点击的设置项组件；需要点击位置时（主题过渡动效）走坐标回调，
+// 否则保持普通 clickable，保留水波纹反馈
 @Composable
 fun SettingsClickableItem(
     icon: ImageVector,
     title: String,
     subtitle: String,
-    onClick: (Offset) -> Unit,
+    onClick: () -> Unit,
+    onClickWithPosition: ((Offset) -> Unit)? = null,
 ) {
+    // 记录组件根坐标，用于将局部点击位置转换为根坐标
     var currentCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .onGloballyPositioned { currentCoordinates = it }
-            .pointerInput(onClick) {
-                detectTapGestures { offset ->
-                    onClick(currentCoordinates?.localToRoot(offset) ?: offset)
-                }
+    val modifier = Modifier
+        .fillMaxWidth()
+        .then(
+            if (onClickWithPosition != null) {
+                Modifier
+                    .onGloballyPositioned { currentCoordinates = it }
+                    .pointerInput(onClickWithPosition) {
+                        detectTapGestures { offset ->
+                            val rootOffset = currentCoordinates?.localToRoot(offset) ?: offset
+                            onClickWithPosition(rootOffset)
+                            onClick()
+                        }
+                    }
+            } else {
+                Modifier.clickable(onClick = onClick)
             }
+        )
+    Row(
+        modifier = modifier
             .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
                 fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = subtitle,
                 fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
             )
         }
     }

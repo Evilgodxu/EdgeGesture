@@ -16,6 +16,7 @@ import com.edgegesture.evilgodxu.data.repository.DataStoreSettingsRepository
 import com.edgegesture.evilgodxu.data.repository.DataStoreUpdateCheckRepository
 import com.edgegesture.evilgodxu.data.repository.SettingsRepository
 import com.edgegesture.evilgodxu.data.repository.UpdateCheckRepository
+import com.edgegesture.evilgodxu.log.CrashLogManager
 import com.edgegesture.evilgodxu.update.UpdateChecker
 import com.edgegesture.evilgodxu.utils.localization.LocalizationManager
 
@@ -72,10 +73,15 @@ class AppContainer(context: Context) {
         appContext.getSharedPreferences(LEGACY_UPDATE_PREFERENCES, Context.MODE_PRIVATE)
     }
 
-    private fun readAppVersion(): String =
+    private fun readAppVersion(): String = runCatching {
         appContext.packageManager
             .getPackageInfo(appContext.packageName, PackageManager.PackageInfoFlags.of(0L))
-            .versionName.orEmpty()
+            .versionName
+            .orEmpty()
+    }.getOrElse { error ->
+        CrashLogManager.logException("AppContainer", "读取版本号失败", error)
+        ""
+    }
 
     private companion object {
         const val LEGACY_UPDATE_PREFERENCES = "update_prefs"

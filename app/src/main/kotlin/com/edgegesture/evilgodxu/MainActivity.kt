@@ -1,6 +1,5 @@
 package com.edgegesture.evilgodxu
 
-import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
 import android.content.res.Configuration
@@ -11,25 +10,20 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.core.view.WindowCompat
 import androidx.core.net.toUri
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.initializer
@@ -52,6 +46,8 @@ import kotlinx.coroutines.runBlocking
 
 // Activity 只做入口：挂载导航图与全局副作用，状态由 MainViewModel 与 UpdateViewModel 持有
 class MainActivity : ComponentActivity() {
+
+    private lateinit var windowInsetsController: WindowInsetsControllerCompat
 
     // 手动 DI：经 Application 容器取依赖，ViewModel 以工厂注入构造参数
     private val appContainer: AppContainer
@@ -78,6 +74,9 @@ class MainActivity : ComponentActivity() {
                 MainViewModel(
                     settingsRepository = appContainer.settingsRepository,
                     initialState = initialAppUiState,
+                    applyLocale = { language ->
+                        localizationManager.applyAppLocale(localizationManager.localeFor(language))
+                    },
                 )
             }
         }
@@ -115,6 +114,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // 绑定当前 Activity，使对话框、Toast 等独立窗口在切语言时同步更新资源
+        localizationManager.bindActivity(this)
+
+        // 设置系统栏控制
+        setupSystemBars()
+
         setContent {
             CompositionLocalProvider(
                 LocalMainViewModel provides mainViewModel,
@@ -132,23 +137,22 @@ class MainActivity : ComponentActivity() {
     @Composable
     private fun MainContent() {
         MyApplicationTheme {
-            // 全局副作用：按窗口方向显隐系统栏
-            SystemBarsVisibilityEffect()
-
-            // 回前台自动检查更新（每日仅一次），是否该检查由 ViewModel 判定
-            LifecycleResumeEffect(Unit) {
-                updateViewModel.onForeground()
-                onPauseOrDispose { }
+            // 回前台自动检查更新（每日仅一次），是否该检查由 ViewModel 判定；
+            // 与重构前一致：只在生命周期进入 ON_RESUME 时触发，冷启动不额外检查
+            val lifecycleOwner = LocalLifecycleOwner.current
+            DisposableEffect(lifecycleOwner) {
+                val observer = LifecycleEventObserver { _, event ->
+                    if (event == Lifecycle.Event.ON_RESUME) {
+                        updateViewModel.onForeground()
+                    }
+                }
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
             }
 
             UpdateToastEffect()
 
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background,
-            ) {
-                NavGraph()
-            }
+            NavGraph()
 
             // 更新对话框挂在应用级：各页面共用同一份更新状态
             val updateUiState by updateViewModel.uiState.collectAsStateWithLifecycle()
@@ -204,22 +208,23 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
 
-// 按窗口方向显隐系统栏的全局副作用；横屏隐藏、竖屏显示
-@Composable
-private fun SystemBarsVisibilityEffect() {
-    val view = LocalView.current
-    if (view.isInEditMode) return
-    val orientation = LocalConfiguration.current.orientation
-    SideEffect {
-        val window = (view.context as? Activity)?.window ?: return@SideEffect
-        val controller = WindowCompat.getInsetsController(window, view)
-        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            controller.hide(WindowInsetsCompat.Type.systemBars())
+    private fun setupSystemBars() {
+        windowInsetsController = WindowInsetsControllerCompat(window, window.decorView)
+        windowInsetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        updateSystemBarsVisibility()
+    }
+
+    private fun updateSystemBarsVisibility() {
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            windowInsetsController.hide(WindowInsetsCompat.Type.systemBars())
         } else {
-            controller.show(WindowInsetsCompat.Type.systemBars())
+            windowInsetsController.show(WindowInsetsCompat.Type.systemBars())
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        updateSystemBarsVisibility()
     }
 }

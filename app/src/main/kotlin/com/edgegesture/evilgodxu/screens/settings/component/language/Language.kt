@@ -24,7 +24,7 @@ fun Language(
                 AppLanguage.CHINESE -> stringResource(R.string.settings_language_chinese)
                 AppLanguage.ENGLISH -> stringResource(R.string.settings_language_english)
             },
-            onClick = { onShowDialog() },
+            onClick = onShowDialog,
         )
     }
 }

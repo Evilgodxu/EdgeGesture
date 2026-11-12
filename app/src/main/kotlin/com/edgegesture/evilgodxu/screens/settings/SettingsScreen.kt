@@ -55,8 +55,8 @@ fun SettingsScreen(
             onDismiss = viewModel::dismissThemeDialog,
             // 先从点击位置播放圆形揭示，再落库主题：揭示动画需要旧主题画面作为底图
             onThemeSelected = { themeMode ->
-                themeTransitionController.revealAt(uiState.pendingThemeClickPosition)
                 mainViewModel.setThemeMode(themeMode)
+                themeTransitionController.revealAt(uiState.pendingThemeClickPosition)
                 viewModel.dismissThemeDialog()
             },
         )

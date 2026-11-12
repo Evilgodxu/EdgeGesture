@@ -133,7 +133,7 @@ private fun SliderSetting(
                 } else {
                     raw
                 }
-                onValueChange(stepped.roundToInt().coerceIn(range.start.toInt(), range.endInclusive.toInt()))
+                onValueChange(stepped.toInt().coerceIn(range.start.toInt(), range.endInclusive.toInt()))
             },
             onFractionChangeFinished = onValueChangeFinished,
         )

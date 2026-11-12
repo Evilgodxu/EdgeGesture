@@ -41,7 +41,11 @@ fun RuleKillSwitches(
         checked = form.enableKill,
         enabled = form.isKillSwitchEnabled,
         onCheckedChange = { checked ->
-            form.enableKill = resolveKillSwitch(checked, shizukuState, context)
+            if (checked && shizukuState !is ShizukuState.Granted) {
+                guideToShizuku(shizukuState, context)
+            } else {
+                form.enableKill = checked
+            }
         },
     )
 
@@ -53,7 +57,11 @@ fun RuleKillSwitches(
         hint = shizukuHint.takeIf { shizukuState !is ShizukuState.Granted },
         checked = form.enableKillTarget,
         onCheckedChange = { checked ->
-            form.enableKillTarget = resolveKillSwitch(checked, shizukuState, context)
+            if (checked && shizukuState !is ShizukuState.Granted) {
+                guideToShizuku(shizukuState, context)
+            } else {
+                form.enableKillTarget = checked
+            }
         },
     )
 
@@ -67,7 +75,11 @@ fun RuleKillSwitches(
         checked = form.allowKillSystemApp,
         enabled = canAllowKillSystem,
         onCheckedChange = { checked ->
-            form.allowKillSystemApp = resolveKillSwitch(checked, shizukuState, context)
+            if (checked && shizukuState !is ShizukuState.Granted) {
+                guideToShizuku(shizukuState, context)
+            } else {
+                form.allowKillSystemApp = checked
+            }
         },
     )
 }
@@ -110,14 +122,9 @@ private fun RuleSwitchRow(
     }
 }
 
-// 未授权时先走引导：已安装则拉起或请求授权，未安装则打开官网
-private fun resolveKillSwitch(
-    checked: Boolean,
-    shizukuState: ShizukuState,
-    context: Context,
-): Boolean {
-    if (!checked || shizukuState is ShizukuState.Granted) return checked
-    when (shizukuState) {
+// 未授权时只做引导：已安装则拉起或请求授权，未安装则打开官网，开关状态保持不变
+private fun guideToShizuku(state: ShizukuState, context: Context) {
+    when (state) {
         is ShizukuState.NotInstalled -> {
             context.startActivity(Intent(Intent.ACTION_VIEW, "https://shizuku.rikka.app/".toUri()))
         }
@@ -128,9 +135,9 @@ private fun resolveKillSwitch(
 
         is ShizukuState.Denied, is ShizukuState.Waiting ->
             ShizukuManager.requestPermission(SHIZUKU_PERMISSION_CODE)
+
+        is ShizukuState.Granted -> Unit
     }
-    // 授权未完成前不打开开关，避免写入不可用的配置
-    return false
 }
 
 @Composable

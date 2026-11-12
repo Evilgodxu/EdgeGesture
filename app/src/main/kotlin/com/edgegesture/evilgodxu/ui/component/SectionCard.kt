@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -17,6 +18,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun SectionCard(
     title: String,
+    titleTopPadding: Dp = 20.dp,
     content: @Composable () -> Unit
 ) {
     Column {
@@ -27,7 +29,7 @@ fun SectionCard(
                 letterSpacing = 1.2.sp
             ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 4.dp, top = 20.dp, bottom = 10.dp)
+            modifier = Modifier.padding(start = 4.dp, top = titleTopPadding, bottom = 10.dp)
         )
         Card(
             shape = RoundedCornerShape(20.dp),

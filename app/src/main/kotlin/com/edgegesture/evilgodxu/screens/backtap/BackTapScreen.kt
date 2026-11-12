@@ -14,7 +14,6 @@ import com.edgegesture.evilgodxu.screens.backtap.assembly.BackTapAssembly
 import com.edgegesture.evilgodxu.screens.gesture.component.dialog.ActionSelectionDialog
 import com.edgegesture.evilgodxu.screens.gesture.component.dialog.AppPickerDialog
 import com.edgegesture.evilgodxu.screens.gesture.component.action.getActionDisplayName
-import com.edgegesture.evilgodxu.ui.adaptive.currentWindowSizeClass
 
 // 页面入口：状态与事件上提，应用名映射在此准备，两个弹窗挂在骨架层
 @Composable
@@ -33,7 +32,6 @@ fun BackTapScreen(
     val settings = gestureSettings
 
     BackTapAssembly(
-        windowSizeClass = currentWindowSizeClass(),
         settings = settings,
         appNameByPackage = appNameByPackage,
         onBack = onNavigateBack,

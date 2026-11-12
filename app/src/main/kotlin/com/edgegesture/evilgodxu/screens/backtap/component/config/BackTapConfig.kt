@@ -49,7 +49,10 @@ fun BackTapConfig(
         mutableIntStateOf(settings?.backTapRange ?: 5)
     }
 
-    SectionCard(title = stringResource(R.string.back_tap_config_title)) {
+    SectionCard(
+        title = stringResource(R.string.back_tap_config_title),
+        titleTopPadding = 0.dp,
+    ) {
         Column(modifier = Modifier.padding(20.dp)) {
             ToggleRow(
                 title = stringResource(R.string.back_tap_enable_title),

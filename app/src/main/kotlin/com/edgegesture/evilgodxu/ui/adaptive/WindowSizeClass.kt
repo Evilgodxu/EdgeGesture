@@ -5,8 +5,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import androidx.window.core.layout.computeWindowSizeClass
 
@@ -39,8 +37,3 @@ fun ProvideWindowSizeClass(content: @Composable () -> Unit) {
 fun currentWindowSizeClass(): WindowSizeClass {
     return LocalWindowSizeClass.current
 }
-
-// 单栏内容的行宽上限：宽窗收窄以免文本行过长，窄窗不设限。
-// 阈值与形态判断同处一个文件，避免各组装器重复魔数
-val WindowSizeClass.contentMaxWidth: Dp
-    get() = if (isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)) 840.dp else Dp.Unspecified

@@ -25,7 +25,8 @@ fun Appearance(
                 ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
                 ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
             },
-            onClick = onThemeClick,
+            onClick = {},
+            onClickWithPosition = onThemeClick,
         )
     }
 }

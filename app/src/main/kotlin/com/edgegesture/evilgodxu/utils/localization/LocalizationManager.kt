@@ -36,6 +36,30 @@ class LocalizationManager(
 
     fun localeFor(language: AppLanguage): Locale = language.toLocale(systemLocale)
 
+    // 当前 Activity 引用，用于对话框等独立窗口同步资源
+    private var activity: Activity? = null
+
+    // 绑定当前 Activity，单 Activity 应用在 onCreate 时注册
+    fun bindActivity(activity: Activity) {
+        this.activity = activity
+    }
+
+    // 同步更新 app 层与 activity 层 Resources 及默认 Locale，
+    // 使 Toast、通知等不经过 Compose 的文案跟随应用内语言
+    fun applyAppLocale(locale: Locale) {
+        applyToResources(context.applicationContext.resources, locale)
+        activity?.let { applyToResources(it.resources, locale) }
+        Locale.setDefault(locale)
+    }
+
+    private fun applyToResources(resources: Resources, locale: Locale) {
+        val config = Configuration(resources.configuration).apply {
+            setLocales(LocaleList(locale))
+        }
+        @Suppress("DEPRECATION")
+        resources.updateConfiguration(config, resources.displayMetrics)
+    }
+
     // 以应用上下文创建本地化上下文，供没有 Activity 的场景（如通知文案）使用
     fun createLocalizedContext(locale: Locale): Context {
         val config = Configuration(context.resources.configuration).apply {

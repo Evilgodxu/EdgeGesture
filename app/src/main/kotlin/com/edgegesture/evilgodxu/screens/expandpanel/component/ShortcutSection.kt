@@ -19,7 +19,10 @@ fun ShortcutSection(
     onSaveShortcut: (Int, String?) -> Unit,
     onFreeformToggle: (Int, Boolean) -> Unit,
 ) {
-    SectionCard(title = stringResource(R.string.expand_panel_shortcuts_title)) {
+    SectionCard(
+        title = stringResource(R.string.expand_panel_shortcuts_title),
+        titleTopPadding = 0.dp,
+    ) {
         Column(modifier = Modifier.padding(20.dp)) {
             if (state != null) {
                 ShortcutsGrid(

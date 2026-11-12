@@ -21,7 +21,6 @@ import com.edgegesture.evilgodxu.screens.gesture.component.dialog.ActionSelectio
 import com.edgegesture.evilgodxu.screens.gesture.component.dialog.AppPickerDialog
 import com.edgegesture.evilgodxu.screens.gesture.component.action.gestureActionForDialog
 import com.edgegesture.evilgodxu.screens.gesture.component.action.getActionDisplayName
-import com.edgegesture.evilgodxu.ui.adaptive.currentWindowSizeClass
 
 // 页面入口：滑杆的本地预览状态与两个弹窗留在此处，布局交给组装器
 @Composable
@@ -81,7 +80,6 @@ fun EdgeGestureConfigScreen(
         edgeType = edgeType,
         title = title,
         settings = currentSettings,
-        windowSizeClass = currentWindowSizeClass(),
         selectedSegment = selectedSegment,
         localWidth = localWidth,
         localHeightPercent = localHeightPercent,
