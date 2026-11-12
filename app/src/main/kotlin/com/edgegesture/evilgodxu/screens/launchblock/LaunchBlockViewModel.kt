@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -34,9 +35,27 @@ class LaunchBlockViewModel(
             initialValue = LaunchBlockState(),
         )
 
+    // 页面级状态：规则编辑弹窗
+    private val _uiState = MutableStateFlow(LaunchBlockUiState())
+    val uiState: StateFlow<LaunchBlockUiState> = _uiState.asStateFlow()
+
     // 应用名缓存：包名 -> 应用名，异步解析避免在主线程查询 PackageManager
     private val _appNames = MutableStateFlow<Map<String, String>>(emptyMap())
     val appNames: StateFlow<Map<String, String>> = _appNames.asStateFlow()
+
+    // 打开新增规则弹窗
+    fun showAddRule() {
+        _uiState.update { it.copy(showRuleDialog = true, editingRule = null) }
+    }
+
+    // 打开编辑规则弹窗
+    fun showEditRule(rule: LaunchBlockRule) {
+        _uiState.update { it.copy(showRuleDialog = true, editingRule = rule) }
+    }
+
+    fun dismissRuleDialog() {
+        _uiState.update { it.copy(showRuleDialog = false, editingRule = null) }
+    }
 
     // 设置拦截总开关
     fun setEnabled(enabled: Boolean) {

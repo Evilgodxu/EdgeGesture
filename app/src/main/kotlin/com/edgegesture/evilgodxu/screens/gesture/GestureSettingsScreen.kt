@@ -113,7 +113,7 @@ import com.edgegesture.evilgodxu.ui.adaptive.currentWindowSizeClass
 import com.edgegesture.evilgodxu.screens.gesture.components.ActionSelectionDialog
 import com.edgegesture.evilgodxu.screens.gesture.components.EdgeGestureSection
 import com.edgegesture.evilgodxu.screens.gesture.components.GesturePreview
-import com.edgegesture.evilgodxu.screens.gesture.components.GestureSettingsSwitchItem
+import com.edgegesture.evilgodxu.ui.component.SwitchRow
 import com.edgegesture.evilgodxu.screens.gesture.components.PermissionCard
 import com.edgegesture.evilgodxu.screens.gesture.components.PermissionGroupCard
 import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
@@ -1421,7 +1421,7 @@ private fun TriggerAreaSettingsCard(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     // 隐藏显示
-                    GestureSettingsSwitchItem(
+                    SwitchRow(
                         title = stringResource(R.string.gesture_hide_overlay_title),
                         subtitle = stringResource(R.string.gesture_hide_overlay_desc),
                         checked = hideOverlay,
@@ -1429,7 +1429,7 @@ private fun TriggerAreaSettingsCard(
                     )
 
                     // 隐藏后台
-                    GestureSettingsSwitchItem(
+                    SwitchRow(
                         title = stringResource(R.string.gesture_hide_recents_title),
                     subtitle = stringResource(R.string.gesture_hide_recents_desc),
                     checked = hideFromRecents,
@@ -1437,7 +1437,7 @@ private fun TriggerAreaSettingsCard(
                 )
 
                 // 避免遮挡
-                GestureSettingsSwitchItem(
+                SwitchRow(
                     title = stringResource(R.string.gesture_avoid_keyboard_overlap_title),
                     subtitle = stringResource(R.string.gesture_avoid_keyboard_overlap_desc),
                     checked = avoidKeyboardOverlap,
@@ -1445,7 +1445,7 @@ private fun TriggerAreaSettingsCard(
                 )
 
                 // 震动反馈
-                GestureSettingsSwitchItem(
+                SwitchRow(
                     title = stringResource(R.string.settings_vibration_title),
                     subtitle = stringResource(R.string.settings_vibration_desc),
                     checked = vibrationEnabled,
@@ -1453,7 +1453,7 @@ private fun TriggerAreaSettingsCard(
                 )
 
                 // 二次滑动
-                GestureSettingsSwitchItem(
+                SwitchRow(
                     title = stringResource(R.string.gesture_double_swipe_title),
                     subtitle = stringResource(R.string.gesture_double_swipe_desc),
                     checked = doubleSwipeEnabled,

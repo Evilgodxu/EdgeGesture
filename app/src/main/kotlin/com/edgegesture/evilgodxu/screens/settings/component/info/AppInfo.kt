@@ -24,8 +24,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.edgegesture.evilgodxu.R
+import com.edgegesture.evilgodxu.ui.component.SectionCard
 import com.edgegesture.evilgodxu.screens.settings.component.SettingsClickableItem
-import com.edgegesture.evilgodxu.screens.settings.component.SettingsSection
 import com.edgegesture.evilgodxu.update.UpdateManager
 
 // 信息区块：手势配置入口、捐赠入口、版本号（点击检查更新）与项目链接
@@ -37,7 +37,7 @@ fun AppInfo(
     onCheckForUpdate: () -> Unit,
     onOpenRepository: () -> Unit,
 ) {
-    SettingsSection(title = stringResource(R.string.settings_about)) {
+    SectionCard(title = stringResource(R.string.settings_about)) {
         SettingsClickableItem(
             icon = Icons.Default.Folder,
             title = stringResource(R.string.gesture_config_title),

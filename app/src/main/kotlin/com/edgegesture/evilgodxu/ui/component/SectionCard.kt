@@ -1,4 +1,4 @@
-package com.edgegesture.evilgodxu.screens.settings.component
+package com.edgegesture.evilgodxu.ui.component
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -13,9 +13,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-// 设置分组标题组件
+// 全局分组卡片：带标题的内容卡片，供各页面复用
 @Composable
-fun SettingsSection(
+fun SectionCard(
     title: String,
     content: @Composable () -> Unit
 ) {

@@ -1,467 +1,83 @@
 package com.edgegesture.evilgodxu.screens.backtap
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.outlined.AdsClick
-import androidx.compose.ui.res.painterResource
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import com.edgegesture.evilgodxu.ui.theme.AppSwitch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.edgegesture.evilgodxu.R
-
 import com.edgegesture.evilgodxu.data.app.AppRepository
-import com.edgegesture.evilgodxu.data.gesture.BackTapMode
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
-import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
+import com.edgegesture.evilgodxu.screens.backtap.assembly.BackTapAssembly
 import com.edgegesture.evilgodxu.screens.gesture.components.ActionSelectionDialog
 import com.edgegesture.evilgodxu.screens.gesture.components.AppPickerDialog
 import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
-import kotlin.math.roundToInt
+import com.edgegesture.evilgodxu.ui.adaptive.currentWindowSizeClass
 
-@OptIn(ExperimentalMaterial3Api::class)
+// 页面入口：状态与事件上提，应用名映射在此准备，两个弹窗挂在骨架层
 @Composable
 fun BackTapScreen(
     onNavigateBack: () -> Unit,
     viewModel: BackTapViewModel = viewModel(),
 ) {
     val gestureSettings by viewModel.gestureSettings.collectAsStateWithLifecycle()
-    val settings = gestureSettings
-
-    var showActionDialog by remember { mutableStateOf(false) }
-    var showAppPicker by remember { mutableStateOf(false) }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     // 应用名映射，用于「启动应用」动作显示绑定的目标应用
     val appRepository = AppRepository.getInstance(LocalContext.current)
     val apps by appRepository.appsFlow.collectAsStateWithLifecycle()
     val appNameByPackage = remember(apps) { apps.associate { it.packageName to it.appName } }
 
-    // 滑块本地状态，拖动预览用，松手时才持久化
-    var localSensitivity by remember(settings?.backTapSensitivity) {
-        mutableIntStateOf(settings?.backTapSensitivity ?: 5)
-    }
-    var localRange by remember(settings?.backTapRange) {
-        mutableIntStateOf(settings?.backTapRange ?: 5)
-    }
+    val settings = gestureSettings
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.back_tap_title),
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.nav_back)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            // 背面双击配置标题（卡片上方左上角）
-            Text(
-                text = stringResource(R.string.back_tap_config_title),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 1.2.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp, bottom = 10.dp)
-            )
+    BackTapAssembly(
+        windowSizeClass = currentWindowSizeClass(),
+        settings = settings,
+        appNameByPackage = appNameByPackage,
+        onBack = onNavigateBack,
+        onEnabledChange = viewModel::setBackTapEnabled,
+        onSensitivityChange = viewModel::setBackTapSensitivity,
+        onRangeChange = viewModel::setBackTapRange,
+        onModeChange = viewModel::setBackTapMode,
+        onPauseOnChargingChange = viewModel::setBackTapPauseOnCharging,
+        onShowActionDialog = viewModel::showActionDialog,
+    )
 
-            // 设置卡片
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    // 启用开关
-                    SettingsToggleRow(
-                        title = stringResource(R.string.back_tap_enable_title),
-                        description = stringResource(R.string.back_tap_enable_desc),
-                        checked = settings?.backTapEnabled ?: false,
-                        onCheckedChange = viewModel::setBackTapEnabled
-                    )
-
-                    if (settings?.backTapEnabled == true) {
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // 灵敏度滑块
-                        SettingsSliderItem(
-                            label = stringResource(R.string.back_tap_sensitivity),
-                            value = localSensitivity,
-                            onValueChange = { value -> localSensitivity = value },
-                            onValueChangeFinished = { viewModel.setBackTapSensitivity(localSensitivity) }
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // 检测范围滑块
-                        SettingsSliderItem(
-                            label = stringResource(R.string.back_tap_range),
-                            value = localRange,
-                            onValueChange = { value -> localRange = value },
-                            onValueChangeFinished = { viewModel.setBackTapRange(localRange) }
-                        )
-
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        // 工作模式选择
-                        Text(
-                            text = stringResource(R.string.back_tap_mode),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            BackTapMode.entries.forEach { mode ->
-                                val isSelected = settings.backTapMode == mode
-                                val label = when (mode) {
-                                    BackTapMode.ALWAYS -> stringResource(R.string.back_tap_mode_always)
-                                    BackTapMode.SCREEN_OFF -> stringResource(R.string.back_tap_mode_screen_off)
-                                    BackTapMode.SCREEN_ON -> stringResource(R.string.back_tap_mode_screen_on)
-                                }
-                                FilledTonalButton(
-                                    onClick = { viewModel.setBackTapMode(mode) },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = ButtonDefaults.filledTonalButtonColors(
-                                        containerColor = if (isSelected)
-                                            MaterialTheme.colorScheme.primary
-                                        else
-                                            MaterialTheme.colorScheme.surfaceVariant,
-                                        contentColor = if (isSelected)
-                                            MaterialTheme.colorScheme.onPrimary
-                                        else
-                                            MaterialTheme.colorScheme.onSurface
-                                    )
-                                ) {
-                                    Text(
-                                        text = label,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // 充电时暂停
-                        SettingsToggleRow(
-                            title = stringResource(R.string.back_tap_pause_on_charging_title),
-                            description = stringResource(R.string.back_tap_pause_on_charging_desc),
-                            checked = settings.backTapPauseOnCharging,
-                            onCheckedChange = viewModel::setBackTapPauseOnCharging
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 触发操作卡片
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showActionDialog = true }
-                        .padding(horizontal = 20.dp, vertical = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.AdsClick,
-                        contentDescription = null,
-                        modifier = Modifier.size(22.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.back_tap_action),
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-
-                    Text(
-                        text = if (settings != null) {
-                            resolveBackTapActionName(settings, appNameByPackage)
-                        } else "",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(80.dp))
-        }
-    }
-
-    // 动作选择对话框
-    if (showActionDialog && settings != null) {
+    if (uiState.showActionDialog && settings != null) {
         ActionSelectionDialog(
             currentAction = settings.backTapAction,
             currentRemindMinutes = settings.remindMinutes[GestureSettingsKeys.BACK_TAP_ACTION.name]
                 ?: GestureSettingsKeys.DEFAULT_REMIND_MINUTES,
-            onDismiss = { showActionDialog = false },
+            onDismiss = viewModel::dismissActionDialog,
             onActionSelected = { action ->
                 if (action == GestureAction.LAUNCH_APP) {
                     // 启动应用需先选定目标应用，交由应用选择对话框完成保存
-                    showActionDialog = false
-                    showAppPicker = true
+                    viewModel.showAppPickerFromActionDialog()
                 } else {
                     viewModel.setBackTapAction(action)
-                    showActionDialog = false
+                    viewModel.dismissActionDialog()
                 }
             },
             onRemindConfirmed = { minutes ->
                 viewModel.setBackTapAction(GestureAction.REMIND)
                 viewModel.setRemindMinutes(minutes)
-                showActionDialog = false
+                viewModel.dismissActionDialog()
             },
-            getActionDisplayName = { getActionDisplayName(it) }
+            getActionDisplayName = { getActionDisplayName(it) },
         )
     }
 
-    // 应用选择对话框
-    if (showAppPicker) {
+    if (uiState.showAppPicker) {
         AppPickerDialog(
-            onDismiss = { showAppPicker = false },
+            onDismiss = viewModel::dismissAppPicker,
             onAppSelected = { packageName, useFreeform ->
                 viewModel.setBackTapAction(GestureAction.LAUNCH_APP)
                 viewModel.setLaunchAppTarget(packageName)
                 viewModel.setLaunchAppFreeform(useFreeform)
-                showAppPicker = false
+                viewModel.dismissAppPicker()
             },
-            initialFreeform = settings?.launchAppFreeform?.get(GestureSettingsKeys.BACK_TAP_ACTION.name) == true
+            initialFreeform = settings?.launchAppFreeform?.get(GestureSettingsKeys.BACK_TAP_ACTION.name) == true,
         )
-    }
-}
-
-// 解析背面双击动作显示名：启动应用动作优先显示绑定的应用名，未绑定时回退动作名
-@Composable
-private fun resolveBackTapActionName(
-    settings: GestureSettingsState,
-    appNameByPackage: Map<String, String>
-): String {
-    val appName = if (settings.backTapAction == GestureAction.LAUNCH_APP) {
-        settings.launchAppTargets[GestureSettingsKeys.BACK_TAP_ACTION.name]?.let { appNameByPackage[it] }
-    } else {
-        null
-    }
-    return appName ?: getActionDisplayName(settings.backTapAction)
-}
-
-@Composable
-private fun SettingsToggleRow(
-    title: String,
-    description: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = description,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        AppSwitch(
-            checked = checked,
-            onCheckedChange = onCheckedChange
-        )
-    }
-}
-
-@Composable
-private fun SettingsSliderItem(
-    label: String,
-    value: Int,
-    onValueChange: (Int) -> Unit,
-    onValueChangeFinished: () -> Unit
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = "$value",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-
-        val fraction = ((value - 1) / 9f).coerceIn(0f, 1f)
-        val primary = MaterialTheme.colorScheme.primary
-        val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
-        val surface = MaterialTheme.colorScheme.surface
-        val trackHeight = 6.dp
-        val thumbRadius = 9.dp
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(32.dp)
-                .pointerInput(Unit) {
-                    detectTapGestures { offset ->
-                        val widthPx = size.width.toFloat()
-                        val ratio = (offset.x / widthPx).coerceIn(0f, 1f)
-                        onValueChange((1 + ratio * 9).roundToInt().coerceIn(1, 10))
-                        onValueChangeFinished()
-                    }
-                }
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = { onValueChangeFinished() },
-                        onDragCancel = { onValueChangeFinished() }
-                    ) { change, _ ->
-                        change.consume()
-                        val widthPx = size.width.toFloat()
-                        val ratio = (change.position.x / widthPx).coerceIn(0f, 1f)
-                        onValueChange((1 + ratio * 9).roundToInt().coerceIn(1, 10))
-                    }
-                },
-            contentAlignment = Alignment.CenterStart
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val w = size.width
-                val h = size.height
-                val trackY = h / 2f
-                val trackH = trackHeight.toPx()
-                val thumbR = thumbRadius.toPx()
-                val thumbX = w * fraction
-
-                drawRoundRect(
-                    color = surfaceVariant,
-                    topLeft = Offset(0f, trackY - trackH / 2f),
-                    size = Size(w, trackH),
-                    cornerRadius = CornerRadius(trackH / 2f)
-                )
-                drawRoundRect(
-                    color = primary,
-                    topLeft = Offset(0f, trackY - trackH / 2f),
-                    size = Size(thumbX, trackH),
-                    cornerRadius = CornerRadius(trackH / 2f)
-                )
-                drawCircle(
-                    color = surface,
-                    radius = thumbR + 1.5.dp.toPx(),
-                    center = Offset(thumbX, trackY)
-                )
-                drawCircle(
-                    color = primary,
-                    radius = thumbR,
-                    center = Offset(thumbX, trackY)
-                )
-            }
-        }
     }
 }

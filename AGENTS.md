@@ -31,7 +31,7 @@ Composable → ViewModel 方法 → Repository → DataStore          事件向�
 - 页面 ViewModel 只依赖仓库与纯逻辑工具，不直接触碰 DataStore 键值、文件或网络。
 - 导航集中在 `navigation/`：路由键在 `Screen.kt`，`NavGraph.kt` 负责 `NavDisplay` 装配与返回分发；页面不直接操作 `NavBackStack`。
 - 异步表达：一次性调用用 `suspend` 函数，持续数据用 `Flow`；已具备协程能力的调用方不额外设计回调接口。
-- 现有部分页面仍是单文件直写布局（`GestureSettingsScreen` 1600+ 行）。新增或大范围重排时按「页面模块与组件归属」收敛，不做只为搬家的全量移动。
+- 现有页面中仅手势主设置页与单边缘手势配置页仍是单文件直写布局（`GestureSettingsScreen` 1600+ 行、`EdgeGestureConfigScreen` 1000+ 行），迁移这两页时按「页面模块与组件归属」收敛；其余页面已完成拆分，不做只为搬家的二次移动。
 
 ## 数据持久化
 
@@ -78,7 +78,9 @@ screens/<page>/
 ```
 
 - 页面根包只放骨架三件套；其余文件进 `component/`（或按业务语义新建子目录）。跨页面复用上提 `ui/component/`，无复用的留在页面内。
+- 跨页面共享组件固定为 `ui/component/` 内的 `AppTopBar`（标题 + 可选返回）、`SectionCard`（分组标题 + 卡片）、`ContentPane`（单栏收窄）、`SwitchRow`（标题 + 说明 + 开关）；新增页面直接复用，不在页面内各写一份。
 - 骨架只做连接与副作用，布局装配下放到 `assembly/` 或同文件的 `private` Composable；组装器只消费一份 `UiState` 与一套事件回调，`compact/` 与 `expanded/` 若拆出也必须共享这两者。
+- 列表型页面（如应用黑名单）不套 `ContentPane`：滚动区域需要占满剩余高度，由组装器自行组织 `LazyColumn` 与固定底栏。
 - 页面级弹层挂在骨架层，不随形态重复实现；弹窗自身放在 `component/dialog/`。
 - 拆分判据是「单一问题」：可独立交互 / 预览 / 测试的区块才拆组件；单行 `Text`、`Spacer` 内联。
 - 设置页（`screens/settings/`）是这套结构的现行范例。

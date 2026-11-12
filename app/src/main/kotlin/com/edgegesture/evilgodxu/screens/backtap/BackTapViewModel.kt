@@ -17,9 +17,12 @@ import com.edgegesture.evilgodxu.data.gesture.saveBackTapSensitivity
 import com.edgegesture.evilgodxu.data.gesture.saveLaunchAppTarget
 import com.edgegesture.evilgodxu.data.gesture.saveLaunchAppFreeform
 import com.edgegesture.evilgodxu.data.gesture.saveRemindMinutes
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 // 背面双击配置页 ViewModel：订阅手势设置流，集中处理该页的保存操作
@@ -35,6 +38,27 @@ class BackTapViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = null,
         )
+
+    // 页面级状态：动作选择与应用选择弹窗
+    private val _uiState = MutableStateFlow(BackTapUiState())
+    val uiState: StateFlow<BackTapUiState> = _uiState.asStateFlow()
+
+    fun showActionDialog() {
+        _uiState.update { it.copy(showActionDialog = true) }
+    }
+
+    fun dismissActionDialog() {
+        _uiState.update { it.copy(showActionDialog = false) }
+    }
+
+    // 选择「启动应用」动作时先切到应用选择器
+    fun showAppPickerFromActionDialog() {
+        _uiState.update { it.copy(showActionDialog = false, showAppPicker = true) }
+    }
+
+    fun dismissAppPicker() {
+        _uiState.update { it.copy(showAppPicker = false) }
+    }
 
     fun setBackTapEnabled(enabled: Boolean) {
         viewModelScope.launch { context.saveBackTapEnabled(enabled) }

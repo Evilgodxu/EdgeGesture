@@ -1,4 +1,4 @@
-package com.edgegesture.evilgodxu.screens.gesture.components
+package com.edgegesture.evilgodxu.ui.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,9 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-// 手势设置开关项组件
+// 全局开关行：标题 + 说明 + 开关，供各设置页复用
 @Composable
-fun GestureSettingsSwitchItem(
+fun SwitchRow(
     title: String,
     subtitle: String? = null,
     checked: Boolean,
