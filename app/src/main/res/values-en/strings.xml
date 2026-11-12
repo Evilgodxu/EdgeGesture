@@ -175,7 +175,6 @@
     <string name="edge_segment_count">Segments</string>
     <string name="edge_segment_unit">segments</string>
     <string name="gesture_segment_label">Segment %d</string>
-    <string name="gesture_disabled">Disabled</string>
 
     <!-- Permissions status -->
     <string name="permission_status_title">Permission status</string>

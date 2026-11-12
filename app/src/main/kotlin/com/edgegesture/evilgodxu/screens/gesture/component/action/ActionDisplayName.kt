@@ -1,4 +1,4 @@
-package com.edgegesture.evilgodxu.screens.gesture.components
+package com.edgegesture.evilgodxu.screens.gesture.component.action
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource

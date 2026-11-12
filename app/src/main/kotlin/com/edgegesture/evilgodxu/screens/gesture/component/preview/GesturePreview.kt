@@ -1,4 +1,4 @@
-package com.edgegesture.evilgodxu.screens.gesture.components
+package com.edgegesture.evilgodxu.screens.gesture.component.preview
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background

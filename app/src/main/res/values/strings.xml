@@ -173,7 +173,6 @@
     <string name="edge_segment_count">段数</string>
     <string name="edge_segment_unit">段</string>
     <string name="gesture_segment_label">第%d段</string>
-    <string name="gesture_disabled">禁用</string>
 
     <!-- 权限申请 (Permissions) -->
     <string name="permission_status_title">权限状态</string>

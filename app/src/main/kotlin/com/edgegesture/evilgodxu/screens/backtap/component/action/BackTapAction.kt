@@ -27,7 +27,7 @@ import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.GestureAction
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsKeys
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
-import com.edgegesture.evilgodxu.screens.gesture.components.getActionDisplayName
+import com.edgegesture.evilgodxu.screens.gesture.component.action.getActionDisplayName
 
 // 触发操作卡片：显示当前动作（启动应用优先显示绑定的应用名），点击进入动作选择
 @Composable

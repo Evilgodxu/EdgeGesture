@@ -1,14 +1,9 @@
 package com.edgegesture.evilgodxu.screens.backtap.component.config
 
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,10 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -36,6 +27,7 @@ import com.edgegesture.evilgodxu.R
 import com.edgegesture.evilgodxu.data.gesture.BackTapMode
 import com.edgegesture.evilgodxu.data.gesture.GestureSettingsState
 import com.edgegesture.evilgodxu.ui.component.SectionCard
+import com.edgegesture.evilgodxu.ui.component.SliderTrack
 import com.edgegesture.evilgodxu.ui.theme.AppSwitch
 import kotlin.math.roundToInt
 
@@ -177,64 +169,13 @@ private fun LevelSlider(
         }
         Spacer(modifier = Modifier.height(8.dp))
 
-        val fraction = ((value - 1) / 9f).coerceIn(0f, 1f)
-        val primary = MaterialTheme.colorScheme.primary
-        val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
-        val surface = MaterialTheme.colorScheme.surface
-        val trackHeight = 6.dp
-        val thumbRadius = 9.dp
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(32.dp)
-                .pointerInput(Unit) {
-                    detectTapGestures { offset ->
-                        val ratio = (offset.x / size.width.toFloat()).coerceIn(0f, 1f)
-                        onValueChange((1 + ratio * 9).roundToInt().coerceIn(1, 10))
-                        onValueChangeFinished()
-                    }
-                }
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = { onValueChangeFinished() },
-                        onDragCancel = { onValueChangeFinished() },
-                    ) { change, _ ->
-                        change.consume()
-                        val ratio = (change.position.x / size.width.toFloat()).coerceIn(0f, 1f)
-                        onValueChange((1 + ratio * 9).roundToInt().coerceIn(1, 10))
-                    }
-                },
-            contentAlignment = Alignment.CenterStart,
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                val w = size.width
-                val h = size.height
-                val trackY = h / 2f
-                val trackH = trackHeight.toPx()
-                val thumbR = thumbRadius.toPx()
-                val thumbX = w * fraction
-
-                drawRoundRect(
-                    color = surfaceVariant,
-                    topLeft = Offset(0f, trackY - trackH / 2f),
-                    size = Size(w, trackH),
-                    cornerRadius = CornerRadius(trackH / 2f),
-                )
-                drawRoundRect(
-                    color = primary,
-                    topLeft = Offset(0f, trackY - trackH / 2f),
-                    size = Size(thumbX, trackH),
-                    cornerRadius = CornerRadius(trackH / 2f),
-                )
-                drawCircle(
-                    color = surface,
-                    radius = thumbR + 1.5.dp.toPx(),
-                    center = Offset(thumbX, trackY),
-                )
-                drawCircle(color = primary, radius = thumbR, center = Offset(thumbX, trackY))
-            }
-        }
+        SliderTrack(
+            fraction = ((value - 1) / 9f).coerceIn(0f, 1f),
+            onFractionChange = { ratio ->
+                onValueChange((1 + ratio * 9).roundToInt().coerceIn(1, 10))
+            },
+            onFractionChangeFinished = onValueChangeFinished,
+        )
     }
 }
 

@@ -1,4 +1,4 @@
-package com.edgegesture.evilgodxu.screens.gesture.components
+package com.edgegesture.evilgodxu.screens.gesture.component.dialog
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
