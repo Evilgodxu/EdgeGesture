@@ -41,11 +41,7 @@ fun RuleKillSwitches(
         checked = form.enableKill,
         enabled = form.isKillSwitchEnabled,
         onCheckedChange = { checked ->
-            if (checked && shizukuState !is ShizukuState.Granted) {
-                guideToShizuku(shizukuState, context)
-            } else {
-                form.enableKill = checked
-            }
+            form.enableKill = killSwitchValue(checked, shizukuState, context)
         },
     )
 
@@ -57,11 +53,7 @@ fun RuleKillSwitches(
         hint = shizukuHint.takeIf { shizukuState !is ShizukuState.Granted },
         checked = form.enableKillTarget,
         onCheckedChange = { checked ->
-            if (checked && shizukuState !is ShizukuState.Granted) {
-                guideToShizuku(shizukuState, context)
-            } else {
-                form.enableKillTarget = checked
-            }
+            form.enableKillTarget = killSwitchValue(checked, shizukuState, context)
         },
     )
 
@@ -75,11 +67,7 @@ fun RuleKillSwitches(
         checked = form.allowKillSystemApp,
         enabled = canAllowKillSystem,
         onCheckedChange = { checked ->
-            if (checked && shizukuState !is ShizukuState.Granted) {
-                guideToShizuku(shizukuState, context)
-            } else {
-                form.allowKillSystemApp = checked
-            }
+            form.allowKillSystemApp = killSwitchValue(checked, shizukuState, context)
         },
     )
 }
@@ -122,7 +110,14 @@ private fun RuleSwitchRow(
     }
 }
 
-// 未授权时只做引导：已安装则拉起或请求授权，未安装则打开官网，开关状态保持不变
+// 终止类开关的取值：未授权就引导授权并回到关闭，绝不落成「需要权限却已开启」
+private fun killSwitchValue(checked: Boolean, state: ShizukuState, context: Context): Boolean {
+    if (!checked || state is ShizukuState.Granted) return checked
+    guideToShizuku(state, context)
+    return false
+}
+
+// 引导授权：已安装则拉起或请求授权，未安装则打开官网
 private fun guideToShizuku(state: ShizukuState, context: Context) {
     when (state) {
         is ShizukuState.NotInstalled -> {
