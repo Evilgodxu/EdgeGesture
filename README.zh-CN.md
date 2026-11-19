@@ -12,8 +12,8 @@
 ![License](https://img.shields.io/badge/license-AGPL--3.0-blue)
 ![Platform](https://img.shields.io/badge/platform-Android-brightgreen)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.21-purple)
-![AGP](https://img.shields.io/badge/AGP-9.5.0-blue)
-![Gradle](https://img.shields.io/badge/Gradle-9.8.2-blue)
+![AGP](https://img.shields.io/badge/AGP-9.5.1-blue)
+![Gradle](https://img.shields.io/badge/Gradle-9.9.1-blue)
 ![Compose BOM](https://img.shields.io/badge/Compose%20BOM-2026.09.00-blue)
 ![minSdk](https://img.shields.io/badge/minSdk-34-orange)
 ![targetSdk](https://img.shields.io/badge/targetSdk-37-orange)
@@ -32,6 +32,7 @@
 - **自定义触发区**：边缘宽度、高度 / 位置百分比与段数，实时预览
 - **二次滑动**：全屏或横屏模式下需连续滑动两次方可触发
 - **震动反馈**：触发时震动
+- **触发区管理**：可隐藏触发区、在最近任务列表中隐藏本应用，输入法弹出时自动禁用触发区
 - **统计**：手势触发次数与启动拦截次数，支持 1 日、7 日、30 日周期
 
 ### 背面双击
@@ -41,7 +42,7 @@
 - **灵敏度**（1–10）与**检测范围**（1–10）可调
 - **工作模式**：始终激活、熄屏激活、亮屏激活
 - **充电时暂停**检测，减少误触
-- 支持与边缘手势完全一致的快捷操作
+- 可绑定单个操作，取自与边缘手势相同的操作列表
 
 ### 快捷操作
 
@@ -73,7 +74,7 @@
 - 拦截时切回启动者应用
 - **终止启动者**：每次触发都终止（防呆保护：连续最多 5 次，随后冷却 15 秒）
 - 可选**终止被启动者**进程，并控制是否允许终止系统应用
-- 进程终止依赖 Shizuku，无 Shizuku 时该能力不生效
+- 进程终止依赖 Shizuku，无 Shizuku 时该能力不生效；页面会提示 Shizuku 未安装、未启动或未授权
 
 ### 应用切换黑名单
 
@@ -86,7 +87,7 @@
 - **主题模式**：浅色、深色或跟随系统，切换带圆形揭示过渡
 - **语言**：简体中文、English 或跟随系统；应用内热切换，无需重建 Activity，冷启动按持久化语言直接生效
 - **手势配置**：导入 / 导出 JSON 文件，覆盖边缘手势、背面双击、触发区选项与启动拦截规则
-- **捐赠打赏**、**关于**（作者 / 版本号 / 项目链接）与 Shizuku 状态
+- **捐赠打赏**、**关于**（作者 / 版本号 / 项目链接），以及分享当日崩溃日志的 **`[日志]`** 入口
 
 ### 权限管理
 
@@ -113,53 +114,59 @@
 | --- | --- |
 | 语言 | Kotlin 2.4.21 |
 | UI | Jetpack Compose（BOM 2026.09.00）+ Material 3 |
-| 自适应布局 | androidx.window 1.5.1（`WindowSizeClass`） |
-| 依赖注入 | 原生 AndroidX ViewModel 工厂 + 应用级单例 |
-| 导航 | Navigation 3 —— `navigation3-runtime` / `navigation3-ui` 1.2.0（类型安全 `NavKey`） |
-| 状态 | DataStore Preferences 1.3.0 + StateFlow / MutableStateFlow |
+| 自适应布局 | androidx.window 1.5.1 + material3-adaptive 1.3.0 |
+| 依赖注入 | 手动 `AppContainer` 容器 + 构造注入 |
+| 导航 | Navigation 3 —— `navigation3-runtime` / `navigation3-ui` 1.2.1（类型安全 `NavKey`） |
+| 状态 | DataStore Preferences 1.3.0 + StateFlow |
 | 权限 | Shizuku 13.1.5 + 自定义 `UserService`（AIDL） |
 | 网络 | OkHttp 5.5.1 |
-| 序列化 | kotlinx.serialization 1.12.0 |
+| 序列化 | kotlinx.serialization 1.13.0 |
 | Hidden API 绕过 | hidden-api-bypass 6.2（小窗窗口模式） |
-| 构建 | AGP 9.5.0、Gradle 9.8.2、refreshVersions、JDK 21 |
+| 构建 | AGP 9.5.1、Gradle 9.9.1、refreshVersions、JDK 21 |
 
 ## 项目结构
 
 ```
 .
-├── app/
-│   └── src/main/
-│       ├── aidl/com/edgegesture/evilgodxu/service/   # ICommandService（Shizuku UserService）
-│       ├── kotlin/com/edgegesture/evilgodxu/
-│       │   ├── data/
-│       │   │   ├── app/             # AppRepository（应用列表 + 图标缓存）、DataConfigManager
-│       │   │   ├── gesture/         # 手势 / 扩展面板设置、GestureStatsManager
-│       │   │   ├── launchblock/     # 启动拦截规则
-│       │   │   ├── permission/      # PermissionMonitor
-│       │   │   └── shizuku/         # ShizukuManager
-│       │   ├── log/                 # CrashLogManager
-│       │   ├── navigation/          # NavGraph（Navigation 3 类型安全键）
-│       │   ├── screens/
-│       │   │   ├── gesture/         #   主页 + 边缘配置
-│       │   │   │   ├── components/  #   页面共用组件
-│       │   │   │   └── service/     #   无障碍服务 + 悬浮 UI
-│       │   │   │       └── expandpanel/
-│       │   │   ├── backtap/         #   背面双击
-│       │   │   ├── blacklist/       #   应用切换黑名单
-│       │   │   ├── expandpanel/     #   扩展面板设置
-│       │   │   ├── launchblock/     #   启动拦截
-│       │   │   └── settings/components/
-│       │   ├── service/             # CommandUserService
-│       │   ├── ui/                  # adaptive/（窗口尺寸类）+ theme/
-│       │   ├── update/              # UpdateManager / UpdateViewModel / UpdateDialog
-│       │   ├── utils/localization/  # 应用内多语言管理
-│       │   ├── MainActivity.kt
-│       │   └── MyApplication.kt
-│       └── res/                     # 资源（values / values-en）
-├── archive/removed-features/        # 已移除功能的归档（源码 + 整合快照）
+├── app/src/
+│   ├── main/
+│   │   ├── aidl/com/edgegesture/evilgodxu/service/   # ICommandService（Shizuku UserService）
+│   │   ├── kotlin/com/edgegesture/evilgodxu/
+│   │   │   ├── App.kt / AppContainer.kt      # Application + 手动 DI 容器
+│   │   │   ├── AppUiState.kt / MainViewModel.kt
+│   │   │   ├── data/
+│   │   │   │   ├── app/             # AppRepository（应用列表 + 图标缓存）
+│   │   │   │   ├── config/          # GestureConfigTransfer（导入 / 导出）
+│   │   │   │   ├── gesture/         # 手势 / 扩展面板设置、统计仓库
+│   │   │   │   ├── launchblock/     # 启动拦截规则
+│   │   │   │   ├── permission/      # PermissionMonitor
+│   │   │   │   ├── repository/      # 设置 / 更新检查仓库与 DataStore 实现
+│   │   │   │   ├── settings/        # 应用级设置（主题、语言）
+│   │   │   │   └── shizuku/         # ShizukuManager
+│   │   │   ├── log/                 # CrashLogManager
+│   │   │   ├── navigation/          # Screen（NavKey 路由）+ NavGraph（Navigation 3）
+│   │   │   ├── screens/
+│   │   │   │   ├── gesture/         #   主页 + 边缘配置
+│   │   │   │   │   ├── assembly/    #   布局组装器
+│   │   │   │   │   ├── component/   #   页面组件
+│   │   │   │   │   └── service/     #   无障碍服务 + 悬浮 UI
+│   │   │   │   │       └── expandpanel/
+│   │   │   │   ├── backtap/ blacklist/ expandpanel/
+│   │   │   │   ├── launchblock/
+│   │   │   │   └── settings/        #   以上页面均为 assembly/ + component/ 结构
+│   │   │   ├── service/             # CommandUserService
+│   │   │   ├── ui/
+│   │   │   │   ├── adaptive/        # 按窗口容器尺寸计算窗口尺寸类
+│   │   │   │   ├── component/       # AppTopBar / SectionCard / SwitchRow / SliderTrack
+│   │   │   │   └── theme/           # 配色令牌 + 主题
+│   │   │   ├── update/              # UpdateChecker / Downloader / ViewModel / Dialog
+│   │   │   └── utils/localization/  # 应用内多语言管理
+│   │   └── res/                     # 资源（values / values-en）
+│   └── test/kotlin/                 # 单元测试（纯逻辑与状态持有者）
 ├── gradle/
 │   ├── libs.versions.toml           # 版本目录
 │   └── wrapper/
+├── AGENTS.md
 ├── LICENSE
 ├── NOTICE
 ├── build.gradle.kts
@@ -169,12 +176,15 @@
 
 ## 架构
 
-应用遵循 **MVVM + 单向数据流**：状态由 `ViewModel` → `UiState` → UI 自上而下流动，事件由 UI 自下而上传递；共享数据逻辑位于 `data/` 层，以 Repository 形式暴露（设置、应用列表、启动拦截规则、权限、Shizuku），由 AndroidX ViewModel 工厂与应用级单例统一组装。
+状态向下流动、事件向上传递：`DataStore ⇄ Repository ⇄ ViewModel ⇄ UiState ⇄ Composable`。
 
-手势与悬浮能力都位于 `screens/gesture/service/`：
-`EdgeGestureAccessibilityService` 负责检测边缘滑动、边缘点击与背部敲击，并通过 `AccessibilityActionExecutor` 派发操作。各悬浮 UI（边缘触发区、扩展面板）由各自的窗口管理器以系统窗口形式承载，多数以 `ComposeView` 渲染，并由无障碍服务统一协调。
+- **手动 DI**：`App` 在 `onCreate` 构造唯一的 `AppContainer`，按需提供设置、更新检查、应用、手势统计四个仓库，以及配置导入导出、本地化管理器与应用版本号。Activity 经 `viewModelFactory` + `initializer` 取用，页面与无障碍服务经 `Context.appContainer` 访问器取用；不引入 Hilt / Koin / Dagger。
+- **应用级状态**：主题、语言与版本号由 Activity 作用域的 `MainViewModel` 聚合为 `AppUiState`，经 `LocalMainViewModel` 下发，界面层不直连数据源。
+- **页面级状态**：每个 `{Screen}ViewModel` 持有 `MutableStateFlow<{Screen}UiState>` 并只暴露不可变 `StateFlow`，经 `rememberViewModelStoreNavEntryDecorator()` 绑定到 Navigation 3 导航条目。
+- **页面组织**：`{Screen}.kt` 只做骨架（ViewModel 连接、尺寸类、副作用），布局装配下放 `assembly/`，按业务语义分组的组件放 `component/`；跨页共享组件 `AppTopBar`、`SectionCard`、`SwitchRow`、`SliderTrack` 位于 `ui/component/`。
+- **手势运行时**在 `screens/gesture/service/`：`EdgeGestureAccessibilityService` 检测边缘滑动、边缘点击与背部敲击，并通过 `AccessibilityActionExecutor` 派发操作。各悬浮 UI（边缘触发区、扩展面板）由各自的窗口管理器以系统窗口形式承载，多数以 `ComposeView` 渲染，并由无障碍服务统一协调；`ImeTouchGate` 在输入法可见时关闭触发区触摸。
 
-设置通过 DataStore 持久化（`gesture_settings`、`settings`、`launch_block`）。可选的系统级操作——结束应用进程、小窗窗口——经由 Shizuku 的 `CommandUserService` 或 hidden API 绕过完成；Shizuku 不可用时相关能力不生效。
+设置通过 DataStore 持久化（`settings`、`gesture_settings`、`launch_block`），统计按日计数存储并派生为 `Flow`。可选的系统级操作——结束应用进程、小窗窗口——经由 Shizuku 的 `CommandUserService` 或 hidden API 绕过完成；Shizuku 不可用时相关能力不生效。
 
 ## 快速开始
 
@@ -197,7 +207,7 @@ cd EdgeGesture
 ./gradlew assembleRelease
 ```
 
-APK 输出为 `app/build/outputs/apk/` 下的 `EdgeGesture-<版本号>-arm64.apk`，仅构建 `arm64-v8a` ABI。Release 构建开启代码压缩与资源压缩。
+APK 输出为 `app/build/outputs/apk/` 下的 `EdgeGesture-<版本号>-arm64.apk`，仅构建 `arm64-v8a` ABI。Release 构建经 AGP 的 `optimization` 开关同时启用代码优化与优化型资源缩减；lint 存在错误时构建失败。
 
 ### 发布签名
 
