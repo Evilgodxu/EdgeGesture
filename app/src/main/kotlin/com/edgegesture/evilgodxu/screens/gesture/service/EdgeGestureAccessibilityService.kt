@@ -121,7 +121,9 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
 
     private var settingsFlowJob: kotlinx.coroutines.Job? = null
     private var launchBlockFlowJob: kotlinx.coroutines.Job? = null
-    private var isKeyboardVisible = false
+    private val imeTouchGate = ImeTouchGate { enabled ->
+        if (enabled) edgeViewManager.enableEdgeViewsTouch() else edgeViewManager.disableEdgeViewsTouch()
+    }
 
     private fun requestGestureSync() {
         serviceScope.launch {
@@ -134,6 +136,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
                         edgeViewManager.removeEdgeViews()
                         edgeViewManager.createEdgeViews(latestSettings, settingsProvider)
                         edgeViewManager.showEdgeViews(latestSettings)
+                        // 重建出的窗口不带触摸禁用标志，需重新下发输入法状态
+                        imeTouchGate.invalidate()
                         checkKeyboardVisibility()
                     } else {
                         edgeViewManager.removeEdgeViews()
@@ -495,6 +499,8 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     // 检测输入法是否弹出
     // 优先通过 AccessibilityService.getWindows() 检测 TYPE_INPUT_METHOD 窗口，
     // 该方式能即时响应 TYPE_WINDOWS_CHANGED 事件，WindowInsets 更新有延迟。
+    // getWindows() 受 accessibility_service_config.xml 的 canRetrieveWindowContent 与
+    // flagRetrieveInteractiveWindows 共同约束，缺任一项都会返回空列表。
     // 兜底使用已附着的边缘视图的 WindowInsets，适配 getWindows() 为空的情况。
     private fun checkKeyboardVisibility() {
         // 方法1：通过 AccessibilityService.getWindows() 快速确认键盘可见
@@ -502,7 +508,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         val windowList = windows
         if (windowList.isNotEmpty()) {
             if (windowList.any { windowInfo ->
-                    windowInfo.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_INPUT_METHOD
+                    windowInfo.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD
                 }) {
                 updateKeyboardState(true)
                 return
@@ -525,7 +531,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
         val className = event.className?.toString() ?: return
         val isInputField = isInputFieldClass(className)
 
-        if (isInputField && !isKeyboardVisible) {
+        if (isInputField && !imeTouchGate.isImeVisible) {
             // 输入框获得焦点，延迟检查输入法窗口（输入法弹出可能有动画延迟）
             Handler(Looper.getMainLooper()).postDelayed({
                 checkKeyboardVisibility()
@@ -543,16 +549,7 @@ class EdgeGestureAccessibilityService : AccessibilityService(), AccessibilityGes
     }
 
     private fun updateKeyboardState(visible: Boolean) {
-        // 只有在开启避免遮挡设置时才处理输入法状态
-        if (!settings.avoidKeyboardOverlap) return
-
-        if (visible && !isKeyboardVisible) {
-            isKeyboardVisible = true
-            edgeViewManager.disableEdgeViewsTouch()
-        } else if (!visible && isKeyboardVisible) {
-            isKeyboardVisible = false
-            edgeViewManager.enableEdgeViewsTouch()
-        }
+        imeTouchGate.update(visible, settings.avoidKeyboardOverlap)
     }
 
     // 根据充电状态决定暂停或恢复背面双击
