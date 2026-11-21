@@ -110,7 +110,7 @@ screens/<page>/
 
 - 改动后至少验证 `:app:assembleDebug`、`:app:testDebugUnitTest`、`:app:lintDebug`。
 - 涉及 UI 与资源时追加 `:app:assembleRelease`（R8 与资源优化路径和 debug 不同）。
-- lint 必须保持 **0 errors / 0 warnings**：`app/build.gradle.kts` 已设 `lint { abortOnError = true; checkReleaseBuilds = true }`，`app/lint.xml` 把 `Deprecated` 与 `UnsafeOptIn*` 提级为 error；新增问题当轮修掉，不积压、不用 baseline 文件兜底。
+- lint 必须保持 **0 errors / 0 warnings**：`app/build.gradle.kts` 已设 `lint { abortOnError = true }`；lint 不随 `assembleRelease` 执行，须用 `:app:lintDebug` / `:app:lintRelease` 或 `check` 触发。`app/lint.xml` 把 `Deprecated` 与 `UnsafeOptIn*` 提级为 error；新增问题当轮修掉，不积压、不用 baseline 文件兜底。
 - Kotlin 已开启 `allWarningsAsErrors`，警告即构建失败；弃用 API 必须迁移到等价接口，不用抑制。
 - 签名读 `local.properties`（`KEYSTORE_PASSWORD` / `KEY_ALIAS` / `KEY_PASSWORD`）+ 仓库根 `jh.keystore`；口令不进仓库、不进日志。
 - 版本号 `versionCode` / `versionName` 在 `app/build.gradle.kts`，发版时同步 `README.md` / `README.zh-CN.md` 顶部的版本徽章。

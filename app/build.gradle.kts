@@ -125,9 +125,11 @@ android {
     }
 
     lint {
-        // 质量门禁：Lint Error 阻断构建，release 变体同规则
+        // 质量门禁：Lint Error 阻断构建。
+        // lint 不挂在 assembleRelease 上：冷构建时它独占较长时间且不改变产物，
+        // 由 ./gradlew check / build / lintRelease 强制执行（check 已依赖 lint）
         abortOnError = true
-        checkReleaseBuilds = true
+        checkReleaseBuilds = false
     }
 }
 
